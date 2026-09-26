@@ -1,4 +1,4 @@
-import { SPELLS, SPELL_IDS, FOCUS_WEAPONS, castWith, focusAt, spellXp, readingXp } from './sorcery.js';
+import { SPELLS, SPELL_IDS, FOCUS_WEAPONS, castWith, focusAt, spellXp, readingXp, learnableSpell } from './sorcery.js';
 import { meleeLineClear } from './melee-contact.js';
 import { TESTIMONY, MURDERER, MURDERER_READING } from './murder-quest.js';
 
@@ -24,7 +24,7 @@ export function thoughtOf(npc) {
 
 export function validateMagicSnapshot(data) {
   return !!data && data.version === MAGIC_VERSION && Array.isArray(data.learned)
-    && data.learned.every(id => SPELL_IDS.includes(id)) && new Set(data.learned).size === data.learned.length
+    && data.learned.every(id => SPELL_IDS.includes(id) && learnableSpell(id)) && new Set(data.learned).size === data.learned.length
     && (data.selected === null || data.learned.includes(data.selected))
     && Number.isFinite(data.focus) && data.focus >= 0 && data.focus <= 200
     && Array.isArray(data.read) && data.read.every(id => typeof id === 'string' && id.length > 0)
@@ -48,6 +48,8 @@ export function createMagic({ skills, inventory, weapons, combat, position, worl
 
   function learn(id, { equip = true, announce = true, grantWand = false } = {}) {
     if (!SPELLS[id]) return { ok: false, reason: 'There is no such spell.' };
+    // A reserved school (Time, for now) is nobody's to teach, whoever asks.
+    if (!learnableSpell(id)) return { ok: false, reason: 'Nobody can teach that yet.' };
     const first = !learned.has(id);
     learned.add(id); selected ??= id;
     skills.learn(SPELLS[id].school);

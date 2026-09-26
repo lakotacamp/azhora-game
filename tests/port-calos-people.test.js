@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 import { PORT_CALOS_NPCS, PORT_CALOS_NPC_IDS, portCalosConversation } from '../src/port-calos-people.js';
 import { PORT_CALOS_NPC_POSITIONS } from '../src/port-calos-world.js';
 
-test('Port Calos has only its requested civilian Maddie, with her harbor stand and appearance', () => {
+test('Port Calos has only the people it was asked for: Christina and Maddie, with their stands and looks', () => {
   assert.equal(new Set(PORT_CALOS_NPC_IDS).size, PORT_CALOS_NPCS.length);
-  assert.deepEqual(PORT_CALOS_NPCS.map(npc=>npc.name),['Maddie'],'do not invent a cast of residents');
-  assert.deepEqual(Object.keys(PORT_CALOS_NPC_POSITIONS),PORT_CALOS_NPC_IDS);
-  assert.equal(PORT_CALOS_NPCS[0].look.hat,false);
-  assert.equal(PORT_CALOS_NPCS[0].look.hairStyle,'long');
-  assert.equal(PORT_CALOS_NPCS[0].look.straightHair,true);
+  assert.deepEqual(PORT_CALOS_NPCS.map(npc=>npc.name).sort(),['Christina','Maddie'],'do not invent a cast of residents');
+  assert.deepEqual(Object.keys(PORT_CALOS_NPC_POSITIONS).sort(),[...PORT_CALOS_NPC_IDS].sort());
+  const maddie = PORT_CALOS_NPCS.find(npc => npc.name === 'Maddie'), christina = PORT_CALOS_NPCS.find(npc => npc.name === 'Christina');
+  assert.equal(maddie.look.hat,false);
+  assert.equal(maddie.look.hairStyle,'long');
+  assert.equal(maddie.look.straightHair,true);
+  assert.equal(christina.look.discoHead,true,'Christina’s head is a disco ball');
+  assert.equal(christina.look.hat,false);
   for (const npc of PORT_CALOS_NPCS) {
     const stand = PORT_CALOS_NPC_POSITIONS[npc.id];
     assert.ok(Number.isFinite(stand?.x) && Number.isFinite(stand?.z), npc.id);

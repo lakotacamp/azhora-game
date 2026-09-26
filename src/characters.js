@@ -335,6 +335,73 @@ function makePlainWand(parent) {
   batchRigidParts(wand, [wand]);
   return wand;
 }
+/**
+ * **Subtractidaughter's clock** (the user, 26 September 2026: "a handheld grandfather clock wand
+ * that she can simultaneously cast time magic spells with"). A long-case clock the length of her
+ * forearm, held by its plinth like a wand: dark trunk, a brass-rimmed face in the hood with its
+ * hands at ten to two, a glazed door with the pendulum's bob behind it, and a finial. She swings it
+ * like a mace and points it to cast (src/combat.js `timekeeper`).
+ */
+function makeHandClock(parent) {
+  // Upright in her fist by the waist of its case, the hood above her knuckles and the plinth below;
+  // the animator keeps it upright as it does a planted spear (`staff`), so it swings like a weight.
+  const clock = new THREE.Group(); clock.name = 'Handheld grandfather clock'; parent.add(clock);
+  const body = new THREE.Group(); body.position.set(0, .16, .14); body.scale.setScalar(1.3); clock.add(body);
+  const wood = material(0x3b2a1f), trim = material(0x5a4130), brass = material(0xc9a24e, { metalness: .55, roughness: .38 });
+  const face = material(0xece3cc), hand = material(0x1d1b19), glass = material(0x9fb7c4, { metalness: .1, roughness: .15 });
+  const y = v => v - .42;
+  part(body, UNIT_BOX, trim, [0, y(.03), 0], [.16, .06, .12]);         // the plinth
+  part(body, UNIT_BOX, wood, [0, y(.3), 0], [.12, .5, .09]);           // the trunk, where she holds it
+  part(body, UNIT_BOX, glass, [0, y(.3), .047], [.075, .3, .008]);     // its door
+  round(body, brass, [0, y(.23), .054], [.03, .03, .01]);              // the bob, behind the glass
+  part(body, UNIT_BOX, brass, [0, y(.35), .053], [.007, .14, .005]);   // and its rod
+  part(body, UNIT_BOX, wood, [0, y(.64), 0], [.17, .17, .115]);        // the hood
+  part(body, new THREE.CylinderGeometry(.068, .068, .014, 16), brass, [0, y(.64), .059], [1, 1, 1]).rotation.x = Math.PI / 2;
+  part(body, new THREE.CylinderGeometry(.058, .058, .014, 16), face, [0, y(.64), .064], [1, 1, 1]).rotation.x = Math.PI / 2;
+  part(body, UNIT_BOX, hand, [-.02, y(.654), .073], [.044, .007, .004]).rotation.z = -.5;
+  part(body, UNIT_BOX, hand, [.022, y(.659), .073], [.052, .006, .004]).rotation.z = .55;
+  part(body, UNIT_BOX, trim, [0, y(.735), 0], [.185, .03, .125]);     // the cornice
+  round(body, brass, [0, y(.78), 0], [.027, .042, .027]);              // the finial
+  return clock;
+}
+/**
+ * **Christina's head is a disco ball** (the user, 26 September 2026: "a party nugget whose head
+ * looks and spins like a disco ball"). Bands of little square mirror tiles over a dark core, a few
+ * of them coloured, each tile shaded on its own and hard-lit so the highlights jump from tile to
+ * tile as it turns. Built as one mesh; the caller spins it.
+ */
+function makeDiscoBall(parent) {
+  const ball = new THREE.Group(); ball.name = 'Disco ball head'; ball.position.set(0, .2, 0); parent.add(ball);
+  const r = .235, positions = [], normals = [], colors = [], glints = [[1, .45, .82], [.45, .9, 1], [1, .86, .38]];
+  const at = (lat, lon) => [r * Math.cos(lat) * Math.sin(lon), r * Math.sin(lat), r * Math.cos(lat) * Math.cos(lon)];
+  const bands = 9;
+  let n = 0;
+  for (let band = 0; band < bands; band++) {
+    const lat0 = -Math.PI / 2 + (band + .07) / bands * Math.PI, lat1 = -Math.PI / 2 + (band + .93) / bands * Math.PI;
+    const count = Math.max(5, Math.round(17 * Math.cos((lat0 + lat1) / 2)));
+    for (let k = 0; k < count; k++, n++) {
+      const lon0 = (k + .07) / count * Math.PI * 2, lon1 = (k + .93) / count * Math.PI * 2;
+      const a = at(lat0, lon0), b = at(lat0, lon1), c = at(lat1, lon1), d = at(lat1, lon0);
+      positions.push(...a, ...c, ...b, ...a, ...d, ...c);
+      const mid = at((lat0 + lat1) / 2, (lon0 + lon1) / 2), len = Math.hypot(...mid);
+      // Mirror tiles catch the room, not one grey: dark ones beside bright ones, and a scatter of colour.
+      const shade = .3 + ((n * 37) % 13) / 12 * .7, colour = n % 7 === 3 ? glints[(n >> 1) % 3] : [shade, shade, shade * 1.06];
+      for (let v = 0; v < 6; v++) { normals.push(mid[0] / len, mid[1] / len, mid[2] / len); colors.push(...colour); }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const tiles = new THREE.Mesh(geometry, new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 140, specular: 0xffffff,
+    emissive: 0x202024, side: THREE.DoubleSide }));
+  tiles.name = 'Disco ball tiles';
+  const core = new THREE.Mesh(new THREE.SphereGeometry(r * .96, 12, 8), material(0x232327));
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .05, 6), material(0xb9bcc2, { metalness: .5, roughness: .3 }));
+  cap.position.y = r + .02;
+  ball.add(core, tiles, cap);
+  return ball;
+}
 function makeOakStaff(parent) {
   const staff = new THREE.Group(); staff.name = 'Oak staff'; parent.add(staff);
   const oak = material(0x89613d), grip = material(0x54402d);
@@ -2933,6 +3000,8 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   const weapons = isPlayer ? { 'simple-sword': makeSword(weapon), 'forest-stick': makeStick(weapon), 'iron-mace': makeMace(weapon), 'long-dagger': makeDagger(weapon), 'bearded-axe': makeAxe(weapon), greatsword: makeGreatsword(weapon) }
     : isMercenary ? mercenaryHeldWeapons(weapon, look?.weapon, Boolean(look?.trades)) : fights ? { 'simple-sword': makeSword(weapon) }
     : villagerHolds ? { [villagerHolds]: VILLAGER_WEAPONS[villagerHolds](weapon) } : {};
+  // Subtractidaughter always has her clock in her hand, fighting or not (`look.clock`).
+  if (isRivalKeeper && look?.clock) staff = makeHandClock(wrists[1]);
   let fishingGrip = isPlayer || isPondFisher ? makeWeaponMount(wrists[1], 'Fishing rod grip') : null;
   let fishingRod = fishingGrip ? makeFishingRod(fishingGrip) : null;
   const pivots = [body, chest, head, ...arms, ...elbows, ...wrists, ...legs, ...knees, ...ankles];
@@ -2955,6 +3024,16 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   if (isWineSeller) {
     body.scale.set(1.08, 1.13, 1.08);
     head.scale.set(1 / Math.sqrt(1.08), 1 / 1.13, 1 / Math.sqrt(1.08));
+  }
+  // A disco ball where a head should be (`look.discoHead`, Christina of Port Calos): the head she was
+  // built with is put away, a mirror ball sits on the neck, and she is small, a nugget of a person.
+  let discoBall = null;
+  if (look?.discoHead) {
+    head.traverse(object => { if (object.isMesh) object.visible = false; });
+    discoBall = makeDiscoBall(head);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(.062, .07, .12, 8), skinMat);
+    neck.position.y = -.02; head.add(neck);
+    group.scale.setScalar(.88);
   }
   if (isKaty) {
     // The spyglass is at her right eye and looks where she looks: it rides on the head, and her hands come up to it.
@@ -3052,6 +3131,12 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     if (typeof pose.fishing === 'boolean') setFishing(pose.fishing);
     const hasFocus = selectedWeapon === 'wand' || selectedWeapon === 'oak-staff';
     animatePose(time, speed, grounded, { ...pose, fishing, spellCast: !fishing && hasFocus ? pose.spellCast : null });
+    // The ball never stops turning, and bobs to a beat only she can hear.
+    if (discoBall) {
+      discoBall.rotation.y = time * 1.7;
+      discoBall.rotation.z = Math.sin(time * 3.4) * .06;
+      discoBall.position.y = .2 + Math.abs(Math.sin(time * 3.4)) * .018;
+    }
     if (weapon && fishing) weapon.visible = false;
     // The shaft goes on the string only while he is actually drawing, so a man standing about
     // with a bow is not standing about with an arrow on it. `pose.draw` is 0 to 1, and is the

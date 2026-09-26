@@ -22,7 +22,7 @@
  *
  * Pure: no DOM, no three. The tower is src/lighthouse-world.js.
  */
-import { ADDISON_AFTER, HEIST_ENDINGS, HEIST_ENDING_IDS } from './rival-light.js';
+import { ADDISON_AFTER, CROSSING_PLAN, HEIST_ENDINGS, HEIST_ENDING_IDS } from './rival-light.js';
 
 const freeze = Object.freeze;
 
@@ -180,17 +180,20 @@ export function addisonConversation(npc, context) {
   const sister = heist ? {
     unknown: { id: 'light-sister', label: 'Is there another light on this coast?', act: 'sister-tell' },
     told: { id: 'light-sister-ask', label: 'What do you want done about her?', act: 'sister-ask' },
-    asked: { id: 'light-sail', label: 'Take me across tonight.', act: 'sister-sail' },
-    home: { id: 'light-decide', label: 'What happens to the glass?', act: null },
+    // Her father's key is in the traveler's pocket: she will go over the way again, and that is all.
+    asked: { id: 'light-passage', label: 'Tell me about the door again.', lines: CROSSING_PLAN },
+    taken: { id: 'light-deliver', label: 'I have your sister’s fire.', act: 'sovik-deliver' },
+    home: { id: 'light-decide', label: 'What happens to Sovik?', act: null },
   }[heist.stage] ?? null : null;
   const choices = [
     ...(sister && sister.act ? [{ id: sister.id, label: sister.label,
       action: () => { closeDialogue(); act(sister.act); } }] : []),
-    ...(sister && !sister.act ? [{ id: sister.id, label: sister.label,
+    ...(sister && sister.lines ? [{ id: sister.id, label: sister.label, action: () => tell(sister.lines) }] : []),
+    ...(sister && !sister.act && !sister.lines ? [{ id: sister.id, label: sister.label,
       action: () => openDialogue(npc, [...ADDISON_AFTER], null, 'Decide', { choices: [
-        ...HEIST_ENDING_IDS.map(id => ({ id: `glass-${id}`, label: HEIST_ENDINGS[id].name,
-          action: () => { closeDialogue(); act(`glass-${id}`); } })),
-        { id: 'glass-wait', label: 'Not yet.', action: closeDialogue },
+        ...HEIST_ENDING_IDS.map(id => ({ id: `fire-${id}`, label: HEIST_ENDINGS[id].name,
+          action: () => { closeDialogue(); act(`fire-${id}`); } })),
+        { id: 'fire-wait', label: 'Not yet.', action: closeDialogue },
       ] }) }] : []),
     { id: 'light-climb', label: light.climbed ? 'Can I go up again?' : 'Can I see the light?',
       action: () => { closeDialogue(); act('climb-light'); } },

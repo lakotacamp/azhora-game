@@ -46,6 +46,8 @@ export const SCHOOLS = Object.freeze({
   beast: Object.freeze({ id: 'beast', name: SKILLS.beast.name, spells: Object.freeze(['summon-bees']) }),
   frost: Object.freeze({ id: 'frost', name: SKILLS.frost.name, reserved: true, spells: Object.freeze([]) }),
   wards: Object.freeze({ id: 'wards', name: SKILLS.wards.name, reserved: true, spells: Object.freeze([]) }),
+  /** Begun, with one spell, and nobody's to learn yet: Subtractidaughter casts it (src/combat.js). */
+  time: Object.freeze({ id: 'time', name: SKILLS.time.name, reserved: true, spells: Object.freeze(['slow']) }),
 });
 export const SCHOOL_IDS = Object.freeze(Object.keys(SCHOOLS));
 
@@ -115,8 +117,24 @@ export const SPELLS = Object.freeze({
     /** How long they stay, and how often each sting lands. */
     stay: Object.freeze({ low: 7, high: 16 }), sting: .8,
   }),
+  /**
+   * **Slow** (Time's first spell; the user, 26 September 2026): a bolt that "basically just slows
+   * down the movement of the person hit temporarily". It does no harm. Whoever it meets moves at
+   * `factor` of their pace for `seconds`, which grow with the caster's level. Only Subtractidaughter
+   * casts it for now; the school is reserved, and nobody can be taught it.
+   */
+  slow: Object.freeze({
+    id: 'slow', school: 'time', name: 'Slow',
+    cost: Object.freeze({ low: 22, high: 12 }),
+    cast: Object.freeze({ low: 1, high: .6 }),
+    damage: Object.freeze({ low: 0, high: 0 }),
+    range: 16, speed: 12, radius: .34,
+    slow: Object.freeze({ factor: .45, seconds: Object.freeze({ low: 3, high: 6 }) }),
+  }),
 });
 export const SPELL_IDS = Object.freeze(Object.keys(SPELLS));
+/** Whether a spell can be taught at all: a spell of a reserved school cannot, whoever asks. */
+export const learnableSpell = spell => !!SPELLS[spell] && !SCHOOLS[SPELLS[spell].school]?.reserved;
 
 /** Which school a spell belongs to; a spell nobody has claimed answers null. */
 export const schoolOf = spell => SPELLS[spell]?.school ?? null;
@@ -147,6 +165,7 @@ export function castWith(spellId, { level = 1, weapon = null } = {}) {
     range: spell.range, speed: spell.speed, radius: spell.radius,
     spoken: !!spell.spoken, swarm: !!spell.swarm,
     ...(spell.swarm ? { stay: between(spell.stay, level), sting: spell.sting } : {}),
+    ...(spell.slow ? { slow: Object.freeze({ factor: spell.slow.factor, seconds: +between(spell.slow.seconds, level).toFixed(2) }) } : {}),
   });
 }
 

@@ -33,6 +33,7 @@ import { atticDeckHeight } from './wine-attic.js';
 import { createBrandyYard } from './brandy-yard.js';
 import { createLighthouse } from './lighthouse-world.js';
 import { ELOD_LIGHT } from './rival-light.js';
+import { createSmugglersDoorScenery } from './smugglers-door-world.js';
 import { createWoodlot } from './woodlot-world.js';
 import { createHomestead } from './homestead-world.js';
 import { inKoopwood } from './woodcutting.js';
@@ -1311,6 +1312,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   createLighthouse({ parent: world, material, mesh, box, post, round, cylinder, heightAt, colliders, signs });
   createLighthouse({ parent: world, material, mesh, box, post, round, cylinder, heightAt, colliders, signs }, ELOD_LIGHT,
     { stone: '#4a4a4f', stoneDark: '#343438', stoneLight: '#5e5e63', slate: '#26262a', door: '#2b2723' });
+  // Addison's father's door through the ridge between the two Suvals, and its hatch (src/rival-light.js).
+  createSmugglersDoorScenery({ root: world, groundHeight: heightAt });
   // The Koopwood, Bowden Koop's woodlot, where woodcutting is learned (src/woodcutting.js, src/woodlot-world.js).
   const woodlot = createWoodlot({ parent: world, material, mesh, box, post, round, cylinder, heightAt, colliders, signs, movingGroups });
   // The traveler's house on the plot beside it, and the birdhouse posts in the Greenway (src/construction.js, src/homestead-world.js).

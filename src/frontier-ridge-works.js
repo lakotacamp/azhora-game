@@ -1,5 +1,6 @@
 import { createSceneryBuilder } from './scenery-builder.js';
 import { SUVAL_RIDGE_EDGES, SUVAL_RIDGE_ROCKS, SUVAL_HILL_PASSES, SUVAL_RIDGE_COLLIDERS, hillPassPoint } from './frontier-ridges.js';
+import { SMUGGLERS_DOOR } from './rival-light.js';
 
 /** Chunk the kilometre of rock into short runs so distant sections can be culled. */
 export function buildFrontierRidges({ parent, heightAt, colliders, signs }) {
@@ -12,6 +13,8 @@ export function buildFrontierRidges({ parent, heightAt, colliders, signs }) {
       // The broken talus apron gives the barrier a foot in the surrounding ground.
       for (const side of [-1, 1]) {
         const x = rock.x + edge.inward.x * side * 4.7, z = rock.z + edge.inward.z * side * 4.7;
+        // Except in front of Addison's smugglers' door and its hatch (src/rival-light.js), which are in the face itself.
+        if ([SMUGGLERS_DOOR.door, SMUGGLERS_DOOR.hatch].some(p => Math.hypot(p.x - x, p.z - z) < 3.6)) continue;
         b.rock(shades[(rock.tint + 1) % 3], x, heightAt(x, z) + .35, z, 3.7, 2.4, 3.4, rock.yaw + side * .31);
       }
     }

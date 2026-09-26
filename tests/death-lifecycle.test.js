@@ -245,8 +245,8 @@ test('nobody can die in a fight the player is being taught alone in', () => {
   const source = main();
   // Two authored fights by name, the straw post, which is a phase of its own and has no allies
   // to lose, and a bout with a teacher, which is a fight nobody can die in at all
-  // (`bout`, src/combat.js, docs/combat-brief.md phase 7).
-  assert.match(source, /const TEACHING_FIGHTS=new Set\(\[GREENWAY_RAID\.id,AVREL_RAID\.id,SPARRING_ID\]\);/);
+  // (`bout`, src/combat.js, docs/combat-brief.md phase 7) - and Alex's, which is a bout too.
+  assert.match(source, /const TEACHING_FIGHTS=new Set\(\[GREENWAY_RAID\.id,AVREL_RAID\.id,SPARRING_ID,ALEX_BOUT_ID\]\);/);
   assert.match(source, /const SPARRING_ID='sparring-bout';/, 'and the bout is one of them');
   const teaching = new Set(['greenway-test', 'avrel-test', 'sparring-bout']);
   const allies = hostFunction('companionAllies', { TEACHING_FIGHTS: teaching });

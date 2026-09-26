@@ -4,6 +4,37 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-26 — Addison's quest: her sister's fire (the user's premise)
+
+**The quest.** Addison wants the traveler to steal the fire spirit out of her rival
+Subtractidaughter's lighthouse (the Elod Light). The fire spirit is loosely inspired by
+Calcifer in Howl's Moving Castle. Two ways to get it: stealth (though the spirit is dangerous
+to touch), or fighting past Subtractidaughter and the Elodi guards. Addison gives the traveler
+a key to a secret passage into East Suval. **The guards attack anyone they see without a
+passport.** The spirit has to be smuggled back to Addison. It has its own computer autoplay
+like the other side quests.
+
+**Subtractidaughter is very strong** and wields a handheld grandfather clock as a wand; she
+casts time magic through it. One spell to start: it slows the movement of whoever it hits,
+for a while.
+
+**Time Sorcery is begun, and not learnable by the traveler yet.**
+
+What was built to those (src/rival-light.js, src/rival-light-host.js; my choices are marked):
+the spirit is **Sovik** (name from the Elodi profile's sun root, *sov*); he replaces the
+stepped lens the earlier version of this quest had, and the boat crossing is gone. The passage
+is an old smugglers' door through the limestone ridge between West and East Suval, east of
+Addison's light (my placement). Lifting Sovik burns 30 health, never the last point; carried,
+he glows and the watch sees half as far again (my numbers). Two Elodi guards keep the Elod
+Light's yard at night, one at the gap by the winch and one on the land side, and a postern in
+the yard wall behind the land guard is the quiet way in (my layout); Subtractidaughter sleeps
+in her blockhouse and comes out when the watch is roused. In a fight she **yields at one point
+of health rather than dying** (my choice: she is Addison's twin). Her strength is her own
+(320 health, heavy clock blows); the guards take East Suval's level like every fight. Slow
+leaves whoever it hits at 45% pace for about four seconds at her level. The endings are the
+three the lens had, rewritten for a fire: keep him in the Suval Light, give him to the Svaleen
+Conclave, or let him go. Nobody issues Elodi papers yet.
+
 ## 2026-09-25 — no unsolicited hats
 
 **Characters are hatless by default.** Add a hat only when the user explicitly

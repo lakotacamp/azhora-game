@@ -103,6 +103,9 @@ export function createLighthouse(kit, L = SUVAL_LIGHT, palette = {}) {
   for (let k = 0; k < 44; k++) {
     const angle = k / 44 * Math.PI * 2;
     if (angle > y.openFrom && angle < y.openTo) continue;                      // the gate, to landward
+    // And a postern, if the keeper has one (the Elod Light's, on the land side; src/rival-light.js).
+    const signed = angle > Math.PI ? angle - Math.PI * 2 : angle;
+    if (y.postern && signed > y.postern[0] && signed < y.postern[1]) continue;
     const x = y.x + Math.sin(angle) * y.radius, z = y.z + Math.cos(angle) * y.radius;
     const gy = groundAt(x, z), h = y.height * (.82 + ((k * 7) % 5) * .07);
     const stoneMat = k % 3 ? stone : stoneDark;

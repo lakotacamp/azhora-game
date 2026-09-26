@@ -53,6 +53,17 @@ export const ENEMY_KINDS = Object.freeze({
   // strength wherever the house is: a country's level does not change how hard she hits.
   brawler: Object.freeze({ tell: .55, attack: .38, contact: .17, recovery: .9, damage: 13, speed: 2.7, engage: 1.75, reach: 1.9, lunge: 1.9,
     poise: true, pack: 1, fixedStats: true }),
+  /**
+   * **Subtractidaughter** (src/rival-light.js), keeper of the Elod Light, and the strongest single
+   * person the traveler can pick a fight with on this coast (the user, 26 September 2026). She
+   * carries a grandfather clock the length of her forearm by the neck of its case and swings it
+   * like a mace, and she casts through it: between blows, out of reach, she throws **Slow**
+   * (src/sorcery.js, the Time school), and whoever it catches moves at under half their pace for a
+   * few seconds. Her own strength wherever she stands; `spell.level` is how well she knows it.
+   */
+  timekeeper: Object.freeze({ tell: .6, attack: .44, contact: .19, recovery: .85, damage: 33, speed: 3.1, engage: 2.05, reach: 2.35, lunge: 1.9,
+    poise: true, pack: 1, fixedStats: true,
+    spell: Object.freeze({ id: 'slow', level: 40, tell: .7, attack: .34, contact: .14, recovery: .6, every: 5, from: 0 }) }),
   // The rebels who lie up on the road out of Drent (src/road-ambush.js). Farmers, drovers and
   // market families who lost a battle at the Lauvel ten days ago and kept their swords.
   //
@@ -253,6 +264,8 @@ function encounterConfig(config) {
     if (enemy.armed !== undefined && typeof enemy.armed !== 'boolean') return null;
     // Somebody who came for one person in particular (the cagnappers, for Cagney).
     if (enemy.prey !== undefined && !identifier(enemy.prey)) return null;
+    // Somebody who goes down on her knees at one instead of dying (Subtractidaughter).
+    if (enemy.yields !== undefined && typeof enemy.yields !== 'boolean') return null;
     if (enemy.currentHp !== undefined && (!Number.isFinite(enemy.currentHp) || enemy.currentHp < 0 || enemy.currentHp > 100000)) return null;
     const hp = enemy.hp ?? 75, entry = enemy.entry ?? 0;
     if (!Number.isFinite(hp) || hp <= 0 || hp > 10000 || !Number.isFinite(entry) || entry < 0 || entry > 60
@@ -263,7 +276,7 @@ function encounterConfig(config) {
     seen.add(enemy.id); if (enemy.npcId) seen.add(enemy.npcId);
     enemies.push({ id: enemy.id, x: enemy.x, z: enemy.z, hp, entry, kind, ...(enemy.currentHp !== undefined ? { currentHp: enemy.currentHp } : {}), ...(enemy.look ? { look: enemy.look } : {}),
       ...(enemy.name ? { name: enemy.name } : {}), ...(enemy.npcId ? { npcId: enemy.npcId } : {}), ...(enemy.model ? { model: { ...enemy.model } } : {}),
-      ...(enemy.armed === false ? { armed: false } : {}), ...(enemy.prey ? { prey: enemy.prey } : {}) });
+      ...(enemy.armed === false ? { armed: false } : {}), ...(enemy.prey ? { prey: enemy.prey } : {}), ...(enemy.yields ? { yields: true } : {}) });
   }
   const allies = [];
   if (config.allies !== undefined) {
@@ -493,6 +506,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
       ...(spec.look ? { look: spec.look } : {}), ...(spec.name ? { name: spec.name } : {}),
       ...(spec.npcId ? { npcId: spec.npcId } : {}), ...(spec.model ? { model: spec.model } : {}),
       ...(spec.armed === false ? { armed: false } : {}), ...(spec.prey ? { prey: spec.prey } : {}),
+      ...(spec.yields ? { yields: true } : {}),
     }), spec);
   }
 
@@ -1006,10 +1020,14 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
       && Math.abs(angleDifference(enemy.yaw ?? 0, yaw + Math.PI)) < Math.PI / 3;   // on guard, and the blow comes at his shield
     if (guarded) damage *= 1 - profile.guard;
     damage = Math.max(1, Math.round(damage * (1 - (profile.armor ?? 0))));
-    // In a bout nobody's health goes below one: he is beaten, and he says so, and he gets up.
-    const floor = killFloor();
+    // In a bout nobody's health goes below one: he is beaten, and he says so, and he gets up. Nor
+    // does anybody who `yields` in an ordinary fight: at one she goes down on her knees and is out
+    // of it, and nobody's victory branch ever has a body to count for her.
+    const floor = enemy.yields ? Math.max(1, killFloor()) : killFloor();
     enemy.hp = Math.max(floor, enemy.hp - damage);
     enemy.active = enemy.hp > floor;
+    const yielding = !!enemy.yields && !enemy.active && !enemy.yielded && !lastEncounter.bout;
+    if (yielding) { enemy.yielded = true; enemy.casting = false; }
     // A blow he caught on his shield leaves him standing, and the fight goes on above this line.
     // **But the blow that beats him is never merely blocked**, because everything that ends a
     // fight is below here: the bout's yield, and the victory. This read `enemy.hp`, which in an
@@ -1050,6 +1068,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     emit('hit', { targetId: enemy.id, x: enemy.x, z: enemy.z, damage, weaponId: attackWeapon?.id ?? currentWeapon()?.id ?? null,
       killed: !enemy.hp, level: lastEncounter.level ?? 0, ...attribution });
     if (!enemy.hp) emit('enemy-defeated', { id: enemy.id, x: enemy.x, z: enemy.z, ...attribution });
+    if (yielding) emit('enemy-yielded', { id: enemy.id, ...(enemy.npcId ? { npcId: enemy.npcId } : {}), x: enemy.x, z: enemy.z, ...attribution });
     // **A bout never ends in a victory**, because nothing has been won and nobody is dead. It
     // ends in a yield, with its own event, so that not one of the host's victory branches - the
     // Greenway, the border, the toll stone - can ever fire on a lesson.
@@ -1151,6 +1170,39 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     emit('ally-fireball', { ...ball, sourceId: ally.id });
   }
 
+  /** The numbers an enemy's spell is thrown with: the school's own, at the caster's level. */
+  function enemySpellProfile(spell) {
+    return castWith(spell.id, { level: spell.level ?? 1, weapon: 'wand' });
+  }
+  /**
+   * **An enemy's spell** goes into the same list as an ally's and flies by the same rules: it is
+   * stopped by the first body or wall it meets, whoever that is. `team` is whose it is.
+   */
+  function launchEnemySpell(enemy, spell) {
+    const profile = enemySpellProfile(spell);
+    if (!profile) return;
+    const timers = enemyTimers.get(enemy.id);
+    const tracked = timers?.targetId ? state.allies.find(ally => ally.id === timers.targetId && ally.active) : null;
+    const target = tracked ?? position;
+    const yaw = Math.atan2(target.x - enemy.x, target.z - enemy.z);
+    enemy.yaw = yaw;
+    const ball = { id: `enemy-${profile.id}-${enemy.id}-${++allySpells}`, owner: enemy.id, team: 'enemy', spellId: profile.id,
+      targetId: tracked?.id ?? 'traveler', x: enemy.x, z: enemy.z, y: floorAt(enemy.x, enemy.z) + 1.2, yaw, flown: 0,
+      origin: { x: enemy.x, z: enemy.z }, profile };
+    state.fireballs.push(ball);
+    emit('enemy-spell', { ...ball, sourceId: enemy.id });
+  }
+  /**
+   * **Slowed** (Time's first spell): under `factor` of the pace for `seconds`. A second bolt
+   * lengthens it and never stacks the factor. Only a fight's clock runs it, so it ends with the fight.
+   */
+  const slowScale = actor => (state.phase === 'active' && (actor?.slowUntil ?? 0) > time ? actor.slowFactor ?? 1 : 1);
+  function applySlow(actor, slow) {
+    if (!actor || !slow) return;
+    actor.slowUntil = Math.max(actor.slowUntil ?? 0, time + slow.seconds);
+    actor.slowFactor = slow.factor;
+  }
+
   function updateFireballs(dt) {
     if (state.phase !== 'active') { state.fireballs = []; return; }
     for (const ball of [...state.fireballs]) {
@@ -1167,15 +1219,24 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
           && actor.action !== 'dead' && distance(actor, ball) <= ball.profile.radius + (actor.r ?? BODY.person));
         if (target) {
           reason = 'target';
-          const impact = { id: `impact-${ball.id}`, source: 'ally', sourceId: ball.owner, spell: true, spellId: 'fireball',
+          const team = ball.team ?? 'ally', spellId = ball.spellId ?? 'fireball', damage = ball.profile.damage;
+          const impact = { id: `impact-${ball.id}`, source: team, sourceId: ball.owner, spell: true, spellId,
             weaponId: 'wand', targetId: target.id, ...(target.npcId ? { targetNpcId: target.npcId } : {}),
-            origin: { ...ball.origin }, x: ball.x, y: ball.y, z: ball.z, yaw: ball.yaw, damage: ball.profile.damage,
+            origin: { ...ball.origin }, x: ball.x, y: ball.y, z: ball.z, yaw: ball.yaw, damage,
             encounterId: state.encounterId, bout: !!lastEncounter.bout, combatantIds: combatantIds(), affectedIds: [], hits: [] };
           const beforeHp = target.actor?.hp;
-          const attribution = { by: ball.owner, source: 'ally', spell: true, spellId: 'fireball', weaponId: 'wand', impactId: impact.id };
-          if (target.team === 'enemy') hurtEnemy(target.actor, ball.profile.damage, ball.yaw, attribution);
-          else if (target.team === 'ally') hurtAlly(target.actor, { ...ball.origin, yaw: ball.yaw }, ball.profile.damage, attribution);
-          else if (target.team === 'player') hurtPlayer({ ...ball.origin, id: ball.owner, yaw: ball.yaw }, ball.profile.damage, attribution);
+          const attribution = { by: ball.owner, source: team, spell: true, spellId, weaponId: 'wand', impactId: impact.id };
+          if (damage > 0) {
+            if (target.team === 'enemy') hurtEnemy(target.actor, damage, ball.yaw, attribution);
+            else if (target.team === 'ally') hurtAlly(target.actor, { ...ball.origin, yaw: ball.yaw }, damage, attribution);
+            else if (target.team === 'player') hurtPlayer({ ...ball.origin, id: ball.owner, yaw: ball.yaw }, damage, attribution);
+          }
+          // Time's bolt takes the pace out of whoever it meets, friend or not.
+          if (ball.profile.slow && target.team !== 'world' && target.actor && !(target.team === 'player' && player.invulnerable)) {
+            applySlow(target.actor, ball.profile.slow);
+            emit('slowed', { id: target.id, ...(target.npcId ? { npcId: target.npcId } : {}), by: ball.owner,
+              seconds: ball.profile.slow.seconds, factor: ball.profile.slow.factor });
+          }
           if (target.actor && target.actor.hp < beforeHp) {
             impact.affectedIds.push(target.id);
             impact.hits.push({ id: target.id, ...(target.npcId ? { npcId: target.npcId } : {}), team: target.team,
@@ -1418,14 +1479,24 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
       if (timers.actionTime >= duration) { enemy.action = 'idle'; enemy.progress = 0; }
       return;
     }
+    // Yielded: on her knees, and out of it until the fight is over.
+    if (enemy.yielded) { enemy.action = 'idle'; enemy.progress = 0; return; }
     if (enemy.kind === 'dummy' || state.phase !== 'active') return;
     const profile = ENEMY_KINDS[enemy.kind] ?? ENEMY_KINDS.goblin;
+    // A cast is a swing with its own timings and a spell at the end of it instead of a blade.
+    const casting = enemy.casting && profile.spell ? profile.spell : null;
     // A charge has its own tell, its own rush and its own narrow lane; everything else about it
     // is the kind's own swing, read from the same fields in the same order.
     const rush = enemy.charging ? profile.charge : null;
     if (enemy.action === 'windup') {
-      const tell = rush ? rush.tell : profile.tell;
+      const tell = rush ? rush.tell : casting ? casting.tell : profile.tell;
       enemy.progress = clamp(timers.actionTime / tell, 0, 1);
+      // A caster follows whoever she is aiming at through the whole gathering of it.
+      if (casting) {
+        const tracked = timers.targetId ? state.allies.find(ally => ally.id === timers.targetId && ally.active) : null;
+        const aim = tracked ?? position;
+        enemy.yaw += angleDifference(Math.atan2(aim.x - enemy.x, aim.z - enemy.z), enemy.yaw) * Math.min(1, dt * 8);
+      }
       // Aim is locked for the whole tell; a sidestep or dodge can beat the actual strike.
       // A kind with an `aimLock` instead keeps turning until that much of the tell has
       // gone by, and only then commits: a dodge thrown the moment the arc appears is
@@ -1445,8 +1516,17 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
       return;
     }
     if (enemy.action === 'attack') {
-      const duration = rush ? rush.attack : profile.attack, contact = rush ? rush.contact : profile.contact;
+      const duration = rush ? rush.attack : casting ? casting.attack : profile.attack;
+      const contact = rush ? rush.contact : casting ? casting.contact : profile.contact;
       enemy.progress = clamp(timers.actionTime / duration, 0, 1);
+      if (casting) {
+        if (!timers.hitApplied && timers.actionTime >= contact) { timers.hitApplied = true; launchEnemySpell(enemy, casting); }
+        if (timers.actionTime >= duration && state.phase === 'active') {
+          enemy.action = 'idle'; enemy.progress = 0; enemy.casting = false;
+          timers.cooldown = casting.recovery; timers.spellAt = time + casting.every;
+        }
+        return;
+      }
       // A committed lunge carries the strike forward, but stops short of standing
       // inside whoever it is aimed at: a creature with reach does not need to. A rush is the
       // same movement with the charge's own speed under it, and it stops the same way.
@@ -1473,6 +1553,24 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     enemy.yaw += angleDifference(targetYaw, enemy.yaw) * Math.min(1, dt * 7);
     const swinging = state.enemies.filter(other => other.active && ['windup', 'attack'].includes(other.action)).length;
     const someoneAttacking = swinging > 0;
+    // **A caster between blows.** With a clear line and the spell come round again she throws it,
+    // out of reach instead of walking in, and at arm's length before the next blow (`from`).
+    if (profile.spell) {
+      timers.spellAt ??= time + 1.2;
+      const bolt = enemySpellProfile(profile.spell);
+      if (bolt && dist > profile.spell.from && dist <= bolt.range - .5 && timers.cooldown <= 0 && time >= timers.spellAt
+        && meleeLineClear(enemy, aim, world)) {
+        enemy.action = 'windup';
+        enemy.casting = true;
+        enemy.charging = false;
+        enemy.yaw = targetYaw;
+        enemy.progress = 0;
+        timers.actionTime = 0;
+        timers.targetId = focus.ally?.id ?? null;
+        emit('windup', { id: enemy.id, targetId: timers.targetId, cast: profile.spell.id });
+        return;
+      }
+    }
     // Most kinds take turns; soldiers (`pack`) press two at a time.
     if (dist <= profile.engage && timers.cooldown <= 0 && swinging < (profile.pack ?? 1) && (time >= nextAttackerAt || swinging > 0)) {
       enemy.action = 'windup';
@@ -1534,7 +1632,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
        */
       const clamped = { x: clamp(aim.x, box.minX, box.maxX), z: clamp(aim.z, box.minZ, box.maxZ) };
       const target = distance(clamped, aim) <= profile.engage ? clamped : { x: aim.x, z: aim.z };
-      const speed = profile.speed + (enemy.id === 'goblin-scout' ? .15 : 0);
+      const speed = (profile.speed + (enemy.id === 'goblin-scout' ? .15 : 0)) * slowScale(enemy);
       const amount = steerEnemy(enemy, target, Math.min(speed * dt, Math.max(0, dist - desiredDistance)));
       enemy.speed = amount / dt;
     }
@@ -1638,7 +1736,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     const yaw = Math.atan2(target.x - ally.x, target.z - ally.z);
     for (const side of [1, -1]) {
       const to = { x: ally.x + Math.cos(yaw) * side * 3, z: ally.z - Math.sin(yaw) * side * 3 };
-      const moved = steerAlly(ally, to, Math.min(profile.speed * dt, 3));
+      const moved = steerAlly(ally, to, Math.min(profile.speed * slowScale(ally) * dt, 3));
       if (moved > 0) { ally.speed = moved / dt; return; }
     }
   }
@@ -1723,7 +1821,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     // against a wall, but does not walk into sword range to land a spell.
     if (profile.spell && dist < profile.standoff) {
       const away = { x: ally.x - Math.sin(targetYaw) * (profile.standoff - dist), z: ally.z - Math.cos(targetYaw) * (profile.standoff - dist) };
-      ally.speed = steerAlly(ally, away, Math.min(profile.speed * dt, profile.standoff - dist)) / dt;
+      ally.speed = steerAlly(ally, away, Math.min(profile.speed * slowScale(ally) * dt, profile.standoff - dist)) / dt;
       if (ally.speed > 0) return;
     }
     if (dist <= profile.engage && timers.cooldown <= 0) {
@@ -1740,10 +1838,10 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     const keep = profile.bow || profile.spell ? (profile.standoff ?? 9) : 1.7;
     if (profile.bow && dist < keep) {
       const away = { x: ally.x - Math.sin(targetYaw) * (keep - dist), z: ally.z - Math.cos(targetYaw) * (keep - dist) };
-      ally.speed = steerAlly(ally, away, Math.min(profile.speed * dt, keep - dist)) / dt;
+      ally.speed = steerAlly(ally, away, Math.min(profile.speed * slowScale(ally) * dt, keep - dist)) / dt;
       return;
     }
-    if (dist > keep) ally.speed = steerAlly(ally, target, Math.min(profile.speed * dt, Math.max(0, dist - keep))) / dt;
+    if (dist > keep) ally.speed = steerAlly(ally, target, Math.min(profile.speed * slowScale(ally) * dt, Math.max(0, dist - keep))) / dt;
   }
 
   /** A villager with nothing to fight with: frozen at first, then running for its refuge. */
@@ -1766,7 +1864,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
       return;
     }
     ally.yaw += angleDifference(Math.atan2(ally.refuge.x - ally.x, ally.refuge.z - ally.z), ally.yaw) * Math.min(1, dt * 10);
-    ally.speed = steerAlly(ally, ally.refuge, Math.min(profile.speed * dt, gap)) / dt;
+    ally.speed = steerAlly(ally, ally.refuge, Math.min(profile.speed * slowScale(ally) * dt, gap)) / dt;
   }
 
   function update(dt) {
@@ -1812,9 +1910,11 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     if (['dodge', 'hurt', 'dead'].includes(player.action)) return 0;
     // A man at full draw is walking, not running. He can still move - a bow that rooted you would
     // be a trap rather than a weapon - but not away from anything.
-    if (player.drawing) return .42;
-    return player.action === 'attack' ? .45 : 1;
+    if (player.drawing) return .42 * slowScale(player);
+    return (player.action === 'attack' ? .45 : 1) * slowScale(player);
   }
+  /** Seconds left on a Slow that has caught the traveler, for the picture and the HUD. */
+  const slowedFor = () => (slowScale(player) < 1 ? Math.max(0, player.slowUntil - time) : 0);
 
   function heal(amount) {
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(player.hp)
@@ -1875,6 +1975,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
   return {
     state, startPractice, finishPractice, startEncounter, joinEnemy, attack, dodge, guard, draw, lowerBow, update, resetEncounter, disengage, pose, movementScale, heal, exhaust, revive, spellHit, npcSpellHit,
     setWeaponReady(value) { weaponReady = Boolean(value); },
+    get slowed() { return slowedFor(); },
     /** How far the bow is drawn right now, 0 to 1, for the picture and the HUD. */
     get drawn() { return player.draw ?? 0; },
   };

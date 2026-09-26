@@ -4,7 +4,7 @@ import { createSpider } from './spider-model.js';
 import { createKaylaBear } from './kayla-character.js';
 // Every kind that has an articulated actor here. A kind without one (the practice
 // dummy) is drawn by the world instead, so the list is checked rather than assumed.
-const ACTOR_KINDS = ['goblin', 'wolf', 'soldier', 'officer', 'ogre', 'spider', 'bear', 'sparring', 'rebel', 'brawler'];
+const ACTOR_KINDS = ['goblin', 'wolf', 'soldier', 'officer', 'ogre', 'spider', 'bear', 'sparring', 'rebel', 'brawler', 'timekeeper'];
 
 // A handful of pooled effects and three articulated actors; nothing allocates
 // new geometry during a swing. Combat rules remain independent of the renderer.
@@ -13,6 +13,9 @@ export function createCombatView(scene, world, camera, { onCorpse = () => false,
   const fireballs=new Map(),fireGeometry=new THREE.IcosahedronGeometry(1,1);
   const fireCore=new THREE.MeshBasicMaterial({color:0xffe6a3,toneMapped:false});
   const fireGlow=new THREE.MeshBasicMaterial({color:0xff7829,transparent:true,opacity:.65,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
+  const timeCore=new THREE.MeshBasicMaterial({color:0xe8f4ff,toneMapped:false});
+  const timeGlow=new THREE.MeshBasicMaterial({color:0x8fc4ff,transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,side:THREE.DoubleSide});
+  const timeRing=new THREE.TorusGeometry(.3,.035,6,24);
   const transferred = new Set();
   const labels = document.getElementById('enemy-labels');
   const projection = new THREE.Vector3();
@@ -120,13 +123,24 @@ export function createCombatView(scene, world, camera, { onCorpse = () => false,
     const flying=new Set();
     for(const shot of state.fireballs??[]){
       flying.add(shot.id);let object=fireballs.get(shot.id);
-      if(!object){object=new THREE.Group();object.name='Ben’s fireball';object.userData.combatSpell='fireball';object.userData.projectileId=shot.id;
-        const core=new THREE.Mesh(fireGeometry,fireCore);core.scale.setScalar(.2);object.add(core);
-        const glow=new THREE.Mesh(fireGeometry,fireGlow);glow.scale.setScalar(.37);object.add(glow);
-        for(let i=0;i<3;i++){const ember=new THREE.Mesh(fireGeometry,fireGlow);ember.position.z=-(i+1)*.24;ember.scale.setScalar(.16-i*.035);object.add(ember);}
+      const slowing=shot.spellId==='slow';
+      if(!object){object=new THREE.Group();object.userData.projectileId=shot.id;
+        if(slowing){
+          // Time's bolt (Subtractidaughter's Slow): a pale clock-face ring turning backwards round a cold core.
+          object.name='Slow';object.userData.combatSpell='slow';
+          const core=new THREE.Mesh(fireGeometry,timeCore);core.scale.setScalar(.14);object.add(core);
+          const ring=new THREE.Mesh(timeRing,timeGlow);object.add(ring);
+          for(let i=0;i<12;i+=3){const tick=new THREE.Mesh(fireGeometry,timeCore);tick.position.set(Math.sin(i/12*Math.PI*2)*.3,Math.cos(i/12*Math.PI*2)*.3,0);tick.scale.setScalar(.035);ring.add(tick);}
+        }else{
+          object.name='Ben’s fireball';object.userData.combatSpell='fireball';
+          const core=new THREE.Mesh(fireGeometry,fireCore);core.scale.setScalar(.2);object.add(core);
+          const glow=new THREE.Mesh(fireGeometry,fireGlow);glow.scale.setScalar(.37);object.add(glow);
+          for(let i=0;i<3;i++){const ember=new THREE.Mesh(fireGeometry,fireGlow);ember.position.z=-(i+1)*.24;ember.scale.setScalar(.16-i*.035);object.add(ember);}
+        }
         scene.add(object);fireballs.set(shot.id,object);}
       object.position.set(shot.x,shot.y,shot.z);object.rotation.y=shot.yaw;object.visible=visible;
-      object.children[0].rotation.set(time*9,time*5,0);object.children[1].scale.setScalar(.34+Math.sin(time*27)*.035);
+      if(slowing){object.children[0].rotation.set(time*3,time*2,0);object.children[1].rotation.z=-time*6;}
+      else{object.children[0].rotation.set(time*9,time*5,0);object.children[1].scale.setScalar(.34+Math.sin(time*27)*.035);}
     }
     for(const [id,object]of fireballs)if(!flying.has(id)){object.removeFromParent();fireballs.delete(id);}
     const ids=new Set(state.enemies.filter(e=>ACTOR_KINDS.includes(e.kind)).map(e=>e.id));
@@ -151,14 +165,16 @@ export function createCombatView(scene, world, camera, { onCorpse = () => false,
       }
       item.deadTime=dead?item.deadTime+dt:0;
       const group=item.actor.group;
-      group.visible=dead||enemy.active!==false;
+      // Somebody who yielded is out of the fight and still there, on her knees.
+      group.visible=dead||enemy.active!==false||!!enemy.yielded;
       group.position.set(enemy.x,world.heightAt(enemy.x,enemy.z),enemy.z);
       group.rotation.y=enemy.yaw;
       group.scale.setScalar(1);
       // Empty hands punch, and the next blow comes off the other fist: count the windups.
       if(enemy.action==='windup'&&item.lastAction!=='windup')item.punches=(item.punches??0)+1;item.lastAction=enemy.action;
       item.actor.animate(time+index*1.9,enemy.speed||0,true,{action:enemy.action,progress:enemy.progress,alert:state.phase==='active',
-        armed:enemy.armed!==false,fists:enemy.armed===false,combo:item.punches??0});
+        armed:enemy.armed!==false,fists:enemy.armed===false,combo:item.punches??0,casting:!!enemy.casting,
+        ...(enemy.yielded?{posture:'kneel'}:{})});
       const warning=enemy.action==='windup'||enemy.action==='attack';
       item.tell.visible=visible&&!dead&&warning;
       item.tell.position.set(enemy.x,world.heightAt(enemy.x,enemy.z)+.07,enemy.z);

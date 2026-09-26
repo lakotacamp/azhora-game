@@ -320,6 +320,19 @@ export const SKILLS = Object.freeze({
     thresholds: RUNESCAPE_TABLE,
     unlocks: Object.freeze([unlock(1, 'Unlearned, and unteachable for now')]),
   }),
+  /**
+   * **Time Sorcery** (the user, 26 September 2026): begun, and not yet the traveler's to learn.
+   * Its first spell is Slow (src/sorcery.js), and the one person on this coast who casts it is
+   * Subtractidaughter, through the grandfather clock she carries at the Elod Light. Reserved, like
+   * Frost and Wards: kept out of the journal's grid and out of any lesson until somebody offers one.
+   */
+  time: Object.freeze({
+    id: 'time', name: 'Time Sorcery', group: SORCERY_HEADING, reserved: true,
+    blurb: 'Taking a little of the time out of somebody else, so that the next few seconds go past them slower than they go past you. Nobody has offered to show it to anybody, and the one person who knows it keeps a lighthouse in a country that is shut.',
+    teacher: 'nobody yet',
+    thresholds: RUNESCAPE_TABLE,
+    unlocks: Object.freeze([unlock(1, 'Unlearned, and unteachable for now: Slow, which takes the pace out of whoever it hits')]),
+  }),
 });
 
 export const SKILL_IDS = Object.freeze(Object.keys(SKILLS));

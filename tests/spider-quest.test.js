@@ -7,7 +7,7 @@ import { BODY, bodyWorld, stepToward } from '../src/bodies.js';
 import { BEN_ROUTE, BEN_GUIDE_PACE, BEN_GUIDE_START, benGuideTarget, restoreBenGuide } from '../src/ben-guide.js';
 import { SPIDER_QUEST, BEN, SPIDER, STAGES, REWARDS, createSpiderQuest,
   validateSpiderQuestSnapshot } from '../src/spider-quest.js';
-import { SORCERY, SPELLS, SCHOOL_IDS, castWith, castsWith, focusAt, spellXp, schoolLevel } from '../src/sorcery.js';
+import { SORCERY, SPELLS, SCHOOL_IDS, castWith, castsWith, focusAt, spellXp, schoolLevel, learnableSpell } from '../src/sorcery.js';
 import { SKILLS, SKILL_IDS } from '../src/skills.js';
 import { ENEMY_KINDS } from '../src/combat.js';
 
@@ -161,8 +161,9 @@ test('only damage pays a school, and only Ben teaches one', () => {
   assert.equal(spellXp(0), 0);
   assert.equal(spellXp(-5), 0);
   assert.ok(schoolLevel(0) === 1 && schoolLevel(spellXp(26) * 400) > 1, 'the same table as every other skill');
-  // Five schools, three of them taught, and the journal carries all five.
-  assert.deepEqual([...SCHOOL_IDS], ['fire', 'mind', 'beast', 'frost', 'wards']);
+  // Six schools, three of them taught, and the journal carries all six. Time is begun for
+  // Subtractidaughter and, like Frost and Wards, nobody's to learn yet.
+  assert.deepEqual([...SCHOOL_IDS], ['fire', 'mind', 'beast', 'frost', 'wards', 'time']);
   for (const id of SCHOOL_IDS) {
     assert.ok(SKILL_IDS.includes(id), `${id} is not on the sheet`);
     assert.equal(SKILLS[id].group, 'Sorcery');
@@ -171,7 +172,8 @@ test('only damage pays a school, and only Ben teaches one', () => {
   assert.match(SKILLS.fire.teacher, /Ben/);
   assert.match(SKILLS.frost.teacher, /nobody/i, 'and nobody teaches the other two yet');
   assert.match(SKILLS.wards.teacher, /nobody/i);
-  assert.deepEqual(Object.keys(SPELLS), ['fireball', 'mindread', 'summon-bees'], 'one spell each, and Ben’s is the plainest thing in the world');
+  assert.deepEqual(Object.keys(SPELLS), ['fireball', 'mindread', 'summon-bees', 'slow'], 'one spell each, and Ben’s is the plainest thing in the world');
+  assert.equal(learnableSpell('slow'), false, 'Slow is Subtractidaughter’s, and nobody’s to teach');
   assert.equal(SPELLS.fireball.school, 'fire');
 });
 

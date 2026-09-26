@@ -20,6 +20,7 @@ import { createKaylaRaceAutopilot } from './kayla-race-autopilot.js';
 import { CUB, CUB_STAND, CUB_HONEY_ITEM, CUB_HONEY_QUEST_ID } from './cub-honey-quest.js';
 import { createCubHoneyHost, HONEY_STORE, honeyLineOfSight } from './cub-honey-host.js';
 import { createCubAutopilot } from './cub-autopilot.js';
+import { createAddisonAutopilot } from './addison-autopilot.js';
 import { createBearFamily, BEAR_HOME_ROUTE } from './bear-family.js';
 import { createApiaryBees } from './apiary-bees.js';
 import { createApiaryBeesView } from './apiary-bees-view.js';
@@ -189,8 +190,10 @@ import { BATMAN, BATMAN_PERCH, HANDOVER, EVIDENCE, BUST_SCENE, ENDINGS, VELAETH,
 import { ADDISON, ADDISON_STAND, SUVAL_LIGHT, FROM_THE_GALLERY, createLightKeeper, addisonConversation } from './lighthouse.js';
 import { AMBRON } from './region-world.js';
 import { BOSCO, BOSCO_HAUNTS, BOSCO_TAKES, BOSCO_WALK_START, BOSCO_WALK_END, createBosco, boscoConversation } from './bosco.js';
-import { SUBTRACTIDAUGHTER, SUBTRACTIDAUGHTER_STAND, ELOD_LIGHT, LANDING, LENS_ITEM, SISTER_TOLD, SISTER_WHY,
-  CROSSING_PLAN, RIVAL_WATCHES, RIVAL_UNSEEN, HEIST_ENDINGS, createHeist, rivalConversation } from './rival-light.js';
+import { SUBTRACTIDAUGHTER, SUBTRACTIDAUGHTER_STAND, ELOD_LIGHT, LIGHT_GUARDS, SMUGGLERS_DOOR, BLOCKHOUSE_DOOR, rivalPoint, watchFight, SISTER_TOLD, SISTER_WHY,
+  CROSSING_PLAN, ADDISON_AFTER, HEIST_ENDINGS, HEIST_ENDING_IDS, createHeist, rivalConversation } from './rival-light.js';
+import { createRivalLightHost, SOVIK_SPOTS } from './rival-light-host.js';
+import { createSovik } from './sovik-model.js';
 import { createBosco as createBoscoModel } from './bosco-model.js';
 import { createBatman } from './batman-model.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -469,6 +472,9 @@ function init() {
   // Her twin at the door of the Elod Light, across the water in a country that is shut (src/rival-light.js).
   world.npcPositions[SUBTRACTIDAUGHTER.id]={x:SUBTRACTIDAUGHTER_STAND.x,z:SUBTRACTIDAUGHTER_STAND.z};
   npcData.push({...SUBTRACTIDAUGHTER,yaw:SUBTRACTIDAUGHTER_STAND.yaw});
+  // The two Elodi guards who keep her yard at night: one at the gap by the winch, one on the land side.
+  for(const guard of LIGHT_GUARDS){world.npcPositions[guard.id]={x:guard.x,z:guard.z};
+    npcData.push({id:guard.id,name:guard.name,role:guard.role,modelRole:'elodi-guard',color:0x2b2b2f,yaw:guard.yaw});}
   // Troy at the Bee Fold in Drent's wood, with the skeps behind him (src/beekeeper.js).
   // Troy is in Cobble now, and his stand is Cobble's (src/peblos-world.js). Liz has the skeps
   // and the honeycomb, in the woods of Pueth (src/cat-quest.js).
@@ -1052,6 +1058,7 @@ function init() {
   const heldWeapon=()=>lentProfile()??weapons?.profile()??null;
   /** Whether that thing is drawn rather than swung. One question, asked in four places. */
   const ranged=()=>!!heldWeapon()?.ranged;
+  let rivalLight=null,sovikViews={},sovikShown=null;
   let corpseHost=null,crime=null,magic=null,ambushWatch=null,ambushHost=null,cagneyHost=null,alexHost=null,kaylaHost=null,raceHost=null,cubHost=null,bearFamily=null;
   const combat=createCombat({world,isFallen:(encounterId,id,actor)=>[`npc:${actor.npcId??id}`,`enemy:${encounterId}:${id}`,`ally:${encounterId}:${id}`].some(key=>corpseHost?.model.get(key)?.status==='dead'),position:player.group.position,onEvent:e=>combatEvents.push(e),getWeapon:()=>heldWeapon(),onWeaponContact:id=>{weapons.contact(id);inventory.refresh();},
     // Toughness buys the health, the wind and the length of a dodge; the weapon's own family
@@ -2714,35 +2721,23 @@ function init() {
    * the crossing into a country that is shut, the glass off its cradle, and what becomes of it.
    */
   function heistAct(action){
-    const addison=npcById.get(ADDISON.id),rival=npcById.get(SUBTRACTIDAUGHTER.id);
+    const addison=npcById.get(ADDISON.id);
     const backToAddison=()=>addisonConversation(addison,{light,hunt,heist,openDialogue,closeDialogue,act:addisonAct,visits:addisonVisits++});
     if(action==='sister-tell'){if(!heist.tell().ok)return{ok:false,reason:''};refreshQuest();
       openDialogue(addison,[...SISTER_TOLD],null,'Back to the yard',{onComplete:backToAddison});
       toast('There is another light on this coast, and her sister keeps it.','THE ELOD LIGHT');saveRoad(false);return{ok:true,reason:''};}
-    if(action==='sister-ask'){if(!heist.accept().ok)return{ok:false,reason:''};refreshQuest();
+    // She gives the traveler her father's key to the smugglers' door (src/rival-light.js).
+    if(action==='sister-ask'){if(!heist.accept(inventory).ok)return{ok:false,reason:''};inventory.refresh();refreshQuest();
       openDialogue(addison,[...SISTER_WHY,...CROSSING_PLAN],null,'Back to the yard',{onComplete:backToAddison});
-      toast('The glass, and nothing else. Tell her when you are ready to sail.','THE STEPPED LENS');saveRoad(false);return{ok:true,reason:''};}
-    if(action==='sister-sail'){if(!heist.land().ok)return{ok:false,reason:''};
-      // She lands the traveler herself, which is the only way into East Suval that does not
-      // involve an Elodi picket (src/closed-border.js only refuses crossings of the border).
-      const to={x:LANDING.x,z:LANDING.z};
-      player.place(to.x,to.z,LANDING.yaw);closeDialogue();refreshQuest();
-      audio?.effect('discovery');
-      toast('Shingle under the head, in the dark, in a country that is shut. She is on the water until first light.','EAST SUVAL \u00b7 PUT ASHORE');
-      saveRoad(false);return{ok:true,reason:''};}
-    if(action==='take-lens'){const result=heist.take(inventory);if(!result.ok)return{ok:false,reason:''};
-      inventory.refresh();refreshQuest();audio?.effect('success');
-      openDialogue(result.spoke?rival:addison,[...(result.spoke?RIVAL_WATCHES:RIVAL_UNSEEN)],null,'Down the stair',{onComplete:()=>{}});
-      toast('A third of a ton of Elagosi glass. Get it down the cliff to the boat.','THE STEPPED LENS');saveRoad(false);return result;}
-    if(action==='lens-home'){if(!heist.home().ok)return{ok:false,reason:''};
-      const home={x:ADDISON_STAND.x+1.6,z:ADDISON_STAND.z+1.6};
-      player.place(home.x,home.z,ADDISON_STAND.yaw+Math.PI);refreshQuest();
-      toast('Across in the dark with the glass in the bottom of the boat, and up onto her own head at dawn.','THE SUVAL LIGHT');
-      saveRoad(false);return{ok:true,reason:''};}
-    if(action.startsWith('glass-')){const id=action.slice(6);const result=heist.finish(id);if(!result.ok)return{ok:false,reason:''};
-      inventory.remove(LENS_ITEM,1);inventory.refresh();refreshQuest();audio?.effect('success');
+      toast('Her father’s key to the smugglers’ door, in the ridge east of her light. Bring her the fire.','THE FIRE IN THE ELOD LIGHT');saveRoad(false);return{ok:true,reason:''};}
+    if(action==='sovik-deliver'){if(!heist.deliver(inventory).ok)return{ok:false,reason:''};inventory.refresh();refreshQuest();audio?.effect('success');
+      openDialogue(addison,[...ADDISON_AFTER],null,'Decide',{choices:[...HEIST_ENDING_IDS.map(id=>({id:`fire-${id}`,label:HEIST_ENDINGS[id].name,
+        action:()=>{closeDialogue();heistAct(`fire-${id}`);}})),{id:'fire-wait',label:'Not yet.',action:closeDialogue}]});
+      toast('Sovik goes out of your arms and into an iron coal-scuttle on her table, still talking.','THE SUVAL LIGHT');saveRoad(false);return{ok:true,reason:''};}
+    if(action.startsWith('fire-')){const id=action.slice(5);const result=heist.finish(id);if(!result.ok)return{ok:false,reason:''};
+      refreshQuest();audio?.effect('success');
       openDialogue(addison,[result.outcome.outcome],null,'Back to the yard',{onComplete:backToAddison});
-      toast(result.outcome.name,'THE STEPPED LENS \u00b7 DECIDED');saveRoad(false);return{ok:true,reason:''};}
+      toast(result.outcome.name,'THE FIRE IN THE ELOD LIGHT \u00b7 DECIDED');saveRoad(false);return{ok:true,reason:''};}
     return{ok:false,reason:''};
   }
   function jimsonAct(action){
@@ -3139,6 +3134,20 @@ function init() {
     refresh:refreshQuest,save:()=>saveRoad(false),openDialogue,closeDialogue,focus:selectQuest,atHome:()=>alexHost?.cagneyAtHome()??null,
     makeAmbusher:spec=>{const actor=createCharacter({...spec.model,armed:true});actor.group.name=spec.id;actor.ambushCover=createAmbushCamouflage(actor,ALL_CAGNAPPERS.findIndex(e=>e.id===spec.id));setShadowCasting(actor,false);scene.add(actor.group);return actor;},
     reward:coins=>{inventory.add(COPPER_ITEM,coins);inventory.refresh();homeResidents.begin(CAGNEY.id);toast(`${coins} copper received. Cagney is home.`,CAGNEY_QUEST.title.toUpperCase());}});
+  /** Put the traveler somewhere without walking there (the smugglers' door is a passage), facing on, the camera behind. */
+  function placeTraveler(x,z,facing){stopInput();player.group.position.set(x,world.heightAt(x,z),z);grounded=true;verticalSpeed=0;inWater=false;
+    if(Number.isFinite(facing)){player.group.rotation.y=facing;yaw=facing+Math.PI;}settleCamera();}
+  // Addison's errand in the world (src/rival-light-host.js): the smugglers' door, the Elodi watch, the
+  // stair, and Sovik, who is drawn in the Elod Light's lantern, in the traveler's arms, or in Addison's.
+  sovikViews={lantern:createSovik({scale:1.6}),carried:createSovik({scale:.45}),addison:createSovik({scale:1.3})};
+  for(const [where,view] of Object.entries(sovikViews)){view.group.visible=false;scene.add(view.group);
+    // In a lantern he looks out over the land, south-east at the Elod Light and north up Addison's lane,
+    // from in front of the brass reflector rather than inside its bowl.
+    const turn=where==='addison'?Math.PI:.8,spot=SOVIK_SPOTS[where];view.group.rotation.y=turn;
+    if(spot)view.group.position.set(spot.x+Math.sin(turn)*.95,world.heightAt(spot.x,spot.z)+spot.y,spot.z+Math.cos(turn)*.95);}
+  rivalLight=createRivalLightHost({heist,world,player,combat,inventory,crime,corpses:corpseHost,people:()=>npcData,
+    sneaking:()=>!!drent?.sneaking,place:placeTraveler,toast,openDialogue,closeDialogue,
+    refresh:refreshQuest,save:()=>saveRoad(false),audio,showSovik:where=>{sovikShown=where;for(const [key,view] of Object.entries(sovikViews))view.group.visible=key===where;}});
   const homeFerryView=createHomeFerryView({scene}),homeFerryMaterials=new WeakMap();
   function homePassengerOpacity(npc,opacity){
     if(opacity===1&&!npc.homeFerryFaded)return;
@@ -4152,7 +4161,7 @@ function init() {
     // out of the file: he came back alive and no longer at your shoulder.
     fallen.restore(saved.fallen??createFallen().snapshot());
     companions.restore(saved.companions??createCompanions().snapshot());teachers.restore(saved.teachers??createTeachers().snapshot());gear.restore(saved.gear??createGear().snapshot());rebuildCompany();refreshFoundWeapons();world.setFeederHung(birding.feeder==='hung');refreshSkillsSheet();
-    mapFog.restore(saved.chart??createMapFog().snapshot());cartography.restore(saved.cartography??createCartography().snapshot());fishing.restore(saved.fishing??createFishing().snapshot());mycology.restore(saved.mycology??createMycology().snapshot());mushrooms.restoreGathered(saved.mushrooms??[]);botany.restore(saved.botany??saved.herbology??createBotany().snapshot());pipe.restore(saved.pipe??createPipe().snapshot());jimson.restore(saved.jimson??createJimson().snapshot());katy.restore(saved.katy??createKaty().snapshot());troy.restore(saved.troy??createBeekeeper().snapshot());vineyard.restore(saved.vineyard??createVineyard().snapshot());hunt.restore(saved.hunt??createBatmanHunt().snapshot());light.restore(saved.light??createLightKeeper().snapshot());bosco.restore(saved.bosco??createBosco().snapshot());heist.restore(saved.heist??createHeist().snapshot());boscoModel.setDye(boscoDye=bosco.dye.colour);geology.restore(saved.geology??createGeology().snapshot());archaeology.restore(saved.archaeology??createArchaeology().snapshot());wine.restore(saved.wine??createWine().snapshot());cooking.restore(saved.cooking??createCooking().snapshot());wineAttic.restore(saved.wineAttic??createWineAttic().snapshot());// A road saved before the split keeps its `ed` key, which was always Puck's half of him.
+    mapFog.restore(saved.chart??createMapFog().snapshot());cartography.restore(saved.cartography??createCartography().snapshot());fishing.restore(saved.fishing??createFishing().snapshot());mycology.restore(saved.mycology??createMycology().snapshot());mushrooms.restoreGathered(saved.mushrooms??[]);botany.restore(saved.botany??saved.herbology??createBotany().snapshot());pipe.restore(saved.pipe??createPipe().snapshot());jimson.restore(saved.jimson??createJimson().snapshot());katy.restore(saved.katy??createKaty().snapshot());troy.restore(saved.troy??createBeekeeper().snapshot());vineyard.restore(saved.vineyard??createVineyard().snapshot());hunt.restore(saved.hunt??createBatmanHunt().snapshot());light.restore(saved.light??createLightKeeper().snapshot());bosco.restore(saved.bosco??createBosco().snapshot());heist.restore(saved.heist??createHeist().snapshot());rivalLight?.restore();boscoModel.setDye(boscoDye=bosco.dye.colour);geology.restore(saved.geology??createGeology().snapshot());archaeology.restore(saved.archaeology??createArchaeology().snapshot());wine.restore(saved.wine??createWine().snapshot());cooking.restore(saved.cooking??createCooking().snapshot());wineAttic.restore(saved.wineAttic??createWineAttic().snapshot());// A road saved before the split keeps its `ed` key, which was always Puck's half of him.
     puck.restore(saved.puck??saved.ed??createPuck().snapshot());placePuck();
     // Completed legacy tutorials predate the optional cartography save field.
     // Their owners keep map access; a pending lesson must also own the chart it asks them to read.
@@ -4750,7 +4759,7 @@ function init() {
     if(npc.id===IMANI.id){imaniConversation(npc,{vineyard,wine,openDialogue,closeDialogue,act:imaniAct,visits:imaniVisits++});return;}
     if(npc.id===BATMAN.id){batmanConversation(npc,{hunt,openDialogue,closeDialogue,act:batmanAct,visits:batmanVisits++});return;}
     if(npc.id===ADDISON.id){addisonConversation(npc,{light,hunt,heist,openDialogue,closeDialogue,act:addisonAct,visits:addisonVisits++});return;}
-    if(npc.id===SUBTRACTIDAUGHTER.id){rivalConversation(npc,{heist,openDialogue,closeDialogue,act:heistAct,visits:rivalVisits++});return;}
+    if(npc.id===SUBTRACTIDAUGHTER.id){rivalConversation(npc,{heist,openDialogue,closeDialogue,visits:rivalVisits++});return;}
     if(npc.id===BOSCO.id){boscoConversation(npc,{bosco,carrying:BOSCO_TAKES.filter(id=>inventory.count(id)>0),openDialogue,closeDialogue,act:boscoAct,visits:boscoVisits++});return;}
     if(npc.id===TROY.id){troyConversation(npc,{murder,openDialogue,closeDialogue,act:murderAct,now:playSeconds,visits:troyVisits++});return;}
     if(npc.id===LIZ.id){lizConversation(npc,{cat:catQuest,comb:troy,openDialogue,closeDialogue,act:(action,id)=>{if(action==='take-honeycomb')return combAct(action);return catAct(action,id);},
@@ -5510,6 +5519,7 @@ function init() {
     if(mode!=='playing'||living.recall().status==='passenger')return;
     if(raceHost?.mounted)return;
     if(cubHost?.nearby&&combat.state.phase!=='active'){cubHost.interact();return;}
+    if(rivalLight?.nearby&&combat.state.phase!=='active'){rivalLight.interact();return;}
     if(droppedSatchelNear&&combat.state.phase!=='active'){takeDroppedSatchel();return;}
     if(currentNPC){conversation(currentNPC);return;}
     if(currentHomeDoor&&combat.state.phase!=='active'){homeResidents.knock(currentHomeDoor);return;}
@@ -5705,6 +5715,27 @@ function init() {
     if(!autopilot.startQuest('cagney'))return false;canvas.focus();return true;
   }
   $('test-cagney-autoplay').onclick=testPlayCagneyQuest;
+  /** Addison's errand from the start, in a testing session: her sister's fire, the quiet way. */
+  function testPlayAddisonQuest(){
+    stopAutopilot();testingEnabled=true;show('testing-badge',true);closeDialogue();questChoice.close();
+    if(riding.mounted)stepDown(true);prepareTesting();combat.revive();magic.stop();combatEvents.length=0;sessionCheckpoint.clear();recoveryInfo=null;
+    if(drent.sneaking)drent.toggleSneak();
+    const ids=[ADDISON.id,SUBTRACTIDAUGHTER.id,...LIGHT_GUARDS.map(guard=>guard.id)],dead=fallen.snapshot();dead.ids=dead.ids.filter(id=>!ids.includes(id));fallen.restore(dead);
+    const remains=corpseHost.snapshot();remains.bodies=remains.bodies.filter(body=>!ids.includes(body.sourceId)&&!ids.includes(body.npcId));corpseHost.restore(remains);
+    const law=crime.snapshot();for(const id of ids)delete law.people[id];law.bounty=0;law.phase='clear';crime.restore(law);
+    for(const [id,at] of [[ADDISON.id,ADDISON_STAND],[SUBTRACTIDAUGHTER.id,SUBTRACTIDAUGHTER_STAND],...LIGHT_GUARDS.map(guard=>[guard.id,guard])]){
+      const npc=npcById.get(id);if(!npc)continue;Object.assign(npc,{hidden:false,fallen:false,crimeDown:false,lying:false,combatPosition:null});
+      world.npcPositions[id]={x:at.x,z:at.z};npc.actor.group.position.set(at.x,world.heightAt(at.x,at.z),at.z);npc.actor.group.rotation.set(0,at.yaw??npc.yaw??0,0);npc.actor.group.visible=true;}
+    heist.restore(createHeist().snapshot());
+    for(const item of ['smugglers-key','sovik','elodi-passport','elodi-lens'])inventory.remove(item,inventory.count(item));
+    rivalLight.restore();skills.learn('stealth');
+    inventory.grant('simple-sword');weapons.equip('simple-sword');weapons.repair();
+    if(inventory.count('pawpaw')<8)inventory.add('pawpaw',8-inventory.count('pawpaw'));
+    const spot=clearApproach({x:ADDISON_STAND.x,z:ADDISON_STAND.z-3});testGoTo(spot,'PLAYTEST - ADDISON','Addison at the Suval Light has something to ask about the other light on this coast.');
+    skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();reviewFrozen=false;reviewTarget=null;stopInput();refreshQuest();inventory.refresh();
+    if(!autopilot.startQuest('addison'))return false;canvas.focus();return true;
+  }
+  $('test-addison-autoplay').onclick=testPlayAddisonQuest;
   function testPlayBearQuest(kind){
     stopAutopilot();testingEnabled=true;show('testing-badge',true);closeDialogue();questChoice.close();
     if(raceHost.mounted){race.abandon();raceHost.sync();}if(riding.mounted)stepDown(true);
@@ -5881,7 +5912,11 @@ function init() {
   const racePilotWorld=bodyWorld(world);
   const raceAutopilot=createKaylaRaceAutopilot({world:racePilotWorld,act:autopilotActs,read:()=>{racePilotWorld.setBodies(gatherBodies().filter(b=>!race.mounted||b.id!=='traveler')).moving(race.mounted?race.position:player.group.position,race.mounted?KAYLA_RACE.radius:BODY.traveler,race.mounted?KAYLA.id:'traveler');return {...autopilotRead(),quest:race.state()};}});
   const cubAutopilot=createCubAutopilot({world:autopilotWorld,act:autopilotActs,read:()=>{const s=autopilotRead();return {...s,quest:cubHost.state(),cameraYaw:yaw,cub:questPilotPerson(CUB.id),liz:questPilotPerson(LIZ.id),sneaking:drent.sneaking,interaction:{...s.interaction,id:cubHost.nearby?.id}};}});
-  const pilots={main:roadAutopilot,ben:benAutopilot,liz:lizAutopilot,troy:troyAutopilot,cagney:cagneyAutopilot,race:raceAutopilot,cub:cubAutopilot};let pilotId='main';
+  // Addison's errand, the quiet way (src/addison-autopilot.js): it reads the host's prompts and which side of the ridge it is on.
+  const addisonAutopilot=createAddisonAutopilot({world:autopilotWorld,act:autopilotActs,read:()=>{const s=autopilotRead(),p=player.group.position;
+    return {...s,quest:{stage:heist.stage,alarm:heist.alarm,way:heist.way},addison:questPilotPerson(ADDISON.id),sneaking:drent.sneaking,
+      inEast:insideRegion('East Suval',p.x,p.z),interaction:{...s.interaction,id:rivalLight.nearby?.id??null}};}});
+  const pilots={main:roadAutopilot,ben:benAutopilot,liz:lizAutopilot,troy:troyAutopilot,cagney:cagneyAutopilot,race:raceAutopilot,cub:cubAutopilot,addison:addisonAutopilot};let pilotId='main';
   const autopilot={
     start(){return this.startQuest('main');},
     startQuest(id){if(!pilots[id])return false;if(this.active)this.stop('Starting another playtest.');pilotId=id;return pilots[id].start();},
@@ -5898,11 +5933,11 @@ function init() {
   function startAutopilot(){
     if(living.recall().status==='passenger')return;
     const focusedPilot={[SPIDER_QUEST.id]:'ben','liz-cat':'liz','cobble-murder':'troy',[CAGNEY_QUEST.id]:'cagney',[KAYLA_RACE.id]:'race',[CUB_HONEY_QUEST_ID]:'cub'}[questTracker.selectedId];
-    const earlyQuest={ben:['unmet','asked'].includes(spiderQuest.state.stage),liz:['unmet','asked'].includes(catQuest.state.stage),troy:murder.state.stage==='unmet',cagney:['unmet','asked'].includes(cagneyQuest.state.stage),race:race.state().stage!=='complete',cub:cubHost.state().stage!=='complete'};
+    const earlyQuest={ben:['unmet','asked'].includes(spiderQuest.state.stage),liz:['unmet','asked'].includes(catQuest.state.stage),troy:murder.state.stage==='unmet',cagney:['unmet','asked'].includes(cagneyQuest.state.stage),race:race.state().stage!=='complete',cub:cubHost.state().stage!=='complete',addison:heist.stage!=='done'};
     const sidePilot=focusedPilot??(earlyQuest[autopilot.id]?autopilot.id:null);
     if(testingEnabled&&sidePilot){
       if(['pause','journal','testing'].includes(mode))closeModal();
-      if(autopilot.startQuest(sidePilot)){toast(`The computer continues ${ {ben:'Ben',liz:'Liz',troy:'Troy',cagney:'Cagney',race:'Kayla',cub:'Bodhi'}[sidePilot]}'s quest. Any key or click takes control.`,'QUEST AUTOPLAY');canvas.focus();return true;}return false;
+      if(autopilot.startQuest(sidePilot)){toast(`The computer continues ${ {ben:'Ben',liz:'Liz',troy:'Troy',cagney:'Cagney',race:'Kayla',cub:'Bodhi',addison:'Addison'}[sidePilot]}'s quest. Any key or click takes control.`,'QUEST AUTOPLAY');canvas.focus();return true;}return false;
     }
     if(questTracker.selectedId!=='main'){toast('F8 offers the side-quest playtests, including Kayla and Bodhi. Focus the gold quest to autoplay the main road.','QUEST FOCUS');return false;}
     if(['pause','journal','testing'].includes(mode))closeModal();
@@ -6067,7 +6102,7 @@ function init() {
       combatView.event(e);audio?.effect(e.type);
       const lawEvent=crime.combatEvent(e);kaylaHost.combatEvent(e);
       corpseHost.combatEvent(e,combat.state);
-      ambushHost.combatEvent(e);cagneyHost.combatEvent(e);
+      ambushHost.combatEvent(e);cagneyHost.combatEvent(e);rivalLight?.combatEvent(e);
       if(lawEvent&&['victory','retreat','defeat'].includes(e.type)){saveRoad(false);continue;}
 
       if(raid.ids.includes(e.id)){const npc=npcById.get(e.id);
@@ -6572,15 +6607,19 @@ function init() {
       republic?.frame(dt,{playing:mode==='playing'&&!reviewFrozen});
       const roadAwareness=drent.frame(dt,{playing:mode==='playing'&&!reviewFrozen,canSneak:!raceHost.mounted&&!inWater&&!riding.mounted&&combat.state.phase!=='active'});
       cubHost.frame(dt,{playing:mode==='playing'&&!reviewFrozen,talking:activeDialogue?.npc?.id===LIZ.id});
+      rivalLight.frame(dt,{playing:mode==='playing'&&!reviewFrozen});
+      // Sovik flickers wherever he is; carried, he is held out in front of the traveler at the chest.
+      if(sovikShown==='carried'){const p=player.group.position,r=player.group.rotation.y;sovikViews.carried.group.position.set(p.x+Math.sin(r)*.5,p.y+1.08,p.z+Math.cos(r)*.5);sovikViews.carried.group.rotation.y=r;}
+      if(sovikShown)sovikViews[sovikShown]?.animate(elapsed);
       apiaryBees.update(dt,{playing:mode==='playing'&&!reviewFrozen,player:{...player.group.position,hp:combat.state.player.hp,action:combat.state.player.action},ownerAlive:!crime.isDown(LIZ.id)});
       apiaryBeesView.update(mode==='playing'&&!reviewFrozen?dt:0);
       const apiaryNear=['learning','carrying'].includes(cubHost.state().stage)&&Math.hypot(player.group.position.x-HONEY_STORE.x,player.group.position.z-HONEY_STORE.z)<35;
-      const awareness=apiaryNear?cubHost.awareness:roadAwareness;
+      const awareness=apiaryNear?cubHost.awareness:rivalLight.watching?rivalLight.awareness:roadAwareness;
       const raceState=race.state();$('bear-race-status').hidden=!(mode==='playing'&&raceHost.mounted);
       $('bear-race-detail').textContent=raceState.stage==='countdown'?`Ready in ${Math.ceil(raceState.countdown)}…`:raceState.stage==='returning'?'Kayla is carrying you back to Ambron.':`${raceState.kayla.next>raceState.ed.next?'You lead':'Race Ed to the crossroads'} · Shift to run · G to withdraw`;
       const stealthHud=$('stealth-status');stealthHud.hidden=!(drent.sneaking||awareness.suspicion>.01);
       $('stealth-meter').value=awareness.suspicion;
-      $('stealth-caption').textContent=awareness.detected?(apiaryNear?'Liz spotted you · run!':'Spotted · leave the yard'):awareness.visible?'In sight · find cover':awareness.danger?(apiaryNear?'Hidden from Liz · X to stand':'Hidden near guards · X to stand'):'Sneaking · X to stand';
+      $('stealth-caption').textContent=awareness.detected?(apiaryNear?'Liz spotted you · run!':rivalLight.watching?'Seen · you have no papers':'Spotted · leave the yard'):awareness.visible?'In sight · find cover':awareness.danger?(apiaryNear?'Hidden from Liz · X to stand':'Hidden near guards · X to stand'):'Sneaking · X to stand';
       stealthHud.dataset.alert=String(awareness.detected||awareness.visible);
       chopping(dt,movement);
       const weaponPose=chop?{action:'attack',progress:((SWING-chop.next)/SWING+.46)%1,combo:0,armed:true,alert:false,weaponId:'bearded-axe',weaponUsable:true}:combat.pose();
@@ -6874,10 +6913,6 @@ function init() {
           want:Math.atan2(pp.x-edView.group.position.x,pp.z-edView.group.position.z)});
           edFacing=turned.facing;edLent=turned.lent;edView.group.rotation.y=edFacing;}
         const d=near?edView.group.position.distanceTo(pp):Infinity;if(!edRacing&&d<ED.talk&&d<nearest){nearest=d;currentNPC=edNpc;}}
-      {// The boat under the Elod head: she waits on the water until first light, and the moment
-       // the traveler comes back down the cliff with the glass she takes them home.
-        if(mode==='playing'&&heist.stage==='taken'){const pp=player.group.position;
-          if(Math.hypot(LANDING.x-pp.x,LANDING.z-pp.z)<9)heistAct('lens-home');}}
       {// Bosco: he holds the yard, comes at a flat run to anybody who walks into it, and sits
        // on their foot. He is a different colour every so often, because he sleeps against vats.
         const pp=player.group.position,near=!crime.isDown(boscoNpc.id)&&(bosco.walking||Math.hypot(BOSCO_HAUNTS[0].x-pp.x,BOSCO_HAUNTS[0].z-pp.z)<120);
@@ -7038,7 +7073,7 @@ function init() {
       if(raceHost.mounted)seatOnKayla();
       currentHomeDoor=mode==='playing'?homeResidents.nearby():null;
       const currentCorpse=mode==='playing'?corpseHost.nearest():null;
-      const prompting=mode==='playing'&&living.recall().status!=='passenger'&&(!!currentNPC||!!currentHomeDoor||!!currentCorpse||droppedSatchelNear||!!republic?.nearby||!!cubHost.nearby||!!drent.nearby||!!vastos.nearby||currentFeederHook||!!currentMushroom||!!currentPlant||!!currentStone||!!currentDig||!!currentVine||!!currentCask||!!currentTree||!!currentChop||!!currentBench||!!currentPlot||!!currentPost||nearOldTree||!!currentHideoutSite||!!currentForestSite||!!currentRegionalSite||!!currentLusciaSite||!!currentMorosSite||!!currentJourneySite||!!currentFire||nearFishing||!!currentAcorn||!!currentStick||!!currentFruit||!!currentRow||nearArtEasel||!!currentAppleTree||!!currentLivestock||nearRepair||nearBorder)&&(!currentFoundWeapon||!!currentNPC)&&!raceHost.mounted&&combat.state.phase!=='active';show('interaction',prompting);
+      const prompting=mode==='playing'&&living.recall().status!=='passenger'&&(!!currentNPC||!!currentHomeDoor||!!currentCorpse||droppedSatchelNear||!!republic?.nearby||!!cubHost.nearby||!!rivalLight?.nearby||!!drent.nearby||!!vastos.nearby||currentFeederHook||!!currentMushroom||!!currentPlant||!!currentStone||!!currentDig||!!currentVine||!!currentCask||!!currentTree||!!currentChop||!!currentBench||!!currentPlot||!!currentPost||nearOldTree||!!currentHideoutSite||!!currentForestSite||!!currentRegionalSite||!!currentLusciaSite||!!currentMorosSite||!!currentJourneySite||!!currentFire||nearFishing||!!currentAcorn||!!currentStick||!!currentFruit||!!currentRow||nearArtEasel||!!currentAppleTree||!!currentLivestock||nearRepair||nearBorder)&&(!currentFoundWeapon||!!currentNPC)&&!raceHost.mounted&&combat.state.phase!=='active';show('interaction',prompting);
       if(currentNPC)$('interaction-label').textContent=currentNPC.greet?currentNPC.greet:currentNPC.dog?'Greet the dog':currentNPC.cat?'Greet the cat':'Speak with '+currentNPC.name;else if(currentFire)$('interaction-label').textContent='Tend the fire · cooking';else if(nearFishing)$('interaction-label').textContent=inventory.has('fishing-rod')?'Cast a line':`Fishing bank · ${currentFishingSpot?.id==='avrel-pool'?'ask Stanley for a lesson':currentFishingSpot?.id==='reedwater'?'ask Chip for a rod':'ask Glun, Mark, Jean or Bran to teach you'}`;else if(nearRepair)$('interaction-label').textContent='Repair weapons · free';else if(currentFruit)$('interaction-label').textContent='Gather ripe pawpaw · +25 health';else if(currentStick)$('interaction-label').textContent='Gather fallen stick';else if(currentAcorn)$('interaction-label').textContent='Gather acorn';else if(nearBorder)$('interaction-label').textContent='Read the border notice';
       if(currentNPC?.marker.visible&&currentNPC.markerKind==='skill')$('interaction-label').textContent+=' \u00b7 Skill teacher';
       if(currentJourneySite&&!currentNPC)$('interaction-label').textContent=journey.availableActions().find(action=>action.objectiveId===currentJourneySite.id)?.label||(['sticks','fruit'].includes(currentJourneySite.type)?'Gather '+currentJourneySite.name:currentJourneySite.name);
@@ -7066,6 +7101,7 @@ function init() {
       if(currentMushroom&&!currentNPC&&!currentFeederHook)$('interaction-label').textContent=mycology.met?(mycology.hasFound(currentMushroom.species)?`Gather the ${currentMushroom.name.toLowerCase()}`:'Look at this mushroom'):'An unfamiliar mushroom';
       if(currentHideoutSite&&!currentNPC)$('interaction-label').textContent=currentHideoutSite==='supplies'?'Lift the stolen stores':'Survey Bramble Scout Camp · keep your distance';
       if(cubHost.nearby)$('interaction-label').textContent=cubHost.nearby.prompt;
+      if(rivalLight?.nearby&&!currentNPC)$('interaction-label').textContent=rivalLight.nearby.prompt;
       // A prompt that is off the screen must not leave its words behind. Opening a conversation
       // hides this panel on the spot (openDialogue), and everything that writes the label is
       // gated on play, so the HUD otherwise keeps offering whatever it offered last. No player
@@ -7382,6 +7418,20 @@ function init() {
           saveAndRestore:()=>{recoveryInfo={testing:true,encounterId:null};const ok=writeRoadCheckpoint(sessionCheckpoint,false)&&continueRoad(true);reviewFrozen=true;return ok;},
           warp:p=>{player.group.position.set(p.x,world.heightAt(p.x,p.z),p.z);grounded=true;verticalSpeed=0;settleCamera();},
           prompt:()=>$('interaction-label').textContent});
+      },
+      async runAddisonAutoplayChecks(){
+        const {runAddisonAutoplayChecks}=await import('./addison-autoplay-checks.js');
+        return runAddisonAutoplayChecks({
+          prepare:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();closeDialogue();mode='playing';reviewFrozen=false;reviewTarget=null;testingEnabled=false;
+            if(!saveRoad(false))throw new Error($('road-checkpoint-status').textContent);},
+          press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code})),release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code})),
+          position:()=>({x:player.group.position.x,z:player.group.position.z}),hp:()=>combat.state.player.hp,
+          mode:()=>mode,pilot:()=>({enabled:autopilot.active,id:autopilot.id,intent:autopilot.intent,stopReason:autopilot.stopReason}),
+          heist:()=>heist.snapshot(),combat,inventory,checkpointCopy:()=>structuredClone(checkpoint.read().data),sovikShown:()=>sovikShown,
+          isTesting:()=>testingEnabled,frameErrors:()=>frameErrors.view(),
+          save:()=>{recoveryInfo={testing:testingEnabled,encounterId:null};return writeRoadCheckpoint(sessionCheckpoint,false);},
+          reload:()=>{stopAutopilot();const ok=continueRoad(true);reviewFrozen=false;reviewTarget=null;return ok;},resume:startAutopilot,
+        });
       },
       async runCagneyAutoplayChecks(){
         const {runCagneyAutoplayChecks}=await import('./cagney-autoplay-checks.js');
@@ -9455,6 +9505,31 @@ function init() {
             const px=t.x+Math.sin(turn)*30,pz=t.z+Math.cos(turn)*30;
             player.group.position.set(px,world.heightAt(px,pz),pz);
             reviewTarget=new THREE.Vector3(t.x,world.heightAt(t.x,t.z)+9,t.z);yaw=turn;pitch=.2;distance=targetDistance=30;}}
+        // Addison's errand (src/rival-light.js): the smugglers' door and its hatch, Sovik in the lantern and in
+        // the traveler's arms, and a moment of the fight at the light with Subtractidaughter casting Slow.
+        if(['smugglers-door','smugglers-hatch','sovik-lantern','sovik-carried','elod-light-fight','rival-clock'].includes(view)){
+          questStage=QUEST_DONE;combat.finishPractice();closeDialogue();combat.revive();
+          heist.restore(view==='sovik-carried'?{version:2,stage:'taken',spoke:false,alarm:false,way:'quiet',ending:null}
+            :view==='elod-light-fight'?{version:2,stage:'asked',spoke:false,alarm:false,way:null,ending:null}:createHeist().snapshot());
+          rivalLight.restore();rivalLight.frame(0,{playing:false});
+          const look=(target,turn,far,lift,pitchTo)=>{reviewTarget=new THREE.Vector3(target.x,world.heightAt(target.x,target.z)+lift,target.z);yaw=turn;pitch=pitchTo;distance=targetDistance=far;};
+          if(view==='smugglers-door'||view==='smugglers-hatch'){const at=view==='smugglers-door'?SMUGGLERS_DOOR.door:SMUGGLERS_DOOR.hatch;
+            player.group.visible=false;player.group.position.set(at.x+Math.sin(at.yaw)*5,world.heightAt(at.x,at.z),at.z+Math.cos(at.yaw)*5);look(at,at.yaw+.55,9,1,.28);}
+          // Subtractidaughter by day at her tower door, with the clock in her hand.
+          if(view==='rival-clock'){const g=npcById.get(SUBTRACTIDAUGHTER.id).actor.group,at=SUBTRACTIDAUGHTER_STAND;player.group.visible=false;
+            g.position.set(at.x,world.heightAt(at.x,at.z),at.z);g.rotation.y=at.yaw;player.group.position.set(at.x+Math.sin(at.yaw)*4,world.heightAt(at.x,at.z),at.z+Math.cos(at.yaw)*4);
+            look(at,at.yaw-1.1,2.8,1.05,.05);}
+          if(view==='sovik-lantern'){const t=ELOD_LIGHT.tower;player.group.visible=false;player.group.position.set(t.x+6,world.heightAt(t.x+6,t.z+6),t.z+6);
+            reviewTarget=new THREE.Vector3(t.x,world.heightAt(t.x,t.z)+SOVIK_SPOTS.lantern.y,t.z);yaw=.8;pitch=.05;distance=targetDistance=6;}
+          if(view==='sovik-carried'){const p={x:ADDISON_STAND.x+2,z:ADDISON_STAND.z-6};player.group.visible=true;placeTraveler(p.x,p.z,Math.PI);
+            rivalLight.frame(0,{playing:false});look(p,Math.PI+.35,3.4,1.1,.1);}
+          if(view==='elod-light-fight'){const p=rivalPoint(-3,9);player.group.visible=true;placeTraveler(p.x,p.z,Math.atan2(BLOCKHOUSE_DOOR.x-p.x,BLOCKHOUSE_DOOR.z-p.z));
+            const spec=watchFight({traveler:p,guards:LIGHT_GUARDS.filter(g=>Math.hypot(g.x-p.x,g.z-p.z)<30),rival:BLOCKHOUSE_DOOR});
+            if(spec&&combat.startEncounter(spec)){heist.rouse();for(let i=0;i<60*4.6&&!combat.state.fireballs.length;i++)combat.update(1/60);}
+            else toast('The review fight could not be laid out here.','REVIEW');
+            look({x:(p.x+BLOCKHOUSE_DOOR.x)/2,z:(p.z+BLOCKHOUSE_DOOR.z)/2},.8,13,1.2,.35);}
+          reviewFrozen=true;settleCamera();return;
+        }
         // Addison at her yard gate ('addison'), and the whole light from the lane ('suval-light').
         if(view==='addison'||view==='suval-light'){questStage=QUEST_DONE;combat.finishPractice();player.group.visible=false;
           if(view==='addison'){const g=npcById.get(ADDISON.id).actor.group,at=g.position,turn=2.2;

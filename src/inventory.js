@@ -124,6 +124,22 @@ export const INVENTORY_ITEMS = Object.freeze({
     brief: 'Rings of Elagosi glass ground one inside the next like a beehive, in a brass cradle, chest high and a third of a ton. You are carrying it with both arms and no dignity.',
     description: 'The only one on this sea. A flame the size of a fist goes in the middle of it and comes out twenty miles long, which is what makes a light powerful — not the fire, the glass. It was in the lantern of the Elod Light, which is kept by Addison’s twin sister, who has spent eleven years showing it from the wrong place twice a year and taking what washes up.',
   }),
+  // Addison's errand (src/rival-light.js): her father's key, the fire, and the papers nobody has.
+  'smugglers-key': Object.freeze({
+    name: 'Addison’s key', type: 'Quest item', icon: 'key',
+    brief: 'Iron, black, as long as your hand, on a tarred cord. It opens the smugglers’ door in the ridge east of her light.',
+    description: 'Her father’s key to the old smugglers’ door through the limestone where West Suval meets East Suval. The door is set low in the rock on the West Suval side, and it comes out among the stones on the other, in a country that is shut.',
+  }),
+  sovik: Object.freeze({
+    name: 'Sovik', type: 'Quest item', icon: 'flame',
+    brief: 'A fire spirit the size of a cabbage, in your bare hands, burning. He glows, and the Elodi can see you farther off while you carry him.',
+    description: 'The fire in the Elod Light: a flame with two white-hot eyes and a mouth mostly made of teeth, who has kept Subtractidaughter’s lantern burning twenty miles out to sea for eleven years and talks the whole time. He says he is trying not to burn you. Bring him to Addison at the Suval Light.',
+  }),
+  'elodi-passport': Object.freeze({
+    name: 'Elodi papers', type: 'Document', icon: 'letter',
+    brief: 'Leave to be in East Suval, stamped by Elod. The watch does not attack a traveler who carries these.',
+    description: 'Papers of passage issued by Elod. Nobody has been given any since the gate shut in 976.',
+  }),
   'salt-beef': Object.freeze({
     name: 'Salt beef', type: 'Food', icon: 'strips', stackable: true, eatName: 'piece of salt beef',
     brief: 'A hard red-brown piece out of the brine barrel, cut across the grain, salty in the way the sea is salty. Restores up to 35 health.',
@@ -616,6 +632,8 @@ const iconPaths = {
   letter: '<rect x="4" y="7" width="28" height="22" rx="2"/><path d="m5 9 13 10L31 9M5 27l9-9m17 9-9-9"/><circle cx="18" cy="19" r="3" fill="currentColor" stroke="none"/>',
   sword: '<path d="m13 23 14-19 5-1-1 6-16 16M15 21 28 7M9 20l9 8M12 25l-6 7-3-3 6-7M4 28l4 4"/>',
   stick: '<path d="m10 32 5-14 8-14 4 1-8 15-5 13ZM18 15l-6-5-2 2 6 7M21 12l8-3 1 2-10 5M12 28l3 1M15 21l3 1"/>',
+  key: '<circle cx="11" cy="12" r="6.5"/><circle cx="11" cy="12" r="2.5"/><path d="m15.5 16.5 14 14M24 25l3-3M27.5 28.5l3-3"/>',
+  flame: '<path d="M18 33c-7 0-11-5-10-11 1-5 5-7 5-13 4 2 6 5 6 8 2-2 2-5 1-8 6 3 9 9 8 15-1 5-4 9-10 9Z"/><circle cx="15" cy="23" r="1.3"/><circle cx="21" cy="23" r="1.3"/><path d="M15 28c2 1.4 4 1.4 6 0"/>',
   token: '<circle cx="18" cy="19" r="12"/><circle cx="18" cy="19" r="8.5"/><path d="m18 10-5 9h3v6h4v-6h3ZM14 7l-2-5m10 5 2-5"/>',
   feeder: '<path d="M16 3h4M18 3v4M14 7h8v5l2 3v6H12v-6l2-3Z"/><path d="M6 24c0-2 5-3 12-3s12 1 12 3-5 4-12 4-12-2-12-4ZM9 27c1 3 4 5 9 5s8-2 9-5"/><circle cx="10" cy="24" r="1.4"/><circle cx="26" cy="24" r="1.4"/><circle cx="18" cy="26" r="1.4"/>',
   acorn: '<path d="M8 17c0 10 6 15 10 16 4-1 10-6 10-16M7 16c0-6 5-10 11-10s11 4 11 10Z M18 6c-1-3 0-4 3-5M11 11l4 4m1-7 6 7m1-6 4 4M11 22c1 3 2 5 4 6"/>',

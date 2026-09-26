@@ -37,6 +37,8 @@ export const PORT_CALOS_BUILDINGS = freeze([
 
 export const PORT_CALOS_NPC_POSITIONS = freeze({
   'port-calos-harbourmaster': point(-416,282.5,{yaw:Math.PI/2}),
+  // Christina, in the street between the market house and the custom house, facing the quay.
+  christina: point(-461,293,{yaw:Math.PI/2}),
 });
 export const PORT_CALOS_LANDMARKS = freeze([
   freeze({ ...PORT_CALOS, description: 'A small Luscian harbor at the Caloss mouth: timber houses above the river, fish stalls and a stone quay reaching into the inlet. Maddie keeps the harbor and sails to Tidewater Haven and Peblos.' }),

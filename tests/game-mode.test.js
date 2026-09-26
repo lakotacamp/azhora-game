@@ -133,7 +133,7 @@ test('normal mode filters hidden and reserved skills, pays none of the Linguist,
   assert.deepEqual([...hiddenSkillsIn(GAME_MODE_HARD)], [], 'hard mode hides nothing');
   assert.deepEqual([...hiddenSkillsIn(undefined)], ['linguist'], 'and the default is normal');
   const shown = SKILL_IDS.filter(id => !hiddenSkillsIn(GAME_MODE_NORMAL).includes(id));
-  assert.equal(shown.length, 31, 'the mode includes new craft and art skills while retaining the seven Arms and five Sorcery schools');
+  assert.equal(shown.length, 32, 'the mode includes new craft and art skills while retaining the seven Arms and six Sorcery schools');
   assert.equal(shown.includes('linguist'), false, 'the tile is not on the sheet');
   assert.equal(SKILL_IDS.includes('linguist'), true, 'and the registry keeps it all the same');
 

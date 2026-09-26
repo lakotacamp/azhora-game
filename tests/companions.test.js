@@ -662,7 +662,7 @@ test('the fights the player is taught alone in are a list, not a place', () => {
   const main = readFileSync(fileURLToPath(new URL('../src/main.js', import.meta.url)), 'utf8');
   // Named fights, and a bout with a teacher is one of them: you are taught by one man at a time
   // and the other nine keep out of it (docs/combat-brief.md, phase 7).
-  assert.match(main, /const TEACHING_FIGHTS=new Set\(\[GREENWAY_RAID\.id,AVREL_RAID\.id,SPARRING_ID\]\);/, 'named fights');
+  assert.match(main, /const TEACHING_FIGHTS=new Set\(\[GREENWAY_RAID\.id,AVREL_RAID\.id,SPARRING_ID,ALEX_BOUT_ID\]\);/, 'named fights, Alex’s bout among them');
   // The hold used to fire on any fight at all, which came from the long road keeping Chris out of
   // the tutorial raid. A company that stands beside the box and watches is the opposite of what
   // was asked for.

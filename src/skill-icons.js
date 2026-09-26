@@ -88,6 +88,9 @@ export const SKILL_ICONS = Object.freeze({
   frost: '<path d="M18 4v29"/><path d="M5.4 11.5 30.6 25.5"/><path d="M30.6 11.5 5.4 25.5"/><path d="M18 10.5 13.6 7M18 10.5 22.4 7M18 26.5 13.6 30M18 26.5 22.4 30"/>',
   wards: '<path d="M6 21c0-8.3 5.4-14 12-14s12 5.7 12 14"/><path d="M11.5 21c0-4.9 2.9-8.2 6.5-8.2s6.5 3.3 6.5 8.2"/><path d="M6 26.5h24"/>'
     + '<path d="M13.6 17.6 17 21l5.6-6.4"/>',
+  // Time: a grandfather clock, its face and its pendulum, which is what Subtractidaughter carries.
+  time: '<path d="M11.5 4h13v28h-13z"/><circle cx="18" cy="12" r="4.4"/><path d="M18 9.6V12l1.9 1.5"/>'
+    + '<path d="M18 19.5v6.2"/><circle cx="18" cy="27.3" r="1.8"/>',
 });
 
 /** A skill's mark as a whole `<svg>`, ready to drop into a tile. */
