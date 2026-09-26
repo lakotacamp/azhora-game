@@ -427,3 +427,87 @@ Wildlife should be present throughout explorable woods, including the stretches 
 roads and named places. A few populated landmarks do not satisfy this. Drent now uses
 resident home ranges across the province, with birds and squirrels attached to real trees.
 Verify coverage across the whole region as well as visibility, fleeing, revisiting and pause.
+
+## Character additions and the three ports (25 September 2026)
+
+Do not invent or add nonsoldier NPCs without an explicit user request. The user is
+choosing individual characters deliberately; soldiers are the stated exception.
+Remove the unsolicited Port Calos residents. Keep Port Calos to its single land hex
+plus the harbor, deleting overflow buildings and moving its sign closer to town.
+
+Jess serves Tidewater Haven; Maddie, a woman with long brown hair, serves Port Calos;
+Howie, a woman, serves the Peblos port. Each stays based at her own harbor, offers passage
+to either of the other two ports, and can introduce swimming. None has an unsolicited hat.
+
+## Character homes and mailboxes (25 September 2026)
+
+When the user assigns a character a specific house, give that home a mailbox labeled
+with the character's name by default. Keep it beside the approach rather than across
+the door, path or quest walking route. Liz's cottage now has a named mailbox, as Cagney's does.
+
+## Winery, Wine lessons and closed East Suval (25 September 2026)
+
+Paradise Springs (Vaervelm Caelazh) moves from West Suval into the single Luscian
+land hex immediately southeast of Port Calos, with a lane from the town. Retain
+the log cabin, hall, spring and eight grape varieties; do not duplicate the old site.
+Its three winemakers are Rob, MAT and KAT. KAT keeps her original appearance. Rob
+has cropped gray hair; MAT has cropped black hair and brown skin. Neither has a hat.
+Do not add extra winery residents.
+
+Wine is a separate skill, not a Farming subskill. KAT, MAT, Ben, Liz and Troy can
+introduce Wine, alongside the existing Lakota and Juan routes. Rob's subject is
+advanced viticulture, a Farming specialty. Its Farming level 5 prerequisite is
+provisional and visibly explained; these advanced lessons are not playable yet.
+Show an unavailable lesson as locked instead of granting a placeholder quest or XP.
+
+Katy now stands in Port Calos. Her new quest is for later; do not offer the old
+Batman search in her live dialogue. Keep legacy save data readable. Retire the
+winery's former vine-keeper host rather than leaving a duplicate among the vines.
+
+The Peblos harbor master is Hallie (renamed from Howie), with long straight blonde
+hair. Keep her ferry routes, swimming lessons and saved identity. East Suval's
+closed land borders need visible physical ridges and locked passes, including the
+western and southern edges, so a player cannot simply walk around the road gate.
+
+### Rob's name and hair (2026-09-25)
+
+Display the head winemaker as **Rob**, with short gray hair and no bun or hat.
+The close crop follows his skull without the shared rounded nape tuft. KAT and
+MAT keep their existing names and appearances.
+
+
+### 2026-09-25 - Quest teachers return home
+
+- Scatter similar varied thorn thickets across the authored hexes west and northwest of Nothom, keeping the existing spider den and clear travel routes. No extra spiders.
+- After the reward is chosen, Ben walks home to Ambron. His named-mailbox house is beside Cagney's, on the same lane, with purple shutters and a copper sun.
+- Troy is also from Ambron; after his case he takes the Cobble-Port Calos ferry and walks to his own house on Raft Street, west of the river. His house has a named mailbox, sage frontage and reading bench.
+- Cagney, Ben and Troy (the user confirmed Ben, not Bill) go inside once home and paid. Knock at their door and ask them outside to talk. They stay outside while visiting, then go back in after the player leaves. Building interiors remain future work.
+- Travel and residency persist in checkpoints and pause with gameplay; quest playtests reset only their own resident. Older completed quests acquire a home journey without replaying rewards.
+
+### 2026-09-25 - Jessi of Cobble
+
+Jessi has twelve distinct hair colors in streaks across her crown and long tied ponytail. Keep her glasses and no hat; the generic fisher beard does not belong to her. Jess the ferrywoman is a separate character.
+
+
+### 2026-09-25 - Kayla, Ari and Jessi
+
+- Kayla is a specifically requested large, kind talking bear. She walks her own honey rounds through Drent, Pueth and Luscia, sometimes visiting Liz for a little comb. The player may give her honeycomb voluntarily. She is peaceful until attacked, then defends herself with formidable strength; her injuries and death persist like those of other named residents. Her route follows actual paths and bridges, with a short swim beside the broken Caloss bridge.
+- Ari keeps her brown skin and purple palette, with long black curls and a long violet dress. No hat.
+- Jessi keeps the twelve-color hair and glasses. They repair carriages, carry workshop tools instead of a fishing pole, and use abundant playful slang about their trade. Their murder-case testimony and alibi concern carriage repairs and deliveries; the clue structure remains unchanged.
+- Addison stands clear of the Suval lighthouse cottage, facing its open yard entrance. Solis gets a connected physical harbor with walkable waterfront piers, moorings and boats. This adds scenery and access, not extra residents or new ferry destinations.
+
+### 2026-09-26 - Kayla's race and her cub's honey lesson
+
+- The user authorized this redesign and its implementation. It supersedes the plan that assigned the stealth theft to Kayla: an unnamed **Bear cub** gives that lesson beside the Drent bank of the Tessen crossing into Pueth. The user will choose the cub's name later.
+- Kayla waits outside Ambron's east/Ossen Gate. Ed the Chameleon stole her honey and demands a race. Accepting makes the existing Ed poof into the scene, riding a unicycle; the player rides and steers Kayla to the prophet's Caloss crossroads. Cagney may already have left on her own quest. Winning awards honey once.
+- The cub teaches Stealth and asks the player to steal a particular comb from Liz's apiary. Real sight, sound, facing, and solid cover determine detection. Liz retaliates against a caught thief with one telegraphed cast of ten bee swarms, using ordinary health, escape, and checkpoint recovery. Ordinary visits to Liz remain safe.
+- After the race, Kayla physically returns to her cub. Both quests can be done in either order. Only after both are complete and the bears have reunited do Kayla and her cub roam together through Drent, Pueth, and Luscia, including Liz's apiary. Neither quest alone starts roaming.
+- Add distinct **Kayla** race and **Bear cub** Stealth computer-autoplay cards alongside Ben, Liz, Troy, and Cagney in Quest playtests. These demonstrations use actual movement and interactions and preserve the normal saved adventure.
+- The implementation and verification contract is in [Kayla, her cub, and the honey quests](kayla-honey-quest-plan.md). Native test completion is reported separately from this accepted design.
+
+
+### 2026-09-26 - Liz's cat is Olive
+
+Liz's rescue quest, dialogue, journal, playtest card and autoplay status use the name
+**Olive**. This renames the existing cat; keep the `liz-cat` identity and saved quest
+progress, behavior and rewards compatible with older checkpoints.

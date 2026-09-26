@@ -13,6 +13,7 @@ import { elagosGround } from './elagos-world.js';
 import { southSuvalGround } from './south-suval-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
+import { wineryGround } from './winery.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const smooth = (a, b, x) => { const v = clamp((x - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
@@ -244,8 +245,8 @@ export function groundWithRiver(x, z) {
   // The four western regions do the same with their own water and landforms
   // (src/west-ground.js). South Suval cuts the Stillwater to its own level and lays
   // Imlamdris's terraces on the slope above it (src/south-suval-world.js). None of the four
-  // boxes overlaps another.
-  return southSuvalGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))));
+  // boxes overlaps another, nor the winery's (src/winery.js), which is in its own hex at Port Calos.
+  return southSuvalGround(x, z, wineryGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */

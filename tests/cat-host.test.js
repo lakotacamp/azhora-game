@@ -12,7 +12,7 @@ const load = main.slice(main.indexOf('function continueRoad('));
 const start = load.indexOf('catQuest.restore(saved.cat');
 const end = load.indexOf('refreshQuest();', start);
 assert.ok(start >= 0 && end > start, 'the cat/law checkpoint boundary exists');
-const restore = new Function('saved', 'catQuest', 'createCatQuest', 'crime', 'CAT', 'vastos', 'drent', 'corpseHost',
+const restore = new Function('saved', 'catQuest', 'createCatQuest', 'crime', 'CAT', 'vastos', 'drent', 'corpseHost', 'cagneyQuest', 'cagneyHost',
   load.slice(start, end));
 
 function fixture(stage, { downed = false, cleaned = true, alive = false } = {}) {
@@ -35,11 +35,11 @@ function fixture(stage, { downed = false, cleaned = true, alive = false } = {}) 
     combat: { state: { phase: 'peaceful', enemies: [], allies: [] } }, position: () => ({ x: 0, z: 0 }),
     onDeath: event => { events.push(event); if (event.permanent) quest.died(); } });
   const ignored = { restore() {} };
-  const reload = () => restore(saved, quest, createCatQuest, crime, CAT, ignored, ignored, ignored);
+  const reload = () => restore(saved, quest, createCatQuest, crime, CAT, ignored, ignored, ignored, ignored, ignored);
   return { quest, crime, events, reload };
 }
 
-test('restoring a cleaned dead Mop ends legacy unfinished rescue quests without a new death event', () => {
+test('restoring a cleaned dead Olive ends legacy unfinished rescue quests without a new death event', () => {
   for (const stage of ['looking', 'following', 'home']) {
     const f = fixture(stage);f.reload();
     assert.equal(f.crime.health(CAT.id).status, 'dead');
@@ -51,7 +51,7 @@ test('restoring a cleaned dead Mop ends legacy unfinished rescue quests without 
   }
 });
 
-test('restoring a later Mop death does not revoke an already earned reward', () => {
+test('restoring a later Olive death does not revoke an already earned reward', () => {
   for (const stage of ['paid', 'taught']) {
     const f = fixture(stage);f.reload();
     assert.equal(f.quest.state.stage, stage);
@@ -62,7 +62,7 @@ test('restoring a later Mop death does not revoke an already earned reward', () 
   }
 });
 
-test('restoring a merely downed Mop keeps the rescue available through recovery', () => {
+test('restoring a merely downed Olive keeps the rescue available through recovery', () => {
   const f = fixture('following', { downed: true });f.reload();
   assert.equal(f.crime.health(CAT.id).status, 'downed');
   assert.equal(f.quest.state.stage, 'following');
@@ -72,7 +72,7 @@ test('restoring a merely downed Mop keeps the rescue available through recovery'
   assert.equal(f.quest.home(), true);
 });
 
-test('restoring an ordinary living legacy Mop leaves quest progress intact', () => {
+test('restoring an ordinary living legacy Olive leaves quest progress intact', () => {
   const f = fixture('following', { alive: true });f.reload();
   assert.equal(f.crime.health(CAT.id).status, 'alive');
   assert.equal(f.quest.state.stage, 'following');

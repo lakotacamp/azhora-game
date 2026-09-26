@@ -76,6 +76,7 @@ export const SMITH_IDS = Object.freeze(['tidehaven-smith', 'moros-armourer', 'am
 /** The characters the user made, which are theirs and not the game's furniture. */
 export const OWN_IDS = Object.freeze([
   'lee-anne',           // Fire Making teacher beside Tidehaven's empty village fire ring.
+  'cagney',             // The user's traveler escorted home from the Luscian fork.
   'sylvia',             // The user's kindly painter, teaching Visual Arts beside the Sunken Lane.
   'luscia-prophet',     // Caelom warns of winter at the Caloss fork.
   ...PORT_CALOS_NPC_IDS, // The working harbor requested at the river mouth.
@@ -83,17 +84,20 @@ export const OWN_IDS = Object.freeze([
   'garden-keeper',      // Jean, the user's blonde birding teacher in Tidehaven
   'doomsayer',           // Mark, who reads the signs and teaches Botany and Geology on Tidehaven's shore
   'ben-sorcerer',        // Ben, of the sorcerer's guild, and the only man who teaches fire
+  'kayla-cub',          // The unnamed cub teaching Stealth at the Drent river.
+  'kayla',              // The kind talking bear on her honey rounds
   'liz-beekeeper',       // Liz, who keeps the Pueth skeps and the game's honeycomb
   'cobble-jessi', 'cobble-ari', 'cobble-imani', 'cobble-weighmaster',   // Cobble, and the murder
   'bee-keeper',          // Troy, who kept the user's bees and now keeps a murder in Cobble
   'brandy-frank',        // Brandy Frank, dyer of impossible colours
   'bird-watcher',        // Lakota
   'boatman',             // Jess of the Stills
+  'cobble-harbourmaster', // Hallie, the user's ferry host and swimming teacher in Peblos
   'attic-juan', 'attic-nika',    // Juan and Nika at Tharganhom, the Wine Attic
   'solis-secretary',     // Tancredi Vel, who the chameleon's arrangement runs through
   'john-salt',           // John, Sultan of the Salt Trade, and the Sultana he sails
-  'katy',                // Katy, who goes looking for Batman at dusk
-  'vintner', 'winemaker', 'vine-keeper',   // Livia, Kat and the keeper at Vaervelm Caelazh
+  'katy',                // Katy at Port Calos; her future quest is not active yet
+  'vintner', 'winemaker', 'cellar-hand',   // Rob, KAT and MAT at Paradise Springs
   'light-keeper', 'rival-keeper',// the two lighthouse keepers and their feud
 ]);
 

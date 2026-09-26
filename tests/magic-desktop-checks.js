@@ -4,7 +4,7 @@ import { CAT, LIZ, LIZ_STAND } from '../src/cat-quest.js';
 import { TROY, WITNESS_IDS, MURDERER, TESTIMONY } from '../src/murder-quest.js';
 
 /** Real host dialogue, quest frame triggers, combat, rewards, input and persisted spells.
- * Warps keep this bounded; the Node test separately walks Mop all the way back to Liz.
+ * Warps keep this bounded; the Node test separately walks Olive all the way back to Liz.
  */
 export async function runMagicDesktopChecks(h) {
   const checks=[];
@@ -109,18 +109,28 @@ export async function runMagicDesktopChecks(h) {
   check(h.combat.startEncounter({id:'magic-desktop-target',level:0,center:shot,checkpoint:shot,retreatAxis:'x',retreatLine:shot.x+30,
     enemies:[{id:'magic-check-goblin',kind:'goblin',x:shot.x,z:shot.z-5,hp:200,entry:60}]}),'Spell test uses a real combat target');
   // Facing is host player rotation, not a fabricated projectile.
-  h.face?.(Math.PI);h.unfreeze();cast('fireball');
+  h.face?.(Math.PI);h.unfreeze();await frames(3);
+  const restingTip=h.player.focusTip()?.clone();check(restingTip,'The equipped player wand exposes its physical tip');
+  cast('fireball');
+  await until(()=>h.magic.pose()?.progress>.38,'Fireball reaches its visible windup');
+  check(h.player.focusTip().y>restingTip.y+.2,'The player raises the wand before releasing Fireball');
+  await until(()=>h.magic.view().projectiles.length>0,'The wrist flick releases a visible projectile');
+  const fireball=h.magic.view().projectiles[0],tip=h.player.focusTip();
+  check(Math.hypot(fireball.origin.x-tip.x,fireball.origin.y-tip.y,fireball.origin.z-tip.z)<.3,
+    'Fireball leaves the animated wand tip, not the center of the body');
+  check(Math.hypot(fireball.origin.x-h.player.group.position.x,fireball.origin.z-h.player.group.position.z)>.5,
+    'The projectile starts ahead of the player at the outstretched wand');
   await until(()=>h.combat.state.enemies[0]?.hp<200,'Z casts learned Fireball and damages its target');h.freeze();
   check(h.skills.xp('fire')>0,'Actual fire damage earns school experience');
   h.combat.revive();h.handleCombatEvents();h.magic.stop();
 
   h.unfreeze();talk(LIZ.id);choice('cat-yes');h.closeDialogue();
   h.warp({x:CAT.at.x+1.5,z:CAT.at.z});
-  await until(()=>h.catQuest.state.stage==='following','Mop notices the player and follows through the live frame');
+  await until(()=>h.catQuest.state.stage==='following','Olive notices the player and follows through the live frame');
   // Fixture relocation exercises the real home trigger without a minute of screen-time walking.
   const cat=h.npcById.get(CAT.id);cat.actor.group.position.set(LIZ_STAND.x+2,h.world.heightAt(LIZ_STAND.x+2,LIZ_STAND.z),LIZ_STAND.z);
   h.world.npcPositions[CAT.id]={x:LIZ_STAND.x+2,z:LIZ_STAND.z};h.warp(LIZ_STAND);
-  await until(()=>h.catQuest.state.stage==='home','Mop arriving in Liz’s clearing completes the escort');h.freeze();
+  await until(()=>h.catQuest.state.stage==='home','Olive arriving in Liz’s clearing completes the escort');h.freeze();
   talk(LIZ.id);choice('cat-purse');h.closeDialogue();check(h.catQuest.state.stage==='paid','Liz pays the chosen coin reward');
   check(h.save()&&h.reload(),'Liz’s paid quest reloads with its earned lesson still available');
   talk(LIZ.id);choice('cat-lesson');check(h.magic.view().selected==='summon-bees','Liz selects the new spell even when Fireball was selected');h.closeDialogue();

@@ -18,6 +18,7 @@ const ROAD_CLOTH = Object.freeze({
   'commons-miller': 0xa18452,
   'reed-worker': 0x5f8078,
   'shelter-keeper': 0x827b6d,
+  'carriage-mechanic': 0x4d6f63,
 });
 // The Empire's men-at-arms wear the red of Ambron: the tabard over their mail, and the tunic under it;
 // Suval's border guards wear slate wool and studded leather instead.
@@ -535,6 +536,9 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
     const pace = Math.max(0, Number.isFinite(speed) ? speed : 0);
     const run = THREE.MathUtils.clamp((pace - 3.5) / 3.7, 0, 1);
     const action = pose.action || 'idle';
+    const castProgress = typeof pose.spellCast === 'number' ? pose.spellCast : pose.spellCast?.progress;
+    const focusCasting = Number.isFinite(castProgress) && !['dead', 'hurt', 'dodge', 'attack'].includes(action) && !pose.fishing && !pose.swimming;
+    let castWrist = 0;
     const sneaking = !goblin && grounded && action === 'idle' && !!pose.sneaking && !pose.riding && !pose.swimming;
     const progress = THREE.MathUtils.clamp(Number.isFinite(pose.progress) ? pose.progress : 0, 0, 1);
     const actionRate = action === 'attack' || action === 'hurt' ? 26 : 15;
@@ -717,6 +721,14 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
         headX = -.012 + stretch * .045;
         headY = Math.sin(seconds * .36 + offset) * .16;
         hip[0] -= .025; knee[1] += .045;
+      } else if (role === 'carriage-mechanic') {
+        // A spanner held ready, and an enthusiastic free hand explaining a repair.
+        const explain = Math.pow(Math.max(0, Math.sin(seconds * .62 + offset)), 3);
+        arm[1] = -.18; elbow[1] = -.78 + breath * .04; armOut[1] = .13;
+        arm[0] = -.12 - explain * .28; elbow[0] = -.36 - explain * .24; armOut[0] = -.14 - explain * .08;
+        chestY += Math.sin(seconds * .44 + offset) * .045;
+        headY = Math.sin(seconds * .39 + offset) * .14;
+        headX = -.015 + explain * .04;
       } else if (role === 'bridge-keeper') {
         // The worker checks the bridge with one thumb hooked over the toolbelt.
         arm[0] = -.12; elbow[0] = -.71; armOut[0] = -.17;
@@ -971,6 +983,21 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       if(id==='afraid'){chestX=-.15*ease;headY=Math.sin(seconds*6)*.3*ease;arm[0]=arm[1]=-1.2*ease;elbow[0]=elbow[1]=-1.4*ease;knee[0]=knee[1]=.2*ease;}
       if(id==='proud'){chestX=(progress<.65?-.2:.5)*ease;headX=-.1*ease;armOut[0]=-.5*ease;armOut[1]=.5*ease;}
     }
+    if (focusCasting) {
+      // The traveler casts with the equipped focus in the RIGHT hand. Raise it,
+      // cock the wrist, then flick toward the target at the release key (.5).
+      // Sample these joints directly: projectile release may be sampled between
+      // animation frames and must use the same visible wand-tip position.
+      const p = THREE.MathUtils.clamp(castProgress, 0, 1);
+      const blend = THREE.MathUtils.smoothstep(p, 0, .18) * (1 - THREE.MathUtils.smoothstep(p, .78, 1));
+      arm[1] = THREE.MathUtils.lerp(arm[1], samplePose(p, [[0, -.22], [.36, -.62], [.5, -1.12], [.64, -1.04], [1, -.22]]), blend);
+      elbow[1] = THREE.MathUtils.lerp(elbow[1], samplePose(p, [[0, -.35], [.36, -1.05], [.5, -.12], [.64, -.16], [1, -.35]]), blend);
+      armOut[1] = THREE.MathUtils.lerp(armOut[1], samplePose(p, [[0, .15], [.36, .27], [.5, .13], [1, .15]]), blend);
+      castWrist = samplePose(p, [[0, 0], [.2, 0], [.38, -.28], [.5, 1.13], [.64, 1.04], [1, 0]]) * blend;
+      chestY = THREE.MathUtils.lerp(chestY, samplePose(p, [[0, 0], [.36, -.08], [.5, .04], [1, 0]]), blend);
+      chestX = THREE.MathUtils.lerp(chestX, .025, blend);
+      headY *= 1 - blend;
+    }
     const rotate = (object, x, y, z) => {
       object.rotation.x = THREE.MathUtils.lerp(object.rotation.x, x, damping);
       object.rotation.y = THREE.MathUtils.lerp(object.rotation.y, y, damping);
@@ -1006,8 +1033,10 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       // .81 forward - across the centreline, at chin height, in front of him. The first draft
       // raised it but left it out at his side, where it read as a man holding a plate.
       arm[0] = -1.1; elbow[0] = -1.0; armOut[0] = .55;
-      arm[1] = -.22; elbow[1] = -.55; armOut[1] = .06;
-      chestY = .16; chestX = .05; headY = -.06;
+      if (!focusCasting) {
+        arm[1] = -.22; elbow[1] = -.55; armOut[1] = .06;
+        chestY = .16; chestX = .05; headY = -.06;
+      }
     }
     for (let i = 0; i < 2; i++) {
       const side = i ? 1 : -1;
@@ -1019,6 +1048,11 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       rotate(arms[i], arm[i], side * breath * 0.015 * idle, armOut[i]);
       rotate(elbows[i], elbow[i], 0, side * 0.015);
       rotate(wrists[i], 0, Math.sin(seconds * 1.1 + i + offset) * 0.025 * idle, side * 0.045);
+      if (focusCasting && i === 1) {
+        arms[i].rotation.set(arm[i], 0, armOut[i]);
+        elbows[i].rotation.set(elbow[i], 0, side * .015);
+        wrists[i].rotation.set(castWrist, 0, side * .045);
+      }
     }
     // Analytic sole height keeps one foot in contact with the ground, while
     // the knee bends and the other foot clears it. This also grounds dodges.
@@ -1087,6 +1121,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   const isCourier = role === 'field-courier', isBridgeKeeper = role === 'bridge-keeper';
   const isCustodian = role === 'rise-custodian', isClerk = role === 'relay-clerk';
   const isWoodcutter = role === 'forest-woodcutter';
+  const isCarriageMechanic = role === 'carriage-mechanic';
   const isBirdWatcher = role === 'bird-watcher';
   // Perrin, who keeps the bird garden in Tidehaven. Not a birder: a man with a garden that birds
   // come to, which he considers a different and more sensible thing to be (src/birding.js).
@@ -1099,6 +1134,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   // and Katy's; `look.slight` opens it to anybody, which is how Jojo the harbourmaster and Jess
   // of the Stills read as the women they are (the user, 22 September 2026).
   const isKaty = role === 'bat-seeker', slight = isWineClerk || isKaty || look?.slight === true;
+  const longDress = look?.dress === true;
   // Troy, who kept the bees at the Bee Fold (src/murder-quest.js): curly red hair, half of it gone
   // dirty blonde, a red beard and a grin.
   const isKeeper = role === 'bee-keeper';
@@ -1161,6 +1197,8 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   // not stand in eleven different tunics above one shared pair of olive trousers.
   const trousers = material(isDyer ? 0x8e44ec : isMercenary ? new THREE.Color(tunic).multiplyScalar(0.66).lerp(new THREE.Color(0x585244), 0.45) : isSoldier ? (isSuvaliGuard ? 0x4a4a45 : isElodiGuard ? 0x2c2c30 : 0x5a4a3c) : isLocalWorker ? isReedWorker ? 0x5a685c : 0x655a48 : isWoodcutter ? 0x635846 : isVineKeeper ? 0x584b3a : isWinemaker ? 0x4d4a44 : isRivalKeeper ? 0x232427 : isLightKeeper ? 0x3c4a4e : isBirdWatcher ? 0x3b3129 : isGardenKeeper ? 0x4a4436 : isTraveler ? 0x68523c : role === 'fisher' ? 0x667779 : 0x76714e);
   const hairMat = material(Number.isInteger(look?.hair) ? look.hair : isWineSeller ? 0x241b16 : isWineClerk ? 0xb2461f : isKaty ? 0xead38e : isKeeperKin ? 0x9c8355 : isWinemaker ? 0x53381f : isVineKeeper ? 0x1b1512 : isKeeper ? 0x87301a : isDyer ? 0x6b3a26 : isBirdWatcher ? 0x5c4430 : isGardenKeeper ? 0x877b62 : isShelterKeeper ? 0x797368 : isReedWorker ? 0x403b32 : isMiller ? 0x624731 : isCustodian ? 0x8e8b7d : isBridgeKeeper ? 0x42382e : isClerk ? 0x685445 : isTraveler ? 0x806044 : isCook ? 0x624330 : isDoomsayer ? 0xa2a293 : isPondFisher ? 0x5d5140 : role === 'harbormaster' ? 0x79776b : role === 'warden' ? 0x503d30 : 0x6b462c);
+  const hairColors = hairStyle === 'long-tied' && Array.isArray(look?.hairColors)
+    ? look.hairColors.filter(Number.isInteger).map(color => material(color)) : [];
   const dark = material(0x282d23);
   const whites = material(0xf3e9cc);
   const gold = isTraveler || isCook || isDoomsayer || isPondFisher || isRoadWorker ? bootMat : material(0xc8a250, { metalness: 0.28, roughness: 0.52 });
@@ -1208,11 +1246,16 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   }
 
   // The traveler wears a short, mended cloth tunic over ordinary trousers.
-  const hem = isShelterKeeper ? new THREE.CylinderGeometry(.218, .30, .60, 9) : isMiller ? new THREE.CylinderGeometry(.218, .285, .46, 8) : isDoomsayer ? new THREE.CylinderGeometry(.219, .35, .81, 9) : isCook ? new THREE.CylinderGeometry(0.214, 0.34, 0.69, 10) : isCourier || isClerk ? new THREE.CylinderGeometry(.218, .27, .42, 8) : isTraveler
+  const hem = longDress ? new THREE.CylinderGeometry(.211, .32, .65, 12) : isShelterKeeper ? new THREE.CylinderGeometry(.218, .30, .60, 9) : isMiller ? new THREE.CylinderGeometry(.218, .285, .46, 8) : isDoomsayer ? new THREE.CylinderGeometry(.219, .35, .81, 9) : isCook ? new THREE.CylinderGeometry(0.214, 0.34, 0.69, 10) : isCourier || isClerk ? new THREE.CylinderGeometry(.218, .27, .42, 8) : isTraveler
     ? new THREE.CylinderGeometry(0.218, 0.244, 0.158, 8)
     : new THREE.CylinderGeometry(0.218, 0.285, 0.275, 8);
-  part(body, hem, cloth, [0, isShelterKeeper ? .64 : isMiller ? .718 : isDoomsayer ? .563 : isCook ? 0.585 : isCourier || isClerk ? .753 : isTraveler ? 0.881 : 0.814, 0], [1, 1, isCook || isDoomsayer ? 0.79 : 0.72]);
-  const torsoShape = new THREE.CylinderGeometry(isCook ? 0.226 : 0.252, isCook ? 0.2 : 0.217, 0.395, 8);
+  part(body, hem, cloth, [0, longDress ? .61 : isShelterKeeper ? .64 : isMiller ? .718 : isDoomsayer ? .563 : isCook ? 0.585 : isCourier || isClerk ? .753 : isTraveler ? 0.881 : 0.814, 0], [1, 1, longDress || isCook || isDoomsayer ? 0.79 : 0.72]);
+  if (longDress) {
+    // A fitted waist and a softly flared, calf-length skirt keep Ari's violet
+    // clothes distinct from the custodian's short travelling tunic.
+    part(body, new THREE.CylinderGeometry(.315, .321, .032, 12), clothLight, [0, .302, 0], [1, 1, .79]);
+  }
+  const torsoShape = new THREE.CylinderGeometry(longDress ? .236 : isCook ? 0.226 : 0.252, longDress ? .205 : isCook ? 0.2 : 0.217, 0.395, 8);
   part(body, torsoShape, cloth, [0, 1.12, 0], [isDyer ? 0.86 : 1, 1, isDyer ? 0.64 : 0.68]);
   if (isMercenary) {
     // The plain laced jerkin is the company's only shared piece, and the two men
@@ -1271,7 +1314,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     elbow.position.set(side * 0.019, -0.245, 0);
     pivot.add(elbow);
     elbows.push(elbow);
-    if (isBridgeKeeper || isWoodcutter || isMiller || isReedWorker || bareForearms || isWineSeller || isVineKeeper || isWinemaker || isKeeperKin) {
+    if (isBridgeKeeper || isWoodcutter || isCarriageMechanic || isMiller || isReedWorker || bareForearms || isWineSeller || isVineKeeper || isWinemaker || isKeeperKin) {
       // Rolled sleeves show bare working forearms, not bracers or armor.
       part(elbow, UNIT_CYLINDER, garment === 'sleeveless' ? skinMat : linen, [0, -.017, .003], [.085, .067, .088]);
       round(elbow, skinMat, [0, -.103, .007], [.067, .082, .07]);
@@ -1309,12 +1352,12 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   const crownMat = isMercenary && hairStyle === 'none' ? stubbleMat : hairMat;
   const templeMat = isMercenary && ['none', 'shaved-sides', 'topknot'].includes(hairStyle) ? stubbleMat : hairMat;
   part(head, UNIT_CYLINDER, skinMat, [0, -0.035, 0], [0.069, 0.14, 0.069]);
-  round(head, crownMat, [0, 0.202, -0.045], [0.224, 0.227, 0.183]);
+  round(head, hairColors.length ? skinMat : crownMat, [0, 0.202, -0.045], [0.224, 0.227, 0.183]);
   round(head, skinMat, [0, 0.181, 0.015], [isCook || slight || isDyer ? 0.187 : 0.195, 0.228, 0.18]);
   for (const side of [-1, 1]) {
     round(head, skinMat, [side * 0.194, 0.186, 0], [0.047, 0.062, 0.044]);
     round(head, noseMat, [side * 0.212, 0.186, 0.027], [0.018, 0.032, 0.014]);
-    if (!isTraveler && !isCook && !isSoldier) box(head, templeMat, [side * 0.169, 0.251, -0.009], [0.06, 0.132, 0.127]);
+    if (!isTraveler && !isCook && !isSoldier && !hairColors.length) box(head, templeMat, [side * 0.169, 0.251, -0.009], [0.06, 0.132, 0.127]);
     round(head, whites, [side * 0.068, 0.226, 0.177], [0.046, isAvrelFarmer ? 0.021 : 0.031, 0.016]);
     round(head, dark, [side * 0.065, 0.226, 0.191], [0.018, isAvrelFarmer ? 0.018 : 0.025, 0.011]);
     round(head, whites, [side * 0.065 - 0.006, 0.235, 0.2], [0.006, 0.007, 0.004]);
@@ -1413,12 +1456,14 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     // **Bald.** Not the same thing as having no `hairStyle`: that falls through to the role's own
     // hair. This draws nothing, on purpose, and is Ben's (src/spider-quest.js).
     if (hairStyle === 'bald') { /* nothing on top, which is the whole of it */ }
-    else if (hairStyle === 'cropped') {
+    else if (hairStyle === 'cropped' || hairStyle === 'short-cropped') {
       // Cover the face mesh's crown as well as the rear skull; a fringe alone
       // leaves a bare patch between them when no headwear is present.
       part(crop, new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, 1.14),
         hairMat, [0, .181, .005], [.218, .25, .202]);
-      fringe(0.328, 0.194); nape();
+      fringe(0.328, 0.194);
+      // The short crop follows the skull; no rounded tuft extends from its nape.
+      if (hairStyle !== 'short-cropped') nape();
     }
     else if (hairStyle === 'receding') {
       // A high forehead: hair left only at the temples and the back of the head.
@@ -1427,6 +1472,35 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
         temple.rotation.z = side * 0.32;
       }
       nape();
+    } else if (hairStyle === 'long-tied' && hairColors.length) {
+      // Opaque coloured locks are baked into the normal head batch. The curved
+      // hairline stays above the glasses and wraps the temples and rear scalp.
+      for (const [stripe, tint] of hairColors.entries()) {
+        const start = stripe * Math.PI * 2 / hairColors.length, width = Math.PI * 2 / hairColors.length;
+        const vertices = [], indices = [], rows = 8, columns = 2;
+        for (let row = 0; row <= rows; row++) for (let col = 0; col <= columns; col++) {
+          const phi = start + width * col / columns;
+          const theta = (1.95 - .78 * Math.max(0, Math.sin(phi))) * row / rows;
+          vertices.push(-Math.cos(phi) * Math.sin(theta) * .238,
+            .19 + Math.cos(theta) * .257, -.02 + Math.sin(phi) * Math.sin(theta) * .223);
+        }
+        for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++) {
+          const i = row * (columns + 1) + col;
+          indices.push(i + 1, i, i + columns + 2, i, i + columns + 1, i + columns + 2);
+        }
+        const lock = new THREE.BufferGeometry();
+        lock.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        lock.setIndex(indices); lock.computeVertexNormals();
+        part(crop, lock, tint, [0, 0, 0]);
+        // Matching streaks continue through the gathering and down the tail.
+        for (const [y, z, sx, sy, sz] of [[.198, -.222, .116, .116, .1],
+          [.088, -.298, .062, .074, .062], [-.022, -.312, .054, .064, .054],
+          [-.126, -.302, .042, .050, .042]]) {
+          part(crop, new THREE.SphereGeometry(1, 2, 6, start, width), tint, [0.008, y, z], [sx, sy, sz]);
+        }
+      }
+      const tie = part(crop, new THREE.TorusGeometry(.052, .013, 4, 8), linen, [0, .174, -.27]);
+      tie.rotation.y = Math.PI / 2;
     } else if (hairStyle === 'long-tied') {
       fringe(0.33, 0.184);
       round(crop, hairMat, [0, 0.198, -0.222], [0.116, 0.116, 0.1]);
@@ -1515,6 +1589,39 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       for (const side of [-1, 1]) {
         round(crop, hairMat, [side * 0.152, -0.09, -0.108], [0.066, 0.15, 0.084]);
         round(crop, hairMat, [side * 0.146, -0.2, -0.03], [0.058, 0.126, 0.07]);
+      }
+    } else if (hairStyle === 'long-curly') {
+      // Ari's full crown flows into loose curls below the shoulders. The side
+      // lengths stay outside the cheeks, leaving her eyes, smile and jaw clear.
+      const curlLight = material(new THREE.Color(hairMat.color).lerp(new THREE.Color(0x51443a), .16));
+      round(crop, hairMat, [0, .297, -.025], [.22, .145, .211]);
+      for (const [x, y, z, width, tilt] of [[-.085, .351, .097, .119, -.2], [.107, .339, .087, .105, .22],
+        [-.144, .338, -.087, .093, -.3], [.142, .347, -.096, .096, .24], [0, .371, -.11, .12, -.1]]) {
+        const curl = round(crop, hairMat, [x, y, z], [width, .074, .101]);
+        curl.rotation.z = tilt;
+      }
+      // Overlapping rear lengths give the curls a continuous, rounded outline.
+      for (const [y, width] of [[.135, .205], [-.052, .203], [-.24, .17]])
+        round(crop, hairMat, [0, y, -.184], [width, .17, .119]);
+      for (let column = 0; column < 5; column++) {
+        const x = (column - 2) * .078;
+        for (let row = 0; row < 4; row++) {
+          const y = .208 - row * .156 - (column % 2) * .029;
+          const wave = Math.sin(row * 2.25 + column * .8);
+          const curl = round(crop, (column + row) % 4 === 0 ? curlLight : hairMat,
+            [x + wave * .014, y, -.267 - Math.cos(row * 1.9 + column) * .012],
+            [.065 - row * .004, .106, .07]);
+          curl.rotation.z = wave * .23;
+        }
+      }
+      for (const side of [-1, 1]) {
+        for (const [i, y] of [.247, .106, -.035, -.176, -.312].entries()) {
+          const wave = Math.sin(i * 2.15 + (side > 0 ? .65 : 0));
+          const curl = round(crop, i === 2 ? curlLight : hairMat,
+            [side * (.207 + wave * .014), y, i < 2 ? -.018 : .041 + (i - 2) * .013],
+            [.067 - Math.max(0, i - 2) * .005, .098, .077]);
+          curl.rotation.z = side * wave * .17;
+        }
       }
     } else if (hairStyle === 'curls') {
       for (const [x, y, z] of [[-0.12, 0.34, 0.07], [0.02, 0.365, 0.086], [0.136, 0.332, 0.056], [-0.176, 0.3, -0.05],
@@ -1853,6 +1960,18 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   }
   if (!isMercenary && look?.glasses) spectacles(head, 'Spectacles',
     material(0x53575c, { metalness: .62, roughness: .34 }), material(0xdfe7ea, { roughness: .12, metalness: .1 }));
+  if (look?.shirtRibbons) {
+    const bows = new THREE.Group(); bows.name = 'Shirt ribbons'; body.add(bows);
+    const cloth = material(0xb85179), knot = material(0xe5a1ae);
+    for (const [x, y] of [[-.10, 1.22], [.12, 1.08]]) {
+      for (const side of [-1, 1]) {
+        const loop = box(bows, cloth, [x + side * .034, y, .188], [.065, .047, .028]);
+        loop.rotation.z = side * .35;
+        ribbon(bows, cloth, [x, y - .01, .19], [x + side * .033, y - .115, .195], .025, .015);
+      }
+      box(bows, knot, [x, y, .212], [.029, .034, .018]);
+    }
+  }
   if (isMercenary) for (const mark of marks) {
     // Small marks, one draw each, put where a face carries them at a distance.
     const marked = lookGroup(head, 'mark', mark);
@@ -2525,6 +2644,33 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       // Stained skin, not gloves: the colour sits in the hand rather than over it.
       round(wrist, material(new THREE.Color(skin).lerp(new THREE.Color(0x4f2a46), .62)), [0, -.068, .012], [.058, .05, .062]);
     }
+  } else if (isCarriageMechanic) {
+    // Jessi's working leather apron, spare linchpins and an open-ended spanner.
+    const apron = material(0x69503a), worn = material(0x937654), grease = material(0x383b31);
+    const iron = material(0x8b9292, { metalness: .45, roughness: .6 });
+    box(body, apron, [0, 1.091, .181], [.235, .3, .03]);
+    box(body, apron, [0, .755, .197], [.34, .43, .032]);
+    for (const side of [-1, 1]) ribbon(body, apron, [side * .11, 1.285, .09], [side * .095, 1.205, .181], .034, .019);
+    box(body, worn, [0, .815, .219], [.29, .125, .018]);
+    for (const [x, y, size] of [[-.075, 1.057, .046], [.091, .681, .063], [-.105, .734, .037]]) {
+      const stain = round(body, grease, [x, y, .228], [size, size * 1.4, .006]);
+      stain.rotation.z = -.27;
+    }
+    for (const x of [-.073, -.027]) {
+      box(body, iron, [x, .867, .237], [.014, .115, .015]);
+      part(body, new THREE.TorusGeometry(.018, .005, 4, 8), iron, [x, .933, .237]);
+    }
+    const mallet = new THREE.Group(); mallet.name = 'Carriage repair mallet'; body.add(mallet);
+    mallet.position.set(.22, .825, .018); mallet.rotation.z = -.18;
+    box(mallet, leather, [0, -.055, 0], [.028, .235, .029]);
+    box(mallet, worn, [0, .073, 0], [.132, .075, .075]);
+    ribbon(body, apron, [.185, .867, .013], [.251, .867, .013], .047, .052);
+    const spanner = new THREE.Group(); spanner.name = 'Carriage repair spanner'; wrists[1].add(spanner);
+    spanner.position.set(0, -.012, .05); spanner.rotation.z = -.18;
+    box(spanner, iron, [0, .044, 0], [.035, .25, .025]);
+    box(spanner, iron, [0, .18, 0], [.098, .05, .031]);
+    for (const side of [-1, 1]) box(spanner, iron, [side * .035, .218, 0], [.028, .065, .031]);
+    part(spanner, new THREE.TorusGeometry(.028, .01, 4, 10), iron, [0, -.099, 0]);
   } else if (isVineKeeper) {
     // The shirt sleeves are rolled to the elbow from the thaw to the leaf fall, and over the
     // shirt a heavy canvas apron wiped down the same two places for eleven years: a bib to the
@@ -2818,7 +2964,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   }
   const { animate: animatePose, setArmed, setShield } = makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, ankles, weapon, shield: authoredShield, clothPivot, offset: idleOffset, role });
   let fishing = isPondFisher, selectedWeapon = null;
-  const rodTipWorld = new THREE.Vector3();
+  const rodTipWorld = new THREE.Vector3(), focusTipWorld = new THREE.Vector3();
   /**
    * The three poles, made the first time he holds one. They use the props the hired swords
    * already carry (`makeSpearProp`, `makeStaffProp`) rather than new ones, so a spear in his hand
@@ -2872,7 +3018,8 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   }
   function animate(time, speed = 0, grounded = true, pose = {}) {
     if (typeof pose.fishing === 'boolean') setFishing(pose.fishing);
-    animatePose(time, speed, grounded, { ...pose, fishing });
+    const hasFocus = selectedWeapon === 'wand' || selectedWeapon === 'oak-staff';
+    animatePose(time, speed, grounded, { ...pose, fishing, spellCast: !fishing && hasFocus ? pose.spellCast : null });
     if (weapon && fishing) weapon.visible = false;
     // The shaft goes on the string only while he is actually drawing, so a man standing about
     // with a bow is not standing about with an arrow on it. `pose.draw` is 0 to 1, and is the
@@ -2893,10 +3040,21 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     fishingRod.updateWorldMatrix(true, false);
     return rodTipWorld.set(.056, 1.625, 0).applyMatrix4(fishingRod.matrixWorld);
   }
+  /** Current rendered tip, including the grip, casting joints and actor transform.
+   * The returned vector is reused; callers retaining an origin must copy it. */
+  function focusTip() {
+    const model = weapons[selectedWeapon];
+    if (fishing || !weapon?.visible || !model?.visible || !['wand', 'oak-staff'].includes(selectedWeapon)) return null;
+    model.updateWorldMatrix(true, false);
+    // The staff's crown is tilted -.12 radians, so its actual endpoint is offset.
+    return selectedWeapon === 'wand'
+      ? focusTipWorld.set(0, .4, 0).applyMatrix4(model.matrixWorld)
+      : focusTipWorld.set(.014 + Math.sin(.12) * .12, .83 + Math.cos(.12) * .12, 0).applyMatrix4(model.matrixWorld);
+  }
   if (isPlayer || fights) setWeapon('simple-sword');
   if (isMercenary && !isPlayer) setWeapon(KIT_HELD[look?.weapon] ?? null);
   if (fishingGrip) setFishing(isPondFisher);
-  return { group, animate, setArmed, setShield, setWeapon, setFishing, fishingTip };
+  return { group, animate, setArmed, setShield, setWeapon, setFishing, fishingTip, focusTip };
 }
 
 /** A scrawny woodland raider: a sunken glare, ragged ears and a wary lope. */
@@ -3919,16 +4077,44 @@ export function makeQuestMarker(kind = 'main', { open = false } = {}) {
   group.userData.markerKind = look.kind;
   group.userData.markerOpen = optionalRoad;
   const mat = material(look.colour, { emissive: look.emissive, emissiveIntensity: 0.42, roughness: 0.36, metalness: 0.22 });
-  if (look.shape === 'book') {
+  const magicBook = look.shape === 'book-sparkle', lockedBook = look.shape === 'book-lock';
+  const bookWithBadge = magicBook || lockedBook;
+  group.userData.markerLocked = lockedBook;
+  if (look.shape === 'book' || bookWithBadge) {
     mat.side = THREE.DoubleSide;
+    if (magicBook) mat.emissiveIntensity = .65;
+    const edge = bookWithBadge ? new THREE.MeshBasicMaterial({color:magicBook?0x302047:0x22372a,side:THREE.DoubleSide,toneMapped:false}) : null;
     for (const side of [-1, 1]) {
       const page = new THREE.Shape();
       page.moveTo(0, .1);page.lineTo(side*.13,.17);page.lineTo(side*.29,.17);page.lineTo(side*.29,-.14);page.lineTo(side*.13,-.14);page.lineTo(0,-.21);page.closePath();
       part(group,new THREE.ShapeGeometry(page),mat,[0,0,0]);
+      if (bookWithBadge) part(group,new THREE.ShapeGeometry(page),edge,[0,0,-.018],[1.12,1.12,1]).name=magicBook?'Sorcery book outline':'Locked lesson book outline';
     }
-    const ink=material(0x204835,{side:THREE.DoubleSide});
+    const ink=bookWithBadge ? new THREE.MeshBasicMaterial({color:magicBook?0xf5eaff:0xe2e5d8,side:THREE.DoubleSide,toneMapped:false}) : material(0x204835,{side:THREE.DoubleSide});
     part(group,new THREE.BoxGeometry(.025,.3,.016),ink,[0,-.05,.02]);
     for(const side of [-1,1])for(const y of [.075,-.01,-.095])part(group,new THREE.BoxGeometry(.16,.014,.015),ink,[side*.165,y,.02]);
+    if (magicBook) {
+      // A four-point sparkle makes the magic lesson readable by silhouette as well as colour.
+      const star=new THREE.Shape();
+      for (let i=0;i<8;i++) {
+        const angle=Math.PI/2+i*Math.PI/4,r=i%2?.035:.14;
+        if(i===0)star.moveTo(Math.cos(angle)*r,Math.sin(angle)*r);
+        else star.lineTo(Math.cos(angle)*r,Math.sin(angle)*r);
+      }
+      star.closePath();
+      part(group,new THREE.ShapeGeometry(star),edge,[.31,.31,.005],[1.22,1.22,1]).name='Sorcery sparkle outline';
+      part(group,new THREE.ShapeGeometry(star),new THREE.MeshBasicMaterial({color:0xfff3d1,side:THREE.DoubleSide,toneMapped:false}),[.31,.31,.025]).name='Sorcery sparkle';
+    }
+    if (lockedBook) {
+      // The book remains recognizable as a teacher; a padlock makes the gate
+      // legible without relying on the muted grey-green colour alone.
+      const lock = new THREE.Group(); lock.name='Lesson padlock'; group.add(lock);
+      part(lock,new THREE.BoxGeometry(.21,.18,.02),edge,[.28,.25,.02]);
+      part(lock,new THREE.TorusGeometry(.063,.017,5,14,Math.PI),ink,[.28,.325,.035]);
+      part(lock,new THREE.BoxGeometry(.18,.14,.025),ink,[.28,.255,.045]);
+      part(lock,new THREE.CircleGeometry(.025,10),edge,[.28,.27,.061]);
+      part(lock,new THREE.BoxGeometry(.018,.037,.004),edge,[.28,.243,.062]);
+    }
     group.userData.billboard=true;
   } else {
     const diamond = part(group, new THREE.OctahedronGeometry(0.128, 0), mat, [0, 0, 0], [0.85, 1.45, 0.85]);

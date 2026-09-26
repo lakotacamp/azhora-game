@@ -166,17 +166,23 @@ The storage key and file keep their original road-checkpoint names. **Older vers
 
 ## Testing tools
 
-Press **F8**, use the opening screen's testing button, or choose **Testing tools** from Pause. F8 also works from a defeat screen, so a failed fight cannot block regional testing. **Skip tutorial & give camp supplies** finishes the first-shore tutorial, restores health and weapons, and tops up a rod, tinderbox, five acorns, six sticks, and two raw fish. Existing quantities are not repeatedly accumulated, and Lysa's completed friendship is kept.
+Press **F8**, use the opening screen's testing button, or choose **Testing tools** from Pause. F8 also works from a defeat screen.
 
-**Go anywhere** is two rows under the shortcut buttons, and it is not a list anybody maintains. The first select is every playable country, the second is every named ground the chart holds inside it, and both are read from the world itself (`src/testing-travel.js`), so a country or a ground built today is in the menu today. A ground's centre is a chart fact rather than a standing place — the middle of the Caloss Bank is the river — so the panel searches outward from it in four-metre rings and sets you down on the first ground the world's own `canStand` accepts, saying how far out that was; if the whole ground refuses, it says so and you do not move. **Go to a point** takes a coordinate in any shape this project writes them: `-1050, 982`, a report's `(-1050, 982)`, a log line's `[-1050, 982]`, or the review runner's own `stand-at:-806.1,-521,-1.57`, whose third number is the facing. Opening the panel also prints where you are standing, in the chart's words and in numbers you can paste back out. Both jumps complete the road errands their country's shortcut would have completed.
+**Quest playtests** comes first: Ben's spider hunt, Liz's rescue of Olive, Troy's investigation, and Cagney's escort. Each card teleports to a fresh run of that quest; the magic quests stop at the reward choice. Any key or click takes control, and **P** resumes. These demos protect the normal saved adventure.
 
-Travel buttons lead directly to the village, Willowmere Pond, **Luscia**, the **Moros Plain**, and **East Suval**. **Explore woodland trails** places you beside Tamsin so the new forest content is easy to find. **Try the goblin camp** resets the optional camp errand for testing and places you at its approach; press F and choose whether to challenge the two scouts. Traveling to Region 3 completes the clearing prerequisites; traveling to Region 4 also completes the bridge prerequisites. This lets each region be tested immediately.
+**Main story jumps** offers Iven's satchel assignment, the Republican at the relay, and the Imperial recall decision.
+
+**General travel** is visible directly in the panel. **Go anywhere** lists countries and named places from the world and searches for standable ground near each destination. **Go to a point** accepts coordinates such as `-1050, 982` or `stand-at:-806.1,-521,-1.57`. Regional travel advances earlier main-road prerequisites as before.
+
+**Hacks** contains just the fast developer horse and whole-map reveal. Older character jumps, individual location buttons, supplies, ordinary horses, and ghost view are removed from the panel.
+
+`npm run test:testing-tools` clicks the four playtests, three story jumps, travel controls, and hacks while verifying that the normal checkpoint is unchanged. Review the panel with `--smoke-test --review-views=testing-tools`.
 
 The **TESTING SESSION** badge identifies the override. Testing supplies and travel **never overwrite the normal road checkpoint**. Reopen the game and choose Continue to recover the normal saved road, or begin from the boat for a fresh playthrough.
 
 ### Developer ghost view
 
-Open **F8 → Ghost view developer · atlas / free flight**. The current adventure pauses, and a translucent traveler becomes your spectator. Choose a region on the actual World Builder atlas, then use its **Fly into** button. All **131 authored region outlines** are clickable. Scroll and drag to inspect the map, or use the Drent and Thalmagar focus buttons.
+Ghost view remains available through automated developer checks and review hooks, including `npm run test:developer`; it is no longer an F8 control. The current adventure pauses, and a translucent traveler becomes your spectator. Choose a region on the actual World Builder atlas, then use its **Fly into** button. All **131 authored region outlines** are clickable. Scroll and drag to inspect the map, or use the Drent and Thalmagar focus buttons.
 
 The four playable regions each carry their own pin on their own authored hexes: Drent, Luscia, the Moros Plain and East Suval. A separate schematic shows their order along the road. Tidehaven's exact place on Drent's coast is still provisional. Every region is tinted by its campaign difficulty level, with provisional levels labeled. Cape Thalmagar opens its own fortress prototype. Every other mapped region opens a **Terrain survey · gameplay not built** scene, using the authored region's hex layout and terrain categories. Survey elevations and scenery are illustrative. These visits do not imply that the whole continent has quests, settlements, or connected playable terrain.
 
@@ -234,7 +240,7 @@ New to the code? [docs/codebase-map.md](docs/codebase-map.md) is a guided map of
 | `src/languages.js`, `src/linguist.js`, `src/word-frequency.js` | The fourteen tongues of Azhora and their dialects; what the traveler understands of what is said to him, and the commonest words of this game's own speech, which is the order he learns them in (`docs/languages.md`) |
 | `src/fortification.js`, `src/fortworks.js` | The shared fortification standard (wall, wall walk, towers, two gates, ditch) as a ground plan, and its drawing in timber or stone |
 | `src/outpost.js`, `src/moros-works.js` | The Ambroni outpost and the border stockade to that standard, the Moros gate and the Moros wayside |
-| `src/frontier.js`, `src/frontier-works.js`, `src/closed-border.js` | Elod's closed frontier with Luscia, the pickets along East Suval's border, and the rule that refuses entry to a closed region |
+| `src/frontier.js`, `src/frontier-works.js`, `src/frontier-ridges.js`, `src/frontier-ridge-works.js`, `src/closed-border.js` | Elod's closed frontier with Luscia, solid limestone ridges and guarded barred hill passes around East Suval, and the closed-region entry rule |
 | `src/places.js`, `src/place-works.js`, `src/wayside.js`, `src/scenery-builder.js` | The built-up places of Drent and Luscia, the wayside on the empty roads, and the merged vertex-coloured builder they share |
 | `src/rena.js`, `src/rena-works.js`, `src/rena-people.js`, `src/rena-letters.js` | The three Renas: the razed town at Drent's centre, Applegarth to its west, the old road between them, their people, and the Ardrys' letters |
 | `src/town-life.js` | Townsfolk, the outpost's Legion and Coalition garrisons (staked through `occupation.js`), Elod's frontier guard and the figures on the walls |
@@ -244,9 +250,15 @@ New to the code? [docs/codebase-map.md](docs/codebase-map.md) is a guided map of
 | `src/autopilot.js`, `src/autoplay-smoke.js` | Autoplay: quest planner, trail-following navigation with collision probing and stall detours, combat policy, dialogue pacing; the rendered end-to-end check |
 | `src/forest-places.js`, `src/forest-story.js` | Six woodland places, optional Tamsin errand, shrine repair, journal notes, dialogue, and exactly-once rewards |
 | `src/forest-ecology.js` | Instanced understory plants, mossy logs, deer, foraging/fleeing thrushes, butterflies, bees, and dragonflies |
+| `src/spider-den-scenery.js` | Permanent thorn canopy, spiked bramble canes and web strands screening the spider's emergence in Ben's quest |
+| `src/nothom-thickets.js` | Varied bramble patches in the exact west and northwest Nothom hexes; roads and quest approaches stay clear |
+| `src/quest-homes.js` | Named Ambron homes, mailboxes, thresholds and porch approaches for Cagney, Ben and Troy |
+| `src/home-residents.js`, `src/home-resident-host.js`, `src/home-return-routes.js`, `src/home-ferry-view.js` | Saved independent walks home, ferry leg, indoor residents and knocking to ask them outside |
+| `src/home-residents-smoke.js` | Native reward-to-home, checkpoint and doorstep interaction checks (`--homes-checks`) |
 | `src/forest-hideout.js`, `src/forest-hideout-world.js`, `src/forest-hideout-watch.js` | Optional two-scout encounter, marked approach, camp and lookout props, stolen supplies, and Tamsin's one-time reward |
 | `src/woodland-life.js`, `src/road-life.js`, `src/road-verges.js` | Squirrels, forage, instanced regional animals, and small botanical patches |
 | `src/drent-wildlife.js`, `src/drent-birds.js` | Resident woodland animals and bird habitats across Drent; stable homes, local animation and distance culling |
+| `src/regional-wildlife.js`, `src/west-regions-life.js` | Regional animal habitats and shared instanced wildlife; West Suval has persistent ground-animal bands throughout its usable countryside, with Solis, road and quest-site exclusions |
 | `src/acorn-quest.js` | Lysa's atomic turn-in and relationship memory |
 | `src/inventory.js`, `src/weapons.js`, `src/consumables.js` | Satchel UI, item stacks, wear, equipment, repairs, and guarded food consumption |
 | `src/campcraft.js` | Fishing timing, catches, fire fuel, and cooking exchanges |
@@ -291,4 +303,28 @@ The harness writes results and desktop/compact screenshots to `tests/artifacts/`
 
 Each test launch uses its own temporary Electron profile under `tests/.electron-profiles/`, removed when that test exits. Offscreen checks keep their saves in memory and do not share the normal game's Chromium cache.
 
+The three coastal ferry hosts are Jess in Tidehaven, Maddie in Port Calos, and Hallie in Cobble. Each offers both other ports and a Swimming lesson; they remain residents of their home port. Port Calos is a five-building settlement on its single land hex, with the harbor extending to the water. `npm run test:port-calos` exercises all six crossings, lessons, and reloading at each destination.
+
+Paradise Springs (Vaervelm Caelazh) occupies the land hex southeast of Port Calos, reached by a lane from town. Its three residents are Rob, KAT and MAT. KAT and MAT introduce the standalone Wine skill, as can Ben, Liz and Troy; Wine requires no Farming experience. Rob's viticulture lessons are a future Farming branch with a provisional level-5 requirement. His muted book-and-padlock marker shows when that prerequisite is unmet; his dialogue displays the player's level and clearly identifies the lessons as not yet available.
+
+Liz now lives beside a small cottage, a working apiary with straw skeps and wooden hives, and a fenced flower-and-herb garden. Her original interaction point and Olive's return approach remain open.
+
+[Cagney and the Cagnappers](docs/cagney-escort.md) is an optional escort west from Caelom's fork to Ambron. F8 includes a dedicated quest playtest; `npm run test:cagney:autoplay` checks the complete walk, ambush, and reward through ordinary game inputs.
+
 The desktop icon is an abstract gold sun and winding coastal path over teal water. `scripts/create-icon.ps1` generates its seven ICO sizes; `scripts/create-desktop-shortcut.ps1` updates the shortcut without restarting a live game.
+
+`npm run test:winery` checks the five Wine teachers through their actual dialogue buttons, ROB's Farming-gated viticulture placeholder and marker, the three-winemaker cast, and Katy's quest-free Port Calos greeting. `src/winery-lessons.js` keeps viticulture separate from the Wine skill.
+
+
+### Kayla and the Cobble character update
+
+`src/kayla.js` owns Kayla's persistent honey rounds and dialogue; `kayla-host.js` joins her ordinary resident health to her physical roaming and self-defense. `kayla-character.js` is her articulated brown-bear model. Her authored circuit visits Drent, Liz's clearing in Pueth, and Luscia; `kayla-world.test.js` walks the full route against real scenery and the initially broken Caloss bridge. `npm run test:kayla` checks her race invitation, peaceful refusal, combat, checkpoints and corpse restoration in an isolated Electron run.
+
+Ari has long black curls and a violet dress. Jessi retains all twelve hair colors and now works in carriage repair, with tools, an apron and slang-heavy dialogue; the Troy investigation retains its existing clue identities.
+
+
+### Bear family quests
+
+Kayla waits at Ambron's east gate for **The Honey Race**. Ride her along the Ossen road against Ed the Chameleon on his unicycle. Her unnamed cub offers **A Cub's Share**, a Stealth lesson at the Drent river crossing. Liz retaliates against a detected honey theft with ten bee swarms. The two bears resume their honey rounds only after both quests and their physical reunion.
+
+F8 / Quest playtests includes separate Kayla and Bear cub autoplay cards. `npm run test:bear-quests` runs both real pilots, mounted and carrying checkpoints, reunion, bee damage, escape, and normal defeat recovery in an isolated save. The state machines live in `kayla-race.js`, `cub-honey-quest.js`, and `bear-family.js`; their hosts own movement and dialogue, while `apiary-bees.js` owns the NPC spell.

@@ -17,8 +17,9 @@ import {
   STILLWATER, STILLWATER_HEX, IMLAMDRIS_HEX, STILLWATER_SURFACE, STILLWATER_SHORE, SOUTH_SUVAL_CLIMATE,
   stillwaterDistance, TERRACES, STAIRS, cityPoint, cityLocal, cityLevel, hexInset, FACING_LAKE, CITY_FEATHER,
   IMLAMDRIS_HOUSES, STILLWATER_TEMPLE, STAR_TERRACE, LANDWARD_GATE, PASS_ROAD_LINE, passRoadAt,
-  COVES, SOUTH_SUVAL_LANDMARKS, SOUTH_SUVAL_CHART_WATERS, southSuvalClear, IMLAMDRIS_PATCH,
+  COVES, SOUTH_SUVAL_LANDMARKS, SOUTH_SUVAL_CHART_WATERS, southSuvalClear, IMLAMDRIS_PATCH, ELOD_SOUTH_GATE,
 } from '../src/south-suval-world.js';
+import { hillPassPoint } from '../src/frontier-ridges.js';
 import { SOUTH_SUVAL_WILDLIFE_ZONES } from '../src/south-suval-wildlife.js';
 
 /**
@@ -141,7 +142,9 @@ test('the city is drawn on ground of its own, and the world’s coarse ground ne
   let checked = 0;
   for (let a = -48; a <= 48; a += 2.3) for (let b = -7; b <= 87; b += 2.1) {
     const p = cityPoint(a, b);
-    if (hexInset(a, b) < CITY_FEATHER.full + 3 || stillwaterDistance(p.x, p.z) < 1.5) continue;   // a whole cell on the made ground
+    // A whole lattice cell on the made ground, and a cell's width (2.8 m) back from the water, where
+    // the bank drops under the Lake Walk's own stone face.
+    if (hexInset(a, b) < CITY_FEATHER.full + 3 || stillwaterDistance(p.x, p.z) < 3) continue;
     if (walls.some(wall => Math.abs(b - wall) < .5) || STAIRS.some(stair => Math.abs(Math.abs(a - stair.a) - stair.half - .15) < .45)) continue;
     const ground = world.heightAt(p.x, p.z), top = drawn(patch, p), under = drawn(coarse, p);
     assert.ok(Math.abs(top - ground) < .06, `the city's ground is drawn ${(top - ground).toFixed(2)} m off the ground walked on at ${a}, ${b}`);
@@ -186,12 +189,17 @@ test('the Stillwater Temple opens on the lake and is closed to the land, and the
   assert.ok(steps.half * 2 > 12, 'broad steps, not a door stair');
 });
 
-test('the road leaves by the Landward Gate at the back and goes over the hill pass to the border', () => {
+test('the road leaves by the Landward Gate at the back and goes over the hill pass to the gate in the frontier', () => {
   const first = PASS_ROAD_LINE[0], last = PASS_ROAD_LINE.at(-1);
   assert.ok(Math.hypot(first.x - LANDWARD_GATE.x, first.z - LANDWARD_GATE.z) < 3, 'the road starts at the gate');
   assert.equal(LANDWARD_GATE.b, TERRACES.at(-1).to, 'and the gate is at the back of the highest terrace');
   assert.equal(regionAt(last.x, last.z).name, 'South Suval');
-  assert.equal(regionAt(last.x, last.z - 15).name, 'East Suval', 'and it stops at the border');
+  // East Suval's land border is a ridge of rock with two barred gates in it (src/frontier-ridges.js);
+  // the city's road is the road to the southern one, and ends on this side of it.
+  assert.ok(ELOD_SOUTH_GATE.locked, 'the southern hill gate is barred');
+  assert.ok(Math.hypot(last.x - ELOD_SOUTH_GATE.x, last.z - ELOD_SOUTH_GATE.z) < 9, 'and the road ends at it');
+  const beyond = hillPassPoint(ELOD_SOUTH_GATE, 0, 6);
+  assert.equal(regionAt(beyond.x, beyond.z).name, 'East Suval', 'with East Suval on the far side');
   let steepest = 0;
   for (let i = 0; i < PASS_ROAD_LINE.length; i++) {
     const p = PASS_ROAD_LINE[i];
@@ -200,9 +208,13 @@ test('the road leaves by the Landward Gate at the back and goes over the hill pa
     if (i) { const q = PASS_ROAD_LINE[i - 1]; steepest = Math.max(steepest, Math.abs(p.grade - q.grade) / Math.hypot(p.x - q.x, p.z - q.z)); }
   }
   assert.ok(steepest < 1 / 6, `the pass is 1 in ${(1 / steepest).toFixed(1)} at its steepest`);
-  // It crosses the saddle and not the ridge: the ridge stands well above the road to its west.
-  const saddle = Math.max(...PASS_ROAD_LINE.map(p => p.grade)), ridge = hexCentre(7, 118);
-  assert.ok(world.heightAt(ridge.x, ridge.z) > saddle + 6, 'the road goes round the ridge');
+  // It crosses the saddle and goes round the ridge, not over it: the crest stands well above the
+  // highest the road climbs, which is where it runs under the ridge's north flank.
+  const highest = Math.max(...PASS_ROAD_LINE.map(p => p.grade)), ridge = hexCentre(7, 118);
+  let crest = -Infinity;
+  for (let x = ridge.x - 50; x <= ridge.x + 50; x += 2) for (let z = ridge.z - 50; z <= ridge.z + 50; z += 2)
+    if (hexOwnerAt(x, z) === 'South Suval') crest = Math.max(crest, world.heightAt(x, z));
+  assert.ok(crest > highest + 6, `the road goes round the ridge: its crest is ${(crest - highest).toFixed(1)} m above the road`);
 });
 
 test('the southern coast is cliffs, with two places a boat could land', () => {

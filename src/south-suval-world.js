@@ -36,6 +36,7 @@
  * lower and upper city on terraces stepping up that slope, every one of them facing the water.
  */
 import { hexCentre, landDistance, terrainMix, seamlessTerrainMix, relief } from './region-world.js';
+import { SUVAL_HILL_PASSES, hillPassPoint } from './frontier-ridges.js';
 
 const freeze = Object.freeze;
 const point = (x, z) => freeze({ x, z });
@@ -157,7 +158,7 @@ export const SOUTH_SUVAL_BOX = freeze({ minX: -330, maxX: 230, minZ: 900, maxZ: 
  * the road's bed - with twenty-four metres of natural hill round it, where the sink eases off and
  * the two grids agree.
  */
-export const IMLAMDRIS_PATCH = freeze({ minA: -77, maxA: 77, minB: -32, maxB: 305, step: 2 });
+export const IMLAMDRIS_PATCH = freeze({ minA: -150, maxA: 77, minB: -32, maxB: 190, step: 2 });
 /** Deeper than a coarse triangle can rise across the city's tallest wall or the road's deepest cut. */
 const PATCH_SINK = 6;
 /** How far the world's coarse grid is lowered under the patch: all the way inside, none at the rim. */
@@ -340,23 +341,28 @@ export function inImlamdris(x, z, margin = 0) {
 /**
  * "Imlamdris is not a maritime city. It has no harbor. Its trade moves by road through the hill
  * passes." The road leaves by the Landward Gate at the back of the Star Terrace, runs up the level
- * shelf east of the ridge's spur to the saddle, and goes down the pass northward to the East Suval
- * border - the lowest way out of the lake's bowl, measured, with the ridge standing fifteen metres
- * higher to the west of it and the ground falling to the sea to the east.
+ * shelf east of the ridge's spur to the saddle - the lowest way out of the lake's bowl, measured -
+ * and turns west there under the ridge's north flank to East Suval's frontier, where it meets the
+ * Elod southern hill gate (`src/frontier-ridges.js`). The frontier is a wall of limestone ridge
+ * with that gate barred in it, so the road ends at the gate: a hill pass on both sides of the
+ * border is one pass, and the city's trade road is the road to it.
  *
  * Each vertex carries the road's own grade, read off the ground and smoothed; the road is cut and
- * built to it, so it never climbs a bank. It stops at the border: where it goes after that is the
- * peninsula's interior, and that is not built.
+ * built to it, so it never climbs a bank. Under the ridge's spur that is a cutting six metres deep.
  */
 const roadVertex = (p, grade) => freeze({ x: p.x, z: p.z, grade });
+export const ELOD_SOUTH_GATE = SUVAL_HILL_PASSES.find(gate => gate.id === 'elodi-south-pass');
 export const PASS_ROAD = freeze([
   roadVertex(cityPoint(18, 86), 34),
   roadVertex(cityPoint(21, 100), 35.2),
   roadVertex(cityPoint(24, 118), 36.1),
   roadVertex(point(20, 1060), 36.4),
-  roadVertex(point(24, 1020), 31.2),
-  roadVertex(point(28, 982), 26.2),
-  roadVertex(point(30, 940), 21),
+  roadVertex(point(-10, 1054), 40),
+  roadVertex(point(-45, 1047), 45.5),
+  roadVertex(point(-80, 1041), 46.5),
+  roadVertex(point(-106, 1037), 45.5),
+  // Seven metres short of the gate's line, on the South Suval side: the gate is barred.
+  roadVertex(hillPassPoint(ELOD_SOUTH_GATE, 0, -7), 44),
 ]);
 export const PASS_ROAD_HALF = 2.2;
 /**
@@ -560,7 +566,7 @@ export function onCliffFoot(x, z) {
  * the Eastern Slopes are the wine catalogue's ("Imlamdris Eastern Slopes"); the rest are plain words
  * for plain things, the way the game names a shore or a pass when nobody in the lore has.
  */
-const hillPass = PASS_ROAD_LINE[Math.round(PASS_ROAD_LINE.length * .45)];
+const hillPass = PASS_ROAD[3];   // the saddle
 export const SOUTH_SUVAL_LANDMARKS = freeze([
   freeze({ id: 'imlamdris', name: 'Imlamdris', ...cityPoint(0, 45), radius: 58,
     description: 'The oldest city on the peninsula, on the Stillwater’s north-east shore: terraces of pale stone climbing from the water to the Star Terrace, wide streets, low tiled roofs, and every door and window turned to the lake. No harbour. Its trade comes in by road, through the hill pass and the gate at the back.' }),
@@ -573,7 +579,7 @@ export const SOUTH_SUVAL_LANDMARKS = freeze([
   freeze({ id: 'landward-gate', name: 'The Landward Gate', x: LANDWARD_GATE.x, z: LANDWARD_GATE.z,
     description: 'The city’s way in from the road, at its back and its highest point, so that whoever comes overland comes down through the whole of Imlamdris to reach the water.' }),
   freeze({ id: 'imlamdris-pass', name: 'The hill pass', x: hillPass.x, z: hillPass.z,
-    description: 'The saddle east of the ridge’s spur, the lowest way out of the lake’s bowl, and the only road there is: north over it and down to the border with East Suval, slower and harder than any coastal route.' }),
+    description: 'The saddle east of the ridge’s spur, the lowest way out of the lake’s bowl, and the only road there is: over it and west under the ridge to the southern hill gate in the East Suval frontier, slower and harder than any coastal route. The gate is barred.' }),
   freeze({ id: 'eastern-slopes', name: 'The Eastern Slopes', ...hexCentre(7, 120),
     description: 'Vines in rows on the hill south-east of the water, across the lake from the city: the lake country’s eastern slopes, whose whites are fresh and bright and higher in acid than the western-facing sites.' }),
   freeze({ id: 'south-cove', name: COVES[0].name, x: COVES[0].x, z: COVES[0].z,

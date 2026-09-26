@@ -18,6 +18,17 @@ import { METRES_PER_HEX, AUTHORED_METRES_PER_HEX, toWorld } from '../src/world-s
 import { WORLD_BOUNDS as PLAYABLE_BOUNDS } from '../src/regions.js';
 import {createLivingStory} from '../src/living-story.js';
 import {createLusciaCivilWar} from '../src/luscia-civil-war.js';
+import { createCagneyQuest, CAGNEY_HOME } from '../src/cagney-quest.js';
+import { createCorpses } from '../src/corpses.js';
+import { createSpiderQuest } from '../src/spider-quest.js';
+import { createMurderQuest, WITNESS_IDS, MURDERER } from '../src/murder-quest.js';
+import { QUEST_HOMES } from '../src/quest-homes.js';
+import { FERRY_LANDINGS } from '../src/ferry.js';
+import { createKayla, KAYLA_START } from '../src/kayla.js';
+import { createKaylaRace, KAYLA_RACE_ROUTE } from '../src/kayla-race.js';
+import { createCubHoneyQuest, CUB_STAND, CUB_HONEY_ITEM, CUB_HONEY_SOURCE } from '../src/cub-honey-quest.js';
+import { BEAR_HOME_ROUTE } from '../src/bear-family.js';
+import { LIZ_STAND } from '../src/cat-quest.js';
 
 function memoryStorage() {
   const values = new Map();
@@ -44,6 +55,117 @@ function fixture() {
   const storage = memoryStorage();
   return { inventory, weapons, journey, data, storage, checkpoint: createRoadCheckpoint({ storage }) };
 }
+
+const cubHostSnapshot = quest => ({ version: 1, quest, alerted: false, alertTime: 0, patrol: 0, wait: -1, liz: { ...LIZ_STAND } });
+function bearQuestState() {
+  const race = createKaylaRace(); race.accept();
+  const won = race.snapshot(); won.stage = 'won'; won.kayla.next = KAYLA_RACE_ROUTE.length;
+  race.restore(won); race.takeReward();
+  const cub = createCubHoneyQuest(); cub.accept();
+  cub.collect({ source: CUB_HONEY_SOURCE, unseen: true, grant: () => true }); cub.deliver({ take: () => true });
+  return { kaylaRace: race.snapshot(), cubHoney: cubHostSnapshot(cub.snapshot()),
+    bearFamily: { version: 1, phase: 'roaming', next: BEAR_HOME_ROUTE.length, cub: { x: CUB_STAND.x, z: CUB_STAND.z } } };
+}
+
+test('bear quest checkpoints keep both rewards and family positions without rewarding either quest twice', () => {
+  const { data, checkpoint } = fixture(), quests = bearQuestState();
+  const saved = { ...data, ...quests }; const result = checkpoint.save(saved);
+  assert.equal(result.ok, true, result.reason);
+  const loaded = checkpoint.read().data;
+  for (const field of ['kaylaRace', 'cubHoney', 'bearFamily']) assert.deepEqual(loaded[field], quests[field]);
+  loaded.bearFamily.cub.x += 10; loaded.kaylaRace.ed.z += 10;
+  assert.deepEqual(checkpoint.read().data.bearFamily, quests.bearFamily);
+  assert.deepEqual(checkpoint.read().data.kaylaRace, quests.kaylaRace);
+  const race = createKaylaRace(), cub = createCubHoneyQuest(); race.restore(quests.kaylaRace); cub.restore(quests.cubHoney.quest);
+  assert.equal(race.takeReward(), 0); let rewards = 0;
+  assert.equal(cub.deliver({ take: () => true, reward: () => rewards++ }), false); assert.equal(rewards, 0);
+});
+
+test('bear family checkpoints require both quests before roaming and keep the last save when any bear section is invalid', () => {
+  const { data, checkpoint } = fixture(), quests = bearQuestState(), saved = { ...data, ...quests };
+  assert.equal(checkpoint.save(saved).ok, true);
+  const unfinishedRace = createKaylaRace().snapshot(), unfinishedCub = cubHostSnapshot(createCubHoneyQuest().snapshot());
+  for (const changes of [
+    { kaylaRace: null }, { cubHoney: null }, { bearFamily: null },
+    { kaylaRace: { ...quests.kaylaRace, attempts: -1 } },
+    { cubHoney: { ...quests.cubHoney, quest: { ...quests.cubHoney.quest, reward: false } } },
+    { cubHoney: { ...quests.cubHoney, alertTime: -1 } },
+    { bearFamily: { ...quests.bearFamily, next: BEAR_HOME_ROUTE.length + 1 } },
+    { kaylaRace: unfinishedRace }, { kaylaRace: undefined }, { cubHoney: unfinishedCub }, { cubHoney: undefined },
+    { kaylaRace: unfinishedRace, bearFamily: { ...quests.bearFamily, phase: 'returning' } }
+  ]) {
+    assert.equal(checkpoint.save({ ...saved, ...changes }).ok, false, JSON.stringify(changes));
+    assert.deepEqual(checkpoint.read().data.bearFamily, quests.bearFamily);
+  }
+  assert.equal(checkpoint.save({ ...saved, cubHoney: unfinishedCub, bearFamily: { ...quests.bearFamily, phase: 'waiting-cub' } }).ok, true,
+    'Kayla may return first and wait for the cub’s separate quest');
+  assert.equal(checkpoint.save({ ...saved, kaylaRace: unfinishedRace, bearFamily: { ...quests.bearFamily, phase: 'waiting-race', next: 0 } }).ok, true,
+    'the cub’s quest can be completed before the race');
+  const old = { ...data, kayla: createKayla().snapshot() }; assert.equal(checkpoint.save(old).ok, true);
+  const legacy = checkpoint.read().data;
+  assert.deepEqual(legacy.kayla.position, { x: KAYLA_START.x, z: KAYLA_START.z });
+  for (const field of ['kaylaRace', 'cubHoney', 'bearFamily']) assert.equal(Object.hasOwn(legacy, field), false, 'legacy saves do not invent new progress');
+});
+
+test('a saved stolen comb must be the one carried for the cub’s unfinished delivery', () => {
+  const { data, checkpoint } = fixture(), cub = createCubHoneyQuest(); cub.accept();
+  cub.collect({ source: CUB_HONEY_SOURCE, unseen: true, grant: () => true });
+  const carrying = { ...data, cubHoney: cubHostSnapshot(cub.snapshot()), inventory: [...data.inventory, { id: CUB_HONEY_ITEM, quantity: 1 }] };
+  assert.equal(checkpoint.save(carrying).ok, true); assert.deepEqual(checkpoint.read().data.cubHoney, carrying.cubHoney);
+  assert.equal(checkpoint.save({ ...carrying, inventory: data.inventory }).ok, false);
+  assert.equal(checkpoint.save({ ...carrying, cubHoney: cubHostSnapshot(createCubHoneyQuest().snapshot()) }).ok, false);
+  assert.equal(checkpoint.save({ ...carrying, inventory: [...data.inventory, { id: CUB_HONEY_ITEM, quantity: 2 }] }).ok, false);
+  assert.equal(checkpoint.save({ ...data, cubHoney: cubHostSnapshot(cub.snapshot()) }).ok, false, 'ordinary honey never stands in for Liz’s comb');
+});
+
+test('Cagney checkpoints keep escort injuries and casualties without replaying the reward', () => {
+  const { checkpoint, data } = fixture(), escort = createCagneyQuest();
+  escort.accept(); escort.begin(); escort.settle({ hp: 58, enemies: [0, 12, 48] });
+  const saved = { ...data, cagney: escort.snapshot() };
+  assert.equal(checkpoint.save(saved).ok, true);
+  assert.deepEqual(checkpoint.read().data.cagney, saved.cagney);
+  const damaged = { ...saved, cagney: { ...saved.cagney, ambushCleared: true } };
+  assert.equal(checkpoint.save(damaged).ok, false);
+  assert.deepEqual(checkpoint.read().data.cagney, saved.cagney, 'invalid data leaves the valid checkpoint untouched');
+  escort.begin(); escort.settle({ hp: 58, enemies: [0, 0, 0] }); escort.arrive(CAGNEY_HOME);
+  assert.equal(escort.take(), 45);
+  assert.equal(checkpoint.save({ ...data, cagney: escort.snapshot() }).ok, true);
+  const restored = createCagneyQuest(); restored.restore(checkpoint.read().data.cagney);
+  assert.equal(restored.take(), 0, 'a restored completed escort never pays twice');
+  assert.equal(checkpoint.save(data).ok, true, 'older saves without this quest remain valid');
+  assert.equal(Object.hasOwn(checkpoint.read().data, 'cagney'), false);
+});
+
+test('checkpoints retain returning residents, a ferry in progress and a resident indoors without paying rewards again', () => {
+  const { checkpoint, data } = fixture(), ben = createSpiderQuest(), troy = createMurderQuest(), cagney = createCagneyQuest();
+  ben.ask(); ben.accept(); ben.begin(); ben.settle({ spiderDead: true }); ben.take('bounty');
+  troy.begin(); for (const id of WITNESS_IDS) troy.hear(id); troy.accuse(MURDERER); troy.take('purse');
+  cagney.accept(); cagney.begin(); cagney.settle({ hp: 70, enemies: [0, 0, 0] }); cagney.arrive(CAGNEY_HOME); cagney.take();
+  const homes = { version: 1, people: {
+    'ben-sorcerer': { phase: 'walking', leg: 'home', position: { x: -807, z: 240 }, yaw: -.7, clock: 0 },
+    'bee-keeper': { phase: 'sailing', leg: 'quay', position: { x: FERRY_LANDINGS.peblos.ashore.x, z: FERRY_LANDINGS.peblos.ashore.z }, yaw: 0, clock: 23.5 },
+    cagney: { phase: 'inside', leg: 'home', position: { ...QUEST_HOMES.cagney.door }, yaw: QUEST_HOMES.cagney.yaw, clock: 0 },
+  } };
+  const saved = { ...data, spider: ben.snapshot(), murder: troy.snapshot(), cagney: cagney.snapshot(), homes };
+  const result = checkpoint.save(saved); assert.equal(result.ok, true, result.reason);
+  const loaded = checkpoint.read().data;
+  assert.deepEqual(loaded.homes, homes);
+  assert.deepEqual(loaded.inventory, saved.inventory, 'residence state neither grants nor removes reward items');
+  loaded.homes.people['bee-keeper'].clock = 59;
+  loaded.homes.people['ben-sorcerer'].position.x = 123;
+  assert.deepEqual(checkpoint.read().data.homes, homes, 'resident state and nested positions are independently copied');
+  ben.restore(loaded.spider); troy.restore(loaded.murder); cagney.restore(loaded.cagney);
+  assert.equal(ben.take('bounty'), null); assert.equal(troy.take('purse'), null); assert.equal(cagney.take(), 0);
+  for (const homes of [null, { version: 1, people: { unknown: saved.homes.people.cagney } },
+    { version: 1, people: { cagney: { ...saved.homes.people.cagney, position: { x: 0, z: 0 } } } },
+    { version: 1, people: { 'bee-keeper': { ...saved.homes.people['bee-keeper'], clock: -1 } } }]) {
+    assert.equal(checkpoint.save({ ...saved, homes }).ok, false, 'invalid residence data is rejected');
+    assert.deepEqual(checkpoint.read().data.homes, saved.homes, 'invalid data preserves the last valid checkpoint');
+  }
+  const { homes: ignored, ...legacy } = saved;
+  assert.equal(checkpoint.save(legacy).ok, true, 'completed quest saves predating homes remain loadable');
+  assert.equal(Object.hasOwn(checkpoint.read().data, 'homes'), false);
+});
 
 test('road checkpoint round-trips partial quest progress, satchel, weapon wear, gathering and narrative flags', () => {
   const { checkpoint, data, storage } = fixture();
@@ -567,4 +689,28 @@ test('guided fishing and fire-making progress survives a checkpoint and malforme
   assert.deepEqual(checkpoint.read().data.fishingLessons, data.fishingLessons);
   const badFire = structuredClone(data); badFire.fireMaking.firesLit = -1;
   assert.equal(checkpoint.save(badFire).ok, false);
+});
+
+
+test('legacy Port Calos bodies for removed civilians disappear without affecting Maddie, other bodies or carried loot', () => {
+  const { data, checkpoint, storage } = fixture(), bodies = createCorpses();
+  const removed = ['innkeeper', 'fishmonger', 'netmaker', 'shipwright', 'carter', 'resident', 'dockhand'].map(id => `port-calos-${id}`);
+  for (const [i, id] of removed.entries()) bodies.add({ id: `npc:${id}`, sourceId: id, npcId: i < 4 ? id : null,
+    name: id, x: -416 + i, z: 282, model: { role: 'villager' }, dead: true });
+  for (const id of ['port-calos-harbourmaster', 'boatman', 'cobble-harbourmaster', 'unrelated-traveler']) {
+    bodies.add({ id: `npc:${id}`, sourceId: id, npcId: id, name: id, x: -418, z: 280,
+      model: { role: 'villager', look: { hat: false } }, dead: true,
+      loot: [{ id: 'copper-piece', quantity: 7 }, { id: 'pawpaw', quantity: 2 }] });
+  }
+  const legacy = { ...data, corpses: bodies.snapshot() }, original = structuredClone(legacy);
+  storage.setItem(ROAD_CHECKPOINT_KEY, JSON.stringify(legacy));
+  const loaded = checkpoint.read();
+  assert.equal(loaded.ok, true, loaded.reason);
+  const expected = original.corpses.bodies.filter(body => !removed.includes(body.sourceId));
+  assert.deepEqual(loaded.data.corpses.bodies, expected, 'Only the seven retired residents are removed, with other appearances and loot intact');
+  assert.equal(loaded.data.corpses.clock, original.corpses.clock);
+  assert.deepEqual(loaded.data.inventory, original.inventory, 'Previously gathered loot remains in the satchel');
+  assert.deepEqual(legacy, original, 'Migration does not mutate its input');
+  assert.equal(checkpoint.save(loaded.data).ok, true);
+  assert.deepEqual(checkpoint.read().data.corpses.bodies, expected, 'Saving the migrated checkpoint does not resurrect old models');
 });

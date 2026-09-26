@@ -3,7 +3,7 @@ import { ATTIC_WINES, ATTIC_WINE_IDS } from './attic-wines.js';
 import { SLOT_NAMES, SLOTS, gearId } from './gear.js';
 
 export const INVENTORY_ITEMS = Object.freeze({
-  'jojo-sandwich': Object.freeze({name:'Jojo’s sandwich',type:'Food',icon:'bread',stackable:true,eatName:'sandwich',brief:'A filling sandwich for the road · restores 35 health.',description:'Jojo wrapped bread and a savoury filling for your journey. Open the satchel and eat it when you need health.'}),
+  'jojo-sandwich': Object.freeze({name:'Jojo’s sandwich',type:'Food',icon:'loaf',stackable:true,eatName:'sandwich',brief:'A filling sandwich for the road. Restores up to 35 health.',description:'Jojo wrapped bread and a savoury filling for your journey. Restores up to 35 health. Open the satchel and eat it when you need health.'}),
   'courier-satchel': Object.freeze({name:'The courier’s satchel',type:'Quest item',icon:'letter',stackable:false,
     brief:'The one missing army satchel, carrying the Lauvel muster rolls.',
     description:'Deliver this physical satchel to Iven in Nothom. A reassignment does not remove it from your possession; a replacement must find you and ask for a handover.'}),
@@ -377,6 +377,10 @@ export const INVENTORY_ITEMS = Object.freeze({
     name: 'Bramble berries', type: 'Food', icon: 'berries', stackable: true, eatName: 'handful of bramble berries',
     brief: 'Dark, sweet berries from the thorn tangles. Restores up to 15 health.',
     description: 'Restores up to 15 health. Picked from the same brambles that give the bramble goblins their name. They stain the fingers and bruise within a day, so eat them soon.',
+  }),
+  'liz-stolen-honey': Object.freeze({
+    name: "Liz's stolen honey", type: 'Quest item', icon: 'honeycomb', stackable: false,
+    description: 'A comb quietly taken from Liz’s private stores for the bear cub. Return it to the cub by the Tessen crossing.',
   }),
   honeycomb: Object.freeze({
     name: 'Honeycomb', type: 'Food', icon: 'honeycomb', stackable: true, eatName: 'piece of honeycomb',

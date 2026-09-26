@@ -28,6 +28,7 @@ import { PLACE_LANDMARKS } from './places.js';
 import { FRONTIER_ROUTE, FRONTIER_LANDMARKS, FRONTIER_GATE, FRONTIER_APPROACH } from './frontier.js';
 import { SOLIS_ROAD } from './region-world.js';
 import { WEST_SUVAL_LANDMARKS, SOLIS_ENCLOSURES, SOLIS_STREETS, WEST_SUVAL_SEA } from './west-suval.js';
+import { SOLIS_HARBOR, SOLIS_HARBOR_PATHS, solisHarborDeckHeight } from './solis-harbor.js';
 import { atticDeckHeight } from './wine-attic.js';
 import { createBrandyYard } from './brandy-yard.js';
 import { createLighthouse } from './lighthouse-world.js';
@@ -68,6 +69,8 @@ import { createWestScenery } from './west-regions-scenery.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
+import { createSpiderDenScenery, createNothomThicketScenery } from './spider-den-scenery.js';
+import { CAGNEY_AMBUSH, CAGNAPPERS } from './cagney-quest.js';
 import { createRoadSurfaceMask } from './path-junctions.js';
 
 /**
@@ -258,6 +261,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     // Izolveth's quay and the two moles that close its harbour, in West Izol.
     const izolDeck = izolDeckHeight(x, z);
     if (izolDeck !== null) return izolDeck;
+    // Solis's ramp, stone quay, timber piers and breakwater share their drawn deck heights.
+    const solisDeck = solisHarborDeckHeight(x, z);
+    if (solisDeck !== null) return solisDeck;
     // Tharganhom's stair and attic floor, on the main street of Solis.
     const attic = atticDeckHeight(x, z, groundHeight);
     if (attic !== null) return attic;
@@ -1211,6 +1217,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   ];
   // Measure every road before any scenery, so nothing is planted across one.
   measurePath(MAIN_ROAD, 4.2); measurePath(SUVAL_ROAD, 3.4); measurePath(SOLIS_ROAD, 4.2); measurePath(PUETH_ROAD, 4.2); measurePath(AMOD_ROAD, 4.2); measurePath(HIDEOUT_APPROACH_TRAIL, 1.85);
+  measurePath(FOREST_HIDEOUT.trail.map(p => hideoutToWorld(p.x, p.z)), 1.85);
   measurePath(RENA_ROAD, 2.6);   // the old Rena road, off the main road at Drent's centre (src/rena.js)
   for (const path of IZOL_PATHS) measurePath(path.points, path.width);
   measurePath(AMBRON_ROAD, 4.6); measurePath(LAKE_ROAD, 3.6); for (const track of ELAGOS_ROADS.slice(2)) measurePath(track, track === CALOSS_ELAGOS_ROAD ? 4.2 : 2.6);
@@ -1241,6 +1248,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const puethScenery = createPuethScenery({
     root: world, material, mesh, box, post, pebble, rope, cottage, fence, barrel, crate, wornPatch, trailSign: (...args) => trailSign(...args),
     groundHeight, colliders, dummy, color, wood, woodLight, darkWood, cream, rockMat, roofGeometry, cylinder, round,
+    drapeGround: (vertices, indices) => drapeRoadOnTerrain(vertices, indices, terrainXs, terrainZs, terrainPositions),
     roadDistance, riverMaterial: regionScenery.riverMaterial, regionClear,
     insideVillage: (x, z) => { const local = worldToVillage(x, z); return local.x > -122 && local.x < 122 && local.z > -182 && local.z < 40; },
   });
@@ -1274,7 +1282,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
   const westSuval = createWestSuvalScenery({ root: world, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
     wood, woodLight, darkWood, cream, movingGroups, roadDistance, sign: roadsideSign, signs, barrel });
-  // Paradise Springs (src/winery-world.js): Lakota's old winery in the north-east of West Suval.
+  // Paradise Springs (src/winery-world.js): Lakota's old winery southeast of Port Calos.
   const winery = createWineryScenery({ root: world, material, mesh, box, post, barrel, groundHeight, colliders, cylinder, round, wornPatch, signs, movingGroups });
   // West Izol (src/izol-scenery.js): Izolveth, its harbour and moles, the Coalition's camp above the town,
   // Ardveth, Kelvath Cove, the Sea Gate, the Sightstone and the island's own scatter.
@@ -1322,6 +1330,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     }
     paths.push(Object.assign(line, { kind: 'road', width: street.width }));
   }
+  for (const line of SOLIS_HARBOR_PATHS) paths.push(Object.assign(line.map(p => ({ ...p })), { kind: 'road', width: 3 }));
   for (const spur of roadSpurs) addPath(spur, 2.2);
   // Tidehaven's own lanes and woodland spurs stay in the village's frame.
   function addLocalPath(points, width, kind = 'trail') {
@@ -1573,7 +1582,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const forestHideout = createForestHideout(hideoutRoot, { heightAt: (x, z) => { const p = hideoutToWorld(x, z); return groundHeight(p.x, p.z); }, colliders: hideoutColliders });
   const regionalPlaces = createRegionalPlaces(world, { heightAt: groundHeight, colliders });
   const drentCivilWar = createDrentCivilWarScenery({ root: world, material, box, mesh, post, pebble, groundHeight, colliders, wornPatch, roofGeometry, movingGroups });
+  createSpiderDenScenery({ root: world, groundHeight });
+  createNothomThicketScenery({ root: world, groundHeight, roadDistance });
   createRoadAmbushScenery({ root: world, groundHeight, roadDistance, colliders });
+  createRoadAmbushScenery({ root: world, groundHeight, roadDistance, colliders, name: 'Cagnapper ambush undergrowth',
+    center: CAGNEY_AMBUSH.center, forward: { dx: -1, dz: 0 }, ambushers: CAGNAPPERS, colliderKind: 'cagnapper-sapling' });
 
   const reedMat = material('#758249'), reedHead = material('#705637');
   for (let i = 0; i < 25; i++) {
@@ -1764,7 +1777,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   ]);
 
   // Islands are land inside the chart's sea: the charts paint these over the water (src/local-map-data.js).
-  const mapLands = Object.freeze([Object.freeze({id:'port-calos-quay-land',kind:'polygon',region:'Luscia',
+  const mapLands = Object.freeze([...[SOLIS_HARBOR.ramp, ...SOLIS_HARBOR.decks].map(deck => Object.freeze({
+    id: `solis-${deck.id}-land`, kind: 'polygon', region: 'West Suval',
+    points: Object.freeze([[deck.minA, deck.minB], [deck.maxA, deck.minB], [deck.maxA, deck.maxB], [deck.minA, deck.maxB]]
+      .map(([a, b]) => { const p = solisPoint(a, b); return mapPoint(p.x, p.z); })),
+  })), Object.freeze({id:'port-calos-quay-land',kind:'polygon',region:'Luscia',
     points:Object.freeze([[PORT_CALOS_QUAY.minX,PORT_CALOS_QUAY.minZ],[PORT_CALOS_QUAY.maxX,PORT_CALOS_QUAY.minZ],[PORT_CALOS_QUAY.maxX,PORT_CALOS_QUAY.maxZ],[PORT_CALOS_QUAY.minX,PORT_CALOS_QUAY.maxZ]].map(([x,z])=>mapPoint(x,z)))}),...PEBLOS_ISLANDS.flatMap(island => regions.find(region => region.name === 'Peblos')?.border
     ?.filter(loop => loop.some(p => island.cells.some(cell => Math.hypot(cell.x - p.x, cell.z - p.z) < 90)))
     .map((loop, index) => Object.freeze({ id: `${island.id}-land-${index}`, kind: 'polygon', region: 'Peblos',
