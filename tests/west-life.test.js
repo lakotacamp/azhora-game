@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
 import { sourceModule } from './module-loader.js';
-import { canStand } from '../src/game-state.js';
+import { canStand, canSwim } from '../src/game-state.js';
 
 /**
  * The west's animals with somebody among them.
@@ -57,7 +57,8 @@ function chase(zone, pace, seconds, { bearing = Math.PI / 2, arm = 3 } = {}) {
       // A bird that has taken off is over the water within a wingbeat; footing is for what is standing.
       // Nor for an otter on its way into the river: the water is where it is going.
       const grounded = !animal.hidden && animal.lift < 1, standing = !animal.hidden && animal.action !== 'fly' && animal.action !== 'dive';
-      if (standing && !(canStand(animal.x, animal.z, world, zone.radius)
+      // A floating bird's footing is the water as well as the ground (the Stillwater's duck).
+      if (standing && !((canStand(animal.x, animal.z, world, zone.radius) || (zone.float && canSwim(animal.x, animal.z, world, zone.radius)))
         && animal.x >= zone.minX && animal.x <= zone.maxX && animal.z >= zone.minZ && animal.z <= zone.maxZ)) report.offFooting++;
       if (animal.id !== first.id) continue;
       const d = Math.hypot(animal.x - player.x, animal.z - player.z);

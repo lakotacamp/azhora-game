@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { canStand } from './game-state.js';
+import { canStand, canSwim } from './game-state.js';
 import { SEA_LEVEL } from './region-world.js';
 import { westWaterSurface } from './west-ground.js';
 import { REGIONAL_WILDLIFE_ZONES, WEST_SUVAL_WILDLIFE_ZONES } from './regional-wildlife.js';
@@ -956,7 +956,11 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
 
   const inRange = (x, z, zone) => Number.isFinite(x) && Number.isFinite(z)
     && x >= zone.minX && x <= zone.maxX && z >= zone.minZ && z <= zone.maxZ;
-  const valid = (x, z, zone) => inRange(x, z, zone) && canStand(x, z, world, zone.radius)
+  // A bird that floats has water for footing as well as ground: the Stillwater is swum and never
+  // stood in, and its duck are on it. The western rivers carry no level of their own for the world
+  // to judge by, so on those a duck's water was always "ground", and nothing there changes.
+  const footing = (x, z, zone) => canStand(x, z, world, zone.radius) || (zone.float && canSwim(x, z, world, zone.radius));
+  const valid = (x, z, zone) => inRange(x, z, zone) && footing(x, z, zone)
     && (!zone.keepRegion || !world.regionAt || world.regionAt(x, z)?.name === zone.region)
     && !(zone.exclusions ?? []).some(area => x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ);
   /**
