@@ -310,7 +310,8 @@ test('Eer is the first country with a sky of its own, and it takes it the way th
   // Every region that has not asked for one is still on the three numbers the game has always
   // used. Nethereum is the second to ask (`tests/nethereum-world.test.js`), and it asks for the
   // opposite of this one: a grey overcast and a closer horizon where Eer has a clear far one.
-  const OWN_SKY = new Set(['Eer', 'Nethereum']);
+  // South Suval (25 September 2026) asked for its own since.
+  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval']);
   for (const region of regions) if (!OWN_SKY.has(region.name))
     assert.deepEqual({ ...regionSky(region) }, { ...DEFAULT_SKY }, `${region.name} lost the default sky`);
   assert.ok(regionSky(regions.find(region => region.name === 'Nethereum')).density > sky.density,
@@ -356,7 +357,9 @@ test('the birds of the Lizeem’s distributaries, the boar in the scrub, and the
   assert.ok(ducks.length >= 3);
   let afloat = 0;
   for (const duck of ducks) {
-    const water = westWaterSurface(duck.x, duck.z), ground = world.heightAt(duck.x, duck.z);
+    // The western rivers know their own level; the Stillwater's is the world's (`waterAt`).
+    const ground = world.heightAt(duck.x, duck.z), still = world.waterAt(duck.x, duck.z);
+    const water = westWaterSurface(duck.x, duck.z) ?? (still > ground ? still : null);
     if (water === null) { assert.ok(Math.abs(duck.groundY - ground) < .05, `${duck.id} is on dry land and not on it`); continue; }
     afloat++;
     assert.ok(Math.abs(duck.groundY - (water - .04)) < .05, `${duck.id} sits ${(duck.groundY - water).toFixed(2)} m off its own water`);

@@ -137,7 +137,9 @@ test('Every hex of the corridor country is honest ground', () => {
 
 test('The river fox watches; everything else in the west runs', () => {
   const life = createWestLife(scene, world);
-  const foxZones = WEST_LIFE_ZONES.filter(zone => zone.species === 'river-fox');
+  // The corridor's foxes. South Suval's road foxes are drawn with the same rig and live on a road,
+  // not a river bank (src/south-suval-wildlife.js), so the corridor's law is not theirs.
+  const foxZones = WEST_LIFE_ZONES.filter(zone => zone.species === 'river-fox' && zone.region === 'Caricas');
   assert.ok(foxZones.length >= 2, 'the corridor carries foxes along its length');
   for (const zone of foxZones) for (const site of zone.sites) {
     assert.ok(courseDistance(CARICA, site[0], site[1], 60) < CARICA_CORRIDOR.bankReach,

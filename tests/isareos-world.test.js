@@ -54,7 +54,7 @@ test('Isareos is a registered region, landlocked, and without a tree the atlas d
   // true for exactly one country and broke the moment Nethereum landed. What actually has to
   // hold is that nothing is ever *inserted*: the biome scatter walks this list with one seeded
   // stream, so a country put anywhere but the end re-rolls every region after it.
-  assert.deepEqual(PLAYABLE_REGIONS.slice(13), ['Nesdor', 'Eer', 'Isareos', 'Nethereum'],
+  assert.deepEqual(PLAYABLE_REGIONS.slice(13, 17), ['Nesdor', 'Eer', 'Isareos', 'Nethereum'],
     'the south-western countries are appended in the order they were built');
   assert.equal(REGION_IDS.Isareos, 16, 'Eer took 15 first');
   assert.equal(cells.length, 31, 'the atlas authors thirty-one Isareos hexes');

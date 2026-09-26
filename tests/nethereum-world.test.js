@@ -57,7 +57,7 @@ const ATLAS_OWNERS = (() => {
 
 test('Nethereum is a registered region, appended last, and the atlas gives it no lake and no marsh', () => {
   assert.ok(PLAYABLE_REGIONS.includes('Nethereum'));
-  assert.equal(PLAYABLE_REGIONS.at(-1), 'Nethereum', 'appended, so nothing already built is re-seeded by the biome loop');
+  assert.equal(PLAYABLE_REGIONS[16], 'Nethereum', 'appended, so nothing already built is re-seeded by the biome loop');
   assert.equal(REGION_IDS.Nethereum, 17, 'Isareos took 16 first');
   assert.equal(REGION_BIOMES.Nethereum.ownScatter, true, 'it draws its own meadow');
   assert.equal(cells.length, 27, 'the atlas authors twenty-seven Nethereum hexes');

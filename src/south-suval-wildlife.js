@@ -32,8 +32,8 @@ export const SOUTH_SUVAL_WILDLIFE_ZONES = freeze([
   // The hills and the grass.
   zone('south-suval-hares', 'upland-hare', .3, [-125, -60, 1280, 1345], [[-95, 1297], [-95, 1311], [-95, 1325]],
     'Extension. Hares on the open grass south of the lake, which is the same thin, short-grazed ground the western uplands’ hares keep.'),
-  zone('south-suval-boar', 'boar', .7, [-225, -165, 1265, 1330], [[-195, 1283], [-195, 1297], [-195, 1311]],
-    'Extension, as Eer’s boar are: the ordinary pig of a Mediterranean scrub, in the cushion scrub of the south-western hills because the scrub is there.'),
+  zone('south-suval-boar', 'boar', .7, [-240, -60, 1070, 1112], [[-90, 1092], [-100, 1104], [-78, 1100]],
+    'Extension, as Eer’s boar are: the ordinary pig of a Mediterranean scrub, in the cushion scrub of the ridge above the lake because the scrub is there - and on the ridge because a boar backing off from somebody walking at it wants most of a hundred and fifty metres behind it, which the cliffed south-west does not have.'),
   zone('south-suval-road-foxes', 'river-fox', .32, [-60, 100, 1035, 1082], [[78, 1052], [68, 1064]],
     'Extension from the next country: the overview’s road fox of the eastern rain-shadow, "a lean, bold scavenger associated with caravan routes and settlement edges", which is what the city’s one road is: on the open saddle and along the road west of it toward the gate, where a fox that keeps its distance has room to - a fox backing away from somebody walking at it needs the best part of a hundred metres behind it. Drawn with the river fox’s rig, which is the fox the game has.'),
   zone('south-suval-hawk', 'plateau-hawk', .3, [-160, -40, 1010, 1130], [[-100, 1068]],
