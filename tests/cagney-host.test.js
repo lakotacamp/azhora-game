@@ -193,11 +193,19 @@ function realFight({helping=false}={}){
 
 test('the cagnappers go for Cagney, not the traveler, and she fights back',()=>{
   const {f,her}=realFight();
-  const start=f.combat.state.enemies.map(e=>Math.hypot(e.x-her.x,e.z-her.z)),unhurt=f.combat.state.player.hp;
-  for(let i=0;i<90;i++)f.combat.update(1/60);
-  f.combat.state.enemies.forEach((e,i)=>assert.ok(Math.hypot(e.x-her.x,e.z-her.z)<start[i],`${e.id} closes on her`));
-  let struck=false;
-  for(let i=0;i<60*20&&her.hp>0;i++){f.combat.update(1/60);if(f.combat.state.enemies.some(e=>e.hp<e.maxHp))struck=true;}
+  const spots=f.combat.state.enemies.map(e=>({x:e.x,z:e.z})),unhurt=f.combat.state.player.hp;
+  // They break from cover one after another: a second in, only the first is on his way.
+  for(let i=0;i<60;i++)f.combat.update(1/60);
+  const moved=f.combat.state.enemies.map((e,i)=>Math.hypot(e.x-spots[i].x,e.z-spots[i].z)>.2);
+  assert.deepEqual(moved,[true,false,false],'the first breaks cover first');
+  // Each of them comes to her, whoever is standing nearer.
+  const closest=f.combat.state.enemies.map(()=>Infinity);let struck=false;
+  for(let i=0;i<60*20&&her.hp>0;i++){
+    f.combat.update(1/60);
+    f.combat.state.enemies.forEach((e,j)=>{closest[j]=Math.min(closest[j],Math.hypot(e.x-her.x,e.z-her.z));});
+    if(f.combat.state.enemies.some(e=>e.hp<e.maxHp))struck=true;
+  }
+  f.combat.state.enemies.forEach((e,i)=>assert.ok(closest[i]<3,`${e.id} came to her`));
   assert.equal(f.combat.state.player.hp,unhurt,'nobody touched the traveler');
   assert.ok(struck,'she landed something');
   assert.equal(her.hp,0,'without the traveler she does not survive them');

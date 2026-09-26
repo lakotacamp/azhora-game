@@ -54,7 +54,9 @@ export function createCagneyAutopilot({world,read,act={},options={}}={}) {
         const enemies=(c.enemies??[]).filter(e=>e.hp>0&&e.active!==false).sort((a,b)=>gap(a,from)-gap(b,from)),target=enemies[0];
         if(target){
           yaw=Math.atan2(s.position.x-target.x,s.position.z-target.z);
-          const threat=enemies.find(e=>gap(e,s.position)<3.1&&((e.action==='windup'&&e.progress>.65)||(e.action==='attack'&&e.progress<.65)));
+          // Only a blow coming at the traveler is worth a guard: most of theirs are for her.
+          const facing=e=>!Number.isFinite(e.yaw)||Math.abs(Math.atan2(Math.sin(e.yaw-Math.atan2(s.position.x-e.x,s.position.z-e.z)),Math.cos(e.yaw-Math.atan2(s.position.x-e.x,s.position.z-e.z))))<.6;
+          const threat=enemies.find(e=>gap(e,s.position)<3.1&&facing(e)&&((e.action==='windup'&&e.progress>.65)||(e.action==='attack'&&e.progress<.65)));
           if(c.action==='idle'){
             if(c.hp<55&&s.inventory?.pawpaws>0&&eat>3&&!threat){actions.push({type:'eat',id:'pawpaw'});eat=0;}
             else if(threat&&c.hasShield&&c.stamina>20){guard=true;intent='Guarding against a cagnapper';}

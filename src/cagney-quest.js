@@ -22,10 +22,11 @@ export const CAGNEY_ROUTE = Object.freeze([
 export const CAGNEY_QUEST = Object.freeze({ id: 'cagney-escort', title: 'Cagney and the Cagnappers', reward: 45, pace: 6.4 });
 /**
  * She fights back (the user, 26 September 2026), and without the traveler three cagnappers kill her
- * in about eight seconds; with him she comes through a gang with some of this left, and binds her
- * cuts before the next stretch of road, so each gang meets her whole.
+ * in about eleven seconds; with him she comes through a gang with some of this left, and binds her
+ * cuts before the next stretch of road, so each gang meets her whole. (At 100 the escort autoplay,
+ * fighting beside her, lost her to the middle gang two runs in three.)
  */
-export const CAGNEY_HEALTH = 100;
+export const CAGNEY_HEALTH = 150;
 
 // ---------------------------------------------------------------------------
 // The road, measured
@@ -57,7 +58,13 @@ function alongRoad(arc) {
 // The cagnappers: three waves of them
 // ---------------------------------------------------------------------------
 const TUNICS = [0x5d6548, 0x6b5945, 0x4f6259];
-const gang = (ids, stands) => stands.map((p, i) => Object.freeze({ id: ids[i], x: p.x, z: p.z, name: 'Cagnapper', kind: 'rebel', hp: 48,
+/**
+ * They break from cover one after another, not all at once (`entry`, src/combat.js), as the
+ * goblins of the first raid do. All three on her together killed her in under five seconds, before
+ * the traveler beside her could do anything about it; one at a time, he can.
+ */
+const BREAK = [.3, 1.8, 3.3];
+const gang = (ids, stands) => stands.map((p, i) => Object.freeze({ id: ids[i], x: p.x, z: p.z, name: 'Cagnapper', kind: 'rebel', hp: 48, entry: BREAK[i],
   model: Object.freeze({ role: 'mercenary', tunic: TUNICS[i], look: Object.freeze({ hat: false }) }) }));
 
 /** The first gang anybody met, and still where they were: on the Luscian side, before the road enters Elagos. */

@@ -5839,7 +5839,7 @@ function init() {
     enclosures:world.enclosures,
     sideSeat:(side,conquest)=>sideSeat(side,conquest)};
   const autopilotRead=()=>({mode,questStage,practiceHits,practiceGuards,practiceDodges,lessonSet,chartLesson:chartLesson.stage,position:{x:player.group.position.x,z:player.group.position.z},
-    combat:{encounterId:combat.state.encounterId,phase:combat.state.phase,action:combat.state.player.action,stamina:combat.state.player.stamina,hp:combat.state.player.hp,hasShield:hasCarriedShield(),guardCost:arms.margins().guardCost,enemies:combat.state.enemies.map(e=>({id:e.id,x:e.x,z:e.z,action:e.action,progress:e.progress,active:e.active,hp:e.hp,guarded:!!e.guarded}))},
+    combat:{encounterId:combat.state.encounterId,phase:combat.state.phase,action:combat.state.player.action,stamina:combat.state.player.stamina,hp:combat.state.player.hp,hasShield:hasCarriedShield(),guardCost:arms.margins().guardCost,enemies:combat.state.enemies.map(e=>({id:e.id,x:e.x,z:e.z,yaw:e.yaw,action:e.action,progress:e.progress,active:e.active,hp:e.hp,guarded:!!e.guarded}))},
     weapon:weapons.profile(),inventory:{sticks:inventory.count('forest-stick'),cookedFish:inventory.count('cooked-fish'),pawpaws:inventory.count('pawpaw')},
     dialogue:mode==='dialogue'?{npcId:activeDialogue?.npc?.id,choices:[...document.querySelectorAll('#dialogue-choices button')].map(b=>({id:b.dataset.choice,label:b.textContent,enabled:!b.disabled}))}:null,
     // `bridge` is the side errand's own state, and the planner needs it because the Caloss span
@@ -6050,8 +6050,11 @@ function init() {
     const caughtLine=[running.length?`${listed(running)} ${running.length>1?'are':'is'} caught in the open.`:'',fighting.length?`${listed(fighting)} ${fighting.length>1?'take up what they have':'takes up an axe'} and ${fighting.length>1?'stand':'stands'} with you.`:''].filter(Boolean).join(' ');
     toast(caughtLine?`Goblins on the Greenway! ${caughtLine}`:'Goblins on the Greenway!','THE VILLAGE BELL');
   }
+  // The last blows that landed on an ally, and whose they were, for the quest autoplay checks to report.
+  const allyBlows=[];
   function handleCombatEvents() {
     const events=combatEvents.splice(0);
+    for(const e of events)if(e.type==='ally-hit'||e.type==='ally-down'){allyBlows.push({t:+playSeconds.toFixed(2),type:e.type,id:e.id,by:e.by??null,source:e.source??null,damage:e.damage??null});if(allyBlows.length>40)allyBlows.shift();}
     // Record every physical impact before death rendering and terminal encounter callbacks.
     for(const event of events){const impact=crime.handleImpact(event.type==='spell-impact'?{...event,type:'arrow-impact'}:event);
       if(['melee-impact','arrow-impact'].includes(event.type)&&!event.practice&&!event.bout){
@@ -7390,7 +7393,7 @@ function init() {
           mode:()=>mode,pilot:()=>({enabled:autopilot.active,id:autopilot.id,intent:autopilot.intent,stopReason:autopilot.stopReason}),
           quest:()=>cagneyQuest.snapshot(),combat,inventory,checkpointCopy:()=>structuredClone(checkpoint.read().data),
           motion:()=>({time:playSeconds,position:{x:player.group.position.x,y:player.group.position.y,z:player.group.position.z},guide:questPilotPerson(CAGNEY.id),camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},focus:{x:cameraFocus.x,y:cameraFocus.y,z:cameraFocus.z},input:{...autopilot.move}}),
-          isTesting:()=>testingEnabled,tracked:()=>questTracker.selectedId,frameErrors:()=>frameErrors.view(),
+          isTesting:()=>testingEnabled,tracked:()=>questTracker.selectedId,frameErrors:()=>frameErrors.view(),blows:()=>allyBlows.slice(),
           save:()=>{recoveryInfo={testing:testingEnabled,encounterId:null};return writeRoadCheckpoint(sessionCheckpoint,false);},
           reload:()=>{stopAutopilot();const ok=continueRoad(true);reviewFrozen=false;reviewTarget=null;return ok;},resume:startAutopilot,
         });

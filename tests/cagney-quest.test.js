@@ -128,6 +128,7 @@ test('three gangs wait on her road: midway to the first gang met, that gang, and
   assert.equal(new Set(CAGNEY_WAVES.map(w => w.id)).size, 3);
   for (const wave of CAGNEY_WAVES) {
     assert.equal(wave.enemies.length, 3);
+    assert.deepEqual(wave.enemies.map(e => e.entry), [.3, 1.8, 3.3], 'they break from cover one after another');
     // She is held short of a gang once her next waypoint is past it.
     assert.ok(arcOf(CAGNEY_ROUTE[wave.waypoint]).arc > arcOf(wave.center).arc);
     assert.ok(arcOf(CAGNEY_ROUTE[wave.waypoint - 1]).arc <= arcOf(wave.center).arc);

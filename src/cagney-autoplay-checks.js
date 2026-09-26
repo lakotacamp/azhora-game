@@ -2,13 +2,15 @@ import { CAGNEY_HOME, CAGNEY_WAVES, cagneyWave } from './cagney-quest.js';
 import { createEscortMotionChecks } from './escort-motion-checks.js';
 
 /** Drives the public F8 button and watches real render frames, ordinary travel and combat. */
+/** The road is clear when every gang is beaten; the saved quest keeps that as `wave`. */
+const cleared=q=>q.wave>=CAGNEY_WAVES.length;
 export async function runCagneyAutoplayChecks(h) {
   const checks=[],samples=[],stages=new Set(),check=(ok,message)=>{if(!ok)fail(message);checks.push(message);};
   const motion=createEscortMotionChecks();
   const frames=async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);};
   const gap=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
   const state=()=>({mode:h.mode(),pilot:h.pilot(),quest:h.quest(),position:h.position(),cagney:h.person(),
-    combat:{phase:h.combat.state.phase,hp:h.combat.state.player.hp,enemies:h.combat.state.enemies,allies:h.combat.state.allies},samples});
+    combat:{phase:h.combat.state.phase,hp:h.combat.state.player.hp,enemies:h.combat.state.enemies,allies:h.combat.state.allies},blows:h.blows?.()??[],samples});
   function fail(message){throw new Error(`Cagney autoplay: ${message}; ${JSON.stringify(state())}`);}
   const until=async(test,message,seconds=30)=>{const until=performance.now()+seconds*1000;
     while(!test()){if(performance.now()>until)fail(message);await frames();}};
@@ -40,11 +42,11 @@ export async function runCagneyAutoplayChecks(h) {
       const ally=c.allies.find(a=>a.id==='cagney');
       if(!ally||ally.kind!=='villager'||ally.armed!==true||ally.model?.look?.shirtRibbons!==true)fail('Cagney lost her own appearance or stopped fighting back');
     }
-    if(q.stage==='escorting'&&q.ambushCleared&&!saveChecked&&c.phase!=='active'&&h.mode()==='playing'){
+    if(q.stage==='escorting'&&cleared(q)&&!saveChecked&&c.phase!=='active'&&h.mode()==='playing'){
       const health=q.hp,position=h.person();
       check(h.save(),'An escort checkpoint can be saved after the road fight');
       check(h.reload(),'The saved escort resumes in the real game');await frames(2);
-      check(h.quest().ambushCleared&&h.quest().enemies.every(hp=>hp===0)&&h.quest().hp===health,'Loading preserves the defeated cagnappers and Cagney health');
+      check(cleared(h.quest())&&h.quest().enemies.every(hp=>hp===0)&&h.quest().hp===health,'Loading preserves the defeated cagnappers and Cagney health');
       check(gap(position,h.person())<1,'Loading keeps Cagney at her saved road position');
       h.resume();check(h.pilot().enabled&&h.pilot().id==='cagney','P resumes the selected escort after loading');
       saveChecked=true;last=h.position();motion.resetWindow();
@@ -56,7 +58,7 @@ export async function runCagneyAutoplayChecks(h) {
   }
   check(h.quest().stage==='complete','The pilot finishes the escort and speaks to Cagney at her home');
   check(stages.has('escorting')&&stages.has('ambushed')&&stages.has('home'),'The real escort, ambush and home stages were played');
-  check(combatSeen&&attackSeen&&h.quest().ambushCleared&&gangs.size===CAGNEY_WAVES.length,'Ordinary player combat defeats all three gangs of cagnappers');
+  check(combatSeen&&attackSeen&&cleared(h.quest())&&gangs.size===CAGNEY_WAVES.length,'Ordinary player combat defeats all three gangs of cagnappers');
   check(saveChecked,'A mid-escort save and load were exercised');
   check(travelled>250&&gap(h.person(),CAGNEY_HOME)<2.6,'The traveler and Cagney walk the western road to her actual house');
   check(largestStep<4,'Autoplay does not teleport during the quest');
@@ -70,7 +72,7 @@ export async function runCagneyAutoplayChecks(h) {
   check(JSON.stringify(h.checkpointCopy())===savedBefore,'Autoplay preserves the normal saved adventure');
   const completion={seconds:Math.round((performance.now()-start)/1000),travelled,largestStep,stages:[...stages],position:h.position(),cagney:h.person(),following,samples};
   await startFromMenu();
-  check(!h.quest().ambushCleared&&h.quest().wave===0&&h.quest().enemies.every(hp=>hp===48),'A repeated playtest resets the completed encounters');
+  check(!cleared(h.quest())&&h.quest().wave===0&&h.quest().enemies.every(hp=>hp===48),'A repeated playtest resets the completed encounters');
   await until(()=>h.quest().stage==='escorting'&&h.mode()==='playing','The second run did not accept the escort',60);
   const restart=h.position();await until(()=>gap(restart,h.position())>1.5,'The restarted pilot did not walk',30);
   check(h.tracked()==='cagney-escort','Restarting focuses the escort again');
