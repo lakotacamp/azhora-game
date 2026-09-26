@@ -18,7 +18,8 @@ export function createEscortMotionChecks(){
     const dt=sample.time-before.time;
     if(dt<=0||dt>.25){lastSpeed=lastInput=lastAngular=null;warmup=0;return;}
     const guidePace=distance(sample.guide,before.guide)/dt,separation=distance(sample.position,sample.guide);
-    if(guidePace<1.5||guidePace>4.5||separation<2||separation>6){lastSpeed=lastInput=lastAngular=null;warmup=0;return;}
+    // A guide may walk or, like Cagney, run (never faster than the traveler's own run of 7.2).
+    if(guidePace<1.5||guidePace>7.4||separation<2||separation>6){lastSpeed=lastInput=lastAngular=null;warmup=0;return;}
     warmup+=dt;
     const speed=distance(sample.position,before.position)/dt,input=Math.hypot(sample.input.forward,sample.input.side);
     const currentLook=look(sample),oldLook=look(before),angular={heading:angleDelta(currentLook.heading,oldLook.heading)/dt,pitch:(currentLook.pitch-oldLook.pitch)/dt};

@@ -216,7 +216,7 @@ import { runRepublicDesktopChecks } from './luscia-republic-desktop-checks.js';
 import { createCompanyTransport } from './company-transport.js';
 import { clearLine, createAutopilot, planGoal } from './autopilot.js';
 import { createBenAutopilot } from './ben-autopilot.js';
-import { CAGNEY, CAGNEY_START, CAGNEY_HOME, CAGNEY_QUEST, CAGNEY_AMBUSH, CAGNAPPERS, createCagneyQuest } from './cagney-quest.js';
+import { CAGNEY, CAGNEY_START, CAGNEY_HOME, CAGNEY_QUEST, CAGNEY_WAVES, ALL_CAGNAPPERS, cagneyWave, createCagneyQuest } from './cagney-quest.js';
 import { createCagneyHost } from './cagney-host.js';
 import { ALEX, ALEX_DOOR, ALEX_FACING, ALEX_BOUT_ID, ALEX_STEP } from './alex.js';
 import { createAlexHost } from './alex-host.js';
@@ -3137,7 +3137,7 @@ function init() {
     }});
   cagneyHost=createCagneyHost({quest:cagneyQuest,npc:npcById.get(CAGNEY.id),world,combat,player,crime,corpses:corpseHost,toast,
     refresh:refreshQuest,save:()=>saveRoad(false),openDialogue,closeDialogue,focus:selectQuest,atHome:()=>alexHost?.cagneyAtHome()??null,
-    makeAmbusher:spec=>{const actor=createCharacter({...spec.model,armed:true});actor.group.name=spec.id;actor.ambushCover=createAmbushCamouflage(actor,CAGNAPPERS.findIndex(e=>e.id===spec.id));setShadowCasting(actor,false);scene.add(actor.group);return actor;},
+    makeAmbusher:spec=>{const actor=createCharacter({...spec.model,armed:true});actor.group.name=spec.id;actor.ambushCover=createAmbushCamouflage(actor,ALL_CAGNAPPERS.findIndex(e=>e.id===spec.id));setShadowCasting(actor,false);scene.add(actor.group);return actor;},
     reward:coins=>{inventory.add(COPPER_ITEM,coins);inventory.refresh();homeResidents.begin(CAGNEY.id);toast(`${coins} copper received. Cagney is home.`,CAGNEY_QUEST.title.toUpperCase());}});
   const homeFerryView=createHomeFerryView({scene}),homeFerryMaterials=new WeakMap();
   function homePassengerOpacity(npc,opacity){
@@ -5693,7 +5693,7 @@ function init() {
     stopAutopilot();testingEnabled=true;show('testing-badge',true);closeDialogue();questChoice.close();
     if(riding.mounted)stepDown(true);prepareTesting();combat.revive();magic.stop();combatEvents.length=0;
     homeResidents.reset(CAGNEY.id);cagneyQuest.restore();sessionCheckpoint.clear();recoveryInfo=null;
-    const ids=[CAGNEY.id,...CAGNAPPERS.map(npc=>npc.id)],dead=fallen.snapshot();dead.ids=dead.ids.filter(id=>!ids.includes(id));fallen.restore(dead);
+    const ids=[CAGNEY.id,...ALL_CAGNAPPERS.map(npc=>npc.id)],dead=fallen.snapshot();dead.ids=dead.ids.filter(id=>!ids.includes(id));fallen.restore(dead);
     const bodies=corpseHost.snapshot();bodies.bodies=bodies.bodies.filter(body=>!ids.includes(body.sourceId)&&!ids.includes(body.npcId));corpseHost.restore(bodies);
     const law=crime.snapshot();for(const id of ids)delete law.people[id];law.bounty=0;law.phase='clear';crime.restore(law);
     const npc=npcById.get(CAGNEY.id);Object.assign(npc,{hidden:false,fallen:false,crimeDown:false,lying:false,combatPosition:null});
@@ -7372,7 +7372,7 @@ function init() {
           rewardReady:id=>{homeResidents.reset(id);const npc=npcById.get(id);let at;
             if(id===BEN.id){spiderQuest.restore(createSpiderQuest().snapshot());spiderQuest.ask();spiderQuest.accept();spiderQuest.begin();spiderQuest.settle({spiderDead:true});at=SPIDER_DEN.allies[0];}
             else if(id===TROY.id){murder.restore(createMurderQuest().snapshot());murder.begin();for(const key of Object.keys(TESTIMONY))murder.hear(key);murder.accuse(MURDERER,playSeconds);at=magicTestHomes.get(id);}
-            else{const data=createCagneyQuest().snapshot();data.stage='home';data.ambushCleared=true;data.enemies=data.enemies.map(()=>0);data.walk={...data.walk,...CAGNEY_HOME};cagneyQuest.restore(data);cagneyHost.restore();at=CAGNEY_HOME;}
+            else{const data=createCagneyQuest().snapshot();data.stage='home';data.wave=CAGNEY_WAVES.length;data.enemies=data.enemies.map(()=>0);data.walk={...data.walk,...CAGNEY_HOME};cagneyQuest.restore(data);cagneyHost.restore();at=CAGNEY_HOME;}
             Object.assign(npc,{hidden:false,fallen:false,lying:false,combatPosition:null,escorting:false,walkingWith:false});
             npc.actor.group.position.set(at.x,world.heightAt(at.x,at.z),at.z);world.npcPositions[id]={x:at.x,z:at.z};
             player.group.position.set(at.x+2,world.heightAt(at.x+2,at.z),at.z);refreshQuest();},
@@ -7828,7 +7828,7 @@ function init() {
       // arrival sequence and anything else that runs after it can ask for it (PLAYABLE, companyFor).
       playerCharacter:()=>playerId,chooseCharacter:id=>characterSelect.select(id),
       // Where the camera is and what it is doing: main.cjs --review-views prints it beside each picture.
-      camera:()=>({cagnappers:{stage:cagneyQuest.state.stage,health:combat.state.encounterId===CAGNEY_AMBUSH.id?combat.state.enemies.map(e=>({id:e.id,hp:e.hp,maxHp:e.maxHp})):[]},magicTeachers:[BEN,LIZ,TROY].map(({id})=>({id,visible:!!npcById.get(id)?.marker.visible,kind:npcById.get(id)?.markerKind})),position:camera.position.toArray().map(v=>+v.toFixed(2)),focus:cameraFocus.toArray().map(v=>+v.toFixed(2)),yaw:+yaw.toFixed(2),pitch:+pitch.toFixed(2),distance:+distance.toFixed(2),
+      camera:()=>({cagnappers:{stage:cagneyQuest.state.stage,health:cagneyWave(combat.state.encounterId)?combat.state.enemies.map(e=>({id:e.id,hp:e.hp,maxHp:e.maxHp})):[]},magicTeachers:[BEN,LIZ,TROY].map(({id})=>({id,visible:!!npcById.get(id)?.marker.visible,kind:npcById.get(id)?.markerKind})),position:camera.position.toArray().map(v=>+v.toFixed(2)),focus:cameraFocus.toArray().map(v=>+v.toFixed(2)),yaw:+yaw.toFixed(2),pitch:+pitch.toFixed(2),distance:+distance.toFixed(2),
         // What the camera was given and what it actually got: the difference is whatever it was
         // pulled in against, and it is the difference that tells you the shot is wrong.
         stoodBackBy:+cameraPullIn(cameraFocus,distance,yaw).toFixed(2),mode,
@@ -8432,15 +8432,20 @@ function init() {
           const p=world.npcPositions[MARK.id];player.group.position.set(p.x+1,world.heightAt(p.x+1,p.z+3),p.z+3);yaw=.3;pitch=.3;distance=targetDistance=7;settleCamera();
           if(view==='mark-lessons')conversation(npcById.get(MARK.id));return;
         }
-        if(view==='cagnappers-hidden'||view==='cagnappers-active'){
+        // cagnappers-hidden/-active is the middle gang, the first one anybody met; cagnappers-first-*
+        // and cagnappers-last-* are the gangs before and after it.
+        const gangView=/^cagnappers-(?:(first|last)-)?(hidden|active)$/.exec(view);
+        if(gangView){
           testTravel('village');stopAutopilot();closeDialogue();combat.revive();crime.restore();corpseHost.restore();questStage=QUEST_DONE;
-          cagneyQuest.restore(createCagneyQuest().snapshot());cagneyHost.restore();
-          const center=CAGNEY_AMBUSH.center,npc=npcById.get(CAGNEY.id),active=view==='cagnappers-active';
-          player.group.position.set(center.x+(active?15:29),world.heightAt(center.x+15,center.z),center.z);
-          npc.actor.group.position.set(center.x+9,world.heightAt(center.x+9,center.z),center.z);
+          const wave=CAGNEY_WAVES[{first:0,last:2}[gangView[1]]??1],data=createCagneyQuest().snapshot();data.wave=wave.index;
+          cagneyQuest.restore(data);cagneyHost.restore();
+          const center=wave.center,f=wave.forward,back=d=>({x:center.x-f.dx*d,z:center.z-f.dz*d}),npc=npcById.get(CAGNEY.id),active=gangView[2]==='active';
+          const stand=back(active?15:29),waiting=back(9),target=back(2);
+          player.group.position.set(stand.x,world.heightAt(stand.x,stand.z),stand.z);
+          npc.actor.group.position.set(waiting.x,world.heightAt(waiting.x,waiting.z),waiting.z);
           if(active){cagneyQuest.accept();cagneyHost.frame(3,true);}
-          reviewFrozen=true;player.group.visible=active;reviewTarget=new THREE.Vector3(center.x+2,world.heightAt(center.x,center.z)+1.4,center.z);
-          yaw=Math.PI/2+.1;pitch=.24;distance=targetDistance=active?23:32;
+          reviewFrozen=true;player.group.visible=active;reviewTarget=new THREE.Vector3(target.x,world.heightAt(center.x,center.z)+1.4,target.z);
+          yaw=Math.atan2(-f.dx,-f.dz)+.1;pitch=.24;distance=targetDistance=active?23:32;
           refreshQuest();skillAnnouncements.clear();clearTimeout(toastTimer);$('toast').classList.remove('visible');settleCamera();return;
         }
         if(view==='cagney'||view==='cagney-home'||view==='liz-apiary'){
@@ -9377,7 +9382,7 @@ function init() {
         // and the start of the bout that follows a flirt, fists up.
         if(view==='alex-cagney'||view==='alex-bout'){questStage=QUEST_DONE;combat.finishPractice();
           const step=QUEST_HOMES[CAGNEY.id];
-          cagneyQuest.restore({version:1,stage:'complete',ambushCleared:true,hp:85,enemies:[0,0,0],walk:{x:step.porch.x,z:step.porch.z,waypoint:0,waiting:false}});
+          cagneyQuest.restore({version:2,stage:'complete',wave:CAGNEY_WAVES.length,hp:85,enemies:[0,0,0],walk:{x:step.porch.x,z:step.porch.z,waypoint:0,waiting:false}});
           homeResidents.restore({version:1,people:{[CAGNEY.id]:{phase:'outside',leg:'home',position:{x:step.porch.x,z:step.porch.z},yaw:step.yaw+Math.PI,clock:0}}});
           alexHost.frame(.1,true);const alex=npcById.get(ALEX.id);alex.actor.group.position.set(ALEX_STEP.x,world.heightAt(ALEX_STEP.x,ALEX_STEP.z),ALEX_STEP.z);
           const out={x:Math.sin(step.yaw+Math.PI),z:Math.cos(step.yaw+Math.PI)},mid={x:(step.porch.x+ALEX_STEP.x)/2,z:(step.porch.z+ALEX_STEP.z)/2};

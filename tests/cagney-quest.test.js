@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAGNEY, CAGNEY_START, CAGNEY_HOME, CAGNEY_ROUTE, CAGNEY_AMBUSH, CAGNAPPERS,
-  CAGNEY_QUEST, createCagneyQuest, validateCagneySnapshot, cagneyGuideTarget } from '../src/cagney-quest.js';
+import { CAGNEY, CAGNEY_START, CAGNEY_HOME, CAGNEY_ROUTE, CAGNEY_AMBUSH, CAGNAPPERS, CAGNEY_WAVES, ALL_CAGNAPPERS,
+  CAGNEY_QUEST, CAGNEY_HEALTH, createCagneyQuest, validateCagneySnapshot, cagneyGuideTarget, cagneyWave } from '../src/cagney-quest.js';
 import { regionAt } from '../src/region-world.js';
 
 test('Cagney only pays once after surviving the cagnappers and reaching her home', () => {
@@ -9,8 +9,13 @@ test('Cagney only pays once after surviving the cagnappers and reaching her home
   assert.equal(quest.take(), 0);
   quest.ask(); assert.ok(quest.accept());
   assert.equal(quest.arrive(CAGNEY_HOME), false, 'The ambush cannot be skipped by teleporting her home');
-  assert.ok(quest.begin());
-  assert.ok(quest.settle({ hp: 60, enemies: [0, 0, 0] }));
+  for (const wave of CAGNEY_WAVES) {
+    assert.equal(quest.state.currentWave.id, wave.id);
+    assert.ok(quest.begin());
+    assert.ok(quest.settle({ hp: 60, enemies: [0, 0, 0] }));
+    if (wave.index < 2) assert.equal(quest.arrive(CAGNEY_HOME), false, 'every gang has to be beaten');
+  }
+  assert.equal(quest.state.ambushCleared, true); assert.equal(quest.state.currentWave, null);
   assert.equal(quest.arrive(CAGNEY_START), false);
   assert.ok(quest.arrive(CAGNEY_HOME));
   assert.equal(quest.take(), CAGNEY_QUEST.reward);
@@ -60,7 +65,7 @@ test('saving during combat records actual injuries without ending the active fig
 test('defeating the gang after Cagney is lost records their deaths without restoring the escort', () => {
   const quest = createCagneyQuest(); quest.accept(); quest.begin(); quest.settle({ hp: 0 });
   assert.ok(quest.rememberEnemies([0, 0, 0]));
-  assert.equal(quest.state.stage, 'captured'); assert.equal(quest.state.ambushCleared, true);
+  assert.equal(quest.state.stage, 'captured'); assert.equal(quest.state.ambushCleared, false, 'the gangs further on were never met');
   assert.equal(quest.take(), 0); assert.equal(quest.accept(), false);
   const loaded = createCagneyQuest(); assert.ok(loaded.restore(quest.snapshot()));
   assert.deepEqual(loaded.state.enemies, [0, 0, 0]);
@@ -92,4 +97,94 @@ test('invalid and contradictory saves are rejected without changing the live que
     { ...before, walk: { ...before.walk, waypoint: 1000 } }, { ...before, enemies: [48, 48] }]) {
     assert.equal(quest.restore(data), false); assert.deepEqual(quest.snapshot(), before);
   }
+});
+
+/**
+ * Two more waves (the user, 26 September 2026): one midway between the start and the first gang
+ * anybody met, one midway between that gang and her door.
+ */
+const RUNS = [0];
+for (let i = 1; i < CAGNEY_ROUTE.length; i++) RUNS.push(RUNS[i - 1] + Math.hypot(CAGNEY_ROUTE[i].x - CAGNEY_ROUTE[i - 1].x, CAGNEY_ROUTE[i].z - CAGNEY_ROUTE[i - 1].z));
+function arcOf(p) {
+  let best = { distance: Infinity, arc: 0 };
+  for (let i = 1; i < CAGNEY_ROUTE.length; i++) {
+    const a = CAGNEY_ROUTE[i - 1], b = CAGNEY_ROUTE[i], dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2)), distance = Math.hypot(a.x + dx * t - p.x, a.z + dz * t - p.z);
+    if (distance < best.distance) best = { distance, arc: RUNS[i - 1] + Math.sqrt(l2) * t };
+  }
+  return best;
+}
+
+test('three gangs wait on her road: midway to the first gang met, that gang, and midway from it to her door', () => {
+  assert.equal(CAGNEY_WAVES.length, 3);
+  assert.equal(CAGNEY_WAVES[1], cagneyWave(CAGNEY_AMBUSH.id), 'the first gang anybody met is the middle one');
+  assert.equal(CAGNEY_WAVES[1].enemies, CAGNAPPERS);
+  const start = arcOf(CAGNEY_START).arc, middle = arcOf(CAGNEY_AMBUSH.center).arc, end = RUNS.at(-1);
+  const [first, , last] = CAGNEY_WAVES.map(wave => arcOf(wave.center));
+  assert.ok(first.distance < .01 && last.distance < .01, 'on the road itself');
+  assert.ok(Math.abs(first.arc - (start + middle) / 2) < .5, `first gang midway (${first.arc} of ${start}..${middle})`);
+  assert.ok(Math.abs(last.arc - (middle + end) / 2) < .5, `last gang midway (${last.arc} of ${middle}..${end})`);
+  assert.equal(new Set(ALL_CAGNAPPERS.map(e => e.id)).size, 9, 'nine different men');
+  assert.equal(new Set(CAGNEY_WAVES.map(w => w.id)).size, 3);
+  for (const wave of CAGNEY_WAVES) {
+    assert.equal(wave.enemies.length, 3);
+    // She is held short of a gang once her next waypoint is past it.
+    assert.ok(arcOf(CAGNEY_ROUTE[wave.waypoint]).arc > arcOf(wave.center).arc);
+    assert.ok(arcOf(CAGNEY_ROUTE[wave.waypoint - 1]).arc <= arcOf(wave.center).arc);
+    for (const foe of wave.enemies) {
+      const off = Math.abs((foe.x - wave.center.x) * wave.forward.dz - (foe.z - wave.center.z) * wave.forward.dx);
+      assert.ok(off > 6 && off < 9, `${foe.id} waits in cover beside the road, not on it`);
+    }
+    const back = (wave.checkpoint.x - wave.center.x) * wave.forward.dx + (wave.checkpoint.z - wave.center.z) * wave.forward.dz;
+    assert.ok(back < -20, 'the retry point is back up the road');
+  }
+  assert.ok(CAGNEY_WAVES.every((wave, i) => i === 0 || wave.waypoint >= CAGNEY_WAVES[i - 1].waypoint));
+  assert.equal(regionAt(CAGNEY_WAVES[0].center.x, CAGNEY_WAVES[0].center.z)?.name, 'Luscia');
+  assert.equal(regionAt(CAGNEY_WAVES[2].center.x, CAGNEY_WAVES[2].center.z)?.name, 'Elagos');
+});
+
+test('a beaten gang lets the next one in at full health, and a half-beaten one keeps its wounds', () => {
+  const quest = createCagneyQuest(); quest.accept();
+  assert.equal(quest.state.wave, 0);
+  quest.begin(); quest.settle({ hp: 70, enemies: [0, 20, 48] });
+  assert.equal(quest.state.wave, 0); assert.deepEqual(quest.state.enemies, [0, 20, 48]);
+  assert.equal(quest.state.hp, 70, 'a fight broken off is not a gang beaten: her wounds stay');
+  quest.begin(); quest.settle({ hp: 61, enemies: [0, 0, 0] });
+  assert.equal(quest.state.wave, 1); assert.deepEqual(quest.state.enemies, [48, 48, 48]);
+  assert.equal(quest.state.hp, CAGNEY_HEALTH, 'she binds her cuts before the next gang');
+  assert.equal(quest.state.currentWave, CAGNEY_WAVES[1]);
+  assert.match(quest.trackableView().detail, /2 gangs of cagnappers are still waiting/);
+  // Saved the moment the last man of a gang fell, the gang is beaten on loading.
+  quest.begin(); assert.ok(quest.rememberBattle({ hp: 50, enemies: [0, 0, 0] }));
+  const loaded = createCagneyQuest(); assert.ok(loaded.restore(quest.snapshot()));
+  assert.equal(loaded.state.stage, 'escorting'); assert.equal(loaded.state.wave, 2); assert.deepEqual(loaded.state.enemies, [48, 48, 48]);
+  assert.match(loaded.trackableView().detail, /1 gang of cagnappers is still waiting/);
+});
+
+test('saves from before the extra gangs keep their place on the road', () => {
+  const v1 = (stage, cleared, enemies, waypoint) => ({ version: 1, stage, ambushCleared: cleared, hp: stage === 'captured' || stage === 'dead' ? 0 : 60, enemies,
+    walk: { ...CAGNEY_ROUTE[waypoint], waypoint, waiting: false } });
+  const loaded = saved => { const quest = createCagneyQuest(); assert.ok(quest.restore(saved), JSON.stringify(saved)); return quest.state; };
+  // Not yet at the first gang: all three still ahead.
+  assert.equal(loaded(v1('escorting', false, [48, 48, 48], 0)).wave, 0);
+  // Past where the new first gang waits but not through the old one: that one is next, wounds and all.
+  const between = CAGNEY_WAVES[0].waypoint;
+  const midway = loaded(v1('escorting', false, [0, 30, 48], between));
+  assert.equal(midway.wave, 1); assert.deepEqual(midway.enemies, [0, 30, 48]);
+  // Through the old one: the last gang is still to come.
+  const through = loaded(v1('escorting', true, [0, 0, 0], CAGNEY_WAVES[1].waypoint));
+  assert.equal(through.wave, 2); assert.deepEqual(through.enemies, [48, 48, 48]);
+  // Home or paid: all done.
+  for (const stage of ['home', 'complete']) {
+    const done = loaded(v1(stage, true, [0, 0, 0], CAGNEY_ROUTE.length - 1));
+    assert.equal(done.wave, 3); assert.equal(done.ambushCleared, true);
+  }
+  assert.equal(loaded(v1('captured', false, [0, 12, 48], between)).stage, 'captured');
+  assert.equal(validateCagneySnapshot(v1('escorting', true, [0, 12, 48], 0)), false, 'a v1 save that contradicts itself');
+});
+
+test('Cagney runs home, a little slower than the traveler can', () => {
+  assert.ok(CAGNEY_QUEST.pace > 4.2, 'faster than the traveler walks');
+  assert.ok(CAGNEY_QUEST.pace < 7.2 && CAGNEY_QUEST.pace > 6, 'a little slower than the traveler runs');
+  assert.equal(cagneyGuideTarget(CAGNEY_ROUTE[2], CAGNEY_ROUTE[2], { waypoint: 2 }).pace, CAGNEY_QUEST.pace);
 });

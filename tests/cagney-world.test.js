@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
 import { sourceModule } from './module-loader.js';
-import { CAGNEY, CAGNEY_START, CAGNEY_ROUTE, CAGNEY_HOME, CAGNAPPERS, CAGNEY_AMBUSH } from '../src/cagney-quest.js';
+import { CAGNEY, CAGNEY_START, CAGNEY_ROUTE, CAGNEY_HOME, CAGNEY_WAVES } from '../src/cagney-quest.js';
 import { bodyWorld, stepToward, BODY } from '../src/bodies.js';
 import { canStand } from '../src/game-state.js';
 
@@ -28,10 +28,13 @@ test('Cagney can walk from the prophet along the actual west road and through Am
   assert.ok(Math.hypot(position.x - CAGNEY_HOME.x, position.z - CAGNEY_HOME.z) < .25);
 });
 
-test('the Cagnappers and retreat checkpoint have dry usable ground', () => {
-  for (const p of [...CAGNAPPERS, CAGNEY_AMBUSH.checkpoint]) {
-    assert.ok(canStand(p.x, p.z, world, BODY.person), `clear ground at ${p.x}, ${p.z}`);
-    assert.ok(world.heightAt(p.x, p.z) > world.waterAt(p.x, p.z), 'the ambush is not in water');
+test('every gang of cagnappers, its retreat checkpoint and where she waits for it have dry usable ground', () => {
+  for (const wave of CAGNEY_WAVES) {
+    const waiting = { x: wave.center.x - wave.forward.dx * 9, z: wave.center.z - wave.forward.dz * 9 };
+    for (const p of [...wave.enemies, wave.checkpoint, wave.center, waiting]) {
+      assert.ok(canStand(p.x, p.z, world, BODY.person), `${wave.id}: clear ground at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`);
+      assert.ok(world.heightAt(p.x, p.z) > world.waterAt(p.x, p.z), `${wave.id}: the ambush is not in water`);
+    }
   }
 });
 
@@ -49,13 +52,14 @@ test('Cagney keeps her long hair, glasses and shirt ribbons on the ordinary civi
 
 test('cagnappers wait off the road in permanent shrubs and can step out of their cover',()=>{
   assert.ok(scene.getObjectByName('Cagnapper ambush undergrowth'));
-  assert.equal(world.colliders.filter(c=>c.kind==='cagnapper-sapling').length,6);
-  for(const foe of CAGNAPPERS){
-    assert.ok(Math.abs(foe.z-CAGNEY_AMBUSH.center.z)>6,'Ambushers are off the road');
+  assert.equal(world.colliders.filter(c=>c.kind==='cagnapper-sapling').length,6*CAGNEY_WAVES.length,'two saplings behind each of nine men');
+  for(const wave of CAGNEY_WAVES)for(const foe of wave.enemies){
+    const c=wave.center,off=Math.abs((foe.x-c.x)*wave.forward.dz-(foe.z-c.z)*wave.forward.dx);
+    assert.ok(off>6,'Ambushers are off the road');
     const position={x:foe.x,z:foe.z},nav=bodyWorld(world).moving(position,BODY.person);
-    for(let n=0;n<300&&Math.hypot(position.x-CAGNEY_AMBUSH.center.x,position.z-CAGNEY_AMBUSH.center.z)>.3;n++)
-      stepToward(position,CAGNEY_AMBUSH.center,2.8/30,nav,BODY.person);
-    assert.ok(Math.hypot(position.x-CAGNEY_AMBUSH.center.x,position.z-CAGNEY_AMBUSH.center.z)<.3,'Cover leaves an exit to the road');
+    for(let n=0;n<300&&Math.hypot(position.x-c.x,position.z-c.z)>.3;n++)
+      stepToward(position,c,2.8/30,nav,BODY.person);
+    assert.ok(Math.hypot(position.x-c.x,position.z-c.z)<.3,`${foe.id}: cover leaves an exit to the road`);
   }
 });
 

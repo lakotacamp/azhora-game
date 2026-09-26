@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCagneyHost } from '../src/cagney-host.js';
-import { createCagneyQuest, CAGNEY, CAGNEY_AMBUSH, CAGNAPPERS } from '../src/cagney-quest.js';
+import { createCagneyQuest, CAGNEY, CAGNEY_AMBUSH, CAGNAPPERS, CAGNEY_WAVES, CAGNEY_HEALTH } from '../src/cagney-quest.js';
 import { createCombat } from '../src/combat.js';
 
-function fixture({realCombat=false,region='Drent'}={}){
-  const quest=createCagneyQuest(),at={...CAGNEY_AMBUSH.center},pos={...at,y:0,set(x,y,z){Object.assign(this,{x,y,z});}};
+function fixture({realCombat=false,region='Drent',wave=1}={}){
+  const quest=createCagneyQuest(),at={...CAGNEY_WAVES[wave].center};
+  if(wave){const data=quest.snapshot();data.wave=wave;assert.ok(quest.restore(data));}
+  const pos={...at,y:0,set(x,y,z){Object.assign(this,{x,y,z});}};
   const npc={id:CAGNEY.id,actor:{group:{position:pos}}},world={bounds:{minX:-2000,maxX:1000,minZ:-1000,maxZ:1000},colliders:[],heightAt:()=>1,regionAt:()=>({name:region}),npcPositions:{}},player={group:{position:{x:at.x+3,z:at.z}}};
   const events=[],created=[],combatEvents=[],combat=realCombat?createCombat({world,position:player.group.position,onEvent:e=>combatEvents.push(e)}):{state:{phase:'peaceful',encounterId:null,enemies:[],allies:[]},startEncounter(spec){
     this.state={phase:'active',encounterId:spec.id,enemies:spec.enemies.map(e=>({...e,hp:e.currentHp})),allies:spec.allies.map(e=>({...e,hp:e.currentHp}))};return true;}};
@@ -17,12 +19,14 @@ function fixture({realCombat=false,region='Drent'}={}){
   return{quest,npc,world,combat,player,events,created,host,begin,flush(){for(const e of combatEvents.splice(0))host.combatEvent(e);},get dialogue(){return dialogue;},setDown:()=>{down=true;}};
 }
 
-test('Cagney explains the seer prophecy and chooses an ordinary unarmed escort',()=>{
+test('Cagney explains the seer prophecy, and in the fight she fights back and is the one they came for',()=>{
   const f=fixture();f.host.conversation({id:CAGNEY.id});
   assert.match(f.dialogue[1].join(' '),/Caelom/);assert.match(f.dialogue[1].join(' '),/What the heck is a cagnapper/);
   f.dialogue[4].choices.find(c=>c.id==='cagney-accept').action();
   f.host.frame(.1,true);const ally=f.combat.state.allies[0];
-  assert.equal(ally.kind,'bystander');assert.equal(ally.capturable,true);assert.equal(ally.armed,false);
+  assert.equal(ally.kind,'villager');assert.equal(ally.capturable,undefined,'nobody takes her alive');assert.equal(ally.armed,true);
+  assert.equal(ally.hp,CAGNEY_HEALTH);
+  assert.ok(f.combat.state.enemies.every(e=>e.prey===CAGNEY.id),'every cagnapper is after her');
   assert.equal(ally.model.look.shirtRibbons,true);assert.equal(ally.model.look.glasses,true);assert.equal(ally.model.look.hat,false);
 });
 
@@ -146,4 +150,78 @@ test('waiting cagnappers crouch under cover and the same actors uncover on every
   f.host.frame(5,true);f.host.update(3);
   for(const actor of actors)assert.equal(actor.ambushCover.visible,false,'A reused combat renderer still gets an uncovered actor');
   assert.equal(f.created.length,3);
+});
+
+
+test('each gang in turn: a beaten one is gone from the road, and the next waits in its own cover',()=>{
+  const f=fixture({wave:0});f.host.update(0);
+  const first=CAGNEY_WAVES[0].enemies.map(e=>f.host.actor(e.id));
+  assert.ok(first.every(a=>a.group.visible),'the first gang waits');
+  f.begin();assert.equal(f.combat.state.encounterId,CAGNEY_WAVES[0].id);
+  assert.match(f.events.at(-1)[0],/make for Cagney/);
+  f.combat.state.enemies.forEach(e=>e.hp=0);f.combat.state.allies[0].hp=31;
+  f.combat.state.phase='victory';f.host.combatEvent({type:'victory'});
+  assert.equal(f.quest.state.wave,1);assert.equal(f.quest.state.stage,'escorting');
+  assert.equal(f.quest.state.hp,CAGNEY_HEALTH,'she binds her cuts');
+  assert.match(f.events.at(-1)[0],/Two more are waiting/);
+  f.host.update(1);assert.ok(first.every(a=>!a.group.visible),'the beaten gang is gone');
+  // On to the next: the old gang's ground no longer starts anything.
+  f.host.frame(5,true);assert.equal(f.quest.state.stage,'escorting');
+  const next=CAGNEY_WAVES[1].center;
+  f.npc.actor.group.position.set(next.x,1,next.z);Object.assign(f.player.group.position,{x:next.x+3,z:next.z});
+  f.host.frame(.1,true);
+  assert.equal(f.combat.state.encounterId,CAGNEY_WAVES[1].id,'the next gang springs its own ambush');
+  assert.deepEqual(f.combat.state.enemies.map(e=>e.id),CAGNEY_WAVES[1].enemies.map(e=>e.id));
+});
+
+test('the last gang beaten clears the road',()=>{
+  const f=fixture({wave:2});f.begin();
+  assert.equal(f.combat.state.encounterId,CAGNEY_WAVES[2].id);
+  f.combat.state.enemies.forEach(e=>e.hp=0);f.combat.state.phase='victory';f.host.combatEvent({type:'victory'});
+  assert.equal(f.quest.state.ambushCleared,true);assert.match(f.events.at(-1)[0],/last of the cagnappers/);
+  f.host.frame(5,true);assert.equal(f.combat.state.phase,'victory','nobody is left to spring anything');
+});
+
+/** Real combat, with the gang at the middle ambush in Luscia and nobody helping her. */
+function realFight({helping=false}={}){
+  const f=fixture({realCombat:true,region:'Luscia'});
+  f.begin();
+  const her=f.combat.state.allies[0];
+  if(!helping)Object.assign(f.player.group.position,{x:her.x+10,z:her.z});
+  return {f,her};
+}
+
+test('the cagnappers go for Cagney, not the traveler, and she fights back',()=>{
+  const {f,her}=realFight();
+  const start=f.combat.state.enemies.map(e=>Math.hypot(e.x-her.x,e.z-her.z)),unhurt=f.combat.state.player.hp;
+  for(let i=0;i<90;i++)f.combat.update(1/60);
+  f.combat.state.enemies.forEach((e,i)=>assert.ok(Math.hypot(e.x-her.x,e.z-her.z)<start[i],`${e.id} closes on her`));
+  let struck=false;
+  for(let i=0;i<60*20&&her.hp>0;i++){f.combat.update(1/60);if(f.combat.state.enemies.some(e=>e.hp<e.maxHp))struck=true;}
+  assert.equal(f.combat.state.player.hp,unhurt,'nobody touched the traveler');
+  assert.ok(struck,'she landed something');
+  assert.equal(her.hp,0,'without the traveler she does not survive them');
+  assert.ok(!her.wounded,'and she is killed, not carried off');
+  f.flush();
+  assert.equal(f.quest.state.stage,'dead');assert.equal(f.npc.hidden,true);
+});
+
+test('a cagnapper the traveler strikes turns on him for a while',()=>{
+  const {f,her}=realFight({helping:true}),foe=f.combat.state.enemies[0],p=f.player.group.position;
+  // Put him between the two of them, a sword's reach from the traveler.
+  Object.assign(her,{x:p.x-9,z:p.z});Object.assign(foe,{x:p.x-1.4,z:p.z});
+  for(const other of f.combat.state.enemies.slice(1))Object.assign(other,{x:her.x-6,z:her.z+(other===f.combat.state.enemies[1]?4:-4)});
+  const bearing=Math.atan2(foe.x-p.x,foe.z-p.z);
+  assert.ok(f.combat.attack(bearing));
+  const hp=foe.hp;
+  for(let i=0;i<40;i++)f.combat.update(1/60);
+  assert.ok(foe.hp<hp,'the blow lands');
+  for(let i=0;i<60;i++)f.combat.update(1/60);
+  assert.ok(Math.hypot(foe.x-p.x,foe.z-p.z)<3,'struck, he stays on the traveler');
+  // Unprovoked, the same man walks straight past the traveler for her.
+  const {f:g,her:her2}=realFight({helping:true}),foe2=g.combat.state.enemies[0],q=g.player.group.position;
+  Object.assign(her2,{x:q.x-9,z:q.z});Object.assign(foe2,{x:q.x-1.4,z:q.z});
+  for(const other of g.combat.state.enemies.slice(1))Object.assign(other,{x:her2.x-6,z:her2.z+(other===g.combat.state.enemies[1]?4:-4)});
+  for(let i=0;i<120;i++)g.combat.update(1/60);
+  assert.ok(Math.hypot(foe2.x-q.x,foe2.z-q.z)>3,'left alone, he goes for her');
 });

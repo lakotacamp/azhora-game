@@ -124,10 +124,11 @@ test('Cagney checkpoints keep escort injuries and casualties without replaying t
   const saved = { ...data, cagney: escort.snapshot() };
   assert.equal(checkpoint.save(saved).ok, true);
   assert.deepEqual(checkpoint.read().data.cagney, saved.cagney);
-  const damaged = { ...saved, cagney: { ...saved.cagney, ambushCleared: true } };
+  const damaged = { ...saved, cagney: { ...saved.cagney, wave: 3 } };
   assert.equal(checkpoint.save(damaged).ok, false);
   assert.deepEqual(checkpoint.read().data.cagney, saved.cagney, 'invalid data leaves the valid checkpoint untouched');
-  escort.begin(); escort.settle({ hp: 58, enemies: [0, 0, 0] }); escort.arrive(CAGNEY_HOME);
+  for (let gang = 0; gang < 3; gang++) { escort.begin(); escort.settle({ hp: 58, enemies: [0, 0, 0] }); }
+  assert.ok(escort.arrive(CAGNEY_HOME));
   assert.equal(escort.take(), 45);
   assert.equal(checkpoint.save({ ...data, cagney: escort.snapshot() }).ok, true);
   const restored = createCagneyQuest(); restored.restore(checkpoint.read().data.cagney);
@@ -140,7 +141,8 @@ test('checkpoints retain returning residents, a ferry in progress and a resident
   const { checkpoint, data } = fixture(), ben = createSpiderQuest(), troy = createMurderQuest(), cagney = createCagneyQuest();
   ben.ask(); ben.accept(); ben.begin(); ben.settle({ spiderDead: true }); ben.take('bounty');
   troy.begin(); for (const id of WITNESS_IDS) troy.hear(id); troy.accuse(MURDERER); troy.take('purse');
-  cagney.accept(); cagney.begin(); cagney.settle({ hp: 70, enemies: [0, 0, 0] }); cagney.arrive(CAGNEY_HOME); cagney.take();
+  cagney.accept(); for (let gang = 0; gang < 3; gang++) { cagney.begin(); cagney.settle({ hp: 70, enemies: [0, 0, 0] }); }
+  cagney.arrive(CAGNEY_HOME); assert.equal(cagney.take(), 45);
   const homes = { version: 1, people: {
     'ben-sorcerer': { phase: 'walking', leg: 'home', position: { x: -807, z: 240 }, yaw: -.7, clock: 0 },
     'bee-keeper': { phase: 'sailing', leg: 'quay', position: { x: FERRY_LANDINGS.peblos.ashore.x, z: FERRY_LANDINGS.peblos.ashore.z }, yaw: 0, clock: 23.5 },

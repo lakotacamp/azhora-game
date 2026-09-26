@@ -1,4 +1,4 @@
-import { CAGNEY_AMBUSH, CAGNEY_HOME } from './cagney-quest.js';
+import { CAGNEY_HOME, CAGNEY_WAVES, cagneyWave } from './cagney-quest.js';
 import { createEscortMotionChecks } from './escort-motion-checks.js';
 
 /** Drives the public F8 button and watches real render frames, ordinary travel and combat. */
@@ -25,7 +25,7 @@ export async function runCagneyAutoplayChecks(h) {
   check(!!h.checkpointCopy(),'A normal adventure checkpoint exists before testing');
   await startFromMenu();
   const start=performance.now(),initialMoney=h.inventory.count('copper-piece'),initial=h.position();
-  let last=initial,travelled=0,largestStep=0,combatSeen=false,attackSeen=false,saveChecked=false,lastReport=0;
+  let last=initial,travelled=0,largestStep=0,combatSeen=false,attackSeen=false,saveChecked=false,lastReport=0;const gangs=new Set();
   while(h.pilot().enabled){
     if(performance.now()-start>1200000)fail('The live escort exceeded its twenty-minute limit');
     if(h.mode()==='defeated'||['dead','captured'].includes(h.quest().stage))fail('A member of the escort party fell');
@@ -35,9 +35,10 @@ export async function runCagneyAutoplayChecks(h) {
     if(['escorting','ambushed','home'].includes(q.stage)&&h.tracked()!=='cagney-escort')fail('The escort lost objective focus');
     if(c.phase==='active'){
       combatSeen=true;attackSeen ||= c.player.action==='attack';
-      if(c.encounterId!==CAGNEY_AMBUSH.id)fail('An unrelated encounter interrupted the escort');
+      if(!cagneyWave(c.encounterId))fail('An unrelated encounter interrupted the escort');
+      gangs.add(c.encounterId);
       const ally=c.allies.find(a=>a.id==='cagney');
-      if(!ally||ally.kind!=='bystander'||ally.armed!==false||ally.model?.look?.shirtRibbons!==true)fail('Cagney lost her own appearance or civilian role');
+      if(!ally||ally.kind!=='villager'||ally.armed!==true||ally.model?.look?.shirtRibbons!==true)fail('Cagney lost her own appearance or stopped fighting back');
     }
     if(q.stage==='escorting'&&q.ambushCleared&&!saveChecked&&c.phase!=='active'&&h.mode()==='playing'){
       const health=q.hp,position=h.person();
@@ -55,7 +56,7 @@ export async function runCagneyAutoplayChecks(h) {
   }
   check(h.quest().stage==='complete','The pilot finishes the escort and speaks to Cagney at her home');
   check(stages.has('escorting')&&stages.has('ambushed')&&stages.has('home'),'The real escort, ambush and home stages were played');
-  check(combatSeen&&attackSeen&&h.quest().ambushCleared,'Ordinary player combat defeats all three cagnappers');
+  check(combatSeen&&attackSeen&&h.quest().ambushCleared&&gangs.size===CAGNEY_WAVES.length,'Ordinary player combat defeats all three gangs of cagnappers');
   check(saveChecked,'A mid-escort save and load were exercised');
   check(travelled>250&&gap(h.person(),CAGNEY_HOME)<2.6,'The traveler and Cagney walk the western road to her actual house');
   check(largestStep<4,'Autoplay does not teleport during the quest');
@@ -69,7 +70,7 @@ export async function runCagneyAutoplayChecks(h) {
   check(JSON.stringify(h.checkpointCopy())===savedBefore,'Autoplay preserves the normal saved adventure');
   const completion={seconds:Math.round((performance.now()-start)/1000),travelled,largestStep,stages:[...stages],position:h.position(),cagney:h.person(),following,samples};
   await startFromMenu();
-  check(!h.quest().ambushCleared&&h.quest().enemies.every(hp=>hp===48),'A repeated playtest resets the completed encounter');
+  check(!h.quest().ambushCleared&&h.quest().wave===0&&h.quest().enemies.every(hp=>hp===48),'A repeated playtest resets the completed encounters');
   await until(()=>h.quest().stage==='escorting'&&h.mode()==='playing','The second run did not accept the escort',60);
   const restart=h.position();await until(()=>gap(restart,h.position())>1.5,'The restarted pilot did not walk',30);
   check(h.tracked()==='cagney-escort','Restarting focuses the escort again');

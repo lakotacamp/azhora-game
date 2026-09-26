@@ -18,6 +18,8 @@ const ENEMY_TELL = .94;
 const ENEMY_ATTACK = .62;
 const ENEMY_CONTACT = .27;
 const ENEMY_RECOVERY = 1.35;
+/** How long an enemy with `prey` stays turned on the traveler after the traveler strikes him. */
+const PROVOKED_FOR = 4;
 // Each enemy kind has its own pace. Goblins keep the original timings; wolves
 // close faster, bite sooner and hit a little lighter.
 export const ENEMY_KINDS = Object.freeze({
@@ -249,6 +251,8 @@ function encounterConfig(config) {
     if (enemy.model !== undefined && (!enemy.model || typeof enemy.model !== 'object' || Array.isArray(enemy.model))) return null;
     // Somebody who fights with her hands is drawn with them empty (the brawler, Alex).
     if (enemy.armed !== undefined && typeof enemy.armed !== 'boolean') return null;
+    // Somebody who came for one person in particular (the cagnappers, for Cagney).
+    if (enemy.prey !== undefined && !identifier(enemy.prey)) return null;
     if (enemy.currentHp !== undefined && (!Number.isFinite(enemy.currentHp) || enemy.currentHp < 0 || enemy.currentHp > 100000)) return null;
     const hp = enemy.hp ?? 75, entry = enemy.entry ?? 0;
     if (!Number.isFinite(hp) || hp <= 0 || hp > 10000 || !Number.isFinite(entry) || entry < 0 || entry > 60
@@ -259,7 +263,7 @@ function encounterConfig(config) {
     seen.add(enemy.id); if (enemy.npcId) seen.add(enemy.npcId);
     enemies.push({ id: enemy.id, x: enemy.x, z: enemy.z, hp, entry, kind, ...(enemy.currentHp !== undefined ? { currentHp: enemy.currentHp } : {}), ...(enemy.look ? { look: enemy.look } : {}),
       ...(enemy.name ? { name: enemy.name } : {}), ...(enemy.npcId ? { npcId: enemy.npcId } : {}), ...(enemy.model ? { model: { ...enemy.model } } : {}),
-      ...(enemy.armed === false ? { armed: false } : {}) });
+      ...(enemy.armed === false ? { armed: false } : {}), ...(enemy.prey ? { prey: enemy.prey } : {}) });
   }
   const allies = [];
   if (config.allies !== undefined) {
@@ -488,7 +492,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     return withCurrentHealth(Object.assign(makeEnemy(spec.id, spec.kind, spec, spec.entry, Math.round(spec.hp * scale)), {
       ...(spec.look ? { look: spec.look } : {}), ...(spec.name ? { name: spec.name } : {}),
       ...(spec.npcId ? { npcId: spec.npcId } : {}), ...(spec.model ? { model: spec.model } : {}),
-      ...(spec.armed === false ? { armed: false } : {}),
+      ...(spec.armed === false ? { armed: false } : {}), ...(spec.prey ? { prey: spec.prey } : {}),
     }), spec);
   }
 
@@ -985,6 +989,8 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
 
   function hurtEnemy(enemy, damage, yaw, attribution = {}) {
     if (!enemy.active || enemy.action === 'dead') return;
+    // Struck by the traveler, a man who came for somebody else turns on him for a while (`prey`).
+    if (attribution.source === 'player') enemy.provokedAt = time;
     const timers = enemyTimers.get(enemy.id);
     if (enemy.kind === 'dummy') {
       enemy.action = 'hurt';
@@ -1569,8 +1575,17 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
 
   function clearAllies() { state.allies = []; allyTimers.clear(); }
 
-  /** The nearest standing target for an enemy: the traveler or a living ally. */
+  /**
+   * **Who an enemy goes for.** Whoever is nearest, as a rule - the traveler or somebody fighting
+   * beside him. An enemy with `prey` came for one person in particular (the cagnappers, for Cagney:
+   * src/cagney-quest.js) and goes for her while she is standing, whoever is nearer, unless the
+   * traveler has hit him in the last few seconds; then he turns on the traveler until it wears off.
+   */
   function enemyTarget(enemy) {
+    if (enemy.prey && !(Number.isFinite(enemy.provokedAt) && time - enemy.provokedAt < PROVOKED_FOR)) {
+      const prey = state.allies.find(ally => ally.active && (ally.id === enemy.prey || ally.npcId === enemy.prey));
+      if (prey) return { point: prey, ally: prey };
+    }
     let best = { point: position, ally: null }, bestDistance = distance(enemy, position);
     for (const ally of state.allies) {
       if (!ally.active) continue;

@@ -1,5 +1,5 @@
 import { clearLine, freeDirection, moveInput } from './autopilot.js';
-import { CAGNEY, CAGNEY_QUEST, CAGNEY_AMBUSH } from './cagney-quest.js';
+import { CAGNEY, CAGNEY_QUEST, cagneyWave } from './cagney-quest.js';
 import { createEscortFollower } from './escort-autopilot-follow.js';
 
 const gap=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z),still=()=>({forward:0,side:0,run:false});
@@ -47,9 +47,11 @@ export function createCagneyAutopilot({world,read,act={},options={}}={}) {
       speech=0;
       if(s.riding?.mounted){intent='Dismounting to escort Cagney';if(touch>.8){actions.push({type:'dismount'});touch=0;}}
       else if(c.phase==='active'){
-        if(c.encounterId!==CAGNEY_AMBUSH.id){stop('Another fight interrupted the escort.');return null;}
+        if(!cagneyWave(c.encounterId)){stop('Another fight interrupted the escort.');return null;}
         intent='Protecting Cagney';follower.reset();
-        const enemies=(c.enemies??[]).filter(e=>e.hp>0&&e.active!==false).sort((a,b)=>gap(a,s.position)-gap(b,s.position)),target=enemies[0];
+        // They are after her, so the one to stop is the one nearest her.
+        const from=s.cagney??s.position;
+        const enemies=(c.enemies??[]).filter(e=>e.hp>0&&e.active!==false).sort((a,b)=>gap(a,from)-gap(b,from)),target=enemies[0];
         if(target){
           yaw=Math.atan2(s.position.x-target.x,s.position.z-target.z);
           const threat=enemies.find(e=>gap(e,s.position)<3.1&&((e.action==='windup'&&e.progress>.65)||(e.action==='attack'&&e.progress<.65)));

@@ -4,7 +4,7 @@ import { createCagneyAutopilot } from '../src/cagney-autopilot.js';
 import { createBenAutopilot } from '../src/ben-autopilot.js';
 import { createEscortMotionChecks } from '../src/escort-motion-checks.js';
 import { createEscortFollower } from '../src/escort-autopilot-follow.js';
-import { CAGNEY_AMBUSH } from '../src/cagney-quest.js';
+import { CAGNEY_AMBUSH, CAGNEY_QUEST } from '../src/cagney-quest.js';
 
 const world={bounds:{minX:-2000,maxX:2000,minZ:-2000,maxZ:2000},colliders:[],heightAt:()=>1.5};
 const base=()=>({mode:'playing',position:{x:0,z:0},quest:{stage:'unmet'},cagney:{x:0,z:2,available:true},
@@ -53,26 +53,27 @@ test('failure and unrelated encounters stop autoplay without choosing a recovery
 
 // Drive the same ordinary movement and camera smoothing as the renderer. A
 // screenshot cannot detect the old 40 full-speed/start-stop changes per second.
-function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30}={}){
+function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30,pace=2.8,settle=3,turnAt=10}={}){
   const position={x:0,z:0},guide={x:0,z:-4,available:true},s={...base(),position,ben:guide,cagney:guide,quest:{stage,walk:{}}};
   const pilot=create({world,read:()=>s});pilot.start();
   const motion=createEscortMotionChecks();
   let cameraYaw=0,camera={x:0,z:10},lastSpeed=0,switches=0,maxSpeedDelta=0,maxCameraTurn=0,minGap=Infinity,maxGap=0;
   for(let frame=0;frame<seconds*fps;frame++){
     const dt=1/fps,time=frame*dt;
-    if(time<stopAt){if(turn&&time>=10)guide.x+=2.8*dt;else guide.z-=2.8*dt;}
+    if(time<stopAt){if(turn&&time>=turnAt)guide.x+=pace*dt;else guide.z-=pace*dt;}
     pilot.step(dt);assert.equal(pilot.active,true,pilot.stopReason);
     if(Number.isFinite(pilot.yaw))cameraYaw+=Math.atan2(Math.sin(pilot.yaw-cameraYaw),Math.cos(pilot.yaw-cameraYaw))*(1-Math.exp(-3.5*dt));
-    const {forward,side}=pilot.move,basis=pilot.move.basisYaw??cameraYaw,speed=Math.hypot(forward,side)*4.2;
-    position.x+=(-Math.sin(basis)*forward+Math.cos(basis)*side)*4.2*dt;
-    position.z+=(-Math.cos(basis)*forward-Math.sin(basis)*side)*4.2*dt;
+    // As the game does: a run is 7.2 at full input, a walk 4.2.
+    const {forward,side}=pilot.move,basis=pilot.move.basisYaw??cameraYaw,top=pilot.move.run?7.2:4.2,speed=Math.hypot(forward,side)*top;
+    position.x+=(-Math.sin(basis)*forward+Math.cos(basis)*side)*top*dt;
+    position.z+=(-Math.cos(basis)*forward-Math.sin(basis)*side)*top*dt;
     const previousLook=Math.atan2(position.x-camera.x,position.z-camera.z);
     const target={x:position.x+Math.sin(cameraYaw)*10,z:position.z+Math.cos(cameraYaw)*10};
     camera.x+=(target.x-camera.x)*(1-Math.exp(-5*dt));camera.z+=(target.z-camera.z)*(1-Math.exp(-5*dt));
     motion.observe({time:time+dt,position:{...position,y:1.5},guide:{...guide},input:{...pilot.move},
       camera:{...camera,y:7},focus:{...position,y:3}},true);
     const look=Math.atan2(position.x-camera.x,position.z-camera.z);
-    if(time>3){
+    if(time>settle){
       if((speed>0)!==(lastSpeed>0))switches++;
       maxSpeedDelta=Math.max(maxSpeedDelta,Math.abs(speed-lastSpeed));
       maxCameraTurn=Math.max(maxCameraTurn,Math.abs(Math.atan2(Math.sin(look-previousLook),Math.cos(look-previousLook))));
@@ -83,23 +84,30 @@ function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30}={
   return {switches,maxSpeedDelta,maxCameraTurn,minGap,maxGap,speed:lastSpeed,position,guide,motion:motion.result()};
 }
 
-for(const [name,create,stage] of [['Cagney',createCagneyAutopilot,'escorting'],['Ben',createBenAutopilot,'walking']]){
+// Cagney runs home (6.4, faster than a walk), so the traveler following her runs too, a little
+// further back; and his run is only a little faster than hers, so closing up from a standing start
+// takes him a while. Ben walks.
+const FOLLOWS=[['Cagney',createCagneyAutopilot,'escorting',{pace:CAGNEY_QUEST.pace,gap:4.5,settle:12,turnAt:14,seconds:36}],
+  ['Ben',createBenAutopilot,'walking',{pace:2.8,gap:3,settle:3,turnAt:10,seconds:30}]];
+for(const [name,create,stage,{pace,gap,settle,turnAt,seconds}] of FOLLOWS){
   test(`${name} autoplay keeps a continuous guide pace across frame rates instead of pumping forward`,()=>{
     for(const fps of [30,60,120]){
-      const run=followRun(create,stage,{fps});
+      const run=followRun(create,stage,{fps,pace,settle,turnAt,seconds});
       assert.equal(run.switches,0,JSON.stringify({fps,...run}));
       assert.ok(run.maxSpeedDelta<.02,JSON.stringify({fps,...run}));
-      assert.ok(Math.abs(run.speed-2.8)<.01);
-      assert.ok(run.minGap>2.7&&run.maxGap<3.1,JSON.stringify(run));
-      assert.ok(run.motion.seconds>25&&run.motion.stopRate===0&&run.motion.inputStopRate===0,JSON.stringify(run.motion));
+      assert.ok(Math.abs(run.speed-pace)<.01,JSON.stringify({fps,...run}));
+      assert.ok(run.minGap>gap-.3&&run.maxGap<gap+.1,JSON.stringify(run));
+      assert.ok(run.motion.seconds>seconds-settle-5&&run.motion.stopRate===0&&run.motion.inputStopRate===0,JSON.stringify(run.motion));
       assert.equal(run.motion.cameraReversalRate,0);
     }
   });
   test(`${name} follows a road corner without camera steering feedback and settles when the guide stops`,()=>{
-    const run=followRun(create,stage,{turn:true,stopAt:20});
+    const run=followRun(create,stage,{turn:true,stopAt:turnAt+10,pace,settle,turnAt,seconds});
     assert.ok(run.maxCameraTurn<.06,JSON.stringify(run));
-    assert.ok(run.minGap>2.1&&run.maxGap<3.3,JSON.stringify(run));
-    assert.ok(run.maxSpeedDelta<=8/60+.001,JSON.stringify(run));
+    // Stopping behind her from a run takes him closer than he follows, but never into her back.
+    assert.ok(run.minGap>2.1&&run.maxGap<gap+.3,JSON.stringify(run));
+    const brisk=pace>4.2?7.2/4.2:1;
+    assert.ok(run.maxSpeedDelta<=8*brisk/60+.001,JSON.stringify(run));
     assert.ok(run.switches<=1,JSON.stringify(run));
     assert.equal(run.speed,0,'the traveler stays still after the guide stops');
     assert.ok(Math.hypot(run.position.x-run.guide.x,run.position.z-run.guide.z)>2.4,JSON.stringify(run));
