@@ -11,7 +11,7 @@ function fixture() {
   const counts = new Map(), inventory = { add(id, n) { counts.set(id, (counts.get(id) ?? 0) + n); return true; },
     remove(id, n) { if ((counts.get(id) ?? 0) < n) return false; counts.set(id, counts.get(id) - n); return true; } };
   let sneaking = true, dead = false, busy = false; const events = [], caught = [], skills = createSkills();
-  const host = createCubHoneyHost({ npc: { id: 'kayla-cub', name: 'Bear cub' }, liz, world, position: () => position,
+  const host = createCubHoneyHost({ npc: { id: 'kayla-cub', name: 'Bodhi' }, liz, world, position: () => position,
     inventory, skills, sneaking: () => sneaking, isLizAlive: () => !dead, busy: () => busy,
     onChange: e => events.push(e), onCaught: e => caught.push(e) });
   const at = p => Object.assign(position, p);

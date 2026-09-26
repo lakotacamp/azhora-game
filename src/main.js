@@ -3452,7 +3452,7 @@ function init() {
   function cubQuestView(){const q=cubHost?.state();return {id:CUB_HONEY_QUEST_ID,title:'A Cub’s Share',type:'skill',stage:q?.stage,
     active:['learning','carrying'].includes(q?.stage),complete:q?.stage==='complete',destinationIds:q?.stage==='carrying'?[CUB.id]:[],
     target:q?.stage==='learning'?{...HONEY_STORE,id:'liz-honey',name:'Liz’s honey stores'}:null,
-    detail:q?.stage==='carrying'?'Bring the honey to the bear cub beside the river.':'Use X to sneak. Wait for Liz to look away, then take a honeycomb with F. Run if she spots you.'};}
+    detail:q?.stage==='carrying'?'Bring the honey to Bodhi, the bear cub, beside the river.':'Use X to sneak. Wait for Liz to look away, then take a honeycomb with F. Run if she spots you.'};}
   function questSource(){
     return {main:{active:!(living?.player().imperialRefused&&living.player().allegiance!=='coalition'),title:$('quest-title').textContent,detail:$('quest-detail').textContent,kicker:$('quest-step').textContent},
       bridge:{stage:journey.state.bridge,sticks:inventory.count('forest-stick')},vastos:vastos.quest.view(),
@@ -3925,7 +3925,7 @@ function init() {
     const entries=buildJournalEntries({tracker,mainSteps,completedChapters,notes,bridge:journey.state.bridge,
       spider:spiderQuest.state,murder:murder.state,cat:catQuest.state,burying:burying.snapshot(),vastos:vastos.quest.view(),drent:drent.quest.view()});
     if(race.state().complete)entries.push({id:KAYLA_RACE.id,title:KAYLA_RACE.title,type:'tertiary',grade:'deed',status:'complete',detail:'You rode Kayla to victory over Ed the Chameleon. She shared three honeycombs and set off to find her cub.'});
-    if(cubHost.quest.completed)entries.push({id:CUB_HONEY_QUEST_ID,title:'A Cub’s Share',type:'skill',grade:'skill',status:'complete',detail:'The cub taught you Stealth. You brought back a comb from Liz’s apiary.'});
+    if(cubHost.quest.completed)entries.push({id:CUB_HONEY_QUEST_ID,title:'A Cub’s Share',type:'skill',grade:'skill',status:'complete',detail:'Bodhi, Kayla’s cub, taught you Stealth. You brought back a comb from Liz’s apiary.'});
     if(cagneyQuest.state.stage==='complete')entries.push({id:CAGNEY_QUEST.id,title:CAGNEY_QUEST.title,type:'secondary',grade:'plot',status:'complete',detail:'You escorted Cagney safely home to Ambron and received 45 copper.'});
     journeyBrowser.update({entries,trackedId:tracker.selectedId});
   }
@@ -5721,7 +5721,7 @@ function init() {
       bearFamily.restore({...saved,next:race.state().complete?saved.next:0,phase:race.state().complete?(reunited?'waiting-cub':saved.phase):'waiting-race',cub:{x:CUB_STAND.x,z:CUB_STAND.z}});}
     if(drent.sneaking)drent.toggleSneak();
     const spot=clearApproach(kind==='race'?KAYLA_RACE_START:CUB_STAND);
-    testGoTo(spot,kind==='race'?'PLAYTEST — KAYLA':'PLAYTEST — BEAR CUB',kind==='race'?'Ride Kayla in a race against Ed the Chameleon.':'Learn Stealth and sneak a honeycomb out of Liz’s apiary.');
+    testGoTo(spot,kind==='race'?'PLAYTEST — KAYLA':'PLAYTEST — BODHI',kind==='race'?'Ride Kayla in a race against Ed the Chameleon.':'Learn Stealth and sneak a honeycomb out of Liz’s apiary.');
     skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();reviewFrozen=false;reviewTarget=null;stopInput();refreshQuest();inventory.refresh();
     autopilot.startQuest(kind);canvas.focus();return true;
   }
@@ -5902,9 +5902,9 @@ function init() {
     const sidePilot=focusedPilot??(earlyQuest[autopilot.id]?autopilot.id:null);
     if(testingEnabled&&sidePilot){
       if(['pause','journal','testing'].includes(mode))closeModal();
-      if(autopilot.startQuest(sidePilot)){toast(`The computer continues ${ {ben:'Ben',liz:'Liz',troy:'Troy',cagney:'Cagney',race:'Kayla',cub:'the bear cub'}[sidePilot]}'s quest. Any key or click takes control.`,'QUEST AUTOPLAY');canvas.focus();return true;}return false;
+      if(autopilot.startQuest(sidePilot)){toast(`The computer continues ${ {ben:'Ben',liz:'Liz',troy:'Troy',cagney:'Cagney',race:'Kayla',cub:'Bodhi'}[sidePilot]}'s quest. Any key or click takes control.`,'QUEST AUTOPLAY');canvas.focus();return true;}return false;
     }
-    if(questTracker.selectedId!=='main'){toast('F8 offers the side-quest playtests, including Kayla and the bear cub. Focus the gold quest to autoplay the main road.','QUEST FOCUS');return false;}
+    if(questTracker.selectedId!=='main'){toast('F8 offers the side-quest playtests, including Kayla and Bodhi. Focus the gold quest to autoplay the main road.','QUEST FOCUS');return false;}
     if(['pause','journal','testing'].includes(mode))closeModal();
     if(!['playing','opening','dialogue','inventory','defeated'].includes(mode))return false;
     if(autopilot.start()){toast('The computer takes the road. Press any key or click to take control back.','AUTOPLAY');if(mode!=='opening')canvas.focus();}

@@ -380,7 +380,7 @@ export const INVENTORY_ITEMS = Object.freeze({
   }),
   'liz-stolen-honey': Object.freeze({
     name: "Liz's stolen honey", type: 'Quest item', icon: 'honeycomb', stackable: false,
-    description: 'A comb quietly taken from Liz’s private stores for the bear cub. Return it to the cub by the Tessen crossing.',
+    description: 'A comb quietly taken from Liz’s private stores for Bodhi, Kayla’s cub. Return it to Bodhi by the Tessen crossing.',
   }),
   honeycomb: Object.freeze({
     name: 'Honeycomb', type: 'Food', icon: 'honeycomb', stackable: true, eatName: 'piece of honeycomb',

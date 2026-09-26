@@ -149,7 +149,7 @@ export function createKaylaRace({ onEvent = () => {} } = {}) {
     const target = ['countdown', 'racing'].includes(s.stage)
       ? { ...KAYLA_RACE_FINISH, id: 'kayla-race-finish', name: "The prophet's crossroads" }
       : s.stage === 'returning' ? { ...KAYLA_RACE_START, id: 'kayla-race-start', name: 'Ambron east gate' } : null;
-    const detail = s.stage === 'won' ? 'Speak to Kayla for your honey. She will then go to her cub.'
+    const detail = s.stage === 'won' ? 'Speak to Kayla for your honey. She will then go to Bodhi, her cub.'
       : s.stage === 'lost' ? 'Speak to Kayla to ride back to the east gate and try again.'
         : s.stage === 'returning' ? 'Ride Kayla back along the road for another race.'
           : s.stage === 'countdown' ? 'Get ready. Ride Kayla east to the prophet at the crossroads.'

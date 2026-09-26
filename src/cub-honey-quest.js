@@ -1,7 +1,7 @@
-﻿/** The unnamed cub's lesson. Progress and the stolen comb are never inferred from ordinary honey. */
+﻿/** Bodhi's lesson (Kayla's cub, named by the user on 26 September 2026). Progress and the stolen comb are never inferred from ordinary honey. */
 import { TESSEN_BRIDGE } from './pueth-world.js';
 
-export const CUB = Object.freeze({ id: 'kayla-cub', name: 'Bear cub', role: "Kayla's honey-loving cub", maxHp: 120, radius: .45, talk: 3.4 });
+export const CUB = Object.freeze({ id: 'kayla-cub', name: 'Bodhi', role: "Kayla's honey-loving cub", maxHp: 120, radius: .45, talk: 3.4 });
 export const CUB_STAND = Object.freeze({ x: -104, z: TESSEN_BRIDGE.south.z + 10, yaw: 1.1 });
 export const CUB_HONEY_QUEST_ID = 'cub-honey';
 export const CUB_HONEY_ITEM = 'liz-stolen-honey';

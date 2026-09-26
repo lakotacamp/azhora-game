@@ -140,7 +140,7 @@ export function createCubHoneyHost({ npc, liz, world, skills, inventory, positio
     if (suspicion.xp) { skills.gain('stealth', suspicion.xp); xpClock += dt; if (xpClock > 5) { xpClock = 0; onChange({ type: 'cub-stealth-practice' }); } }
     if (suspicion.caught) { catchThief(); return state(); }
     if (quest.state().stage === 'learning' && gap(p, HONEY_STORE) <= HONEY_STORE.reach) {
-      near = { id: CUB_HONEY_SOURCE, questId: 'cub-honey', prompt: taking ? 'Quietly lifting the honeycomb...' : 'Steal a honeycomb for the cub' };
+      near = { id: CUB_HONEY_SOURCE, questId: 'cub-honey', prompt: taking ? 'Quietly lifting the honeycomb...' : 'Steal a honeycomb for Bodhi' };
     }
     if (taking > 0) {
       if (!near || !sneaking() || step > .06) { taking = 0; toast('The comb is still in the hive. Stay crouched and still while lifting it.', 'HONEY STORES'); }
@@ -150,7 +150,7 @@ export function createCubHoneyHost({ npc, liz, world, skills, inventory, positio
         if (taking >= HONEY_STORE.seconds) {
           taking = 0;
           const ok = quest.collect({ source: CUB_HONEY_SOURCE, unseen: true, grant: () => inventory.add(CUB_HONEY_ITEM, 1) });
-          if (ok) { near = null; toast('A stolen comb is in your satchel. Sneak out and return to the cub.', 'HONEY TAKEN'); }
+          if (ok) { near = null; toast('A stolen comb is in your satchel. Sneak out and return to Bodhi.', 'HONEY TAKEN'); }
           else toast('You cannot carry the comb yet. Make room and try again.', 'HONEY STORES');
         }
       }
@@ -174,7 +174,7 @@ export function createCubHoneyHost({ npc, liz, world, skills, inventory, positio
     const stage = quest.state().stage;
     if (['unmet', 'offered'].includes(stage)) {
       quest.offer();
-      say(['Mum is very good at finding honey. I am very good at wanting more of it. Liz has a whole row of hives across the river.',
+      say(['I am Bodhi. Mum is very good at finding honey. I am very good at wanting more of it. Liz has a whole row of hives across the river.',
         'Could you sneak me one comb? I can show you how to be quiet. Mum says she used to be brilliant at it before she became a great big bear. I am still small enough to practise.',
         'This is stealing, mind. Watch which way Liz is looking. If she catches you, her bees will make a very strong argument.'], [
         { id: 'cub-honey-yes', label: "Teach me Stealth. I'll try to bring you a comb.", action() {
@@ -189,7 +189,7 @@ export function createCubHoneyHost({ npc, liz, world, skills, inventory, positio
       ? ['Liz is waiting for her cat. Help her get home safely first; we can practise sneaking when Liz is back tending the hives.']
       : ['The northern wooden hive, across the river. X to sneak, F to lift the comb. Wait for Liz to look away, then stay still. Please do not hurt her.']);
     else if (stage === 'carrying') say(['You did it! I knew you could be quiet. Is that comb for me?'], [
-      { id: 'cub-honey-give', label: 'Give the stolen honeycomb to the cub.', action() {
+      { id: 'cub-honey-give', label: 'Give the stolen honeycomb to Bodhi.', action() {
         if (quest.deliver({ take: () => inventory.remove(CUB_HONEY_ITEM, 1), reward: xp => skills.gain('stealth', xp) })) {
           say(['Oh, that is lovely. Thank you! Being quiet really does pay off.', 'I will wait for Mum here. When her race and my little adventure are both done, we can go looking for honey together.']);
         } else say(['That particular comb is not in your satchel. The lesson was to take one quietly from the hive.']);

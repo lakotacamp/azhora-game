@@ -30,7 +30,7 @@ export function createCubAutopilot({ world, read, act = {}, options = {} } = {})
   }
   function start() {
     if (active) return false;
-    active = true; intent = 'Meeting the bear cub'; stopReason = ''; move = still(); yaw = null;
+    active = true; intent = 'Meeting Bodhi'; stopReason = ''; move = still(); yaw = null;
     elapsed = idle = dialogueClock = interactClock = 0; stage = ''; route = []; cursor = 0; finalApproach = false;
     best = Infinity; leg = ''; probe = { x: 0, z: 0 }; previous = null;
     notify({ type: 'start', questId: 'cub-honey' }); return true;
@@ -63,13 +63,13 @@ export function createCubAutopilot({ world, read, act = {}, options = {} } = {})
     const q = s.quest ?? {}, combat = s.combat ?? {};
     if (s.mode === 'defeated' || combat.hp <= 0) { stop('The traveler has fallen. Choose how to recover.'); return null; }
     if (!['playing', 'dialogue'].includes(s.mode)) { intent = 'Paused'; return { move, yaw, guard: false, actions, intent, goal: 'wait' }; }
-    if (!valid(s.cub) || s.cub.available === false || q.available === false) { stop('The cub or Liz is unavailable. You have control.'); return null; }
+    if (!valid(s.cub) || s.cub.available === false || q.available === false) { stop('Bodhi or Liz is unavailable. You have control.'); return null; }
     elapsed += dt; idle += dt; interactClock += dt;
     if (previous && gap(previous, s.position) > .015) idle = 0;
     previous = { ...s.position };
     if (q.stage !== stage) { stage = q.stage; idle = 0; finalApproach = false; if (['learning', 'carrying'].includes(stage)) selectRoute(s, stage === 'carrying'); }
     if (elapsed > config.maxSeconds || idle > config.idleLimit) { stop('Cub autoplay could not find a safe way forward. You have control.'); return null; }
-    if (q.stage === 'complete' && s.mode !== 'dialogue') { stop('The cub has the honey. The Stealth lesson is complete.', true); return null; }
+    if (q.stage === 'complete' && s.mode !== 'dialogue') { stop('Bodhi has the honey. The Stealth lesson is complete.', true); return null; }
     if (combat.phase === 'active') { stop('Another fight interrupted the honey lesson. Resolve it before resuming.'); return null; }
     let goal = 'talk';
     if (q.alerted) {
@@ -78,7 +78,7 @@ export function createCubAutopilot({ world, read, act = {}, options = {} } = {})
       walk(s, { x: -72, z: -212 }, 1.5, 'escape'); move.run = true;
       if (gap(s.position, HONEY_STORE) > 37) { stop('Escaped the apiary. Let Liz calm down, then resume the lesson.'); return null; }
     } else if (s.mode === 'dialogue') {
-      goal = 'dialogue'; intent = 'Listening to the cub'; dialogueClock += dt;
+      goal = 'dialogue'; intent = 'Listening to Bodhi'; dialogueClock += dt;
       if (s.dialogue?.npcId && s.dialogue.npcId !== CUB.id) { stop('Another conversation interrupted the cub lesson.'); return null; }
       const choices = (s.dialogue?.choices ?? []).filter(c => c.enabled !== false);
       if (choices.length && dialogueClock >= config.choicePace) {
@@ -90,7 +90,7 @@ export function createCubAutopilot({ world, read, act = {}, options = {} } = {})
       dialogueClock = 0;
       if (s.riding?.mounted) { intent = 'Dismounting for the stealth lesson'; if (interactClock >= config.interactEvery) { actions.push({ type: 'dismount' }); interactClock = 0; } }
       else if (['unmet', 'offered'].includes(stage) || (stage === 'carrying' && cursor >= route.length)) {
-        intent = stage === 'carrying' ? 'Giving the honey to the cub' : 'Asking the cub about Stealth';
+        intent = stage === 'carrying' ? 'Giving the honey to Bodhi' : 'Asking Bodhi about Stealth';
         if (s.sneaking && interactClock >= config.interactEvery) { actions.push({ type: 'toggleSneak' }); interactClock = 0; }
         if (s.interaction?.npcId === CUB.id) {
           yaw = Math.atan2(s.position.x - s.cub.x, s.position.z - s.cub.z);
