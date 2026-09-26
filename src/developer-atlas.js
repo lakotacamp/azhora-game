@@ -41,6 +41,9 @@ const isareosAnchor = point(1150.081, 2560, -12, 106);
 // x = 27.7128 * (q + r/2) + 13.856 and y = 24 * r + 16, which for (-14, 110) is this hex
 // and no other: a test asserts the anchor stands on the country's own authored ground.
 const nethereumAnchor = point(1150.081, 2656, -14, 110);
+// The Imlamdris hex on the Stillwater's north-east shore: grassland, and the city's own ground.
+// For (7, 119) the atlas's formula gives this point and no other.
+const southSuvalAnchor = point(1856.757, 2872, 7, 119);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -68,6 +71,7 @@ const LOCALS = [
   [15, 'Eer', 'eer', 'Eer', eerAnchor],
   [16, 'Isareos', 'isareos', 'Isareos', isareosAnchor],
   [17, 'Nethereum', 'nethereum', 'Nethereum', nethereumAnchor],
+  [18, 'South Suval', 'south-suval', 'South Suval', southSuvalAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

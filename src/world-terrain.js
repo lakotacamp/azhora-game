@@ -10,6 +10,7 @@ import {
 } from './region-world.js';
 import { PUETH_RIVERS, TESSEN, TESSEN_BRIDGE, nearestPuethRiver } from './pueth-world.js';
 import { elagosGround } from './elagos-world.js';
+import { southSuvalGround } from './south-suval-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 
@@ -241,8 +242,10 @@ export function groundWithRiver(x, z) {
   // the Dromel's bench and the road's (src/amod-terraces.js). It reshapes the
   // relief it is handed and leaves everything outside its own ground untouched.
   // The four western regions do the same with their own water and landforms
-  // (src/west-ground.js). None of the three boxes overlaps another.
-  return westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)));
+  // (src/west-ground.js). South Suval cuts the Stillwater to its own level and lays
+  // Imlamdris's terraces on the slope above it (src/south-suval-world.js). None of the four
+  // boxes overlaps another.
+  return southSuvalGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */

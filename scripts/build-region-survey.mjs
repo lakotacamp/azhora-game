@@ -17,7 +17,22 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
-  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer'];
+  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval'];
+/**
+ * **Lake hexes that belong to the region all round them.** The World Builder map paints these
+ * `lake`; the dev atlas this script reads leaves them unclaimed, because a lake is nobody's
+ * ground. Left unclaimed they are not land, and the coast field calls anything that is not
+ * land the sea - so an inland lake would be cut to sea level and drawn with the sea's shore.
+ *
+ * The rule is narrow on purpose: a lake hex belongs here only when every one of its six
+ * neighbours is the same region. Of the atlas's twenty-eight lake hexes exactly one meets it,
+ * **the Stillwater** at (6,120), ringed by South Suval on all six sides; the lakes between
+ * Elagos, Amod and Drent, and those round Nethereum, touch several regions or open water and
+ * stay as they are. The region takes the hex as a `lake` cell, the way Elagos holds its own
+ * lakes, and src/south-suval-world.js cuts the basin to the lake's own level.
+ * tests/south-suval-world.test.js checks the World Builder map still agrees.
+ */
+export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Object.freeze([6, 120])]) });
 /**
  * Axial window around the playable regions, in atlas hex coordinates. Wide
  * enough that every coast and inland horizon inside the world bounds is honest.
@@ -44,14 +59,18 @@ export function buildSource(survey) {
   const regions = PLAYABLE.map(id => {
     const region = survey.regions.find(candidate => name(candidate) === id);
     if (!region) throw new Error(`The atlas has no region called ${id}.`);
+    const lakes = (ENCLOSED_LAKES[id] ?? []).map(([q, r]) => ({ q, r, terrain: 'lake' }));
     return { id: region.id, name: id, bounds: region.bounds, centerX: region.centerX, centerY: region.centerY,
-      cells: region.cells.map(cell => ({ q: cell.q, r: cell.r, terrain: cell.terrain })) };
+      cells: [...region.cells.map(cell => ({ q: cell.q, r: cell.r, terrain: cell.terrain })), ...lakes] };
   });
   const land = [];
   for (const region of survey.regions) for (const cell of region.cells) {
     if (cell.q < WINDOW.minQ || cell.q > WINDOW.maxQ || cell.r < WINDOW.minR || cell.r > WINDOW.maxR) continue;
     land.push([cell.q, cell.r]);
   }
+  // An enclosed lake is inland water, not the sea: the coast field counts it as land, and the
+  // region that holds it cuts it back to its own level.
+  for (const lakes of Object.values(ENCLOSED_LAKES)) for (const [q, r] of lakes) land.push([q, r]);
   land.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
   const cells = region => region.cells.map(cell => `{q:${cell.q},r:${cell.r},terrain:'${cell.terrain}'}`).join(',');
   const wrap = (text, indent) => {

@@ -530,6 +530,10 @@ export const REGION_LANGUAGE = freeze({
   Amod: spoken('mittoli', 'amodian'),
   'East Suval': spoken('koleth'),
   'West Suval': spoken('suvalen'),
+  // "The language of West and South Suval is a variety of the Iberos coastal contact language"
+  // (suval.md): the same tongue as Solis. The lore adds that "the South Suval fishing dialect is
+  // more conservative", and there is no dialect of it to name, so none is invented here.
+  'South Suval': spoken('suvalen'),
   'West Izol': spoken('izoli'),
   Elagos: spoken('ambroni'),
   // The four western regions. The lore is specific: all four are Mittoli-speaking

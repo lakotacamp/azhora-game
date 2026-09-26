@@ -106,6 +106,7 @@ import { companyRoadStops, legacyCompanyProgress } from './company-route.js';
 // Who you are: any of the eleven of the company, chosen at the opening (src/player-characters.js).
 import { DEFAULT_PLAYER, SELECTABLE, companyFor, playableCharacter, playerLook, savedPlayerCharacter, startingGear, startingInventory, startingLanguages, startingSkills } from './player-characters.js';
 import { createCharacterSelect } from './character-select.js';
+import { cityPoint as imlamdrisPoint } from './south-suval-world.js';
 // Sailing in: the forty-four seconds from the roads to the pier, as data (docs/opening-sequence.md).
 import { stateAt, eventsBetween, variantFor, boatBob, SKIP_BY_VARIANT, ASHORE_PACE } from './opening-sequence.js';
 import { WOODCUTTING_SKILL, BOWDEN, BOWDEN_STAND, WOODLOT_TREES, TREE_KINDS, AXES, SWING, CHOP_REACH, createWoodcutting, bowdenConversation, bowdenLines } from './woodcutting.js';
@@ -219,7 +220,7 @@ import { createRoadVerges } from './road-verges.js';
 import { createRoadAudio as createAudio } from './road-audio.js';
 import { createDeveloperMode } from './developer-mode.js';
 import { runDeveloperSmoke } from './developer-smoke.js';
-import { moveCharacter, canStand, canSwim, WATERLINE, advanceQuest, questSteps, QUEST_DONE, SUBQUESTS, getMovementInput } from './game-state.js';
+import { moveCharacter, canStand, canSwim, waterAt, WATERLINE, advanceQuest, questSteps, QUEST_DONE, SUBQUESTS, getMovementInput } from './game-state.js';
 import { questLive } from './quest-slate.js';
 import { BEN, SPIDER, SPIDER_DEN, SPIDER_QUEST, createSpiderQuest } from './spider-quest.js';
 import { benGuideTarget, restoreBenGuide, BEN_GUIDE_START } from './ben-guide.js';
@@ -1934,6 +1935,13 @@ function init() {
       // plain would show haze and not a country.
       return shot({x:-1170,z:1080},{x:-1030,z:1200},.02,9);
     }
+    // South Suval (src/south-suval-world.js): Imlamdris from the water it faces, the water from
+    // the top of the city - "the lake is visible from most of the upper city" - the temple's open
+    // face, and the southern cliffs from the sea. Placed in the city's own frame, so they follow it.
+    if(view==='south-suval-city')return shot(imlamdrisPoint(-6,-64),imlamdrisPoint(0,40),.08,7);
+    if(view==='south-suval-lake')return shot({x:-92,z:1302},imlamdrisPoint(0,10),.05,9);
+    if(view==='south-suval-temple')return shot(imlamdrisPoint(0,-17),imlamdrisPoint(0,21),.02,4.5);
+    if(view==='south-suval-cliffs')return shot({x:-150,z:1452},{x:-150,z:1362},.02,8);
     if(view==='south-eer-coast'){
       // The low bays from the grass behind one, out over the water. No cliff and no
       // beach to speak of: the point of the shot is that the grass gives out and the
@@ -2183,9 +2191,13 @@ function init() {
    * One arithmetic, because a review view that chooses its shot with a different one would
    * choose a shot the camera then refuses to take.
    */
+  // Water has colliders so the world knows its level (`waterAt`); a camera looking out over a
+  // lake or down a river is not looking into anything, so neither check below counts them.
+  const cameraWater=new Set(['river-water','pond-water']);
   function cameraPullIn(focus,want,bearing){
     let got=want;
     for(const c of world.nearColliders(focus.x,focus.z,want+4,cameraColliders)){
+      if(cameraWater.has(c.kind))continue;
       const vx=c.x-focus.x,vz=c.z-focus.z,along=vx*Math.sin(bearing)+vz*Math.cos(bearing),across=Math.abs(vx*Math.cos(bearing)-vz*Math.sin(bearing));
       const r=c.r??Math.max(c.hx,c.hz);
       if(along>0&&along<want+2&&across<r+.6&&focus.y<world.heightAt(c.x,c.z)+(c.kind==='house'?6:7))got=Math.min(got,Math.max(3.1,along-r-.6));}
@@ -2205,6 +2217,7 @@ function init() {
   function cameraCrowding(focus,want,bearing){
     let count=0;
     for(const c of world.nearColliders(focus.x,focus.z,want+4,cameraColliders)){
+      if(cameraWater.has(c.kind))continue;
       const vx=c.x-focus.x,vz=c.z-focus.z,along=vx*Math.sin(bearing)+vz*Math.cos(bearing),across=Math.abs(vx*Math.cos(bearing)-vz*Math.sin(bearing));
       const r=c.r??Math.max(c.hx,c.hz);
       if(along>0&&along<want+2&&across<r+1.2)count++;}
@@ -6349,7 +6362,11 @@ function init() {
         if(!grounded){verticalSpeed-=17*dt;player.group.position.y+=verticalSpeed*dt;if(player.group.position.y<=floor){player.group.position.y=floor;grounded=true;verticalSpeed=0;}}
         // In the water he floats at the surface rather than walking the seabed: the feet hang a
         // little over a metre down, which puts the head and shoulders above the waterline.
-        else player.group.position.y=(!riding.mounted&&floor<WATERLINE)?WATERLINE-SWIM.sink:floor+((riding.mounted||living.recall().status==='passenger')?RIDE.seat.up:0);
+        // **Whatever water he is in** (`waterAt`, src/game-state.js): the sea at the waterline, a
+        // river or a lake at its own level. Compared with the sea alone, a swimmer in the
+        // Stillwater walked its bed nine metres down while `swimTick` counted him afloat.
+        else{const surface=waterAt(player.group.position.x,player.group.position.z,world);
+          player.group.position.y=(!riding.mounted&&floor<surface)?surface-SWIM.sink:floor+((riding.mounted||living.recall().status==='passenger')?RIDE.seat.up:0);}
         {const turned=borderWatch.step(before,player.group.position,elapsed);if(turned.refused){player.group.position.x=before.x;player.group.position.z=before.z;if(turned.toast)toast(turned.toast,CLOSED_BORDER_TITLE);}}
         swimTick(dt,before);
         movement=Math.hypot(player.group.position.x-before.x,player.group.position.z-before.z)/dt;

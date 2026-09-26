@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -122,6 +122,13 @@ export const REGION_BIOMES = Object.freeze({
   Nethereum: Object.freeze({ id: 'flood-meadow', name: 'The Nethereum meadow', ground: '#5f8c46', canopy: '#44663a', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'wet-meadow', ownScatter: true, blockHexes: 4,
     relief: { amplitude: 1.1, wavelength: 210 }, clearings: ['nethereum-hollow'],
     note: 'The wet grass country: a broad shallow hollow six hundred metres across with the richest pasture in the inner branch country on its floor, ordinary humid grass up the sides and over the rim, rush and sedge in the low threads where the hill-streams run out, and willow and alder on the water and nowhere else. There is no Nethermere: the flood is a spring sheet over meadow that the game, having no seasons, never shows. Cattle loose on all of it.' }),
+  // South Suval scatters its own country (src/south-suval-scenery.js): what grows here depends on
+  // which of three climates a hex is in and how near it stands to the Stillwater, and one count per
+  // hex cannot say that. The atlas gives it ten hexes of Csa, three of Csc on the ridge and two of
+  // Cfb - the northern hills and the lake itself - and the lore's lake country is the Cfb one.
+  'South Suval': Object.freeze({ id: 'lake-hills', name: 'The South Suval hills', ground: '#a2a070', canopy: '#6b7a4c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
+    relief: { amplitude: 7, wavelength: 125 }, clearings: ['imlamdris'],
+    note: 'The peninsula’s southern hills, and the only lake on it. Pale limestone and thin soil on the ridge and the hills, aromatic scrub, olive and fig where the south-facing ground is warm; greener grass, reed and mist round the Stillwater, which is spring-fed and does not run dry; and Imlamdris on its north-east shore, facing the water and turning its back on the road.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

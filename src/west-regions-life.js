@@ -4,6 +4,7 @@ import { SEA_LEVEL } from './region-world.js';
 import { westWaterSurface } from './west-ground.js';
 import { REGIONAL_WILDLIFE_ZONES } from './regional-wildlife.js';
 import { DRENT_WILDLIFE_ZONES } from './drent-wildlife.js';
+import { SOUTH_SUVAL_WILDLIFE_ZONES } from './south-suval-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -841,6 +842,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   }),
   ...REGIONAL_WILDLIFE_ZONES,
   ...DRENT_WILDLIFE_ZONES,
+  ...SOUTH_SUVAL_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -970,7 +972,9 @@ export function createWestLife(scene, world) {
   const footingY = (x, z, zone) => {
     const ground = world.heightAt(x, z);
     if (!zone?.float) return ground;
-    const water = westWaterSurface(x, z);
+    // The western rivers know their own level; any other water - the Stillwater, the sea - is
+    // answered by the world, which carries every water body's surface (`waterAt`).
+    const water = westWaterSurface(x, z) ?? world.waterAt?.(x, z) ?? null;
     return water === null ? ground : Math.max(ground, water - .04);
   };
   // Woodland homes belong beside the roads and settlements, not on their floors

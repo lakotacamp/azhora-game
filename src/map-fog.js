@@ -127,6 +127,13 @@ export const SUBREGIONS = Object.freeze([
   // ford is on the southern corner of Nethereum and a disc centred on it was 42% Ovesos.
   area('neth-ford', 'The Neth Ford', 'Nethereum', -2320, 545, 50, 'Gravel, shin-deep, below where the river comes off the desert edge. The only dry-shod way south out of this country, and the only place on the Neth that is one: everything below it runs deep to the Lizeem and nobody has bridged any of it.'),
   area('nethereum-dry-corner', 'The Dry Corner', 'Nethereum', -2880, 206, 95, 'The one corner the basin does not drain, against the Nether Desert. Two metres lower than the rim and outside the catchment altogether: the grass goes short, thin and grey, and the wind off the desert margin has nothing to break it.'),
+  // South Suval: the lake country and its hills (src/south-suval-world.js).
+  area('imlamdris', 'Imlamdris', 'South Suval', -52, 1158, 62, 'The oldest city on the peninsula, on terraces climbing from the Stillwater to the Star Terrace, facing the water and turning its back on the road.'),
+  area('the-stillwater', 'The Stillwater', 'South Suval', -100, 1241, 58, 'Spring-fed and never dry: the only lake on the peninsula, misted in the mornings, with reed round its open shore.'),
+  area('south-suval-ridge', 'The Ridge', 'South Suval', -150, 1075, 95, 'Pale limestone across the north of the country, cold-summer ground where little grows but cushion scrub and stone.'),
+  area('imlamdris-pass', 'The Hill Pass', 'South Suval', 22, 1030, 70, 'The saddle east of the ridge and the road over it, down to the border with East Suval.'),
+  area('eastern-slopes', 'The Eastern Slopes', 'South Suval', 0, 1241, 55, 'Vines in rows on the hill across the water from the city, facing the morning sun.'),
+  area('southern-cliffs', 'The Southern Cliffs', 'South Suval', -150, 1335, 100, 'The ridge country’s drop to the sea: high ground to the edge, then rock and swell. A cove where the grass comes down, and seabirds on the tops.'),
   area('lizeem-reach', 'The Lower Lizeem', 'Eer', -1420, 1080, 110, 'The last reach of the great river, going grey with what it is carrying. Gala is on the far bank and there is no way to it: not here, and not anywhere along this side.'),
   // Peblos: the islands, which are charted from the water as much as from the land.
   area('cobble', 'Cobble', 'Peblos', 336, 432, 45, 'The one village in the Pebbles: a stone quay, drying racks, ten roofs on a shelf of rock, and the Empire’s tally shed.'),

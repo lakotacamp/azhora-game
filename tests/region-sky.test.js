@@ -37,8 +37,13 @@ test('the default sky is the three numbers src/main.js has always used', () => {
  * overcast. The light has a quality that travelers describe as muffled." So a flat grey-green
  * horizon and a density above the default where Eer's is below it — the two of them together
  * are what the feature was built for.
+ *
+ * South Suval is the third (the user, 25 September 2026): Csa hills round a Cfb lake, whose
+ * country is "its own microclimate — cooler, with morning mist off the water that the rest of
+ * the peninsula does not experience" (svaleen.md). So Eer's clearness with the mist's
+ * grey-green in it, a little denser than Eer and a little clearer than the default.
  */
-const OWN_SKY = new Set(['Eer', 'Nethereum']);
+const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval']);
 
 test('every region but the ones that asked for their own gets the default sky, to the digit', () => {
   for (const region of regions) {

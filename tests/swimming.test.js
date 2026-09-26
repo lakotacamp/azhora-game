@@ -368,8 +368,10 @@ test('the game refuses the water to a rider, and a sword to a swimmer', () => {
   assert.match(main, /const speed=inWater\?swimSpeed\(swimLevel\)/, 'and moves at his own pace once he is in');
   assert.match(main, /combat\.exhaust\(step\.spent,step\.damage\)/, 'the wind and the blood are combat’s');
   assert.match(main, /swimming:swimming\.snapshot\(\)/, 'and the skill is saved with the road');
-  // He floats at the surface with a swimmer's posture, rather than walking the seabed.
-  assert.match(main, /floor<WATERLINE\)\?WATERLINE-SWIM\.sink:/, 'the feet hang below the surface');
+  // He floats at the surface with a swimmer's posture, rather than walking the seabed - the surface
+  // of whatever water he is in, which for the Stillwater is fifteen metres above the sea.
+  assert.match(main, /const surface=waterAt\(player\.group\.position\.x,player\.group\.position\.z,world\)/, 'the water he is in, not the sea');
+  assert.match(main, /floor<surface\)\?surface-SWIM\.sink:/, 'the feet hang below the surface');
   assert.match(main, /swimming:inWater,riding:/, 'and the rig is told');
   assert.match(source('characters.js'), /if \(pose\.swimming\) \{/, 'which the rig has a posture for');
   assert.ok(SWIM.sink > .8 && SWIM.sink < 1.4, `sunk ${SWIM.sink} m: head and shoulders, not a periscope or a drowning`);

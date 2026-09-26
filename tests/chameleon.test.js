@@ -34,11 +34,21 @@ const inPolygon = (points, x, z) => {
   return inside;
 };
 
+/**
+ * **Countries Ed does not visit yet.** He is a character - named, with things to say and a
+ * reason to stay - and South Suval was built on the user's word of 25 September 2026: terrain,
+ * climate, wildlife and one city's stones, "don't add any characters yet". So the builder who
+ * would normally raise his count leaves it where it is and says so here; he goes to the Stillwater
+ * the day people do.
+ */
+const WITHOUT_ED = new Set(['South Suval']);
+
 test('every one of his spots is somewhere a chameleon can be: dry ground, off the road, in its own country', async () => {
   const w = await built();
   // One per region, and two in open country — so this number goes up by one with every
   // country that is built, and the country's own builder is the one who raises it.
-  assert.equal(CHAMELEON_SPOTS.length, regions.length + 2, 'one per region, and two in open country');
+  const visited = regions.filter(region => !WITHOUT_ED.has(region.name));
+  assert.equal(CHAMELEON_SPOTS.length, visited.length + 2, 'one per region he visits, and two in open country');
   assert.equal(CHAMELEON_SPOTS.length, 19);
   assert.equal(new Set(CHAMELEON_SPOT_IDS).size, CHAMELEON_SPOTS.length, 'no two spots share an id');
   const roads = [...(w.paths ?? []), MAIN_ROAD, SUVAL_ROAD, SOLIS_ROAD].filter(Boolean);
@@ -56,8 +66,9 @@ test('every one of his spots is somewhere a chameleon can be: dry ground, off th
     assert.ok(nearest > 20, `${spot.id} is ${nearest.toFixed(0)} m off the road, which is on it`);
     assert.ok(spot.name && spot.note.length > 40, `${spot.id} has somewhere to be and something to be doing`);
   }
-  // Every built region has one, and open country has two.
-  for (const region of regions) assert.ok(CHAMELEON_SPOTS.some(spot => spot.region === region.name), `nowhere in ${region.name}`);
+  // Every built region he visits has one, the ones he does not have none, and open country has two.
+  for (const region of visited) assert.ok(CHAMELEON_SPOTS.some(spot => spot.region === region.name), `nowhere in ${region.name}`);
+  for (const name of WITHOUT_ED) assert.ok(!CHAMELEON_SPOTS.some(spot => spot.region === name), `he has been let into ${name}`);
   assert.equal(CHAMELEON_SPOTS.filter(spot => spot.region === 'Open country').length, 2,
     'a creature that belongs nowhere in particular turns up where the atlas gives out');
 });

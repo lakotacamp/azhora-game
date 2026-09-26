@@ -23,7 +23,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -259,6 +259,23 @@ export const REGION_TERRAIN = Object.freeze({
   Nethereum: Object.freeze({ base: 21, amp: 1.1, wave: 210, ground: REGION_BIOMES.Nethereum.ground, byTerrain: Object.freeze({
     plains: Object.freeze({ base: 19, amp: .9, wave: 260, ground: '#7f9459' }),
   }) }),
+  // South Suval is the peninsula's southern hills: "hillier than the western section - the ridge
+  // system drops more steeply to the southern coast" (suval.md). The atlas puts the ridge through
+  // the north of it - three mountain hexes of cold-summer Mediterranean in a row, a fourth in the
+  // west - and the lake country below them: grassland round the Stillwater, hills beyond. So the
+  // mountains stand well above East Suval's hills, the hills stand with East Suval's, and the
+  // grass round the lake is the low ground of the region. The lake hex is cut back out of this to
+  // the Stillwater's own level by src/south-suval-world.js.
+  'South Suval': Object.freeze({ base: 19, amp: REGION_BIOMES['South Suval'].relief.amplitude, wave: REGION_BIOMES['South Suval'].relief.wavelength,
+    ground: REGION_BIOMES['South Suval'].ground, byTerrain: Object.freeze({
+      // Csc on the atlas: cold-summer Mediterranean, the climate of altitude. The hex blend pulls a
+      // mountain hex toward the low grass round the lake, so the profile stands high enough that
+      // the ridge still reads as one from the water.
+      mountain: Object.freeze({ base: 64, amp: 12, wave: 118, ground: '#9d9b88' }),
+      hills: Object.freeze({ base: 26, amp: 7.5, wave: 112, ground: '#a3a07a' }),
+      grassland: Object.freeze({ base: 16.5, amp: 2.2, wave: 150, ground: '#8f9e66' }),
+      lake: Object.freeze({ base: 15.5, amp: .8, wave: 200, ground: '#86996a' }),
+    }) }),
   outland: Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -266,11 +283,29 @@ const cellProfile = (name, terrain) => REGION_TERRAIN[name].byTerrain?.[terrain]
 
 /** Biome weights around a world point: the containing hex and its six neighbours. */
 export function terrainMix(x, z) {
+  return blendHexes(x, z, HOME_AND_NEIGHBORS);
+}
+const HOME_AND_NEIGHBORS = Object.freeze([[0, 0], ...AXIAL_NEIGHBORS]);
+/** Every hex within two steps: all of them that the blend's reach can ever touch from a point of the home hex. */
+const WITHIN_TWO = Object.freeze([[0, 0], ...AXIAL_NEIGHBORS,
+  ...[[2, 0], [2, -1], [2, -2], [1, -2], [0, -2], [-1, -1], [-2, 0], [-2, 1], [-2, 2], [-1, 2], [0, 2], [1, 1]]]);
+/**
+ * `terrainMix` over every hex its reach touches. The reach is 1.28 hexes, which from a point near
+ * its hex's corner takes in a few hexes two steps away; `terrainMix` leaves those out until the
+ * point crosses into a neighbour of theirs and then counts them all at once, so the ground has a
+ * seam along the hex edge - a few metres high where one of them is a ridge. This blend has none.
+ * A region uses it where it has chosen to (South Suval); everything placed on the world before it
+ * keeps the blend it was placed on.
+ */
+export function seamlessTerrainMix(x, z) {
+  return blendHexes(x, z, WITHIN_TWO);
+}
+function blendHexes(x, z, offsets) {
   const home = hexAt(x, z);
   let total = 0, base = 0, amp = 0, wave = 0;
   const weights = Object.fromEntries(Object.keys(REGION_TERRAIN).map(name => [name, 0]));
   const grounds = {};
-  for (const [dq, dr] of [[0, 0], ...AXIAL_NEIGHBORS]) {
+  for (const [dq, dr] of offsets) {
     const q = home.q + dq, r = home.r + dr, centre = hexCentre(q, r);
     const weight = Math.max(0, 1 - Math.hypot(x - centre.x, z - centre.z) / (METRES_PER_HEX * 1.28));
     if (!weight) continue;
@@ -826,6 +861,21 @@ const REGION_TEXT = {
     description: 'A broad shallow dish of grass between the Isa and the Neth, and the greenest ground in the west. Water gathers in the middle of it every spring and leaves slowly, and what it leaves is the richest pasture in the inner branch country: rank wet meadow on the floor, ordinary humid grass up the sides and over the rim, and wet threads of rush and sedge in the low ground where the hill-streams run out and stop. Willow and alder on the water and nowhere else. There is no lake here and there never was one on this map — only the hollow, the cattle loose on it, and an overcast that makes the light feel like something held.',
     palette: { ground: '#5f8c46', accent: '#cfdaa2', fog: '#b0c3ac', sky: 0xa7b3ad, haze: 0xb4bcb1, hazeDensity: .0071 },
     npcIds: [], landmarks: ['nethereum-hollow', 'nethereum-basin', 'nethereum-threads', 'neth-ford', 'neth-lower', 'nethereum-dry-corner'] },
+  // **South Suval is terrain, wildlife and the stones of one city** (the user, 25 September
+  // 2026: "don't add any characters yet"). Imlamdris is built - its terraces, its streets, the
+  // Stillwater Temple and the road through the hill pass - and nobody lives in it; the city's
+  // people, the Conclave it ignores and the astronomers in the temple are all somebody's, and
+  // somebody is not built.
+  //
+  // **A sky of its own.** Ten of its fifteen land hexes are Csa and the air over them is dry and
+  // clear, as Eer's is; but the lake country is Cfb and "its own microclimate - cooler, with
+  // morning mist off the water that the rest of the peninsula does not experience" (svaleen.md).
+  // The haze is Eer's clearness with the mist's grey-green in it, a little denser than Eer and a
+  // little clearer than the default; the mist itself lies on the water (src/south-suval-scenery.js).
+  'South Suval': { subtitle: 'The lake country of the peninsula', spawn: point(-50, 1155),
+    description: 'The southern hills of the peninsula, and the only lake on it. A ridge of pale limestone runs across the north; below it the ground falls to the Stillwater, which is fed from springs and does not run dry, and beyond the lake the hills drop steeply to a cliffed sea. Olive and fig on the warm slopes, aromatic scrub on the stony ones, green grass and reed and morning mist round the water. On the north-east shore stands Imlamdris, the oldest city on the peninsula, facing the lake and not the road.',
+    palette: { ground: '#a2a070', accent: '#dcd6b4', fog: '#c2ccc4', sky: 0xb6d4dc, haze: 0xc9d0c4, hazeDensity: .0056 },
+    npcIds: [], landmarks: ['imlamdris', 'stillwater', 'stillwater-temple', 'star-terrace', 'landward-gate', 'imlamdris-pass', 'eastern-slopes', 'south-cove', 'east-landing', 'southern-cliffs'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

@@ -51,6 +51,8 @@ import { RENA_ROAD, RENA_LANDMARKS, RENA_NPC_POSITIONS } from './rena.js';
 import { buildRenaWorks } from './rena-works.js';
 import { EAST_SUVAL_PLACES, ELOD_STANDS, EAST_SUVAL_STANDS, ELOD_QUAY, ELOD_LANDING, quayHeight as elodQuayHeight } from './east-suval.js';
 import { createEastSuvalScenery } from './east-suval-world.js';
+import { createSouthSuvalScenery } from './south-suval-scenery.js';
+import { PASS_ROAD_LINE, SOUTH_SUVAL_LANDMARKS, SOUTH_SUVAL_CHART_WATERS, imlamdrisTerrainSink } from './south-suval-world.js';
 import { IZOL_LANDMARKS, IZOL_NPC_POSITIONS, IZOL_PATHS, IZOL_SEA, IZOL_QUAY, izolDeckHeight } from './izol-world.js';
 import { createIzolScenery } from './izol-scenery.js';
 import { drapeRoadOnTerrain, terrainRoadHeight } from './terrain-road.js';
@@ -428,8 +430,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const meadowTint = new THREE.Color(), beachColor = new THREE.Color('#d5c99a'), villageColor = new THREE.Color();
   for (let j = 0; j < rows; j++) for (let i = 0; i < columns; i++) {
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
-    // Amod's terraces are drawn by their own fine patch (src/amod-scenery.js); the coarse grid is sunk out of sight beneath it.
-    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z), z], index * 3);
+    // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
+    // src/south-suval-scenery.js); the coarse grid is sunk out of sight beneath them.
+    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z), z], index * 3);
     groundTint(color, x, z, THREE);
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight > 0) {
@@ -1213,6 +1216,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   measurePath(AMBRON_ROAD, 4.6); measurePath(LAKE_ROAD, 3.6); for (const track of ELAGOS_ROADS.slice(2)) measurePath(track, track === CALOSS_ELAGOS_ROAD ? 4.2 : 2.6);
   for (const path of PORT_CALOS_PATHS) measurePath(path.points, path.width);
   for (const spur of roadSpurs) measurePath(spur, 2.2);
+  measurePath(PASS_ROAD_LINE, 4.2);   // Imlamdris's road through the hill pass (src/south-suval-world.js)
   for (const path of REGIONAL_PATHS) measurePath(path, 1.85);
   measurePath(SYLVIA_PATH.points, SYLVIA_PATH.width);
   createVisualArtsScenery({root:world,cottage,groundHeight,colliders});
@@ -1260,6 +1264,12 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     root: world, material, mesh, box, post, pebble, rope, barrel, crate, wornPatch, sign: roadsideSign,
     groundHeight, colliders, dummy, color, wood, woodLight, darkWood, cream, rockMat, roofGeometry, cylinder, round,
     roadDistance,
+  });
+  // South Suval (src/south-suval-scenery.js): the Stillwater, Imlamdris on its north-east shore,
+  // and the region's own scatter.
+  const southSuval = createSouthSuvalScenery({
+    root: world, material, mesh, box, post, pebble, wornPatch,
+    groundHeight, colliders, dummy, color, cylinder, round, roofGeometry,
   });
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
   const westSuval = createWestSuvalScenery({ root: world, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
@@ -1344,6 +1354,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   for (const path of REGIONAL_PATHS) addPath(path, 1.85);
   addPath(FOREST_HIDEOUT.trail.map(p => hideoutToWorld(p.x, p.z)), 1.85);
   addPath(PUETH_ROAD, 4.2);
+  addPath(PASS_ROAD_LINE, 4.2);
   addPath(AMOD_ROAD, 4.2);
   addPath(HIDEOUT_APPROACH_TRAIL, 1.85);
   addPath(RENA_ROAD, 2.6);
@@ -1749,6 +1760,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...samples.map(s => mapPoint(s.x - s.nx * s.half, s.z - s.nz * s.half)),
       ...[...samples].reverse().map(s => mapPoint(s.x + s.nx * s.half, s.z + s.nz * s.half))]) })),
     ...ELAGOS_CHART_WATERS,
+    ...SOUTH_SUVAL_CHART_WATERS,
   ]);
 
   // Islands are land inside the chart's sea: the charts paint these over the water (src/local-map-data.js).
@@ -1846,6 +1858,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     calossElagosRoute: CALOSS_ELAGOS_ROAD.map(p => ({ x: p.x, z: p.z })),
     lakeRoute: LAKE_ROAD.map(p => ({ x: p.x, z: p.z })),
     elagosMetrics: elagos.metrics,
+    southSuvalMetrics: southSuval.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
     puethMetrics: puethScenery.metrics,
@@ -1992,6 +2005,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...REGIONAL_PLACES,
       ...WEST_SUVAL_LANDMARKS,
       ...ELAGOS_LANDMARKS,
+      ...SOUTH_SUVAL_LANDMARKS,
       ...WEST_REGION_LANDMARKS,
     ],
     paths,
