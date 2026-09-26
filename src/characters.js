@@ -87,12 +87,12 @@ function round(parent, mat, position, scale) {
  * ears. Troy wears a brass pair (src/beekeeper.js) and Imani a steel one (src/vineyard.js);
  * nobody else in Azhora has thought of them yet.
  */
-function spectacles(head, name, wire, glass, { radius = 0.055, y = 0.226, z = 0.2, spread = 0.07 } = {}) {
+function spectacles(head, name, wire, glass, { radius = 0.055, y = 0.226, z = 0.2, spread = 0.07, tube = 0.008 } = {}) {
   const specs = new THREE.Group();
   specs.name = name;
   head.add(specs);
   for (const side of [-1, 1]) {
-    part(specs, new THREE.TorusGeometry(radius, 0.008, 4, 12), wire, [side * spread, y, z]);
+    part(specs, new THREE.TorusGeometry(radius, tube, 4, 12), wire, [side * spread, y, z]);
     part(specs, new THREE.CylinderGeometry(radius * 0.95, radius * 0.95, 0.004, 10), glass, [side * spread, y, z - 0.002]).rotation.x = Math.PI / 2;
     const arm = part(specs, UNIT_CYLINDER, wire, [side * (spread + 0.055), y + 0.006, z - 0.085], [0.006, 0.17, 0.006]);
     arm.rotation.set(Math.PI / 2, 0, side * 0.12);
@@ -594,6 +594,26 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       arm[1]=-.3;elbow[1]=-.8;armOut[1]=.18;
       chestX=-.04+release*.08;chestY=.08;headY=-.08;
       hip[0]=-.12;hip[1]=.1;knee[0]=.18;knee[1]=.14;stance=.03;
+    } else if (pose.fists && (action === 'windup' || action === 'attack')) {
+      // **A punch, not a chop.** Somebody fighting with her hands keeps both fists up at the chin,
+      // draws one back and drives it straight out; the next blow comes off the other hand. The
+      // overhead swing below is a blade's, and from an empty hand it reads as nothing at all.
+      const lead = ((pose.combo || 0) % 2 + 2) % 2 === 0 ? 1 : 0, guard = 1 - lead;
+      const pull = action === 'windup' ? THREE.MathUtils.smoothstep(progress, 0, 0.8) : 0;
+      const drive = action === 'attack' ? samplePose(progress, [[0, 0], [0.28, 1], [0.6, 1], [1, 0]]) : 0;
+      arm[guard] = -1.0; elbow[guard] = -1.55; armOut[guard] = 0.04;
+      arm[lead] = THREE.MathUtils.lerp(-0.8 + pull * 0.3, -1.5, drive);
+      elbow[lead] = THREE.MathUtils.lerp(-1.5 - pull * 0.35, -0.08, drive);
+      armOut[lead] = 0.08;
+      chestY = (lead === 1 ? 1 : -1) * (drive * 0.34 - pull * 0.28);
+      chestX += drive * 0.12;
+      headY = -chestY * 0.4;
+      hip[0] = -0.24; hip[1] = 0.2; knee[0] = 0.36; knee[1] = 0.3;
+      stance = 0.07;
+    } else if (pose.fists && alert > 0.5 && (!action || action === 'idle' || action === 'approach' || action === 'recover')) {
+      // Squared up between blows: fists at the chin.
+      arm[0] = arm[1] = -0.95; elbow[0] = elbow[1] = -1.5; armOut[0] = armOut[1] = 0.05;
+      stance = Math.max(stance, 0.05);
     } else if (action === 'windup') {
       const pull = THREE.MathUtils.smoothstep(progress, 0, 0.85);
       arm[1] = THREE.MathUtils.lerp(-0.6, -2.15, pull);
@@ -1520,9 +1540,16 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       band.rotation.x = Math.PI / 2;
       round(crop, hairMat, [0, 0.42, -0.06], [0.085, 0.09, 0.085]);
       round(crop, hairMat, [0.012, 0.478, -0.075], [0.046, 0.055, 0.046]);
-    } else if (hairStyle === 'long' && (isSkepKeeper || look?.straightHair)) {
+    } else if ((hairStyle === 'long' && (isSkepKeeper || look?.straightHair)) || hairStyle === 'bob') {
       // One continuous crown covers the face mesh as well as the rear skull. A small
       // cap centred behind the face left bare scalp visible from the follow camera.
+      //
+      // **The bob** (Alex, src/alex.js) is the same hair cut short: the lengths stop at the
+      // earlobe, under a fringe. They start a little further behind the temple than the long
+      // hair's do and stop well above the jaw, because a lock at jaw height beside the face reads
+      // as a beard from the follow camera, and that is not a mistake to make about a woman.
+      const bob = hairStyle === 'bob';
+      if (bob) fringe(0.335, 0.2);
       const straight = new THREE.Group();
       straight.name = 'Liz straight hair'; crop.add(straight);
       const crown = part(straight, new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, 1.16),
@@ -1530,14 +1557,16 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       crown.name = 'Liz full crown';
       // A continuous horseshoe of straight hair wraps the temples and back, with an
       // open face. Gently tapered ends reach the waist; no separate slab or scalp part.
-      const rings = [
+      const rings = bob ? [
+        [.30, .218, .218, -.018], [.20, .245, .245, -.018], [.125, .243, .255, -.03], [.1, .238, .262, -.04],
+      ] : [
         [.30, .218, .218, -.018], [.20, .245, .245, -.018],
         [-.12, .247, .26, -.03], [-.49, .225, .258, -.04],
       ];
-      const segments = 20, positions = [], indices = [];
+      const segments = 20, positions = [], indices = [], open = bob ? 1.05 : .86;
       for (const inner of [false, true]) for (const [y, rx, rz, cz] of rings) {
         for (let i = 0; i <= segments; i++) {
-          const angle = .86 + (Math.PI * 2 - 1.72) * i / segments;
+          const angle = open + (Math.PI * 2 - open * 2) * i / segments;
           positions.push(Math.sin(angle) * (rx - (inner ? .032 : 0)), y,
             cz + Math.cos(angle) * (rz - (inner ? .032 : 0)));
         }
@@ -1958,8 +1987,11 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     if (isDoomsayer) patch.position.set(.005, -.012, .09);
     eyePatch(patch, mercStrap ?? material(isDoomsayer ? 0x80674a : 0x4b3a2b));
   }
+  // `glassesColor` gives the frames a colour of their own - Alex's are green - and a coloured
+  // frame is horn or lacquer, not wire, so it is a little heavier and not metallic.
   if (!isMercenary && look?.glasses) spectacles(head, 'Spectacles',
-    material(0x53575c, { metalness: .62, roughness: .34 }), material(0xdfe7ea, { roughness: .12, metalness: .1 }));
+    look.glassesColor !== undefined ? material(look.glassesColor, { roughness: .45 }) : material(0x53575c, { metalness: .62, roughness: .34 }),
+    material(0xdfe7ea, { roughness: .12, metalness: .1 }), look.glassesColor !== undefined ? { tube: .012 } : {});
   if (look?.shirtRibbons) {
     const bows = new THREE.Group(); bows.name = 'Shirt ribbons'; body.add(bows);
     const cloth = material(0xb85179), knot = material(0xe5a1ae);

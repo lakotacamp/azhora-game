@@ -24,7 +24,7 @@ export function createCorpseHost({ scene, world, inventory, getPosition = () => 
   const withinView = body => { const p = getPosition(); return !p || Math.hypot(body.x - p.x, body.z - p.z) <= CORPSE_VIEW_REACH; };
   const visibleBodies = () => model.list({ position: getPosition(), reach: CORPSE_VIEW_REACH });
   function captureCombat(person, { encounterId, ally = false, index = 0 } = {}, actor = null) {
-    if (!person || person.hp > 0 || person.kind === 'dummy' || person.kind === 'sparring' || !encounterId) return false;
+    if (!person || person.hp > 0 || person.kind === 'dummy' || person.kind === 'sparring' || person.kind === 'brawler' || !encounterId) return false;
     const npc = getNpc(person.npcId ?? person.id);
     const id = corpseId({ id: person.id, npcId: npc?.id, encounterId, ally });
     const spec = { ...person, id, sourceId: person.id, npcId: npc?.id ?? null,

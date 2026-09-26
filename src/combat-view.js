@@ -4,7 +4,7 @@ import { createSpider } from './spider-model.js';
 import { createKaylaBear } from './kayla-character.js';
 // Every kind that has an articulated actor here. A kind without one (the practice
 // dummy) is drawn by the world instead, so the list is checked rather than assumed.
-const ACTOR_KINDS = ['goblin', 'wolf', 'soldier', 'officer', 'ogre', 'spider', 'bear', 'sparring', 'rebel'];
+const ACTOR_KINDS = ['goblin', 'wolf', 'soldier', 'officer', 'ogre', 'spider', 'bear', 'sparring', 'rebel', 'brawler'];
 
 // A handful of pooled effects and three articulated actors; nothing allocates
 // new geometry during a swing. Combat rules remain independent of the renderer.
@@ -51,7 +51,7 @@ export function createCombatView(scene, world, camera, { onCorpse = () => false,
     // A named body on the other side of a fight is drawn as himself, exactly as an ally is: that
     // is how a man you are sparring with looks like the man you are sparring with (src/teachers.js).
     const borrowed=getActor(enemy.id)??(enemy.npcId?getActor(enemy.npcId):null);
-    const actor=borrowed??(enemy.kind==='spider'?createSpider():enemy.kind==='bear'?createKaylaBear():enemy.model?createCharacter({...enemy.model,armed:true}):enemy.kind==='wolf'?createWolf({variant:index}):enemy.kind==='ogre'?createOgre():enemy.kind==='officer'?createCharacter({role:'legion-officer',armed:true}):enemy.kind==='soldier'?createCharacter({role:enemy.look==='legion'?'legion-soldier':'suvali-guard',armed:true}):enemy.kind==='rebel'?createCharacter({role:'forest-woodcutter',armed:true}):createGoblin({variant:index}));scene.add(actor.group);
+    const actor=borrowed??(enemy.kind==='spider'?createSpider():enemy.kind==='bear'?createKaylaBear():enemy.model?createCharacter({...enemy.model,armed:enemy.armed!==false}):enemy.kind==='wolf'?createWolf({variant:index}):enemy.kind==='ogre'?createOgre():enemy.kind==='officer'?createCharacter({role:'legion-officer',armed:true}):enemy.kind==='soldier'?createCharacter({role:enemy.look==='legion'?'legion-soldier':'suvali-guard',armed:true}):enemy.kind==='rebel'?createCharacter({role:'forest-woodcutter',armed:true}):createGoblin({variant:index}));scene.add(actor.group);
     // A fight is a crowd of articulated figures: each shadow costs as much as the figure.
     setShadowCasting(actor,false);const enemyShade=groundShadow(enemy.kind==='wolf'?.3:.34);
     // The disc is a person's footprint; a creature this size needs its own.
@@ -155,7 +155,10 @@ export function createCombatView(scene, world, camera, { onCorpse = () => false,
       group.position.set(enemy.x,world.heightAt(enemy.x,enemy.z),enemy.z);
       group.rotation.y=enemy.yaw;
       group.scale.setScalar(1);
-      item.actor.animate(time+index*1.9,enemy.speed||0,true,{action:enemy.action,progress:enemy.progress,alert:state.phase==='active',armed:true});
+      // Empty hands punch, and the next blow comes off the other fist: count the windups.
+      if(enemy.action==='windup'&&item.lastAction!=='windup')item.punches=(item.punches??0)+1;item.lastAction=enemy.action;
+      item.actor.animate(time+index*1.9,enemy.speed||0,true,{action:enemy.action,progress:enemy.progress,alert:state.phase==='active',
+        armed:enemy.armed!==false,fists:enemy.armed===false,combo:item.punches??0});
       const warning=enemy.action==='windup'||enemy.action==='attack';
       item.tell.visible=visible&&!dead&&warning;
       item.tell.position.set(enemy.x,world.heightAt(enemy.x,enemy.z)+.07,enemy.z);

@@ -5,7 +5,7 @@ import { regionLevel } from './region-levels.js';
 
 /** Scene integration; the quest owns outcomes, the normal NPC navigator owns her feet. */
 export function createCagneyHost({ quest, npc, world, combat, player, crime, corpses, toast, refresh, save,
-  openDialogue, closeDialogue, reward, focus, makeAmbusher }) {
+  openDialogue, closeDialogue, reward, focus, makeAmbusher, atHome = () => null }) {
   let cooling = 0, regrouping = false, retryPending = false;
   const ambushers=new Map(), stands=new Map(CAGNAPPERS.map(e=>[e.id,{x:e.x,z:e.z}]));
   const returnWorld=bodyWorld(world), walking=new Map();
@@ -141,6 +141,8 @@ export function createCagneyHost({ quest, npc, world, combat, player, crime, cor
     ],null,'Back to the road',{choices:[{id:'cagney-accept',label:'I will walk with you.',action:()=>{closeDialogue();if(quest.accept()){refresh();focus(CAGNEY_QUEST.id);changed();}}},leave]});
     else if(s.stage==='home')openDialogue(person,['My own front door. Thank you for getting me here safely. These 45 copper are yours.'],null,'Back to the road',{
       choices:[{id:'cagney-reward',label:'Accept 45 copper.',action:()=>{const coins=quest.take();if(coins)reward(coins);closeDialogue();changed();}}]});
+    // At home on her own step, with Alex beside her (src/alex-host.js): her words are the house's.
+    else if(s.stage==='complete'&&atHome()){const home=atHome();openDialogue(person,home.lines,null,'Back to the road',{choices:[...home.choices,leave]});}
     else openDialogue(person,[s.stage==='complete'?'It is good to be home. Thank you again.':s.ambushCleared?'We are clear of them. The road takes us through the Ossen Gate to my house.':'Stay close. I will wait whenever you need to catch up.'],null,'Back to the road',{choices:[leave]});
     return true;
   }

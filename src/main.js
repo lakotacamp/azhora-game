@@ -218,6 +218,8 @@ import { clearLine, createAutopilot, planGoal } from './autopilot.js';
 import { createBenAutopilot } from './ben-autopilot.js';
 import { CAGNEY, CAGNEY_START, CAGNEY_HOME, CAGNEY_QUEST, CAGNEY_AMBUSH, CAGNAPPERS, createCagneyQuest } from './cagney-quest.js';
 import { createCagneyHost } from './cagney-host.js';
+import { ALEX, ALEX_DOOR, ALEX_FACING, ALEX_BOUT_ID, ALEX_STEP } from './alex.js';
+import { createAlexHost } from './alex-host.js';
 import { createHomeResidentHost } from './home-resident-host.js';
 import { createHomeReturnWalker } from './home-return-routes.js';
 import { createHomeFerryView } from './home-ferry-view.js';
@@ -358,6 +360,8 @@ function init() {
   world.npcPositions[LUSCIA_PROPHET.id]={x:CALOSS_PROPHET_STAND.x,z:CALOSS_PROPHET_STAND.z};
   npcData.push({...LUSCIA_PROPHET,yaw:CALOSS_PROPHET_STAND.yaw});
   world.npcPositions[CAGNEY.id]={...CAGNEY_START};npcData.push({...CAGNEY,yaw:Math.PI/2});
+  // Alex, who lives with Cagney (src/alex.js): indoors until Cagney is home and somebody knocks.
+  world.npcPositions[ALEX.id]={...ALEX_DOOR};npcData.push({...ALEX,yaw:ALEX_FACING,hidden:true});
   npcData.push(...PORT_CALOS_NPCS.map(npc=>({...npc})));
   // Ben, of the sorcerer's guild, on Nothom's square with a spider to kill (src/spider-quest.js).
   npcData.push({...BEN});
@@ -779,7 +783,7 @@ function init() {
    * exactly what `TEACHING_FIGHTS` is for.
    */
   const SPARRING_ID='sparring-bout';
-  const TEACHING_FIGHTS=new Set([GREENWAY_RAID.id,AVREL_RAID.id,SPARRING_ID]);
+  const TEACHING_FIGHTS=new Set([GREENWAY_RAID.id,AVREL_RAID.id,SPARRING_ID,ALEX_BOUT_ID]);
   /**
    * **Where the n-th man of the file stands: with the traveler, and never among the enemy.**
    *
@@ -1048,7 +1052,7 @@ function init() {
   const heldWeapon=()=>lentProfile()??weapons?.profile()??null;
   /** Whether that thing is drawn rather than swung. One question, asked in four places. */
   const ranged=()=>!!heldWeapon()?.ranged;
-  let corpseHost=null,crime=null,magic=null,ambushWatch=null,ambushHost=null,cagneyHost=null,kaylaHost=null,raceHost=null,cubHost=null,bearFamily=null;
+  let corpseHost=null,crime=null,magic=null,ambushWatch=null,ambushHost=null,cagneyHost=null,alexHost=null,kaylaHost=null,raceHost=null,cubHost=null,bearFamily=null;
   const combat=createCombat({world,isFallen:(encounterId,id,actor)=>[`npc:${actor.npcId??id}`,`enemy:${encounterId}:${id}`,`ally:${encounterId}:${id}`].some(key=>corpseHost?.model.get(key)?.status==='dead'),position:player.group.position,onEvent:e=>combatEvents.push(e),getWeapon:()=>heldWeapon(),onWeaponContact:id=>{weapons.contact(id);inventory.refresh();},
     // Toughness buys the health, the wind and the length of a dodge; the weapon's own family
     // buys what a swing costs. All four are today's numbers while every skill is level 1.
@@ -3132,7 +3136,7 @@ function init() {
         hits:[{id:event.targetId,npcId:event.targetNpcId,team:event.team,hp:event.hp,maxHp:event.maxHp,spared:event.spared}]});}
     }});
   cagneyHost=createCagneyHost({quest:cagneyQuest,npc:npcById.get(CAGNEY.id),world,combat,player,crime,corpses:corpseHost,toast,
-    refresh:refreshQuest,save:()=>saveRoad(false),openDialogue,closeDialogue,focus:selectQuest,
+    refresh:refreshQuest,save:()=>saveRoad(false),openDialogue,closeDialogue,focus:selectQuest,atHome:()=>alexHost?.cagneyAtHome()??null,
     makeAmbusher:spec=>{const actor=createCharacter({...spec.model,armed:true});actor.group.name=spec.id;actor.ambushCover=createAmbushCamouflage(actor,CAGNAPPERS.findIndex(e=>e.id===spec.id));setShadowCasting(actor,false);scene.add(actor.group);return actor;},
     reward:coins=>{inventory.add(COPPER_ITEM,coins);inventory.refresh();homeResidents.begin(CAGNEY.id);toast(`${coins} copper received. Cagney is home.`,CAGNEY_QUEST.title.toUpperCase());}});
   const homeFerryView=createHomeFerryView({scene}),homeFerryMaterials=new WeakMap();
@@ -3150,6 +3154,8 @@ function init() {
     save:()=>saveRoad(false),openDialogue,closeDialogue,
     complete:id=>id===CAGNEY.id?cagneyQuest.state.stage==='complete':id===BEN.id?['paid','taught'].includes(spiderQuest.state.stage):['paid','taught'].includes(murder.state.stage),
     move:createHomeReturnWalker(npcWorld)});
+  alexHost=createAlexHost({npc:npcById.get(ALEX.id),cagney:npcById.get(CAGNEY.id),world,combat,player,homeResidents,
+    questComplete:()=>cagneyQuest.state.stage==='complete',crime,corpses:corpseHost,toast,openDialogue,closeDialogue,save:()=>saveRoad(false)});
   kaylaHost=createKaylaHost({npc:npcById.get(KAYLA.id),world,combat,crime,bodies:gatherBodies,playerPosition:()=>player.group.position,
     lizAlive:()=>!crime.isDown(LIZ.id),roaming:()=>bearFamily?.motherMayRoam??false,toast,save:saveBearProgress});
   function saveBearProgress(){if(bearFamily&&hasRoadProgress())saveRoad(false);}
@@ -4708,6 +4714,7 @@ function init() {
     if(fireMakingConversation(npc,{lesson:fireMaking,openDialogue,closeDialogue,onChange:refreshRoadSkills}))return;
     if(sylviaConversation(npc,{arts:visualArts,openDialogue,closeDialogue,onChange:refreshRoadSkills}))return;
     if(lusciaProphetConversation(npc,{openDialogue,closeDialogue}))return;
+    if(alexHost?.conversation(npc))return;
     if(cagneyHost.conversation(npc))return;
     if(portCalosConversation(npc,{openDialogue,closeDialogue}))return;
     if(farmingConversation(npc,farmingContext()))return;
@@ -6118,7 +6125,7 @@ function init() {
       if(e.type==='caught'&&e.absorbed>0){arms.learn('shield');armsPaid(arms.caught({damage:e.absorbed,countryLevel:e.level??0,...sparringPay()}));}
       // Sparring is over. Nobody is dead, nobody is hurt, and neither of them has moved: the
       // bout has its own ending so that not one victory branch below can fire on a lesson.
-      if(e.type==='spar-over')endSpar(e.winner);
+      if(e.type==='spar-over'){if(e.encounterId===ALEX_BOUT_ID)alexHost?.boutOver(e.winner);else endSpar(e.winner);}
       // **Every arrow loosed leaves the quiver.** The fight only ever asks how many there are
       // (`getArrows`); the satchel is the host's, and this is the one place it is emptied.
       if(e.type==='loose'){inventory.remove(BOW.arrow,1);inventory.refresh();refreshQuiver();}
@@ -6516,6 +6523,7 @@ function init() {
           } else if(!walking||combat.state.phase==='active')spiderHeldOff=false;
         }
         homeResidents.frame(dt,!reviewFrozen);
+        alexHost.frame(dt,!reviewFrozen);
 
         // **And the body, found.** This is the whole point of an event that happens whether you
         // are there or not: you come up the road a quarter of an hour later and he is lying on it.
@@ -9365,6 +9373,17 @@ function init() {
         // throwing: the view is still written, and comes back with them.
         if(view==='lysa'&&npcById.get('acorn-cook')){questStage=QUEST_DONE;combat.finishPractice();const npc=npcData.find(n=>n.id==='acorn-cook'),home=world.npcPositions[npc.id];player.group.position.set(home.x+1.5,world.heightAt(home.x+1.5,home.z+1.4),home.z+1.4);yaw=.65;pitch=.36;distance=targetDistance=5;conversation(npc);}
         // Anyone, close and face on: 'npc-<id>' (Toft is 'npc-jimson-toft').
+        // Alex on Cagney's step with her, the Cagney quest done and the door knocked (src/alex.js);
+        // and the start of the bout that follows a flirt, fists up.
+        if(view==='alex-cagney'||view==='alex-bout'){questStage=QUEST_DONE;combat.finishPractice();
+          const step=QUEST_HOMES[CAGNEY.id];
+          cagneyQuest.restore({version:1,stage:'complete',ambushCleared:true,hp:85,enemies:[0,0,0],walk:{x:step.porch.x,z:step.porch.z,waypoint:0,waiting:false}});
+          homeResidents.restore({version:1,people:{[CAGNEY.id]:{phase:'outside',leg:'home',position:{x:step.porch.x,z:step.porch.z},yaw:step.yaw+Math.PI,clock:0}}});
+          alexHost.frame(.1,true);const alex=npcById.get(ALEX.id);alex.actor.group.position.set(ALEX_STEP.x,world.heightAt(ALEX_STEP.x,ALEX_STEP.z),ALEX_STEP.z);
+          const out={x:Math.sin(step.yaw+Math.PI),z:Math.cos(step.yaw+Math.PI)},mid={x:(step.porch.x+ALEX_STEP.x)/2,z:(step.porch.z+ALEX_STEP.z)/2};
+          const px=mid.x+out.x*3.2,pz=mid.z+out.z*3.2;player.group.position.set(px,world.heightAt(px,pz),pz);
+          if(view==='alex-bout')alexHost.fight();else player.group.visible=false;
+          reviewTarget=new THREE.Vector3(mid.x,world.heightAt(mid.x,mid.z)+1.2,mid.z);yaw=Math.atan2(px-mid.x,pz-mid.z)+.25;pitch=.1;distance=targetDistance=view==='alex-bout'?5:4.2;}
         if(view.startsWith('npc-')&&npcById.has(view.slice(4))){questStage=QUEST_DONE;combat.finishPractice();player.group.visible=false;
           const npc=npcById.get(view.slice(4)),g=npc.actor.group,turn=g.rotation.y+.35;g.visible=true;
           const px=g.position.x+Math.sin(turn)*3,pz=g.position.z+Math.cos(turn)*3;player.group.position.set(px,world.heightAt(px,pz),pz);

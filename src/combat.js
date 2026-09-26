@@ -44,6 +44,13 @@ export const ENEMY_KINDS = Object.freeze({
   // as long and as honest as anybody's, because **timing never scales** and a lesson least of all.
   sparring: Object.freeze({ tell: .7, attack: .5, contact: .22, recovery: 1.15, damage: 12, speed: 2.3, engage: 2.15, reach: 2.25, lunge: 1.5,
     guard: .5, pack: 1 }),
+  // Somebody fighting with her fists because you said something to the wrong person: Alex, at
+  // Cagney's door (src/alex.js). Only ever in a **bout**, so nobody dies of it. Closer in than a
+  // blade - a fist has no reach but an arm's - quicker off the mark, and she punches through a
+  // cut rather than flinching out of it (`poise`), which is what makes her hard to beat. Her own
+  // strength wherever the house is: a country's level does not change how hard she hits.
+  brawler: Object.freeze({ tell: .55, attack: .38, contact: .17, recovery: .9, damage: 13, speed: 2.7, engage: 1.75, reach: 1.9, lunge: 1.9,
+    poise: true, pack: 1, fixedStats: true }),
   // The rebels who lie up on the road out of Drent (src/road-ambush.js). Farmers, drovers and
   // market families who lost a battle at the Lauvel ten days ago and kept their swords.
   //
@@ -240,6 +247,8 @@ function encounterConfig(config) {
     if (enemy.name !== undefined && typeof enemy.name !== 'string') return null;
     if (enemy.npcId !== undefined && !identifier(enemy.npcId)) return null;
     if (enemy.model !== undefined && (!enemy.model || typeof enemy.model !== 'object' || Array.isArray(enemy.model))) return null;
+    // Somebody who fights with her hands is drawn with them empty (the brawler, Alex).
+    if (enemy.armed !== undefined && typeof enemy.armed !== 'boolean') return null;
     if (enemy.currentHp !== undefined && (!Number.isFinite(enemy.currentHp) || enemy.currentHp < 0 || enemy.currentHp > 100000)) return null;
     const hp = enemy.hp ?? 75, entry = enemy.entry ?? 0;
     if (!Number.isFinite(hp) || hp <= 0 || hp > 10000 || !Number.isFinite(entry) || entry < 0 || entry > 60
@@ -249,7 +258,8 @@ function encounterConfig(config) {
     // so retrying a country-level encounter cannot multiply its health again.
     seen.add(enemy.id); if (enemy.npcId) seen.add(enemy.npcId);
     enemies.push({ id: enemy.id, x: enemy.x, z: enemy.z, hp, entry, kind, ...(enemy.currentHp !== undefined ? { currentHp: enemy.currentHp } : {}), ...(enemy.look ? { look: enemy.look } : {}),
-      ...(enemy.name ? { name: enemy.name } : {}), ...(enemy.npcId ? { npcId: enemy.npcId } : {}), ...(enemy.model ? { model: { ...enemy.model } } : {}) });
+      ...(enemy.name ? { name: enemy.name } : {}), ...(enemy.npcId ? { npcId: enemy.npcId } : {}), ...(enemy.model ? { model: { ...enemy.model } } : {}),
+      ...(enemy.armed === false ? { armed: false } : {}) });
   }
   const allies = [];
   if (config.allies !== undefined) {
@@ -478,6 +488,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     return withCurrentHealth(Object.assign(makeEnemy(spec.id, spec.kind, spec, spec.entry, Math.round(spec.hp * scale)), {
       ...(spec.look ? { look: spec.look } : {}), ...(spec.name ? { name: spec.name } : {}),
       ...(spec.npcId ? { npcId: spec.npcId } : {}), ...(spec.model ? { model: spec.model } : {}),
+      ...(spec.armed === false ? { armed: false } : {}),
     }), spec);
   }
 

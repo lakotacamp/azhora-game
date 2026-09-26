@@ -77,6 +77,7 @@ export const SMITH_IDS = Object.freeze(['tidehaven-smith', 'moros-armourer', 'am
 export const OWN_IDS = Object.freeze([
   'lee-anne',           // Fire Making teacher beside Tidehaven's empty village fire ring.
   'cagney',             // The user's traveler escorted home from the Luscian fork.
+  'alex',               // The user's: lives with Cagney, and comes out with her when you knock.
   'sylvia',             // The user's kindly painter, teaching Visual Arts beside the Sunken Lane.
   'luscia-prophet',     // Caelom warns of winter at the Caloss fork.
   ...PORT_CALOS_NPC_IDS, // The working harbor requested at the river mouth.
