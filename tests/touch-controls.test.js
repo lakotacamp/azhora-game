@@ -71,11 +71,22 @@ test('every button is a key the game already listens for; guard and jump are hel
 
 test('the top row reaches the testing tools and autoplay without taking the reins', () => {
   const f = fixture();
-  assert.deepEqual(TOUCH_TOP.map(t => t.id), ['testing', 'autoplay', 'journal', 'menu']);
+  assert.deepEqual(TOUCH_TOP.map(t => t.id), ['testing', 'autoplay', 'quest', 'journal', 'menu']);
   f.button('testing').fire('click');
   f.button('autoplay').fire('click');
   f.button('menu').fire('click');
   assert.deepEqual(f.log, [['testing'], ['autoplay'], ['down', 'Escape'], ['up', 'Escape']]);
+});
+
+test('on a phone the objectives are put away, and Quest brings them back until tapped again', () => {
+  const document = fakeDocument(), log = [];
+  const touch = createTouchControls({ document, root: document.body, press: code => log.push(code), release: () => {} });
+  touch.buttons.get('quest').fire('click');
+  assert.equal(document.body.classList.contains('touch-info'), true, 'the page shows the objectives');
+  assert.equal(touch.buttons.get('quest').classList.contains('on'), true);
+  touch.buttons.get('quest').fire('click');
+  assert.equal(document.body.classList.contains('touch-info'), false, 'and puts them away again');
+  assert.deepEqual(log, [], 'no key was pressed for it');
 });
 
 test('out of play the stick and buttons step aside and read nothing', () => {

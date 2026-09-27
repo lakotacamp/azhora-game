@@ -5174,7 +5174,9 @@ function init() {
   function updateSpeech() {
     const last=activeDialogue.index===activeDialogue.lines.length-1,choices=last?activeDialogue.choices:null;
     $('speech').textContent=heardSpeech();$('dialogue-next').textContent=last?activeDialogue.action:'Continue  ↵';
-    $('speech-page').textContent=(choices?'Choose a response · Tab / Enter':`${activeDialogue.index+1} / ${activeDialogue.lines.length} · F or Enter`)+speechTongue();
+    // A phone has neither key; it taps the buttons (src/touch-controls.js).
+    const keys=hint=>document.body.classList.contains('touch')?'':hint;
+    $('speech-page').textContent=(choices?'Choose a response'+keys(' · Tab / Enter'):`${activeDialogue.index+1} / ${activeDialogue.lines.length}`+keys(' · F or Enter'))+speechTongue();
     $('dialogue-choices').replaceChildren();show('dialogue-choices',!!choices);show('dialogue-next',!choices);
     for(const choice of choices||[]){const button=document.createElement('button');button.type='button';button.dataset.choice=choice.id;button.textContent=choice.label;button.disabled=!!choice.disabled||choice.enabled===false;button.title=choice.title||choice.reason||'';button.onclick=choice.action;$('dialogue-choices').append(button);}
     if(choices)$('dialogue-choices').querySelector('button:not(:disabled)')?.focus();
@@ -9405,6 +9407,15 @@ function init() {
         // The testing panel itself, so the go-anywhere rows can be looked at rather than believed.
         // Render this one WITHOUT --review-clean: that flag hides every element of the interface.
         if(view==='testing-panel'){combat.finishPractice();testingWhereAmI();modal('testing');}
+        // The phone's HUD (src/touch-controls.css), rendered with --touch --mobile=WxH: the objectives
+        // brought back by the Quest button, and a conversation at a phone's width.
+        // (Only if it is off: main.cjs photographs the first view twice, and a second tap puts it away.)
+        if(view==='touch-hud'){if(document.body.classList.contains('touch-info'))document.querySelector('.touch-quest')?.click();}
+        if(view==='touch-quest'){combat.finishPractice();if(!document.body.classList.contains('touch-info'))document.querySelector('.touch-quest')?.click();}
+        if(view==='touch-talk'){combat.finishPractice();const npc=npcById.get(INSTRUCTOR.id);
+          openDialogue(npc,['Glun looks up from the straw post. “You have the look of somebody who has been walking about on a very small screen.”'],null,'Goodbye',{choices:[
+            {id:'touch-talk-a',label:'What can you teach me?',action:closeDialogue},{id:'touch-talk-b',label:'Where should I go next?',action:closeDialogue},
+            {id:'touch-talk-c',label:'I should keep moving.',action:closeDialogue}]});}
         // A lettered board, close enough to read: the Greenway fingerpost above the landing. What
         // it is for is the lettering atlas, whose cells move when it is cut for fewer words.
         if(view==='signpost'){questStage=QUEST_DONE;combat.finishPractice();player.group.visible=false;

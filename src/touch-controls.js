@@ -30,6 +30,9 @@ export const TOUCH_ACTIONS = Object.freeze([
 export const TOUCH_TOP = Object.freeze([
   Object.freeze({ id: 'testing', label: 'Testing' }),
   Object.freeze({ id: 'autoplay', label: 'Autoplay' }),
+  // On a phone the objectives are put away so the game can be seen (src/touch-controls.css); this
+  // brings them back over the view until it is tapped again.
+  Object.freeze({ id: 'quest', label: 'Quest', toggle: true }),
   Object.freeze({ id: 'journal', label: 'Journal', key: 'KeyJ' }),
   Object.freeze({ id: 'menu', label: 'Menu', key: 'Escape' }),
 ]);
@@ -127,6 +130,7 @@ export function createTouchControls({ document, root, press = () => {}, release 
       event.preventDefault();
       if (entry.id === 'testing') onTesting();
       else if (entry.id === 'autoplay') onAutoplay();
+      else if (entry.toggle) { const on = !root.classList?.contains?.('touch-info'); root.classList?.toggle?.('touch-info', on); button.classList.toggle('on', on); }
       else { press(entry.key); release(entry.key); }
     });
   }
