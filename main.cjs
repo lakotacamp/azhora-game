@@ -182,7 +182,10 @@ if (ownsInstance) app.whenReady().then(async () => {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('console-message', (_, level, message) => { if (level >= 3) errors.push(message); if ((cagneyAutoplayChecksOnly && message.startsWith('CAGNEY_AUTOPLAY_PROGRESS'))||(addisonAutoplayChecksOnly && message.startsWith('ADDISON_AUTOPLAY_PROGRESS'))||(bearQuestChecksOnly&&message.startsWith('BEAR_'))) console.log(message); if(bearQuestChecksOnly&&message.startsWith('BEAR_CAPTURE ')){const name=message.slice(13).replace(/[^a-z0-9-]/gi,'');win.webContents.capturePage().then(img=>fs.writeFileSync(path.join(__dirname,'tests/artifacts','bear-'+name+'.png'),img.toPNG()));} });
   win.webContents.on('render-process-gone', (_, details) => { console.error(details); app.exit(1); });
-  await win.loadURL(`http://127.0.0.1:${server.address().port}/${smoke || windowTest ? '?test=1'+(unbatchedWorld?'&spatial=0':'') : ''}`);
+  await win.loadURL(`http://127.0.0.1:${server.address().port}/${smoke || windowTest ? '?test=1'+(unbatchedWorld?'&spatial=0':'')+(process.argv.includes('--touch')?'&touch=1':'') : ''}`);
+  // --mobile: a phone held sideways (844 x 390), for looking at the touch controls and the HUD at that size.
+  if (process.argv.includes('--mobile')) win.webContents.enableDeviceEmulation({ screenPosition: 'mobile', screenSize: { width: 844, height: 390 },
+    viewPosition: { x: 0, y: 0 }, viewSize: { width: 844, height: 390 }, deviceScaleFactor: 1, scale: 1 });
   if (!smoke) revealGame();
   if (windowTest) {
     const result = await require('./tests/fullscreen-check.cjs')(win);

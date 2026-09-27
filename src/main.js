@@ -21,6 +21,7 @@ import { CUB, CUB_STAND, CUB_HONEY_ITEM, CUB_HONEY_QUEST_ID } from './cub-honey-
 import { createCubHoneyHost, HONEY_STORE, honeyLineOfSight } from './cub-honey-host.js';
 import { createCubAutopilot } from './cub-autopilot.js';
 import { createAddisonAutopilot } from './addison-autopilot.js';
+import { createTouchControls, wantsTouch } from './touch-controls.js';
 import { createBearFamily, BEAR_HOME_ROUTE } from './bear-family.js';
 import { createApiaryBees } from './apiary-bees.js';
 import { createApiaryBeesView } from './apiary-bees-view.js';
@@ -5947,6 +5948,16 @@ function init() {
   }
   function stopAutopilot(reason='Autoplay stopped.'){if(autopilot.active)autopilot.stop(reason);}
   $('autoplay-button').onclick=()=>autopilot.active?stopAutopilot():startAutopilot();$('opening-autoplay').onclick=()=>startAutopilot();
+  // **Touch controls** for a phone, where there is no F8, no WASD and no right button (src/touch-controls.js):
+  // a stick, a drag on the view to look round, the keys as buttons, and the testing tools and autoplay.
+  const touch=wantsTouch({search:location.search,coarse:!!globalThis.matchMedia?.('(pointer: coarse)').matches})
+    ?createTouchControls({document,root:document.body,
+      press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true})),
+      release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true})),
+      onTakeControl:()=>{if(autopilot.active)stopAutopilot('You took the reins.');},
+      onTesting:()=>testingMenu(),onAutoplay:()=>{if(autopilot.active)stopAutopilot();else startAutopilot();}})
+    :{move:{forward:0,side:0},run:false,setPlaying(){},setVisible(){}};
+  if(touch.element)canvas.style.touchAction='none';
   document.addEventListener('keydown',e=>{
     if(e.defaultPrevented)return;
     if(mode==='journal'&&e.target?.closest?.('input,textarea,select,[contenteditable="true"]')&&!['Escape','Tab'].includes(e.code))return;
@@ -6006,6 +6017,12 @@ function init() {
   });
   document.addEventListener('keyup',e=>keys.delete(e.code));
   canvas.addEventListener('pointerdown',e=>{
+    // A finger on the view looks round, the way the right mouse button does; it neither strikes nor
+    // takes the reins from autoplay, so a phone can watch a quest play and turn to see it.
+    if(e.pointerType==='touch'&&mode!=='fishing'){
+      if(mode==='playing'){drag=true;pointerX=e.clientX;pointerY=e.clientY;canvas.setPointerCapture(e.pointerId);}
+      return;
+    }
     if(e.isTrusted&&autopilot.active)stopAutopilot('You took the reins.');
     if(mode==='fishing'&&e.button===0){endFishing();return;}
     if(mode!=='playing')return;
@@ -6426,7 +6443,7 @@ function init() {
       if(mode!=='playing'){combat.guard(false,player.group.rotation.y);combat.lowerBow();}
       if(mode==='playing'&&!reviewFrozen) {
         const before=player.group.position.clone();
-        const {forward,side}=living.recall().status==='passenger'?{forward:0,side:0}:autopilot.active?autopilot.move:getMovementInput(keys),magnitude=Math.hypot(forward,side);
+        const {forward,side}=living.recall().status==='passenger'?{forward:0,side:0}:autopilot.active?autopilot.move:(touch.move.forward||touch.move.side)?touch.move:getMovementInput(keys),magnitude=Math.hypot(forward,side);
         // Escort inputs carry their steering basis so a gently trailing camera cannot bend the route.
         const movementYaw=autopilot.active&&Number.isFinite(autopilot.move.basisYaw)?autopilot.move.basisYaw:yaw;
         const p=combat.state.player;
@@ -6434,20 +6451,20 @@ function init() {
         if(raceHost.mounted&&(living.recall().status==='passenger'||p.hp<=0||crime.isDown(KAYLA.id)||crime.isDown(ED.id)||kaylaHost.state().provoked)){race.abandon('The race was interrupted.');raceHost.sync();}
         if(!crime.isDown(KAYLA.id)&&!kaylaHost.state().provoked&&!kaylaHost.state().fighting)raceHost.tick(dt,{playing:true,input:{
           dx:-Math.sin(movementYaw)*forward+Math.cos(movementYaw)*side,dz:-Math.cos(movementYaw)*forward-Math.sin(movementYaw)*side,
-          run:!!(autopilot.active?autopilot.move.run:(keys.has('ShiftLeft')||keys.has('ShiftRight')||keys.has('Tab')))}});
+          run:!!(autopilot.active?autopilot.move.run:(keys.has('ShiftLeft')||keys.has('ShiftRight')||keys.has('Tab')||touch.run))}});
         bearFamily.frame(dt,{playing:true});
         const guardKey=living.recall().status!=='passenger'&&(autopilot.active?autopilot.guard:keys.has(GUARD_KEY));
         const shieldFacing=guardKey&&hasCarriedShield();
         if(riding.mounted&&combat.state.phase==='active')stepDown(true);
         if(raceHost.mounted){seatOnKayla();}else if(riding.mounted){
-          const canter=!!(autopilot.active?autopilot.move.run:(keys.has('ShiftLeft')||keys.has('ShiftRight')||keys.has('Tab')));
+          const canter=!!(autopilot.active?autopilot.move.run:(keys.has('ShiftLeft')||keys.has('ShiftRight')||keys.has('Tab')||touch.run));
           if(magnitude>0){const wx=-Math.sin(movementYaw)*forward+Math.cos(movementYaw)*side,wz=-Math.cos(movementYaw)*forward-Math.sin(movementYaw)*side,desired=Math.atan2(wx,wz);mountHeading=steer(mountHeading,desired,dt,canter);const pace=riding.speed(canter)*drive(mountHeading,desired);moveCharacter(player.group.position,Math.sin(mountHeading)*pace*dt,Math.cos(mountHeading)*pace*dt,playerWorld,RIDE.radius);}
           player.group.rotation.y=mountHeading;p.yaw=mountHeading;
         } else if(magnitude>0) {
           // A swimmer goes at his own pace, and running is not one of the things he can do.
           const swimLevel=skills.level(SWIMMING_SKILL)||1;
           const speed=inWater?swimSpeed(swimLevel)*combat.movementScale()
-            :(drent.sneaking?4.2*drent.speedMultiplier:((autopilot.active?autopilot.move.run:(keys.has('ShiftLeft')||keys.has('ShiftRight')||keys.has('Tab')))?7.2:4.2))*combat.movementScale();
+            :(drent.sneaking?4.2*drent.speedMultiplier:((autopilot.active?autopilot.move.run:(keys.has('ShiftLeft')||keys.has('ShiftRight')||keys.has('Tab')||touch.run))?7.2:4.2))*combat.movementScale();
           const dx=(-Math.sin(movementYaw)*forward+Math.cos(movementYaw)*side)*speed*dt,dz=(-Math.cos(movementYaw)*forward-Math.sin(movementYaw)*side)*speed*dt;
           // On foot the waterline is not a wall: `swimming:true` is what lets him walk in at all,
           // and it must not be `inWater`, which only turns true once he is already wet - a closed
@@ -6608,6 +6625,7 @@ function init() {
       const roadAwareness=drent.frame(dt,{playing:mode==='playing'&&!reviewFrozen,canSneak:!raceHost.mounted&&!inWater&&!riding.mounted&&combat.state.phase!=='active'});
       cubHost.frame(dt,{playing:mode==='playing'&&!reviewFrozen,talking:activeDialogue?.npc?.id===LIZ.id});
       rivalLight.frame(dt,{playing:mode==='playing'&&!reviewFrozen});
+      touch.setPlaying(mode==='playing');
       // Sovik flickers wherever he is; carried, he is held out in front of the traveler at the chest.
       if(sovikShown==='carried'){const p=player.group.position,r=player.group.rotation.y;sovikViews.carried.group.position.set(p.x+Math.sin(r)*.5,p.y+1.08,p.z+Math.cos(r)*.5);sovikViews.carried.group.rotation.y=r;}
       if(sovikShown)sovikViews[sovikShown]?.animate(elapsed);
