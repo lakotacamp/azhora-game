@@ -64,6 +64,8 @@ import { createEastLotharnScenery } from './east-lotharn-scenery.js';
 import { createFeradomScenery } from './feradom-scenery.js';
 import { feradomTerrainSink } from './feradom-world.js';
 import { FERADOM_LANDMARKS } from './feradom-forts.js';
+import { createAscarthScenery } from './ascarth-scenery.js';
+import { ASCARTH_LANDMARKS } from './ascarth-world.js';
 import { PASS_ROAD_LINE as LOTHARN_ROAD_LINE, WORKINGS_TRACK, EAST_LOTHARN_LANDMARKS, lotharnTerrainSink } from './east-lotharn-world.js';
 import { createCaves } from './east-lotharn-caves.js';
 import { createSuvalHighlandScenery } from './suval-highlands-scenery.js';
@@ -1319,6 +1321,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     root: world, material, mesh, box, post, pebble, wornPatch,
     groundHeight, colliders, dummy, color, cylinder, round, roofGeometry, caves: lotharnCaves,
   });
+  // The Ascarth Peninsula (src/ascarth-scenery.js): grass, scrub and stone on the finger, the wood on
+  // its interior hills, the green stone, and the rock fallen at the foot of its cliffs. Nobody's.
+  const ascarth = createAscarthScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
   const westSuval = createWestSuvalScenery({ root: world, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
     wood, woodLight, darkWood, cream, movingGroups, roadDistance, sign: roadsideSign, signs, barrel });
@@ -1957,6 +1962,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     suvalHighlandMetrics: suvalHighlands.metrics,
     iscareMetrics: iscare.metrics,
     galaMetrics: galaScenery.metrics,
+    ascarthMetrics: ascarth.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
     puethMetrics: puethScenery.metrics,
@@ -2105,6 +2111,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       { id: 'hollow-ridge-refuge', name: 'The Hollow Ridge', ...BAT_CAVE.entrance, radius: 15, description: 'A narrow worn ledge disappears behind a limestone spur. The wind sounds like wings inside the hollow.' },
       { id: 'imlamdris-rebuilding', name: 'Imlamdris rebuilding', ...IMLAMDRIS_REBUILD.centre, radius: 30, description: 'Four timber roofs and a fifth frame stand beside the old city, built from salvaged stone and new-cut boards.' },
       ...ISCARE_RUIN_SITES.map(site => ({ ...site, description: site.id === 'zecron-ruins' ? 'The Blood Prince burned this island port. Roofless houses, a broken lighthouse and burned quay piles remain; nobody lives here.' : 'A small island settlement burned in the Blood Prince\'s passage. Wildlife lives among the fallen rafters.' })),
+      ...ASCARTH_LANDMARKS,
       ...WEST_REGION_LANDMARKS,
       ...GALA_LANDMARKS,
     ],

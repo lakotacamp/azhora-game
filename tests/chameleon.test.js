@@ -43,7 +43,7 @@ const inPolygon = (points, x, z) => {
  */
 // Gala too (docs/gala-brief.md, 28 September 2026): terrain, climate, water and wildlife, and
 // nothing that belongs to anybody - and a wine chameleon is somebody.
-const WITHOUT_ED = new Set(['South Suval', 'Gala']);
+const WITHOUT_ED = new Set(['South Suval', 'Gala', 'Northern Ascarth', 'Southern Ascarth']);
 
 test('every one of his spots is somewhere a chameleon can be: dry ground, off the road, in its own country', async () => {
   const w = await built();

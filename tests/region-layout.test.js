@@ -90,14 +90,28 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * west again (the Nether Desert's own hexes are at -3050) and each will have to state its
    * own case.
    */
-  // East Lotharn extends Amod's old northern boundary to -1301 m, so the complete
-  // world is now 35.264 hexes north-to-south. Feradom and the existing Iscare islands
-  // stay inside this box; neither widens Nethereum's 36.2-hex east-west footprint.
-  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 36 * METRES_PER_HEX, 'the playable regions fit their measured atlas footprint');
-  assert.ok(bounds.maxZ - bounds.minZ > 35 * METRES_PER_HEX, 'the mountain range extends the northern boundary');
+  /*
+   * **The East Lotharn spends four hexes and a third north to south, and states its case.** Amod
+   * set the northern edge at its own hills, -868; the range it is the foothills of runs on north
+   * from there to the South Mithala border, and its northern row of hexes has its centres at
+   * z = -1183, so the edge goes to -1301 and the height from 30.93 hexes to 35.26. That is the
+   * whole of one country, the old range the Empire arc's level-three chapters are set in, and it
+   * takes nothing east or west. So the north-south guard goes to 36 and no further.
+   */
+  /*
+   * **The two Ascarths spend the last hex and three-quarters of it north to south, and state their
+   * case.** West Izol set the southern edge at 2225; the Ascarth Peninsula runs on south of it as a
+   * finger into the Iberos Sea, and Southern Ascarth's tip is the atlas's row 132, its hex centred at
+   * z = 2281, so the edge goes to 2398 and the height from 35.26 hexes to 36.996 - measured. That is
+   * the whole of two countries, the neck and the tip of one peninsula, and they take nothing east or
+   * west: the peninsula lies inside the box Nethereum and Drent already made. So the north-south guard
+   * goes to 37 and no further, with four-tenths of a metre to spare, and it gets a floor of its own.
+   */
+  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 37 * METRES_PER_HEX, 'the playable regions fit a walkable world');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 36 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 36.9 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 
 test('route anchors follow the brief: Tidehaven on the coast, the Caloss on the Luscia border, the Moros west, Elod north-east', () => {

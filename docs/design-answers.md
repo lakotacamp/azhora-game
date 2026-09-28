@@ -647,3 +647,40 @@ what the builder chose where the brief left it open (marked):
 - **The lore** (`gala.md`) was adjusted in place to the atlas: the steppe is Gala's own northern
   half, its rivers are on its borders, the Ascarth border is dry. Recorded claim by claim in
   docs/lore-adjusted-to-atlas.md.
+### 2026-09-28 - The Ascarth Peninsula: terrain, climate and wildlife, nobody's
+
+The user: "start building the wildlife and terrain of Galan, North Ascarth, and South Ascarth."
+Gala is a sibling job; this entry is the two Ascarths (`docs/ascarth-brief.md`,
+`docs/ascarth-report.md`).
+
+- **Ids 22 and 23**, after Feradom (20) and Gala (21), appended in every ordered list. Terrain,
+  climate, water and wildlife only: no Aevis, no city, harbour, road, mound, working or person.
+- **The atlas wins** (the standing rule of 2026-09-21): 13 grassland + 3 hills in the north, 18
+  grassland in the south. The climate, read per hex off the World Builder map, is `Csa` on every
+  grass hex and `Csb` on the three hills and nowhere else. `azhora.cmap.json` says `Cfb` for both,
+  as it does for 84 of its 116 regions - a region-level default, not a reading of the hexes.
+- **It is on the far bank.** The one edge the peninsula shares with Eer is the Lizeem's last,
+  going into the sea; its only dry border is Gala's eight edges. A traveler reaches it through Gala.
+- **The land**: a low neck at Gala's level (the seam contract: grassland base 4.0, amp .6, wave 320;
+  nothing written on Gala's or Eer's hexes; no landform within 100 m of the border), then a stony
+  plateau of Mediterranean grass and scrub at 10-16 m, and the lore's "highland interior" as the
+  atlas's three hill hexes: two rounded rocky hills (summits 35 and 37 m) with a saddle between, and
+  the third hex, which touches Gala, the low shoulder the hex blend makes of it. Wooded in evergreen
+  oak with pine on the tops; green copper stain on the south hill's stone, nothing dug.
+- **The coast**: cliffs 12-16 m along the whole west and round the tip; the east lower, low cliffed
+  headlands and four sheltered bays with beaches where the atlas's own coast steps in a hex (the
+  north bay under the Lizeem's mouth among them). The west's notches are coves in the cliff with no
+  beach.
+- **Wildlife**: red deer on the saddle, boar at the south hill's wood edge, hares on the plateau and
+  on the finger, gulls on the west cliffs and the tip, a hawk over the hills, a harrier toward the
+  tip, grey dolphins off the east shore, and the **Great White Sea-plunger** - the one new rig -
+  circling off the tip and folding into the sea in turn. No domestic stock.
+- **The survey window** widened from row 133 to 135, measured: the tip moves the world's southern
+  edge to 2398 m and the coast lattice then reaches row 135, where Selemi's shore lies across the
+  channel. North to south the world is 36.996 hexes; the guard goes to 37.
+- **Language**: the Avites' speech is carried as an accent of Mittoli (`avite`) - the lore names it
+  a tongue of its own and gives it no family, and the World Builder has no Avite profile, so no name
+  was coined anywhere.
+- The lore (`geography/regions/ascarth.md`) was adjusted in place: the interior is three wooded hills
+  in the north and open grass elsewhere; the cliffs are the west and the tip; Gala lies north-west of
+  the peninsula's base, not south; Aevis's promontory is on the low neck.

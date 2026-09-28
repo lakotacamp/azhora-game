@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -154,6 +154,17 @@ export const REGION_BIOMES = Object.freeze({
   Gala: Object.freeze({ id: 'steppe-to-coast', name: 'The Galan plain', ground: '#b2a874', canopy: '#6e7a4c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'bunch-grass', ownScatter: true,
     relief: { amplitude: .6, wavelength: 320 }, clearings: ['gala-wash', 'gala-delta'],
     note: 'The western bank of the Lizeem near its mouth, and one country with three climates laid across it: hot steppe in the north - bunch grass in tussocks, grey wormwood and saltbush, a dry wash of gravel that runs only in the rains; tawny Mediterranean grass in the middle with low maquis on the rises and wild olive and fig standing singly; and on the short coast the braided mouths of the plain’s water through reed and tamarisk. The Oveth on the northern border, the Lizeem on the eastern, and nothing built by anybody.' }),
+  // The two Ascarths scatter their own country (src/ascarth-scenery.js): what grows there is decided
+  // by whether a point is on one of the three hills the atlas draws in the north - wooded, evergreen
+  // oak on the flanks and pine on the tops - or out on the open grass, and by how near the sea and
+  // which coast, and a count per hex can say none of that. The same grass colour on both, so the
+  // border between them is not drawn on the ground: they are one peninsula with two names on it.
+  'Northern Ascarth': Object.freeze({ id: 'peninsula-hills', name: 'The Ascarth hills', ground: '#aba66b', canopy: '#4f5f3a', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
+    relief: { amplitude: 2.2, wavelength: 150 }, clearings: [],
+    note: 'The neck of the Ascarth Peninsula and its highland interior: low grass where it joins the mainland, then a plateau of tawny Mediterranean grass and aromatic scrub rising to three rounded rocky hills, wooded in evergreen oak with pine on the tops and green copper stain in the stone, and falling to the sea on both sides - in cliffs on the west, and to sheltered bays between low headlands on the east.' }),
+  'Southern Ascarth': Object.freeze({ id: 'peninsula-tip', name: 'The Ascarth tip', ground: '#aba66b', canopy: '#4f5f3a', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
+    relief: { amplitude: 2.2, wavelength: 150 }, clearings: [],
+    note: 'The finger of the peninsula to its tip: open Mediterranean grass and scrub rolling to the sea, thin and stony, a wild olive here and there and nothing taller, cliffs along the whole west and round the tip, two sheltered bays on the east, and Selemi across the channel to the south.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

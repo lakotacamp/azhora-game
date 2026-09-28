@@ -13,6 +13,7 @@ import { elagosGround } from './elagos-world.js';
 import { southSuvalGround } from './south-suval-world.js';
 import { eastLotharnGround } from './east-lotharn-world.js';
 import { feradomGround, feradomSeam } from './feradom-world.js';
+import { ascarthGround, ascarthCliffTint } from './ascarth-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
@@ -257,9 +258,11 @@ export function groundBeforeFeradom(x, z) {
   // (src/west-ground.js). South Suval cuts the Stillwater to its own level and lays
   // Imlamdris's terraces on the slope above it (src/south-suval-world.js). None of the four
   // boxes overlaps another, nor the winery's (src/winery.js), which is in its own hex at Port Calos.
+  // The Ascarth Peninsula lays its plateau, its hills and its cliffs last, over everything else in its
+  // own box; it touches nothing within a hundred metres of Gala or of the Lizeem (src/ascarth-world.js).
   // Lotharn's valleys are cut before western water; level the pass road and made places afterward.
   // Keep the Suval climbing landscape and Iscare ground, then blend Feradom's inland seam.
-  return feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))));
+  return ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -297,6 +300,12 @@ export function groundTint(color, x, z, THREE) {
     }
   }
   color.lerp(new THREE.Color('#cdb98a'), 1 - smooth(1, 15, distance));
+  // The Ascarth cliffs are the one shore in the world that is not a beach: grass to the edge and
+  // bare stone down the face (src/ascarth-world.js). Everywhere else `cliff` is null and this is the
+  // same sand it has always been.
+  const cliff = ascarthCliffTint(x, z, distance);
+  color.lerp(new THREE.Color('#cdb98a'), (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
+  if (cliff?.rock) color.lerp(new THREE.Color('#8a857a'), cliff.rock);
   return color;
 }
 

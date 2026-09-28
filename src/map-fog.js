@@ -156,6 +156,13 @@ export const SUBREGIONS = Object.freeze([
   area('central-massif', 'The Central Massif', 'East Lotharn Mountains', -1300, -955, 110, 'Old forest to a grazed top, and the iron and coal of the central range in its south face.'),
   area('eastern-massif', 'The Eastern Massif', 'East Lotharn Mountains', -930, -830, 110, 'The highest ground in the range, forested to a rounded open summit.'),
   area('border-water', 'The Border Water', 'East Lotharn Mountains', -1250, -1165, 90, 'The range’s northern foot, where the forest gives out above a mountain river and the Mithala plain begins.'),
+  // The Ascarth Peninsula, on the far bank of the Lizeem's mouth (src/ascarth-world.js).
+  area('ascarth-neck', 'The Neck', 'Northern Ascarth', -1455, 1335, 55, 'Where the peninsula leaves the mainland: low grass at Gala’s own level between the western sea and the bay under the Lizeem’s mouth, before the ground begins to rise.'),
+  area('interior-hills', 'The Interior Hills', 'Northern Ascarth', -1365, 1580, 105, 'Two rounded rocky hills and a saddle between them, wooded in evergreen oak with pine on the tops, and green stain on the stone of the southern one where the copper is.'),
+  area('ascarth-west-cliffs', 'The West Cliffs', 'Northern Ascarth', -1530, 1535, 55, 'Grass to the edge and then a fall to rock and swell: the peninsula’s western shore, with gulls on the tops.'),
+  area('ascarth-east-bays', 'The East Bays', 'Southern Ascarth', -1010, 1840, 70, 'Sheltered bays between low headlands on the finger’s eastern shore, each with its beach: the only good anchorage the peninsula has.'),
+  area('ascarth-finger', 'The Finger', 'Southern Ascarth', -870, 2060, 90, 'Thin grass and stone rolling between two seas, a wild olive here and there and nothing taller, cliffs on the west.'),
+  area('ascarth-tip', 'The Tip', 'Southern Ascarth', -720, 2255, 55, 'The end of the peninsula: cliffs round three sides, sea-plungers diving off it, and Selemi across the channel to the south.'),
   area('lizeem-reach', 'The Lower Lizeem', 'Eer', -1420, 1080, 110, 'The last reach of the great river, going grey with what it is carrying. Gala is on the far bank and there is no way to it: not here, and not anywhere along this side.'),
   // Gala: one plain charted by which of its three climates you are in (src/gala-world.js).
   area('gala-dry-north', 'The Dry North', 'Gala', -1690, 1040, 105, 'The interior weather and no shelter from it: bunch grass in tussocks with bare ground between them, grey wormwood and saltbush, and a hot wind off the Oves Desert. Grazed rather than farmed, the lore says, and nobody grazing it.'),

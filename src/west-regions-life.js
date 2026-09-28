@@ -8,6 +8,7 @@ import { SOUTH_SUVAL_WILDLIFE_ZONES } from './south-suval-wildlife.js';
 import { EAST_LOTHARN_WILDLIFE_ZONES } from './east-lotharn-wildlife.js';
 import { FERADOM_WILDLIFE_ZONES } from './feradom-wildlife.js';
 import { GALA_WILDLIFE_ZONES } from './gala-wildlife.js';
+import { ASCARTH_WILDLIFE_ZONES } from './ascarth-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -447,6 +448,36 @@ function models() {
     },
 
     /**
+     * **The Great White Sea-plunger**, the gannet-relative the fauna overview catalogues on "certain
+     * rocky headlands and offshore islands - particularly along the Svaleen coast and the exposed
+     * Legemum headlands", "whose vertical dives from height into the Iberos shoals are one of the more
+     * visible demonstrations of the sea's productivity". Legemum is the next peninsula west of the
+     * Ascarth, and the shoals are the Iberos's, so it fishes off Ascarth's tip: an extension by the
+     * width of one sea, and the one new animal the Ascarth brief allowed.
+     *
+     * Drawn as a gannet reads from a cliff top: a white cigar of a body pointed at both ends, a
+     * straw-yellow head on a dagger of a grey bill, and long narrow white wings dipped in black at
+     * the tips. It soars on the hawk's rig and does the one thing no other bird here does
+     * (`zone.plunge`): folds and falls straight into the sea, and comes up again.
+     */
+    'sea-plunger': {
+      body: geometry([
+        S(0xf4f3ee, [0, 0, 0], [.1, .095, .36]),
+        S(0xe8e6de, [0, -.03, .02], [.085, .06, .28]),
+        S(0xf1eee2, [0, .005, -.36], [.05, .025, .15], [.04, 0, 0]),
+        S(0x1b1b1a, [0, .006, -.49], [.03, .016, .06], [.04, 0, 0]),
+        S(0xe6d49a, [0, .03, .34], [.062, .06, .085]),
+        C(0x8d9aa0, [0, .02, .47], [.024, .15, .02], [Math.PI / 2 + .04, 0, 0]),
+        ...both(side => S(0x141414, [side * .04, .05, .37], [.011, .012, .01])),
+      ]),
+      wing: geometry([
+        S(0xf6f5f0, [.34, 0, 0], [.4, .018, .1]),
+        S(0xeeede6, [.72, -.004, -.03], [.34, .014, .075]),
+        S(0x161616, [1.02, -.008, -.06], [.16, .012, .05]),
+      ]),
+    },
+
+    /**
      * Grey dolphins off the Eer shore. The fauna overview documents them "in the
      * Lizeem estuary at Nylon during upriver fish migrations", and the estuary is
      * Eer's own south-west corner, so this is a placement and not an extension.
@@ -881,6 +912,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...EAST_LOTHARN_WILDLIFE_ZONES,
   ...FERADOM_WILDLIFE_ZONES,
   ...GALA_WILDLIFE_ZONES,
+  ...ASCARTH_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -939,6 +971,8 @@ const SOAR = Object.freeze({
   'plateau-hawk': { slow: .4, rock: .12, dihedral: .16 },
   'turkey-vulture': { slow: .26, rock: .16, dihedral: .26 },
   harrier: { slow: .55, rock: .20, dihedral: .38 },
+  // A seabird on long narrow wings held flat and nearly still: it rides the wind off the sea.
+  'sea-plunger': { slow: .5, rock: .08, dihedral: .05 },
 });
 const SOARERS = new Set(Object.keys(SOAR));
 
@@ -1520,8 +1554,12 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     animal.clock += dt;
     const zone = animal.zone;
     const radius = zone.circle ?? CIRCLE_RADIUS, period = zone.period ?? CIRCLE_PERIOD;
-    const angle = animal.clock / period * TAU + animal.index * 2.1;
-    const slide = zone.quarter ? Math.sin(animal.clock / (period * 3.4) * TAU + animal.index * 1.3) * zone.quarter : 0;
+    // A bird that plunges stops going round while it is in the sea: its circle runs on a clock of its
+    // own that stands still from the moment it folds to the moment it is back at height.
+    const plunge = zone.plunge ? plungeAt(zone.plunge, animal.clock, animal.index) : null;
+    const flying = plunge ? plunge.soar : animal.clock;
+    const angle = flying / period * TAU + animal.index * 2.1;
+    const slide = zone.quarter ? Math.sin(flying / (period * 3.4) * TAU + animal.index * 1.3) * zone.quarter : 0;
     animal.x = animal.home.x + slide + Math.sin(angle) * radius;
     animal.z = animal.home.z + Math.cos(angle) * radius;
     const under = zone.follow ? world.heightAt(animal.x, animal.z) : world.heightAt(animal.home.x, animal.home.z);
@@ -1529,6 +1567,42 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     animal.yaw = angle + Math.PI / 2;
     animal.speed = radius * TAU / period;
     animal.action = 'soar';
+    if (plunge) {
+      // Its height is over the sea's surface, not over the sea floor under it.
+      const aloft = Math.max(under, SEA_LEVEL) + zone.air + Math.sin(animal.clock * .21) * (zone.bob ?? 3);
+      const p = zone.plunge;
+      animal.pitch = 0; animal.fold = 0; animal.hidden = false; animal.y = aloft;
+      if (plunge.stage === 'plunge') {
+        // Folded, head down, and falling faster all the way to the water.
+        const t = plunge.t / p.fall;
+        animal.y = aloft + (SEA_LEVEL - aloft) * t * t;
+        animal.pitch = .35 + 1.15 * Math.min(1, t * 2.5); animal.fold = Math.min(1, t * 3);
+        animal.speed = 0; animal.action = 'plunge';
+      } else if (plunge.stage === 'under') {
+        animal.y = SEA_LEVEL - .6; animal.hidden = true; animal.speed = 0; animal.action = 'under';
+      } else if (plunge.stage === 'climb') {
+        // Off the water and back up, nose raised, beating: straight up over the place it went in.
+        const t = plunge.t / p.climb, ease = t * t * (3 - 2 * t);
+        animal.y = SEA_LEVEL + .15 + (aloft - SEA_LEVEL - .15) * ease;
+        animal.pitch = -.4 * (1 - ease); animal.action = 'climb';
+      }
+    }
+  }
+
+  /**
+   * Where a plunging bird is in its round, from its clock alone, so that a flock left unwatched and
+   * found again is wherever that much time would have put it. Each round is `every` seconds on the
+   * wing, `fall` into the sea, `under` it, and `climb` back to height; `soar` is how long it has
+   * spent going round, which is what its circle is drawn from.
+   */
+  function plungeAt(p, clock, index) {
+    const lead = index * 3.7 + 1, round = p.every + p.fall + p.under + p.climb, time = clock + lead;
+    const rounds = Math.floor(time / round), into = time - rounds * round;
+    const soar = rounds * p.every + Math.min(into, p.every) - lead;
+    if (into < p.every) return { stage: 'soar', t: into, soar };
+    if (into < p.every + p.fall) return { stage: 'plunge', t: into - p.every, soar };
+    if (into < p.every + p.fall + p.under) return { stage: 'under', t: into - p.every - p.fall, soar };
+    return { stage: 'climb', t: into - p.every - p.fall - p.under, soar };
   }
 
   function place(mesh, index, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
@@ -1539,7 +1613,8 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   function render(flock) {
     const species = flock.zone.species;
     flock.animals.forEach((animal, i) => {
-      rotation.setFromEuler(new THREE.Euler(0, animal.yaw, 0));
+      // Only a plunging bird ever pitches; for everything else this is the yaw it has always been.
+      rotation.setFromEuler(new THREE.Euler(animal.pitch || 0, animal.yaw, 0, 'YXZ'));
       unit.setScalar(animal.hidden ? 1e-4 : animal.scale);   // an otter under the water is not drawn
       rootMatrix.compose(new THREE.Vector3(animal.x, animal.y + animal.lift, animal.z), rotation, unit);
       const walking = animal.speed > .05, phase = animal.clock * (animal.action === 'flee' ? 13 : 7);
@@ -1555,8 +1630,13 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
         const soar = SOAR[species];
         const tilt = Math.sin(animal.clock * soar.slow) * soar.rock;
         const dihedral = soar.dihedral;
+        // A plunger folding for the dive sweeps its wings straight back along its body; climbing off
+        // the water it beats. Both are nothing on every other bird that soars, whose wings are placed
+        // exactly as they always were.
+        const fold = animal.fold || 0, beat = animal.action === 'climb' ? Math.sin(animal.clock * 9) * .5 : 0;
         for (let side = 0; side < 2; side++) place(flock.meshes.wings, i * 2 + side,
-          side ? -.06 : .06, .01, -.01, 0, side ? Math.PI : 0, (side ? -1 : 1) * (dihedral + tilt));
+          side ? -.06 : .06, .01, -.01, 0, side ? Math.PI - fold * 1.3 : fold * 1.3,
+          (side ? -1 : 1) * ((dihedral + tilt) * (1 - fold) + beat + fold * .2));
         return;
       }
       const grazer = GRAZER_RIG[species];

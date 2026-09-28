@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -296,6 +296,27 @@ export const REGION_TERRAIN = Object.freeze({
     plains: Object.freeze({ base: 9.5, amp: 1.8, wave: 170, ground: '#6d8250' }),
     mountain: Object.freeze({ base: 58, amp: 9, wave: 190, ground: '#5d6a4c' }),
   }) }),
+  // The Ascarth Peninsula (src/ascarth-world.js), a finger of land on the far bank of the Lizeem's
+  // mouth. **Base 4.0, amplitude .6, wavelength 320 on the grassland** is the seam contract with Gala,
+  // which uses the same on its side of their eight shared edges (docs/ascarth-brief.md): the neck
+  // lies at Gala's own level and the hex blend between them is quiet. Everything the peninsula is
+  // beyond that - the plateau rising out of the neck, the two hills, the cliffs and the bays - is laid
+  // by `ascarthGround`, which leaves the hundred metres next to the border to this blend.
+  //
+  // The hill profile is low on purpose. One of the three hill hexes, (-9,122), touches Gala on its
+  // north-west edge, and a hill profile at the height the hills actually stand would lift Gala's side
+  // of that edge by metres; at seven it lifts it by a metre at the most, measured
+  // (`tests/ascarth-world.test.js`), and the hills themselves are the hand-built landform. Its
+  // wavelength is the grass's, 320, because the blend's relief is a sine of the blended wavelength:
+  // a hex on another wave shifts the phase of every sine within reach of it, and where the blend's
+  // set of hexes changes at a corner the ground steps by a third of a metre. On one wave it does not.
+  'Northern Ascarth': Object.freeze({ base: 4, amp: .6, wave: 320, ground: REGION_BIOMES['Northern Ascarth'].ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 7, amp: 1, wave: 320, ground: '#858b5d' }),
+  }) }),
+  // Southern Ascarth touches nobody but its twin and the sea, so its profile is read by nothing that
+  // shapes the ground - the whole country is `ascarthGround`'s - and it says what that ground is: the
+  // plateau's mean height, measured over the country's own hexes, and its roll.
+  'Southern Ascarth': Object.freeze({ base: 12, amp: 2.1, wave: 150, ground: REGION_BIOMES['Southern Ascarth'].ground }),
   outland: Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
   // Gala is a plain, "flat, fertile, drained by a network of small rivers", and the atlas says so
   // nineteen times out of twenty-one: `plains`, with the two coastal hexes `grassland`. What it
@@ -960,6 +981,26 @@ const REGION_TEXT = {
     description: 'The western bank of the Lizeem near its mouth, and one country with three climates laid across it from north to south. The north is the interior weather: hot steppe, bunch grass in tussocks with bare ground between, grey wormwood and saltbush, and a dry wash of gravel that runs only in the rains. The middle is Mediterranean, tawny grass with low aromatic maquis on the rises and wild olive and fig standing singly. The south is a short coast where the plain’s water comes down to the Iberos Sea in braided channels through reed and tamarisk. The Oveth is the northern border and the Lizeem the eastern, and nothing on either bank is built by anybody.',
     palette: { ground: '#b2a874', accent: '#e4d8aa', fog: '#cfcbb2', sky: 0xc3d9dc, haze: 0xdad5bf, hazeDensity: .0046 },
     npcIds: [], landmarks: ['gala-steppe', 'gala-wash', 'oveth-ford', 'lower-oveth', 'gala-maquis', 'gala-reed-bank', 'gala-mouths', 'gala-shore'] },
+  // **The Ascarth Peninsula is terrain, climate, water and wildlife only** (the user, 28 September
+  // 2026: "start building the wildlife and terrain of Galan, North Ascarth, and South Ascarth"). Aevis
+  // and the peninsula's other cities, their harbours, the bronze and the gates, the bull-headed figures,
+  // the burial mounds and the copper workings are all somebody's, and nothing here belongs to anybody.
+  //
+  // **It is on the far bank.** Its one edge with Eer is the Lizeem's last, going into the sea, and its
+  // only dry border is Gala's: a traveler reaches it through Gala or not at all.
+  //
+  // **A sky of its own**, one for both, since they are one peninsula: Csa on every grass hex and Csb
+  // on the three hills, the sea on both sides of all of it. Eer's clear Mediterranean air with the sea
+  // in it - bluer than Eer's, a haze off the water rather than off a dry plain, and the clearest of the
+  // four southern skies, because the one thing a finger of rock in the sea has is distance to look at.
+  'Northern Ascarth': { subtitle: 'The neck of the peninsula and its hills', spawn: point(-1345, 1480),
+    description: 'The peninsula where it leaves the mainland: low grass at the neck between the Lizeem’s mouth and the western sea, and then the ground rising to a plateau of tawny grass and aromatic scrub, rugged and stony, and to the interior hills - two rounded rocky hills and the shoulder of a third, wooded in evergreen oak with pine on the tops, and green stain on the stone where the copper is. Cliffs along the western shore with seabirds on them; on the east the ground falls to sheltered bays between low headlands.',
+    palette: { ground: '#aba66b', accent: '#e0d6a8', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
+    npcIds: [], landmarks: ['ascarth-neck', 'interior-hills', 'green-stone', 'ascarth-west-cliffs', 'ascarth-north-bay'] },
+  'Southern Ascarth': { subtitle: 'The tip of the finger', spawn: point(-850, 2021),
+    description: 'The finger of the peninsula to its end: open Mediterranean grass and scrub, thin and stony, rolling on a low plateau between two seas, with a wild olive standing alone here and there and nothing taller. Cliffs along the whole of the west and round the tip, two sheltered bays on the east with a beach in each, dolphins off the shore, sea-plungers folding into the shoals off the tip, and Selemi across a narrow channel to the south.',
+    palette: { ground: '#aba66b', accent: '#e0d6a8', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
+    npcIds: [], landmarks: ['ascarth-east-bays', 'ascarth-tip', 'selemi-channel'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

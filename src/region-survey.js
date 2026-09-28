@@ -200,6 +200,19 @@ export const PLAYABLE_SURVEY = Object.freeze({
         terrain:'plains'},{q:15,r:98,terrain:'plains'},{q:16,r:98,terrain:'plains'},{q:17,r:98,terrain:'plains'},{q:12,r:99,terrain:'hills'},{q:13,r:99,
         terrain:'hills'},{q:14,r:99,terrain:'hills'},{q:15,r:99,terrain:'hills'},{q:16,r:99,terrain:'hills'},{q:17,r:99,terrain:'plains'},{q:18,r:99,
         terrain:'plains'},{q:17,r:100,terrain:'plains'},{q:18,r:100,terrain:'plains'},{q:17,r:101,terrain:'plains'}]) }),
+    Object.freeze({ id: "Northern Ascarth", name: "Northern Ascarth",
+      bounds: Object.freeze({"x":1413.354,"y":2880,"width":152.421,"height":176}), centerX: 1486.966, centerY: 2975.5,
+      cells: Object.freeze([{q:-7,r:120,terrain:'grassland'},{q:-8,r:121,terrain:'grassland'},{q:-10,r:122,terrain:'grassland'},{q:-9,r:122,terrain:'hills'},{q:-8,r:122,
+        terrain:'grassland'},{q:-10,r:123,terrain:'grassland'},{q:-9,r:123,terrain:'hills'},{q:-8,r:123,terrain:'grassland'},{q:-10,r:124,
+        terrain:'grassland'},{q:-9,r:124,terrain:'grassland'},{q:-8,r:124,terrain:'grassland'},{q:-7,r:124,terrain:'grassland'},{q:-9,r:125,
+        terrain:'grassland'},{q:-8,r:125,terrain:'hills'},{q:-7,r:125,terrain:'grassland'},{q:-9,r:126,terrain:'grassland'}]) }),
+    Object.freeze({ id: "Southern Ascarth", name: "Southern Ascarth",
+      bounds: Object.freeze({"x":1524.205,"y":3024,"width":180.134,"height":176}), centerX: 1618.89, centerY: 3108,
+      cells: Object.freeze([{q:-8,r:126,terrain:'grassland'},{q:-7,r:126,terrain:'grassland'},{q:-8,r:127,terrain:'grassland'},{q:-7,r:127,terrain:'grassland'},{q:-6,r:127,
+        terrain:'grassland'},{q:-8,r:128,terrain:'grassland'},{q:-7,r:128,terrain:'grassland'},{q:-6,r:128,terrain:'grassland'},{q:-7,r:129,
+        terrain:'grassland'},{q:-6,r:129,terrain:'grassland'},{q:-5,r:129,terrain:'grassland'},{q:-7,r:130,terrain:'grassland'},{q:-6,r:130,
+        terrain:'grassland'},{q:-5,r:130,terrain:'grassland'},{q:-7,r:131,terrain:'grassland'},{q:-6,r:131,terrain:'grassland'},{q:-5,r:131,
+        terrain:'grassland'},{q:-6,r:132,terrain:'grassland'}]) }),
   ]),
 });
 
@@ -300,5 +313,7 @@ export const LAND_HEXES = Object.freeze([
   130],[-32,130],[-31,130],[-30,130],[-29,130],[-28,130],[-27,130],[-26,130],[-25,130],[-24,130],[-17,130],[-16,130],[-12,130],[-7,130],[-6,130],[-5,
   130],[7,130],[8,130],[-33,131],[-32,131],[-31,131],[-30,131],[-29,131],[-28,131],[-27,131],[-26,131],[-25,131],[-17,131],[-16,131],[-15,131],[-13,
   131],[-12,131],[-7,131],[-6,131],[-5,131],[-33,132],[-32,132],[-31,132],[-30,132],[-29,132],[-28,132],[-27,132],[-26,132],[-25,132],[-6,132],[-33,
-  133],[-32,133],[-31,133],[-30,133],[-29,133],[-28,133],[-27,133],[-26,133],[-25,133],[-9,133],[-8,133],[-2,133],[-1,133],[2,133]
+  133],[-32,133],[-31,133],[-30,133],[-29,133],[-28,133],[-27,133],[-26,133],[-25,133],[-9,133],[-8,133],[-2,133],[-1,133],[2,133],[-33,134],[-32,134],
+  [-31,134],[-30,134],[-29,134],[-28,134],[-27,134],[-26,134],[-25,134],[-20,134],[-9,134],[-8,134],[-7,134],[1,134],[2,134],[-33,135],[-32,135],[-31,
+  135],[-30,135],[-29,135],[-28,135],[-27,135],[-26,135],[-25,135],[-19,135],[-9,135],[-8,135],[-7,135],[3,135]
 ]);

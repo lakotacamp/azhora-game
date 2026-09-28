@@ -53,6 +53,11 @@ const feradomAnchor = point(1745.907, 2392, 13, 99);
 // A Gala plains hex on the steppe rows, where the travel button puts the traveler: for (-9, 118)
 // the atlas's formula gives this point and no other.
 const galaAnchor = point(1399.496, 2848, -9, 118);
+// The north hill's hex in Northern Ascarth, hills, the highland interior. For (-9, 123) the atlas's
+// formula gives this point and no other.
+const northernAscarthAnchor = point(1468.778, 2968, -9, 123);
+// A grassland hex in the middle of Southern Ascarth's finger, (-6, 129).
+const southernAscarthAnchor = point(1635.055, 3112, -6, 129);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -85,6 +90,8 @@ const LOCALS = [
   [20, 'East Lotharn', 'east-lotharn', 'East Lotharn Mountains', eastLotharnAnchor],
   [21, 'Feradom', 'feradom', 'Feradom', feradomAnchor],
   [22, 'Gala', 'gala', 'Gala', galaAnchor],
+  [23, 'Northern Ascarth', 'northern-ascarth', 'Northern Ascarth', northernAscarthAnchor],
+  [24, 'Southern Ascarth', 'southern-ascarth', 'Southern Ascarth', southernAscarthAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

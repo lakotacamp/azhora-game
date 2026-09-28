@@ -173,7 +173,7 @@ export const LANGUAGES = freeze({
     from: 'the world-builder profile `mittoli`',
     note: 'The great western family and the tongue of commerce, governance and scholarship. The traveler meets three of its dialects: Luscian, thick with Elagosi and plains loanwords; the Plain’s eastern Mittoli, with an older layer under its place names that nobody has traced; and Amodian, a foothill dialect carrying a terrace-country substrate and a set of water-measure words Standard Mittoli lacks.',
     borrows: ['ambroni', 'pyrosi'],
-    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'isareos', 'nethrani', 'lotharn'],
+    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn'],
     onsets: ['al', 'ar', 'azh', 'bel', 'cael', 'dael', 'dor', 'el', 'gal', 'hom', 'kael', 'mel', 'mir', 'nil', 'sor', 'tal', 'thal', 'trel', 'vel', 'zael'],
     middles: ['a', 'ae', 'e', 'i', 'o', 'oe', 'u'],
     suffixes: ['a', 'ael', 'an', 'ath', 'el', 'eth', 'in', 'ith', 'oe', 'ol', 'om', 'on', 'or', 'os', 'oss', 'um'],
@@ -495,6 +495,17 @@ export const DIALECTS = freeze({
   gala: dialect('gala', 'Galan', 'mittoli',
     'A Mittoli-derived mainland dialect, related to the speech of the Lizeem valley upstream and distinct from Nylon’s coastal variant across the river, leavened with every contact the country has sustained: Avite borrowings in its legal and administrative registers — tribute, garrison, the protocols of royal acknowledgment, and words for kinds of military obligation it had no need of before — and Iberos Sea vocabulary in the maritime and commercial ones. Its names for rivers, inlets and soils are from an older layer than Mittoli, and so is the name Gala.',
     word => word.replace(/oss$/, 'os').replace(/th/, 't')),
+  // The Avites of the Ascarth Peninsula. The lore names their speech as a tongue of its own - the
+  // southern cities "speak a dialect of Avite that the northern cities consider archaic" - and gives it
+  // no family, no grammar and no words beyond a handful of glosses (*veth*, the rememberers;
+  // *Thareveth*, the wine god in the epics), and the World Builder has no Avite naming profile. So it
+  // is not invented here: it is carried as an accent of Mittoli, the tongue of Gala next door, whose
+  // own lore says Avite borrowings sit in its legal and administrative registers, until the lore gives
+  // Avite a family. The accent is the one sound every Avite word the lore has shares, the hard *-th*
+  // close - Ascarth, veth, Thareveth - and a *v* where Mittoli has a *b*. It coins nothing.
+  avite: dialect('avite', 'Avite', 'mittoli',
+    'The speech of the Ascarth Peninsula, a tongue of its own that the lore has never catalogued, heard here through the Mittoli of the mainland it trades with: hard at the close, *-th* where Mittoli ends soft, and old enough in the south of the peninsula that the north calls it archaic. What the epics say in it is for the *veth*, the rememberers, to say.',
+    word => word.replace(/b/, 'v').replace(/([aeiou])l$/, '$1th')),
   isareos: dialect('isareos', 'Isareos Mittoli', 'mittoli',
     'The western-interior Mittoli of the valley heads: unstressed syllables compressed, Elagosi loanwords kept in the formal registers of dispute and contract, and above all **the ford vocabulary** — single terms for water heights and crossing conditions that Standard Mittoli needs a compound for, and which grows every season anybody tries to finish writing it down.',
     word => word.replace(/os$/, 'eos').replace(/([aeiou])([bcdfgklmnprstvz])([aeiou])\2/, '$1$2$3')),
@@ -577,6 +588,11 @@ export const REGION_LANGUAGE = freeze({
   // Iscare's lore describes the Iberos coastal trade contact language. Use its existing
   // coastal relative until Iscari vocabulary is authored, rather than inventing a tongue.
   'Iscare Archipeligo': spoken('suvalen'),
+  // Twenty-two and twenty-three, the Ascarth Peninsula: the Avites' speech (the `avite` entry above
+  // says why it is an accent of Mittoli and not a tongue of its own yet). One entry for both halves;
+  // the south's archaic form is the lore's and has no words to give it, so none is invented.
+  'Northern Ascarth': spoken('mittoli', 'avite'),
+  'Southern Ascarth': spoken('mittoli', 'avite'),
 });
 
 /**

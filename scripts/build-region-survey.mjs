@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
-  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom'];
+  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth'];
 /**
  * **Lake hexes that belong to the region all round them.** The World Builder map paints these
  * `lake`; the dev atlas this script reads leaves them unclaimed, because a lake is nobody's
@@ -51,8 +51,24 @@ export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Obje
  * circumradius of the bounds, and the westernmost such hex on the whole atlas is
  * at q = -31. Two hexes of slack, and no more, because every hex in the window
  * is a line in a generated file.
+
+ *
+ * `minR` was 92, which is the East Lotharn's own northern row, and the East Lotharn is the first
+ * playable country to reach it. Its northern edge then takes the world's bounds to its hexes'
+ * rim, and the coast lattice samples out to COAST_MARGIN plus a circumradius beyond that: row 90
+ * of South Mithala, measured. Row 91 left out would have called the Mithala plain the sea along
+ * the whole north face of the range. Two rows, and no slack past the one the lattice reaches.
+ *
+ * `maxR` was 133, which West Izol's southern shore set, and the two Ascarths are the first
+ * playable countries to reach past it: Southern Ascarth's tip is row 132, its hex's southern
+ * corner stands at z = 2338.4, and the world's southern edge goes from 2225.2 to 2398.4. The coast
+ * lattice samples out to COAST_MARGIN beyond that, to z = 2495.6, which is inside rows 134 and 135
+ * and no further, measured. Twenty-five claimed hexes lie in those two rows under the lattice -
+ * Selemi's six among them, the island a hundred and seventy metres south of the tip across a
+ * channel one hex wide - and with 133 they were all the sea: the tip would have looked out on open
+ * water where the atlas draws Selemi's shore. So 135, the last row the lattice reaches, and no slack.
  */
-export const WINDOW = { minQ: -33, maxQ: 34, minR: 90, maxR: 133 };
+export const WINDOW = { minQ: -33, maxQ: 34, minR: 90, maxR: 135 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

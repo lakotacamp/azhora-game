@@ -99,7 +99,10 @@ test('Isareos is the country that spent most of the hex budget', () => {
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   assert.ok(wide > 36 && wide < 37, `the world is ${wide.toFixed(2)} hexes wide`);
-  assert.ok(Math.abs(tall - 30.93) < .05, `north to south is still ${tall.toFixed(2)} hexes: nothing here touched it`);
+  // North to south was 30.93 hexes, set by West Izol and Amod, and nothing here touched it; the
+  // East Lotharn took it to 35.26 by reaching north to the Mithala border, and the Ascarth Peninsula
+  // to 37.00 (36.996) by reaching south past West Izol to its tip (region-layout.test.js).
+  assert.ok(Math.abs(tall - 37.00) < .05, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
 });
 
 test('low hills, not quite highlands, blurring into the two countries either side of them', () => {
