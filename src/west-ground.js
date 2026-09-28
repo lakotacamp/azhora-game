@@ -25,6 +25,7 @@
  */
 import { terrainMix, relief } from './region-world.js';
 import { lotharnGround, lotharnCoast } from './east-lotharn-world.js';
+import { galaRise, galaWash } from './gala-world.js';
 import {
   WEST_RIVERS, WEST_POOLS, WEST_GROUND, VASTOS_SINTER, VASTOS_BRAID, VASTOS_RIVER,
   MENETH_RIDGES, menethRidgePhase, CARICAS_SHELF, WEST_BRAIDS, WEST_REGION_BOXES, inBox,
@@ -231,7 +232,7 @@ export const nethereumWet = (x, z) => clamp(nethereumHollow(x, z) / NETHEREUM_HO
  * back there first (`lotharnCoast`).
  */
 const baseBeforeWater = (x, z) => lotharnGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z))
-  + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z);
+  + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z) + galaRise(x, z) - galaWash(x, z);
 
 // ---------------------------------------------------------------------------
 // Standing water
@@ -419,13 +420,14 @@ export function westShaping(x, z) {
  * The western ground: the landforms, then the standing water, then the channels,
  * in that order — the sinter apron first because the warm pool sits on top of it,
  * Nethereum's hollow with them because a hill-stream has to find its own floor,
+ * Gala's steppe shoulder and its dry wash with them for the same reason (src/gala-world.js),
  * channels last because a river cuts through whatever it finds.
  * `natural` is the region's own blended relief; everything here only reshapes it.
  */
 export function westGround(x, z, natural) {
   if (!westShaping(x, z)) return natural;
   return channel(x, z, pooled(x, z, lotharnGround(x, z, natural)
-    + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z)));
+    + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z) + galaRise(x, z) - galaWash(x, z)));
 }
 
 /** The western ground of a point on its own, for the scenery and the tests. */

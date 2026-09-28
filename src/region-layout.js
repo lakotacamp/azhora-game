@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -146,6 +146,14 @@ export const REGION_BIOMES = Object.freeze({
   Feradom: Object.freeze({ id: 'barrier-hills', name: 'Feradom', ground: '#5c7248', canopy: '#2e4c33', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'forest-floor', ownScatter: true,
     relief: { amplitude: 2.4, wavelength: 160 }, clearings: ['pass-forts'],
     note: 'The barrier hills: a band of forested ridges along the country’s inland edge, not high but steep-sided and thick with oak and fir, crossed in six places, each held by a fortress of the Duchy. North of them, fields and pasture in the river valleys and the cold northern coast.' }),
+  // Gala scatters its own country (src/gala-scenery.js). The atlas's terrain field says `plains`
+  // for nineteen of its twenty-one hexes and so cannot say what grows where; its climate field
+  // can, and draws three bands straight across the country - `BSh` steppe over the northern three
+  // rows, `Csb` over the next two, `Csa` on the two hexes at the sea - and one count per hex
+  // cannot say which band a point is in or how near it stands to the water.
+  Gala: Object.freeze({ id: 'steppe-to-coast', name: 'The Galan plain', ground: '#b2a874', canopy: '#6e7a4c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'bunch-grass', ownScatter: true,
+    relief: { amplitude: .6, wavelength: 320 }, clearings: ['gala-wash', 'gala-delta'],
+    note: 'The western bank of the Lizeem near its mouth, and one country with three climates laid across it: hot steppe in the north - bunch grass in tussocks, grey wormwood and saltbush, a dry wash of gravel that runs only in the rains; tawny Mediterranean grass in the middle with low maquis on the rises and wild olive and fig standing singly; and on the short coast the braided mouths of the plain’s water through reed and tamarisk. The Oveth on the northern border, the Lizeem on the eastern, and nothing built by anybody.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

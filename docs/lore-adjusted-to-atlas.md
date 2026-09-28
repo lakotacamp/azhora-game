@@ -128,6 +128,24 @@ draft of `docs/six-regions-brief.md` decided the other way and the user reversed
 | "It grows food without great effort" | The south grows food without great effort. The north grows stock | `BSh` |
 | the city, the harbour, the Guild of Assessors, the guest-right, the Avite cycle, Nylon across the river | **All kept.** The atlas denies none of it | — |
 
+### `gala.md` — second pass, **applied in place** (the Gala build, 2026-09-28)
+
+The first pass above had been applied to `gala.md` by the time Gala was built. Building the country
+against the atlas turned up two more claims the map does not bear, and these were written into the
+lore file in place (left uncommitted in `world-builder`, as the rule is), not only proposed here:
+
+| was | now | the atlas fact |
+|---|---|---|
+| "twenty to twenty-five miles inland from it before the terrain gives way to the dry steppe that marks the edge of Ovesos and the Oves Desert beyond it" | twenty to twenty-five miles inland to the Telemonian border; **the northern half of that is itself dry steppe**, the same country as Ovesos and the Oves Desert across the Oveth, with one gravel wash that runs only in the rains | `BSh` over Gala's own northern three rows (12 of 21 hexes): the steppe is inside Gala, not beyond it |
+| "the sea is the southern end of the country rather than its long side" | kept, and made exact: a short shore at the **south-western** tip, and the Lizeem going out to sea at the **south-eastern** tip, where Gala, Eer and the Ascarth ground meet | Gala's three sea edges are on hexes (-12,122) and (-11,122); the Lizeem's last authored edge ends at (-1350, 1213), the corner of Eer, Northern Ascarth and the sea |
+| "drained by a network of small rivers fed from the Ascarth foothills" | its rivers are on its borders — the Oveth along the north, wadeable over rock at its head and deep from there to the Lizeem; a shallower stream off the desert margin; a small stream down the Telemonian border to the sea; the Lizeem along the east, uncrossable. **The Ascarth border is dry.** Inside, the plain's own slow water rises beside the Lizeem's western bank and braids out to the short shore — "the Lizeem's distributaries, as the Galans call it" | river edges: Gala\|Ovesos 3 (medium), Gala\|Oves Desert 2 (medium), Gala\|Telemonia 7 and Gala\|Legemum 1 (small), Gala\|Nesdor 3 and Gala\|Eer 5 (large); Gala\|Northern Ascarth 0 of 8 |
+| "supplemented by irrigation channels in the drier northern stretches" | **kept** — the channels are dug, so somebody's, and not built; the atlas does not deny them | — |
+| "The northern edge of Gala, where the plain meets the dry steppe … the upland herding communities" | the northern **half** of Gala, the steppe … the herding communities; "the climate changes under a traveler's feet in the middle of the country, not at its border" | as the first row; and the north stands about eight metres, which is not upland |
+| "The people of the south-eastern rises" | the people of the south-east, under the Ascarth hills | Gala's own south-east is four-metre plain on the seam; the rises are Northern Ascarth's `hills` hexes beyond it |
+
+Nothing else in the file was touched: the city, the harbour, the Guild of Assessors, the guest-right,
+the Avite cycle, Nylon and the language section all stand.
+
 ## `eer.md` — no hills, and the coast is the grassy half
 
 The lightest of the six.

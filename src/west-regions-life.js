@@ -7,6 +7,7 @@ import { DRENT_WILDLIFE_ZONES } from './drent-wildlife.js';
 import { SOUTH_SUVAL_WILDLIFE_ZONES } from './south-suval-wildlife.js';
 import { EAST_LOTHARN_WILDLIFE_ZONES } from './east-lotharn-wildlife.js';
 import { FERADOM_WILDLIFE_ZONES } from './feradom-wildlife.js';
+import { GALA_WILDLIFE_ZONES } from './gala-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -499,6 +500,36 @@ function models() {
     },
 
     /**
+     * The black migratory goose, for Gala's river mouths: "the black migratory geese that appear on
+     * the Iberos coast in late autumn in vast flocks, winter in the coastal marshes and river mouths,
+     * and depart in spring toward the north" (`fauna/azhoran_fauna_overview.md`). The one new rig the
+     * Gala brief allows, and the raft the duck's comment above has been promising since Eer.
+     *
+     * Built on the duck's plan and for the same reason — head, neck and bill are part of the body,
+     * because the bird rig places wings and legs and nothing else, and a goose on the water does not
+     * swing its head down to graze — at half as big again, and in the colours that say which goose
+     * it is from the far bank: black head, neck and breast with one white fleck at the throat, a
+     * dark grey-brown back over paler barred flanks, and a white stern that is the last thing seen of
+     * a flock going away. Legs and bill black.
+     */
+    goose: {
+      body: geometry([
+        S(0x4c4842, [0, .30, -.03], [.18, .135, .34]),
+        S(0x8b8479, [0, .25, .0], [.165, .095, .30]),
+        S(0xf1efe9, [0, .29, -.32], [.095, .075, .095]),
+        S(0x22201e, [0, .33, -.37], [.065, .045, .10], [.25, 0, 0]),
+        S(0x1b1a18, [0, .36, .21], [.105, .105, .115]),
+        S(0x161514, [0, .48, .27], [.047, .125, .047]),
+        S(0xecebe6, [0, .525, .295], [.051, .021, .049]),
+        S(0x161514, [0, .60, .31], [.056, .053, .072]),
+        C(0x121211, [0, .592, .392], [.022, .075, .018], [Math.PI / 2 + .1, 0, 0]),
+        ...both(side => S(0x0a0a0a, [side * .037, .615, .338], [.009, .010, .009])),
+      ]),
+      leg: geometry([Y(0x1d1c1b, [0, -.075, 0], [.018, .15, .018]), B(0x1d1c1b, [0, -.15, .026], [.066, .02, .092])]),
+      wing: geometry([S(0x4c4842, [.13, 0, -.03], [.165, .03, .19]), S(0x2a2826, [.225, .005, -.12], [.085, .022, .075])]),
+    },
+
+    /**
      * The wild boar of the tamarisk and the cushion scrub. Not the lore's "river
      * boar", which is a semi-aquatic animal of the Mittoli wetlands and a different
      * beast; this is the ordinary pig of a Mediterranean farmland, which is what
@@ -849,6 +880,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...SOUTH_SUVAL_WILDLIFE_ZONES,
   ...EAST_LOTHARN_WILDLIFE_ZONES,
   ...FERADOM_WILDLIFE_ZONES,
+  ...GALA_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -948,6 +980,8 @@ const BIRD_RIG = Object.freeze({
   egret: { shoulder: .84, hip: .58, out: .11, apart: .05, beat: 1.1, swing: .22, fold: .30, sweep: 1.22, tuck: .52 },
   stilt: { shoulder: .45, hip: .38, out: .07, apart: .035, beat: 1.25, swing: .30, fold: .26, sweep: 1.28, tuck: .56 },
   duck: { shoulder: .23, hip: .12, out: .075, apart: .045, beat: 1.35, swing: .18, fold: .34, sweep: 1.30, tuck: .60 },
+  // The goose is the duck's row at half as big again: a bird that sits on the water, not a wader.
+  goose: { shoulder: .32, hip: .17, out: .11, apart: .06, beat: 1.3, swing: .18, fold: .34, sweep: 1.30, tuck: .60 },
   gull: { shoulder: .43, hip: .27, out: .08, apart: .042, beat: 1.2, swing: .20, fold: .28, sweep: 1.25, tuck: .55 },
 });
 
@@ -1127,11 +1161,11 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * keeps them from being chased to the horizon. The fox still never flees.
    */
   const FLEE_AT = { longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
-    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5 };
+    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14 };
   const WALK = { longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
-    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38 };
+    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5 };
   const RUN = { 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
-    egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5 };
+    egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6 };
   /**
    * Cattle, whatever breed. They do not bolt: they put their heads up, turn to face whoever
    * it is, and give ground at a shade over a walking pace. This used to be a test on the
@@ -1143,14 +1177,14 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * Everything that answers a traveler by getting off the ground. A bird cannot be
    * run down, which is the whole of why they are all here and the hare is not.
    */
-  const FLIES = new Set(['wading-bird', 'egret', 'stilt', 'duck', 'gull']);
+  const FLIES = new Set(['wading-bird', 'egret', 'stilt', 'duck', 'gull', 'goose']);
   /** Cattle giving ground: a shade over the traveler's walk, so a walker never closes and a runner does. */
   const GIVE = 4.5;
   /** The fox drifts back as fast as you come on, up to `cap`: only a flat run gains on it, and slowly. */
   const FOX = Object.freeze({ floor: 1, cap: 6.6, lead: 1.06, arm: 2.8, notice: 10 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
   const RETURN = { longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
-    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2 };
+    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4 };
   const HOME = 16, SETTLED = 6;
   const BACK = [0, .35, -.35, .7, -.7], ALONG = [1.05, -1.05, 1.4, -1.4, 1.75, -1.75, 2.1, -2.1];
 

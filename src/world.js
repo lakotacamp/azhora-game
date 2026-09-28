@@ -85,6 +85,8 @@ import { amodTerrainSink } from './amod-terraces.js';
 import { createAmodScenery } from './amod-scenery.js';
 import { WEST_REGION_LANDMARKS, westBareGround, westRiverDistance } from './west-regions.js';
 import { createWestScenery } from './west-regions-scenery.js';
+import { createGalaScenery } from './gala-scenery.js';
+import { GALA_LANDMARKS } from './gala-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
@@ -1335,6 +1337,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // The four western regions (src/west-regions-scenery.js): their water, their gravel,
   // their sedge and Vastos's sulfur ground. Terrain and wildlife only; nobody lives there.
   const westScenery = createWestScenery({ root: world, material, mesh, pebble, groundHeight, colliders, wornPatch, dummy, color, round });
+  // Gala (src/gala-scenery.js): its water, its dry wash, and what grows on the steppe, the maquis and
+  // the coast. Its own seeded stream, after the west's, so nothing already built moves for it.
+  const galaScenery = createGalaScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   const stakedProps = [];
   buildMorosWorks({ parent: world, heightAt: groundHeight, colliders, signs, movingGroups, stakedProps, roadDistance });
@@ -1951,6 +1956,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     farmlandMetrics: regionalFarmland.metrics, farmsteads: FARMSTEADS,
     suvalHighlandMetrics: suvalHighlands.metrics,
     iscareMetrics: iscare.metrics,
+    galaMetrics: galaScenery.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
     puethMetrics: puethScenery.metrics,
@@ -2100,6 +2106,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       { id: 'imlamdris-rebuilding', name: 'Imlamdris rebuilding', ...IMLAMDRIS_REBUILD.centre, radius: 30, description: 'Four timber roofs and a fifth frame stand beside the old city, built from salvaged stone and new-cut boards.' },
       ...ISCARE_RUIN_SITES.map(site => ({ ...site, description: site.id === 'zecron-ruins' ? 'The Blood Prince burned this island port. Roofless houses, a broken lighthouse and burned quay piles remain; nobody lives here.' : 'A small island settlement burned in the Blood Prince\'s passage. Wildlife lives among the fallen rafters.' })),
       ...WEST_REGION_LANDMARKS,
+      ...GALA_LANDMARKS,
     ],
     paths,
     update(time, dt) {
@@ -2115,6 +2122,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       elagos.waterMaterial.uniforms.time.value = time;
       westScenery.update(time);
       eastLotharn.update(time);
+      galaScenery.update(time);
       regionScenery.millSails.rotation.z = time * .115;
       for (const [i, camp] of [...campfires.values()].entries()) if (camp.fire.lit) {
         camp.flames.scale.set(1 + Math.sin(time * 8 + i) * .04, .94 + Math.sin(time * 11 + i) * .10, 1);

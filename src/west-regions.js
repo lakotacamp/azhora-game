@@ -38,7 +38,7 @@
 import { PLAYABLE_SURVEY } from './region-survey.js';
 import { RIVER_EDGES } from './region-rivers.js';
 import { riverCourses } from './region-layout.js';
-import { hexOwnerAt, REGION_CELLS, METRES_PER_HEX } from './region-world.js';
+import { hexOwnerAt, REGION_CELLS, METRES_PER_HEX, landDistance } from './region-world.js';
 import { ELAGOS_REACHES } from './elagos-world.js';
 import { LOTHARN_WATER_LINES, LOTHARN_BOX } from './east-lotharn-world.js';
 
@@ -687,6 +687,145 @@ export const NETHEREUM_STREAMS = Object.freeze([
   ], { halfWidth: 1.4, halfWidthEnd: 1.9, cut: .95, cutEnd: .7, bed: .3, taper: 60 }),
 ]);
 
+// ---------------------------------------------------------------------------
+// Gala: the Oveth's last reach, the two border streams, and the plain's own water
+// ---------------------------------------------------------------------------
+/**
+ * Gala's water, and every metre of it is the atlas's or the ground's (docs/gala-brief.md).
+ *
+ * The atlas draws four courses on Gala's borders and none inside it. The Lizeem along the
+ * whole Nesdor and Eer side is already built (`LIZEEM`, `LIZEEM_REACH`) and is not touched
+ * here. The other three are built here, each only where it has Gala on one bank:
+ *
+ *  - **the desert border stream**, the two `medium` edges between Gala and the Oves Desert. The
+ *    atlas carries it on west, `small`, between the Oves Desert and Telemonia; neither of those
+ *    is built, so neither is that. It runs north along Gala's north-western corner to the Oveth.
+ *  - **the Oveth**, its last reach: three `medium` edges between Gala and Ovesos, from the corner
+ *    where the desert stream and the Oveth's own upper course (Ovesos's, unbuilt) come together,
+ *    east to the Lizeem.
+ *  - **the Telemonia border stream**, `small`, down the whole western side to the sea, its last
+ *    edge between Gala and Legemum. Unnamed in the lore and the atlas, and left so.
+ *
+ * And one course that is the ground's, not the atlas's, which is what the lore's "network of
+ * small rivers" and its "Lizeem's distributaries" come to on a map that draws no river inside
+ * the country: see `GALA_CHANNEL`.
+ */
+const galaTail = (key, count) => atlasCourse(key).slice(-count);
+/**
+ * A course carried to the coast stops where the beach starts. The water level of a western
+ * course is worked out from the lie of the land (`westNaturalGround`), which knows nothing of
+ * the shore, so a course run on to the sea would draw its water in the air over the sand: the
+ * coast field lowers the ground to the sea over the last forty metres and the level does not
+ * follow it. Eer's two channels stop short for the same reason (tests/eer-world.test.js: within
+ * forty-five metres of the water). So each is cut off where it comes within `reach` of the sea,
+ * by interpolation along the segment that crosses that line, and the beach carries it the rest
+ * of the way.
+ */
+function shoreward(points, reach = 42) {
+  const out = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], da = landDistance(a.x, a.z), db = landDistance(b.x, b.z);
+    if (db >= reach) { out.push(b); continue; }
+    const t = clamp((da - reach) / (da - db || 1), 0, 1);
+    out.push(point(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t));
+    break;
+  }
+  return out;
+}
+
+/**
+ * A tributary stops at its parent's bank, not in the middle of it. The atlas ends the Oveth's line
+ * on the Lizeem's centre, where three hex corners meet; the course built here stops where its water
+ * would begin to lie on the Lizeem's own bank, `reach` metres from the great river's centre line,
+ * and the last few paces between are the drop the lore gives it — "drops through a rocky lower
+ * section, and joins the Lizeem approaches" — cut by both channels and wet with neither.
+ *
+ * It is measured, not guessed, and it is there for a second reason as well: the Lizeem's bank reeds
+ * (`west-regions-scenery.js`) are sown from one seeded stream that every western country after
+ * Caricas draws from in turn, and a single reed on that bank falling into the Oveth's water instead
+ * of beside it re-rolled every tree, tuft and thorn in Nesdor, Eer, Isareos and Nethereum. Twenty-
+ * five metres keeps the Oveth's water, at its widest, clear of the whole bank the reeds are sown on.
+ */
+function shortOf(points, parent, reach) {
+  const out = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    const da = courseDistance(parent, a.x, a.z), db = courseDistance(parent, b.x, b.z);
+    if (db >= reach) { out.push(b); continue; }
+    const t = clamp((da - reach) / (da - db || 1), 0, 1);
+    out.push(point(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t));
+    break;
+  }
+  return out;
+}
+
+/**
+ * **The desert border stream.** Shallow over gravel the whole of its Gala reach and a step
+ * across, which is what a stream off the rain-shadow margin is in any month but the wet ones.
+ * It is also half of how the dry country reaches Gala on foot: the Oves Desert shares two edges
+ * with Gala and both of them are this stream, so a stream built deep would have walled the
+ * desert out of the country beside it. `medium` on the atlas and narrow here, because the
+ * atlas's medium begins on these two edges and nowhere upstream of them.
+ */
+export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The desert border stream',
+  galaTail('Gala,Oves Desert,Telemonia', 3), { halfWidth: 2.4, halfWidthEnd: 3, cut: 1.1, cutEnd: 1.3, bed: .45 });
+
+/**
+ * **The Oveth**, its last reach, and the crossing the six-regions brief left to whoever built
+ * Gala: "Ovesos and the Oves Desert both reach Gala only across it, and the lore puts the
+ * wadeable part at the lower end rather than the upper — 'below the Sorten it narrows, drops
+ * through a rocky lower section' … The course will take a ford window rather than a ford
+ * length." This reach *is* the lower end, so the window is its head: shallow over rock for
+ * the first two-fifths below the corner where the three countries meet, and then deep, because
+ * the last of it "joins the Lizeem approaches" and a river backed up by the great river is not
+ * a river anybody wades.
+ *
+ * It drops as it goes: the cut deepens from a metre and a third to three and a half, which is
+ * the "rocky lower section" and is also what brings its water down toward the Lizeem's, three
+ * metres cut into its own bed where they meet. It takes its first level from the desert stream
+ * (`headOf`), because a river cannot stand above the water that runs into it.
+ */
+export const OVETH_REACH = river('oveth-reach', 'The Oveth', shortOf(atlasCourse('Gala,Ovesos'), LIZEEM, 25),
+  { halfWidth: 3, halfWidthEnd: 5.4, cut: 1.3, cutEnd: 3.5, bed: .85, fordUntil: .4, headOf: 'gala-desert-stream' });
+
+/**
+ * **The Telemonia border stream**: small on the atlas, a step across here, running south
+ * down Gala's whole western side and out to the sea at its south-western corner. It has no
+ * name in the lore and none in the atlas, and it is listed for the user rather than given one.
+ * It tapers out onto the beach (`shoreward`, `taper`), the way a stream reaching sand does.
+ */
+export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Telemonia border stream',
+  shoreward(atlasCourse('Gala,Legemum,Telemonia')), { halfWidth: 1.5, halfWidthEnd: 2.2, cut: 1, cutEnd: .75, bed: .35, taper: 30 });
+
+/**
+ * **The distributary.** The lore of Gala says the south is "well-watered by the Lizeem's
+ * distributaries" and the brief asks for "braided distributary channels through reed and
+ * tamarisk reaching the sea". The atlas draws no river inside the country, and it puts the
+ * Lizeem's mouth at the far south-eastern tip, where Gala, Eer and Northern Ascarth meet — the one
+ * corner of Gala nothing may be shaped in, because it is inside the hundred metres the seam with
+ * Northern Ascarth keeps clear. So the water is built where the atlas leaves room for it.
+ *
+ * It rises on the plain beside the Lizeem's western bank and runs south-west across the country
+ * to Gala's one short piece of shore, braiding over its last third where the gradient dies. That
+ * is Eer's own reading of the same lore, one bank over: a true distributary leaves its parent at
+ * the parent's level, and the Lizeem is cut three metres into its bed here, so nothing climbs out
+ * of it. What a plain beside a river like that carries is its own drainage, running the same way
+ * for the same reason — and at its foot it is the widest slow water in the country, which is
+ * where the brief's raft of geese is.
+ *
+ * Its line is drawn to the seam: every point of it, with its braid and the valley the braid is
+ * cut in, is more than a hundred metres inside Gala's own hexes from the Northern Ascarth border
+ * (tests/gala-world.test.js measures it). That is why it bends west as it nears the sea: Gala's
+ * south narrows to a single hex between Telemonia and Northern Ascarth, and the channel goes down
+ * the western side of it.
+ */
+export const GALA_CHANNEL = river('gala-channel', 'The distributary', shoreward([
+  point(-1535, 1078), point(-1572, 1116), point(-1610, 1153), point(-1650, 1191), point(-1691, 1231),
+  point(-1728, 1273), point(-1757, 1318), point(-1774, 1362), point(-1783, 1398), point(-1788, 1430),
+]), { halfWidth: 2.2, halfWidthEnd: 4.6, cut: 1.3, cutEnd: .8, bed: .5 });
+
+export const GALA_RIVERS = Object.freeze([GALA_DESERT_STREAM, OVETH_REACH, GALA_TELEMONIA_STREAM, GALA_CHANNEL]);
+
 /**
  * The braided reaches. A braid is what a river does when it has more bed than
  * water, and the Flats give both of theirs more bed than they know what to do
@@ -703,6 +842,8 @@ export const WEST_BRAIDS = Object.freeze([
   Object.freeze({ id: 'nesdor-beck', course: NESDOR_BECK, from: .46, to: .92, offset: 16, half: 1.9, cut: .75, lift: .14 }),
   Object.freeze({ id: 'eer-north', course: EER_CHANNELS[0], from: .58, to: .96, offset: 15, half: 1.8, cut: .7, lift: .13 }),
   Object.freeze({ id: 'eer-south', course: EER_CHANNELS[1], from: .60, to: .95, offset: 13, half: 1.6, cut: .65, lift: .12 }),
+  // Gala's mouths: the distributary's last third, on the only ground Gala has at the sea.
+  Object.freeze({ id: 'gala-mouths', course: GALA_CHANNEL, from: .64, to: .97, offset: 10, half: 1.5, cut: .6, lift: .1 }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -744,7 +885,7 @@ export const LOTHARN_WATERS = Object.freeze([LOTHARN_BORDER_WATER, KEMRATH_WATER
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...GALA_RIVERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -752,7 +893,7 @@ export const WEST_POOLS = Object.freeze([
 ]);
 
 /** The regions this module shapes, in the order they were built. */
-export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains']);
+export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

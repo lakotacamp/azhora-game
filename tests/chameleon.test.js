@@ -41,7 +41,9 @@ const inPolygon = (points, x, z) => {
  * would normally raise his count leaves it where it is and says so here; he goes to the Stillwater
  * the day people do.
  */
-const WITHOUT_ED = new Set(['South Suval']);
+// Gala too (docs/gala-brief.md, 28 September 2026): terrain, climate, water and wildlife, and
+// nothing that belongs to anybody - and a wine chameleon is somebody.
+const WITHOUT_ED = new Set(['South Suval', 'Gala']);
 
 test('every one of his spots is somewhere a chameleon can be: dry ground, off the road, in its own country', async () => {
   const w = await built();

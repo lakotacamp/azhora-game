@@ -157,6 +157,12 @@ export const SUBREGIONS = Object.freeze([
   area('eastern-massif', 'The Eastern Massif', 'East Lotharn Mountains', -930, -830, 110, 'The highest ground in the range, forested to a rounded open summit.'),
   area('border-water', 'The Border Water', 'East Lotharn Mountains', -1250, -1165, 90, 'The range’s northern foot, where the forest gives out above a mountain river and the Mithala plain begins.'),
   area('lizeem-reach', 'The Lower Lizeem', 'Eer', -1420, 1080, 110, 'The last reach of the great river, going grey with what it is carrying. Gala is on the far bank and there is no way to it: not here, and not anywhere along this side.'),
+  // Gala: one plain charted by which of its three climates you are in (src/gala-world.js).
+  area('gala-dry-north', 'The Dry North', 'Gala', -1690, 1040, 105, 'The interior weather and no shelter from it: bunch grass in tussocks with bare ground between them, grey wormwood and saltbush, and a hot wind off the Oves Desert. Grazed rather than farmed, the lore says, and nobody grazing it.'),
+  area('gala-wash', 'The Dry Wash', 'Gala', -1722, 1122, 55, 'A bed of grey gravel between low cut banks, running south-east off the steppe shoulder. Water in it for a few days after the winter rains and none the rest of the year.'),
+  area('oveth-ford', 'The Oveth Ford', 'Gala', -1772, 978, 40, 'Where the Oveth narrows over rock below the corner of three countries: shin-deep and quick, and the only place on this reach it is crossed. Below it the river deepens toward the Lizeem.'),
+  area('gala-maquis', 'The Maquis', 'Gala', -1680, 1262, 90, 'Tawny grass and low aromatic scrub on every rise, never closed, and wild olive and fig standing singly a long way apart. The rain comes off the sea here and not off the desert.'),
+  area('gala-mouths', 'The Braided Mouths', 'Gala', -1772, 1372, 58, 'The plain’s water coming down to the Iberos Sea in three threads round bars of sand, reed and tamarisk thick along all of them, and black geese on the widest of the water.'),
   // Peblos: the islands, which are charted from the water as much as from the land.
   area('cobble', 'Cobble', 'Peblos', 336, 432, 45, 'The one village in the Pebbles: a stone quay, drying racks, ten roofs on a shelf of rock, and the Empire’s tally shed.'),
   area('peblos-headland', 'The Cobble Headland', 'Peblos', 402, 366, 42, 'The northern cape of the main island, with the unlit headland light on its crown.'),

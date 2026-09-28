@@ -49,6 +49,11 @@ const spot = (id, region, name, x, z, note) => freeze({ id, region, name, x, z, 
  * which is inside Meneth's fringe, so a spot chosen for being in no country was in one. The new
  * one is the nearest ground to it that is honestly open country and still holds him — same rock
  * field west of the Lotharn, 724 m off the nearest road.
+ *
+ * `open-south` moved 104 m, from (-1705, 1461) to (-1804, 1492), when Gala was built (2026-09-28): the
+ * old tree was on what is now Gala's beach. The new one is the nearest ground to it, found by the same
+ * flood, that is honestly open country and holds him: Legemum's shore, just past Gala's south-western
+ * corner, and not in Northern Ascarth, which is being built too.
  */
 export const CHAMELEON_SPOTS = freeze([
   spot('drent-wood', 'Drent', 'a stump in the Greenway wood', -424, -17, 'He is lying along a stump with his eyes going different ways, which is a thing he can do and you cannot.'),
@@ -69,7 +74,7 @@ export const CHAMELEON_SPOTS = freeze([
   spot('isareos-thorn', 'Isareos', 'a blackthorn in an Isareos hollow', -2446, -29, 'He is down in a fold of the hills in a blackthorn, out of a wind that has not let up since morning.'),
   spot('nethereum-willow', 'Nethereum', 'a willow over the Nethereum outlet', -2461, 404, 'He is along a willow branch above the water with his feet in the wet bark, watching the meadow steam.'),
   spot('open-north', 'Open country', 'a rock west of the Lotharn', -1991, -295, 'He is on a rock on ground no country on the atlas claims, which suits him down to the ground.'),
-  spot('open-south', 'Open country', 'a dead tree in the far south-west', -1705, 1461, 'He is in a dead tree a long way past the last border anybody has drawn, and did not come here to be found.'),
+  spot('open-south', 'Open country', 'a dead tree in the far south-west', -1804, 1492, 'He is in a dead tree a long way past the last border anybody has drawn, and did not come here to be found.'),
 ]);
 export const CHAMELEON_SPOT_IDS = freeze(CHAMELEON_SPOTS.map(entry => entry.id));
 

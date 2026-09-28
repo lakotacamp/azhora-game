@@ -50,6 +50,9 @@ const iscareAnchor = point(1690.482,2872,1,119);
 const eastLotharnAnchor = point(1538.060, 2320, 7, 96);
 // The barrier-hill hex the Feradom road comes through from Pueth, the road pass's.
 const feradomAnchor = point(1745.907, 2392, 13, 99);
+// A Gala plains hex on the steppe rows, where the travel button puts the traveler: for (-9, 118)
+// the atlas's formula gives this point and no other.
+const galaAnchor = point(1399.496, 2848, -9, 118);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -81,6 +84,7 @@ const LOCALS = [
   [19, 'Iscare', 'iscare', 'Iscare Archipeligo', iscareAnchor],
   [20, 'East Lotharn', 'east-lotharn', 'East Lotharn Mountains', eastLotharnAnchor],
   [21, 'Feradom', 'feradom', 'Feradom', feradomAnchor],
+  [22, 'Gala', 'gala', 'Gala', galaAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

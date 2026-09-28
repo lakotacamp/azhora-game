@@ -310,8 +310,8 @@ test('Eer is the first country with a sky of its own, and it takes it the way th
   // Every region that has not asked for one is still on the three numbers the game has always
   // used. Nethereum is the second to ask (`tests/nethereum-world.test.js`), and it asks for the
   // opposite of this one: a grey overcast and a closer horizon where Eer has a clear far one.
-  // South Suval (25 September 2026) asked for its own since.
-  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval']);
+  // South Suval (25 Sep), the East Lotharn and Feradom (27 Sep) and Gala (28 Sep) asked for theirs since.
+  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala']);
   for (const region of regions) if (!OWN_SKY.has(region.name))
     assert.deepEqual({ ...regionSky(region) }, { ...DEFAULT_SKY }, `${region.name} lost the default sky`);
   assert.ok(regionSky(regions.find(region => region.name === 'Nethereum')).density > sky.density,

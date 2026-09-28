@@ -15,6 +15,7 @@ import { eastLotharnGround } from './east-lotharn-world.js';
 import { feradomGround, feradomSeam } from './feradom-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
+import { galaGroundColour, inGalaBox } from './gala-world.js';
 import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
@@ -268,9 +269,13 @@ export function groundTint(color, x, z, THREE) {
   const swatch = new THREE.Color();
   let total = 0;
   // Colours by weight, so a cell whose atlas terrain refines its region's ground (Pueth's hills) is tinted as itself.
+  // Gala's plains are the one ground the atlas's terrain field cannot colour: it calls the steppe and the
+  // Mediterranean plain both `plains`, and its climate field draws the line between them. So there the
+  // colour is the climate's (`galaGroundColour`, src/gala-world.js); everywhere else, nothing changes.
+  const gala = inGalaBox(x, z) ? REGION_TERRAIN.Gala.ground : null;
   for (const [ground, weight] of Object.entries(mix.grounds ?? {})) {
     if (!weight) continue;
-    swatch.set(ground);
+    if (ground === gala) swatch.set(galaGroundColour(x, z)); else swatch.set(ground);
     target.r += swatch.r * weight; target.g += swatch.g * weight; target.b += swatch.b * weight; total += weight;
   }
   if (total) { target.r /= total; target.g /= total; target.b /= total; }

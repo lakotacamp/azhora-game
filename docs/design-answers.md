@@ -582,3 +582,68 @@ Expand and relocate Ambron onto dry land between Ela, Thelas, Brul, and Ossen, p
 ### 2026-09-28 - Developer dragon and Azhora thumbnail
 
 Add a testing-only green dragon alongside the developer bat under F8 > Hacks. It carries the actual player on a saddle and uses the same steering, altitude, Shift speed, Tab turbo, safe-landing and testing-save isolation rules. Keep the developer bat available. Capture the player riding the dragon through East Lotharn in the actual game renderer for the Cromblog thumbnail and social preview. No illustrated replacement for the gameplay screenshot.
+### 2026-09-27 - The East Lotharn's peaks: tall, hard to climb, with passages and caves
+
+The user: "Can you work on the East Lotharn mountains, making sure to make the very tall so that
+reaching the peak is difficult and there are lots of passages and caves and such." Asked, the user
+chose: a climbing rule with cliffs; peaks of about 400 m; caves empty, to explore.
+
+- Four peaks on the atlas's three massifs: eastern ~420 m (the highest ground in the range),
+  central ~325 m, western ~275 m, south-west ~240 m. The valleys (Kemrath, the col, Stonegate,
+  Upper Olveth), the pass road, the inn and the iron workings are unchanged.
+- The faces are cliff bands: courses 36 m high at 70-80 degrees with ledges between them, and a
+  flat grass bald on each summit. Forest on the ledges up to about 280 m.
+- **Climbing rule** (src/climbing.js), in the East Lotharn only: ground up to about 35 degrees is
+  walked; 35-50 degrees is climbed, slower, costing wind by the metre risen, with no wind back
+  until the climb stops, and cannot be started winded; steeper cannot be climbed and a traveler
+  standing on it slides down; down is always open. A horse stops at 35 degrees. It is not
+  everywhere because the rest of Azhora has river banks, sea cliffs and seams steeper than 50
+  degrees on the autoplays' roads.
+- **Passages up**: every summit is reached only by its way - ramps cut slantwise across each cliff
+  (about 40 degrees, a climb) joined by ledge paths round the mountain. Without the ways nobody
+  gets above ~140 m on any massif (tests/east-lotharn-peaks.test.js proves both).
+- **Caves** (src/east-lotharn-caves.js): four chimneys, each bypassing a cliff band from one ledge
+  to the next; three chambers (a passage and a room); and the passage to Upper Olveth, through the
+  ridge between Kemrath and Olveth's head. A cave is walked on its own floor from mouth to mouth
+  (the surface above is still ground); inside, the camera stays in the passage, the daylight goes
+  and a lantern glow lights the rock. Nothing lives in them yet.
+- The mountains draw their own ground three metres apart (the world grid is sunk under it) and are
+  coloured by what the ground is: rock on the cliffs, scree on the climbs, grass on the ledges.
+- The lore (geography/regions/lotharn.md) was rewritten in place to fit: old stone worn into
+  courses of cliff and ledge, ramps, chimneys and limestone caves.
+
+### 2026-09-28 - Gala: terrain, climate, water and wildlife, nothing that belongs to anybody
+
+The user: "start building the wildlife and terrain of Galan [Gala], North Ascarth, and South
+Ascarth". Gala was built on its own branch (`gala`) to the coordinator's brief
+(docs/gala-brief.md); the report is docs/gala-report.md. What was fixed before the build, and
+what the builder chose where the brief left it open (marked):
+
+- **Region id 21**; the Ascarths are 22 and 23 and Feradom 20. Every ordered list takes Gala after
+  Feradom (on this branch, which has no Feradom, after the East Lotharn).
+- **The seam with Northern Ascarth** (both builders hold it): base 4.0 m, amplitude .6, wavelength
+  320 on the grassland/plains of the hexes on the shared border - for Gala that is both its
+  profiles - no ground written outside a country's own hexes, and every hand-built landform at
+  least 100 m inside. Gala's north stands higher by a landform (`galaRise`, 4.2 m, gone within
+  100 m of the seam), not by a second profile.
+- **The Oveth's crossing** (the six-regions brief left it to whoever built Gala; the builder's):
+  its Gala reach is waded over rock for its first two-fifths below the corner where Gala, Ovesos
+  and the Oves Desert meet, and is a deep-water wall from there to the Lizeem. The desert border
+  stream is waded anywhere. The Oveth stops 25 m short of the Lizeem's centre line and drops into
+  it, so its water never lies on the Lizeem's reed bank (which would re-roll the west's scatter).
+- **The delta** (the builder's): the Lizeem's mouth is at Gala's south-eastern tip, inside the
+  seam's 100 m, so nothing is shaped there. The plain's own water - one distributary rising beside
+  the Lizeem's western bank - runs south-west to Gala's short shore at the south-western tip and
+  braids through reed and tamarisk over its last third. Like Eer's channels, it stops where the
+  beach starts.
+- **A dry wash** on the steppe (the builder's): gravel, low banks, no water, giving out where the
+  Mediterranean rows begin.
+- **Wildlife**: black migratory geese (a new `goose` rig, the one the brief allowed) as a raft on
+  the distributary's last reach; stilts, egrets, herons, gulls and grey dolphins; hares, a harrier
+  and a dry-plateau hawk on the steppe; boar in the maquis. **No domestic stock.**
+- **Names**: no Galan naming profile exists, so nothing was coined. The dialect is called
+  **Galan**, the lore's own word. The two atlas streams the lore does not name (the Telemonia
+  border stream, the desert border stream) are left unnamed for the user.
+- **The lore** (`gala.md`) was adjusted in place to the atlas: the steppe is Gala's own northern
+  half, its rivers are on its borders, the Ascarth border is dry. Recorded claim by claim in
+  docs/lore-adjusted-to-atlas.md.

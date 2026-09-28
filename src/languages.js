@@ -173,7 +173,7 @@ export const LANGUAGES = freeze({
     from: 'the world-builder profile `mittoli`',
     note: 'The great western family and the tongue of commerce, governance and scholarship. The traveler meets three of its dialects: Luscian, thick with Elagosi and plains loanwords; the Plain’s eastern Mittoli, with an older layer under its place names that nobody has traced; and Amodian, a foothill dialect carrying a terrace-country substrate and a set of water-measure words Standard Mittoli lacks.',
     borrows: ['ambroni', 'pyrosi'],
-    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'isareos', 'nethrani', 'lotharn'],
+    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'isareos', 'nethrani', 'lotharn'],
     onsets: ['al', 'ar', 'azh', 'bel', 'cael', 'dael', 'dor', 'el', 'gal', 'hom', 'kael', 'mel', 'mir', 'nil', 'sor', 'tal', 'thal', 'trel', 'vel', 'zael'],
     middles: ['a', 'ae', 'e', 'i', 'o', 'oe', 'u'],
     suffixes: ['a', 'ael', 'an', 'ath', 'el', 'eth', 'in', 'ith', 'oe', 'ol', 'om', 'on', 'or', 'os', 'oss', 'um'],
@@ -489,6 +489,12 @@ export const DIALECTS = freeze({
   eer: dialect('eer', 'Eer Mittoli', 'mittoli',
     'Coastal-transitional Mittoli, nearer the Lizeem valley’s standard than the Iberos coast’s, and a stratigraphic record of every power that has administered the place: Pyrosi administrative terms, Iberos commercial vocabulary, Ascarth farming words, and an old layer for land, water and soil that belongs to no identified family. Its place names describe the ground and commemorate nobody.',
     word => word.replace(/ee/, 'e').replace(/([aeiou])r$/, '$1er')),
+  // Gala's own name for it is the lore's: "several words ... that Galan has no independent term for".
+  // The accent is the Lizeem valley's speech opened out toward the coast: a closing -oss softened to -os
+  // as the Iberos commercial speech has it, and a -th- let go to -t- in the Avite way.
+  gala: dialect('gala', 'Galan', 'mittoli',
+    'A Mittoli-derived mainland dialect, related to the speech of the Lizeem valley upstream and distinct from Nylon’s coastal variant across the river, leavened with every contact the country has sustained: Avite borrowings in its legal and administrative registers — tribute, garrison, the protocols of royal acknowledgment, and words for kinds of military obligation it had no need of before — and Iberos Sea vocabulary in the maritime and commercial ones. Its names for rivers, inlets and soils are from an older layer than Mittoli, and so is the name Gala.',
+    word => word.replace(/oss$/, 'os').replace(/th/, 't')),
   isareos: dialect('isareos', 'Isareos Mittoli', 'mittoli',
     'The western-interior Mittoli of the valley heads: unstressed syllables compressed, Elagosi loanwords kept in the formal registers of dispute and contract, and above all **the ford vocabulary** — single terms for water heights and crossing conditions that Standard Mittoli needs a compound for, and which grows every season anybody tries to finish writing it down.',
     word => word.replace(/os$/, 'eos').replace(/([aeiou])([bcdfgklmnprstvz])([aeiou])\2/, '$1$2$3')),
@@ -552,6 +558,10 @@ export const REGION_LANGUAGE = freeze({
   // Mittoli, with the ford vocabulary". Neither needed a new language.
   Eer: spoken('mittoli', 'eer'),
   Isareos: spoken('mittoli', 'isareos'),
+  // Twenty-one, from its own lore file's Language section: "Gala speaks a Mittoli-derived mainland
+  // dialect — related to the speech of the Lizeem valley communities upstream". Mittoli again, with the
+  // lore's own name for the dialect, and no new language.
+  Gala: spoken('mittoli', 'gala'),
   // Seventeen, from its own lore file's Language section: "Nethrani is an inner-branch
   // Mittoli variant, recognizable to any Standard Mittoli speaker, with a vocabulary shaped
   // by the basin environment and the flood tradition." Mittoli again, and no new language.

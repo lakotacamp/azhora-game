@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -297,6 +297,29 @@ export const REGION_TERRAIN = Object.freeze({
     mountain: Object.freeze({ base: 58, amp: 9, wave: 190, ground: '#5d6a4c' }),
   }) }),
   outland: Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
+  // Gala is a plain, "flat, fertile, drained by a network of small rivers", and the atlas says so
+  // nineteen times out of twenty-one: `plains`, with the two coastal hexes `grassland`. What it
+  // says in its climate field is the country's whole shape — `BSh` steppe over the northern three
+  // rows, `Csb` over the next two, `Csa` on the sea — and that gradient is a landform on top of
+  // this profile (`galaRise`, src/gala-world.js), not a second profile, for one reason:
+  //
+  // **the seam with Northern Ascarth.** Eight hex edges on Gala's south-east side are shared with
+  // a country being built in another branch at the same time, and the two builders hold the same
+  // contract (docs/gala-brief.md): both use base 4.0 m, amplitude .6 and wavelength 320 for the
+  // grassland and plains of the hexes on that border, so the ordinary hex blend has nothing to
+  // hide, and neither writes ground outside its own hexes. Four of those hexes are `plains` and
+  // one is `grassland`, and a profile belongs to a terrain and not to a hex, so both of Gala's
+  // profiles are the seam's numbers. The north stands higher because the rise says so, and the
+  // rise is nothing at all within a hundred metres of that border.
+  //
+  // 4.0 m is also within a metre or so of everything it meets across the Lizeem: Eer's coast is 2.9
+  // and its inland shoulder 7.4, and the rise lifts Gala's north-east to within a metre of the latter.
+  // The relief is Eer's own quiet: under a metre over three hundred and twenty.
+  Gala: Object.freeze({ base: 4.0, amp: .6, wave: 320, ground: REGION_BIOMES.Gala.ground, byTerrain: Object.freeze({
+    // The two hexes on the sea: the same numbers, a greener ground. `Csa`, and the grass holds.
+    grassland: Object.freeze({ base: 4.0, amp: .6, wave: 320, ground: '#979b62' }),
+  }) }),
+  outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
 const cellProfile = (name, terrain) => REGION_TERRAIN[name].byTerrain?.[terrain] ?? REGION_TERRAIN[name];
@@ -922,6 +945,21 @@ const REGION_TEXT = {
     palette: { ground: '#5c7248', accent: '#c9b58a', fog: '#b6c1c0', sky: 0xa3bdca, haze: 0xb5c2c4, hazeDensity: .0042 },
     npcIds: ['feradom-road-captain', 'feradom-road-gate-a', 'feradom-road-gate-b', 'feradom-ordel-gap-gate', 'feradom-birch-pass-gate', 'feradom-amod-pass-gate', 'feradom-stone-pass-gate', 'feradom-fir-pass-gate'],
     landmarks: ['barrier-hills', 'ordel-gap', 'road-pass', 'birch-pass', 'amod-pass', 'stone-pass', 'fir-pass'] },
+  // **Gala is terrain, climate, water and wildlife, and nothing that belongs to anybody**
+  // (docs/gala-brief.md): the city of Gala, its harbour, its market, the Guild of Assessors and
+  // the council hall with its Avite bronze are all somebody's, and none of them is built; nor are
+  // the irrigation channels the lore puts in the dry north, because a channel somebody dug is a
+  // work. Nylon across the river is not on the atlas at all.
+  //
+  // **A sky of its own**, and the brightest in the west: the country is three climates laid across
+  // it, and the traveler who reaches it comes off the steppe - `BSh` over the northern three rows,
+  // the same hot semi-arid air as the Oves Desert beyond the Oveth. So Eer's clear coastal sky
+  // with the dust of the dry country in its haze: a paler, warmer horizon and a density a little
+  // below Eer's, because the one thing a dry country is is a long way to see.
+  Gala: { subtitle: 'The steppe and the river mouths', spawn: point(-1680, 1080),
+    description: 'The western bank of the Lizeem near its mouth, and one country with three climates laid across it from north to south. The north is the interior weather: hot steppe, bunch grass in tussocks with bare ground between, grey wormwood and saltbush, and a dry wash of gravel that runs only in the rains. The middle is Mediterranean, tawny grass with low aromatic maquis on the rises and wild olive and fig standing singly. The south is a short coast where the plain’s water comes down to the Iberos Sea in braided channels through reed and tamarisk. The Oveth is the northern border and the Lizeem the eastern, and nothing on either bank is built by anybody.',
+    palette: { ground: '#b2a874', accent: '#e4d8aa', fog: '#cfcbb2', sky: 0xc3d9dc, haze: 0xdad5bf, hazeDensity: .0046 },
+    npcIds: [], landmarks: ['gala-steppe', 'gala-wash', 'oveth-ford', 'lower-oveth', 'gala-maquis', 'gala-reed-bank', 'gala-mouths', 'gala-shore'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {
