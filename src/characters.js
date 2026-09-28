@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MARKER_STYLE } from './quest-markers.js';
+import { BLANK_SLATE_COLOUR } from './figure-lod.js';
 
 // Deliberately built from small, flat-shaded meshes: every villager is local,
 // inexpensive to draw, and readable even at the distance of the follow camera.
@@ -28,6 +29,9 @@ const SOLDIER_CLOTH = Object.freeze({
   'suvali-guard': 0x55636f,
   // Elod's frontier guards: black lamellar over charcoal wool, nothing red and nothing slate.
   'elodi-guard': 0x2b2b2f,
+  // The Duchy of Feradom's own foot: the duchy's russet over mail to the knee, and the green of the hills.
+  'feradom-soldier': 0x9a6f4f,
+  'feradom-officer': 0x8c5f41,
 });
 
 /**
@@ -512,6 +516,32 @@ function makeHeaterShield(parent, { face = 0x8f3b30, width = 0.44, height = 0.58
   ambronDevice((mat, [x, z], [sx, sz], turn = 0) => { const piece = box(shield, mat, [x, -0.026, z + 0.02], [sx, 0.008, sz]); piece.rotation.y = turn; }, gold, dark, 1.3);
   return shield;
 }
+/**
+ * Feradom's kite shield, "shields to the chin": tall enough to stand behind, rounded at the top and drawn
+ * down to a point, in the green of the barrier hills with the duchy's russet chevron - the ridge - edged pale.
+ */
+function makeKiteShield(parent, { face = 0x2f4a33, device = 0x9a6f4f, width = 0.5, height = 0.98 } = {}) {
+  const shield = new THREE.Group(); shield.name = 'Feradom kite shield';
+  shield.position.set(0.13, -0.16, 0.02); shield.rotation.x = -0.6; parent.add(shield);
+  const w = width / 2, h = height / 2, outline = new THREE.Shape();
+  outline.moveTo(-w, h * .5); outline.quadraticCurveTo(-w, h, 0, h); outline.quadraticCurveTo(w, h, w, h * .5);
+  outline.quadraticCurveTo(w * .78, -h * .3, 0, -h); outline.quadraticCurveTo(-w * .78, -h * .3, -w, h * .5);
+  const iron = material(0x7f837d, { metalness: 0.46, roughness: 0.55 }), pale = material(0xd8cfb4);
+  const board = part(shield, new THREE.ExtrudeGeometry(outline, { depth: 0.026, bevelEnabled: false }), material(face), [0, 0.004, 0]);
+  board.rotation.x = Math.PI / 2;
+  const rim = part(shield, new THREE.ExtrudeGeometry(outline, { depth: 0.022, bevelEnabled: false }), iron, [0, 0.012, 0], [1.07, 1.04, 1]);
+  rim.rotation.x = Math.PI / 2;
+  // The chevron, point up across the upper third, a pale edge under the russet; and an iron boss below it.
+  const rise = .15, reach = w * .86, lean = Math.atan2(rise, reach), bar = Math.hypot(rise, reach);
+  for (const side of [-1, 1]) {
+    for (const [mat, y, thick, long] of [[pale, -0.024, 0.085, 1.04], [material(device), -0.028, 0.055, 1]]) {
+      const piece = box(shield, mat, [side * reach / 2, y, h * .12 + rise / 2], [bar * long, 0.008, thick]);
+      piece.rotation.y = side * lean;
+    }
+  }
+  round(shield, iron, [0, -0.03, -h * .12], [0.06, 0.022, 0.06]);
+  return shield;
+}
 /** The held weapon a mercenary draws, by the roster's weapon word; spears, staves and bows are not held. */
 const KIT_HELD = Object.freeze({ mace: 'iron-mace', dagger: 'long-dagger', axe: 'bearded-axe', greatsword: 'greatsword', sword: 'simple-sword', 'sword-shield': 'simple-sword' });
 function mercenaryHeldWeapons(mount, weapon, trades = false) {
@@ -603,8 +633,9 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
     const pace = Math.max(0, Number.isFinite(speed) ? speed : 0);
     const run = THREE.MathUtils.clamp((pace - 3.5) / 3.7, 0, 1);
     const action = pose.action || 'idle';
+    const climbing = !goblin && action !== 'dead' && ['climbing', 'falling', 'sliding'].includes(pose.climbing?.phase) ? pose.climbing : null;
     const castProgress = typeof pose.spellCast === 'number' ? pose.spellCast : pose.spellCast?.progress;
-    const focusCasting = Number.isFinite(castProgress) && !['dead', 'hurt', 'dodge', 'attack'].includes(action) && !pose.fishing && !pose.swimming;
+    const focusCasting = Number.isFinite(castProgress) && !['dead', 'hurt', 'dodge', 'attack'].includes(action) && !pose.fishing && !pose.swimming && !climbing;
     let castWrist = 0;
     const sneaking = !goblin && grounded && action === 'idle' && !!pose.sneaking && !pose.riding && !pose.swimming;
     const progress = THREE.MathUtils.clamp(Number.isFinite(pose.progress) ? pose.progress : 0, 0, 1);
@@ -950,7 +981,7 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
         chestX = .07 + breath * .012; chestZ = Math.sin(seconds * .25 + offset) * .016;
         headX = -.042 + nod * .083; headY = Math.sin(seconds * .31 + offset) * .12;
         knee[0] = .10; knee[1] = .12; hip[0] = -.033; hip[1] = -.025;
-      } else if (role === 'legion-soldier') {
+      } else if (role === 'legion-soldier' || role === 'feradom-soldier') {
         // At attention: the spear planted by the right foot, the shield hung
         // from the left forearm, a slow shift of weight and a look down the road.
         const shift = Math.sin(seconds * .27 + offset);
@@ -960,7 +991,7 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
         headX = -.02; headY = Math.sin(seconds * .31 + offset) * .22;
         hip[0] = -.02 + shift * .014; hip[1] = -.02 - shift * .014;
         knee[0] = .06 + Math.max(0, shift) * .03; knee[1] = .06 + Math.max(0, -shift) * .03;
-      } else if (role === 'legion-officer') {
+      } else if (role === 'legion-officer' || role === 'feradom-officer') {
         // One hand rests on the sword hilt; the other makes the occasional
         // short point of a man used to being obeyed.
         const point = Math.pow(Math.max(0, Math.sin(seconds * .5 + offset)), 4);
@@ -986,7 +1017,7 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
         headX = -.01; headY = sweep * .42;
         hip[0] = -.05 + ready * .012; hip[1] = .03 - ready * .012; knee[0] = .12; knee[1] = .09;
       }
-      if (['commons-miller', 'reed-worker', 'shelter-keeper', 'legion-soldier', 'legion-officer', 'suvali-guard', 'elodi-guard'].includes(role))
+      if (['commons-miller', 'reed-worker', 'shelter-keeper', 'legion-soldier', 'legion-officer', 'suvali-guard', 'elodi-guard', 'feradom-soldier', 'feradom-officer'].includes(role))
         for (let i = 0; i < 2; i++) ankle[i] = -hip[i] * .52 - knee[i] * .67;
       if (pose.fishing) {
         const patience = Math.sin(seconds * 1.8 + offset) * .023;
@@ -1085,13 +1116,43 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       chestX = THREE.MathUtils.lerp(chestX, .025, blend);
       headY *= 1 - blend;
     }
+    if (climbing) {
+      // The controller advances this phase with real movement and freezes it
+      // when hanging. No idle sway, walking stride or leftover spell can pull
+      // either hand off a held grip. The host turns the actor toward the slope.
+      const phase = Number.isFinite(climbing.progress) ? climbing.progress : 0;
+      const falling = climbing.phase === 'falling' || climbing.phase === 'sliding';
+      const slope = THREE.MathUtils.clamp(Number(climbing.slope) || Math.PI / 3, .45, Math.PI / 2);
+      const pull = Math.sin(phase), weight = Math.cos(phase);
+      for (let i = 0; i < 2; i++) {
+        const side = i ? 1 : -1, reach = Math.sin(phase + i * Math.PI);
+        // Two bent-elbow grips, kept close to the slope's tangent plane.
+        // A straight arm pointed forward buried the lower hand in the rock;
+        // keep the bent elbows out behind the grips while the hands trade holds.
+        const handUp = .27 + reach * .09, handForward = .18;
+        const upper = .245, forearm = .177;
+        const bend = Math.acos(THREE.MathUtils.clamp((handUp * handUp + handForward * handForward - upper * upper - forearm * forearm) / (2 * upper * forearm), -1, 1));
+        arm[i] = falling ? -1.68 + reach * .22 : Math.atan2(-handForward, -handUp) - Math.atan2(forearm * Math.sin(bend), upper + forearm * Math.cos(bend));
+        elbow[i] = falling ? -.3 : bend;
+        armOut[i] = side * (falling ? .46 : .28);
+        hip[i] = falling ? -.3 + reach * .16 : -1.0 + reach * .22;
+        knee[i] = falling ? .57 - reach * .12 : 1.30 - reach * .23;
+        ankle[i] = -hip[i] - knee[i] + (falling ? -.12 : .08);
+      }
+      bodyX = falling ? .18 : THREE.MathUtils.clamp(Math.PI / 2 - slope + .02, .12, .9);
+      bodyZ = falling ? pull * .04 : pull * .012;
+      chestX = falling ? -.06 : -.035;
+      chestY = falling ? weight * .025 : -pull * .04;
+      chestZ = 0; headX = falling ? .28 : -bodyX * .4 - .1; headY = 0;
+      stance = falling ? .14 : .2; bounce = 0; seatY = .04;
+    }
     const rotate = (object, x, y, z) => {
       object.rotation.x = THREE.MathUtils.lerp(object.rotation.x, x, damping);
       object.rotation.y = THREE.MathUtils.lerp(object.rotation.y, y, damping);
       object.rotation.z = THREE.MathUtils.lerp(object.rotation.z, z, damping);
     };
     rotate(chest, chestX, chestY, chestZ);
-    rotate(body, bodyX, step * 0.026 * movementBlend, bodyZ);
+    rotate(body, bodyX, climbing ? 0 : step * 0.026 * movementBlend, bodyZ);
     rotate(head, headX, headY, -chestZ * 0.6 - bodyZ * (action === 'dead' ? 0 : 0.4));
     if (clothPivot) {
       // The curved cloak hangs from its own soft joint. Its slower response
@@ -1104,7 +1165,7 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       clothPivot.rotation.z = THREE.MathUtils.lerp(clothPivot.rotation.z, Math.sin(seconds * 1.35 + offset) * 0.018 + step * movementBlend * 0.035, settle);
     }
     // A falconer carries the bird on the left fist: upper arm in at the side, forearm level and forward.
-    if (pose.falconer) { arm[0] = -0.28; elbow[0] = -1.35; armOut[0] = -0.1; }
+    if (pose.falconer && !climbing) { arm[0] = -0.28; elbow[0] = -1.35; armOut[0] = -0.1; }
     // The face turns to meet what is in front of him. The arm alone brings the shield up but
     // leaves it edge-on to the blow, so the buckler is twisted on the forearm as it rises: on
     // guard its face points (-.62, -.30, .72) - forward and a little outward, which is how a
@@ -1115,7 +1176,7 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
     // of `combat.guard` being true and nothing else: when the shield is not up - no wind, mid
     // swing, rocked - the host passes false and the arm hangs, so the player is never told he is
     // covered when he is not. Pose only: no timing, no tell, no window.
-    if (pose.guarding) {
+    if (pose.guarding && !climbing) {
       // Measured, not guessed: this puts the buckler at (-.16, 1.31, .36) with its face pointing
       // .81 forward - across the centreline, at chin height, in front of him. The first draft
       // raised it but left it out at his side, where it read as a man holding a plate.
@@ -1130,11 +1191,11 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       rotate(legs[i], hip[i], 0, side * stance);
       rotate(knees[i], knee[i], 0, 0);
       // At rest the heel is down; during push-off the sole rolls over its toe.
-      const footPitch = action === 'idle' ? ankle[i] : -hip[i] * 0.55 - knee[i] * 0.72;
+      const footPitch = climbing || action === 'idle' ? ankle[i] : -hip[i] * 0.55 - knee[i] * 0.72;
       rotate(ankles[i], footPitch, side * 0.04, 0);
-      rotate(arms[i], arm[i], side * breath * 0.015 * idle, armOut[i]);
+      rotate(arms[i], arm[i], climbing ? 0 : side * breath * 0.015 * idle, armOut[i]);
       rotate(elbows[i], elbow[i], 0, side * 0.015);
-      rotate(wrists[i], 0, Math.sin(seconds * 1.1 + i + offset) * 0.025 * idle, side * 0.045);
+      rotate(wrists[i], 0, climbing ? 0 : Math.sin(seconds * 1.1 + i + offset) * 0.025 * idle, side * 0.045);
       if (focusCasting && i === 1) {
         arms[i].rotation.set(arm[i], 0, armOut[i]);
         elbows[i].rotation.set(elbow[i], 0, side * .015);
@@ -1157,7 +1218,9 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
     }
     const y = seatY ?? (action === 'dead' ? THREE.MathUtils.smoothstep(progress, 0, 0.8) * 0.14 : grounded ? -soleHeight + bounce : 0);
     body.position.y = THREE.MathUtils.lerp(body.position.y, y, 1 - Math.exp(-22 * dt));
-    body.position.x = Math.sin(seconds * 0.78 + offset) * 0.008 * idle;
+    body.position.x = climbing ? 0 : Math.sin(seconds * 0.78 + offset) * 0.008 * idle;
+    // Keep the limbs just outside the heightfield while the physics origin stays on its surface.
+    body.position.z = THREE.MathUtils.lerp(body.position.z, climbing ? -.35 : 0, 1 - Math.exp(-22 * dt));
     if (action === 'dead') {
       // A falling body lands on its arm/side, rather than clipping through the
       // path. Ordinary walking uses the much cheaper analytic foot solver.
@@ -1195,7 +1258,49 @@ const VILLAGER_WEAPONS = Object.freeze({ 'bearded-axe': makeAxe, 'simple-sword':
 // and keeps his own bare head, exactly as before.
 const HATTED = Object.freeze(['warden', 'pond-fisher', 'mercenary', 'sorcerer']);
 
+// A literal blank slate, pending the user's description. The shared mannequin has
+// no face, hair, skin tone, clothing, or accessories. It retains the ordinary
+// articulated rig so conversation, walking, fleeing and falling still work.
+function createBlankSlate() {
+  const group = new THREE.Group(); group.name = 'character-blank-slate';
+  group.userData.blankSlate = true;
+  const body = new THREE.Group(); body.name = 'Weight and hips'; group.add(body);
+  const clay = material(BLANK_SLATE_COLOUR);
+  const legs = [], knees = [], ankles = [], arms = [], elbows = [], wrists = [];
+  for (const side of [-1, 1]) {
+    const hip = new THREE.Group(); hip.position.set(side * .105, .74, 0); body.add(hip); legs.push(hip);
+    round(hip, clay, [0, -.155, 0], [.081, .185, .085]);
+    const knee = new THREE.Group(); knee.position.y = -.325; hip.add(knee); knees.push(knee);
+    round(knee, clay, [0, -.125, 0], [.074, .164, .077]);
+    const ankle = new THREE.Group(); ankle.position.y = -.29; knee.add(ankle); ankles.push(ankle);
+    round(ankle, clay, [0, -.045, .049], [.088, .079, .145]);
+  }
+  // Simple continuous volumes, with no seams suggesting an authored outfit.
+  round(body, clay, [0, .82, 0], [.205, .15, .14]);
+  part(body, new THREE.CylinderGeometry(.23, .195, .38, 8), clay, [0, 1.1, 0], [1, 1, .67]);
+  round(body, clay, [0, 1.28, 0], [.226, .065, .15]);
+  part(body, UNIT_CYLINDER, clay, [0, 1.365, 0], [.066, .12, .066]);
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Group(); arm.position.set(side * .258, 1.265, 0); body.add(arm); arms.push(arm);
+    round(arm, clay, [side * .009, -.11, 0], [.076, .145, .08]);
+    const elbow = new THREE.Group(); elbow.position.set(side * .019, -.245, 0); arm.add(elbow); elbows.push(elbow);
+    round(elbow, clay, [0, -.075, 0], [.06, .108, .065]);
+    const wrist = new THREE.Group(); wrist.position.set(0, -.177, .011); elbow.add(wrist); wrists.push(wrist);
+    round(wrist, clay, [0, -.005, 0], [.067, .081, .061]);
+  }
+  const head = new THREE.Group(); head.name = 'Head'; head.position.set(0, 1.365, 0); body.add(head);
+  round(head, clay, [0, .19, 0], [.174, .216, .161]);
+  const chest = addChestPivot(body, legs, .935);
+  for (const [kind, joints] of Object.entries({ Shoulder: arms, Elbow: elbows, Wrist: wrists, Hip: legs, Knee: knees, Ankle: ankles }))
+    joints.forEach((joint, i) => { joint.name = `${i ? 'Right' : 'Left'} ${kind}`; });
+  batchRigidParts(group, [body, chest, head, ...arms, ...elbows, ...wrists, ...legs, ...knees, ...ankles]);
+  const { animate, setArmed } = makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, ankles, role: 'blank-slate' });
+  return { group, animate, setArmed, setShield: () => {}, setWeapon: id => id === null,
+    setFishing: () => false, fishingTip: () => null, focusTip: () => null };
+}
+
 export function createCharacter({ role = 'traveler', tunic = tunicForRole(role), skin = skinForRole(role), hat = HATTED.includes(role), armed = false, look = null, wields = null } = {}) {
+  if (look?.blankSlate === true) return createBlankSlate();
   // Any of the eleven mercenaries can be the player (src/player-characters.js). Given a roster
   // look, the traveler is built as that hired sword — build, hair, garment, marks, weapon —
   // and keeps only what is his alone: the satchel, the full weapon swap and the fishing grip.
@@ -1248,7 +1353,10 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   const isLegionary = role === 'legion-soldier', isOfficer = role === 'legion-officer', isSuvaliGuard = role === 'suvali-guard';
   // Elod's guards: light, black and quick. `look.kit` is 'spear' (the default) or 'bow'.
   const isElodiGuard = role === 'elodi-guard';
-  const isSoldier = isLegionary || isOfficer || isSuvaliGuard || isElodiGuard;
+  // The Duchy of Feradom's army, its own and not the Empire's: the Cref heavy foot the north remembers,
+  // "men in mail to the knee, shields to the chin". The officer is a pass-lord's captain.
+  const isFeradomi = role === 'feradom-soldier' || role === 'feradom-officer', isFeradomOfficer = role === 'feradom-officer';
+  const isSoldier = isLegionary || isOfficer || isSuvaliGuard || isElodiGuard || isFeradomi;
   // Ambron's own: a man-at-arms of the Empire in mail and plate under the red tabard, and his officers.
   const isAmbroni = isLegionary || isOfficer;
   // A hired sword from abroad: the traveler's kind of cloth and sword, a leather jerkin,
@@ -1282,7 +1390,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   const soleMat = material(0x302b24);
   // A hired sword's legs take their colour from his own cloth, so eleven men do
   // not stand in eleven different tunics above one shared pair of olive trousers.
-  const trousers = material(isDyer ? 0x8e44ec : isMercenary ? new THREE.Color(tunic).multiplyScalar(0.66).lerp(new THREE.Color(0x585244), 0.45) : isSoldier ? (isSuvaliGuard ? 0x4a4a45 : isElodiGuard ? 0x2c2c30 : 0x5a4a3c) : isLocalWorker ? isReedWorker ? 0x5a685c : 0x655a48 : isWoodcutter ? 0x635846 : isVineKeeper ? 0x584b3a : isWinemaker ? 0x4d4a44 : isRivalKeeper ? 0x232427 : isLightKeeper ? 0x3c4a4e : isBirdWatcher ? 0x3b3129 : isGardenKeeper ? 0x4a4436 : isTraveler ? 0x68523c : role === 'fisher' ? 0x667779 : 0x76714e);
+  const trousers = material(isDyer ? 0x8e44ec : isMercenary ? new THREE.Color(tunic).multiplyScalar(0.66).lerp(new THREE.Color(0x585244), 0.45) : isSoldier ? (isSuvaliGuard ? 0x4a4a45 : isElodiGuard ? 0x2c2c30 : isFeradomi ? 0x46503f : 0x5a4a3c) : isLocalWorker ? isReedWorker ? 0x5a685c : 0x655a48 : isWoodcutter ? 0x635846 : isVineKeeper ? 0x584b3a : isWinemaker ? 0x4d4a44 : isRivalKeeper ? 0x232427 : isLightKeeper ? 0x3c4a4e : isBirdWatcher ? 0x3b3129 : isGardenKeeper ? 0x4a4436 : isTraveler ? 0x68523c : role === 'fisher' ? 0x667779 : 0x76714e);
   const hairMat = material(Number.isInteger(look?.hair) ? look.hair : isWineSeller ? 0x241b16 : isWineClerk ? 0xb2461f : isKaty ? 0xead38e : isKeeperKin ? 0x9c8355 : isWinemaker ? 0x53381f : isVineKeeper ? 0x1b1512 : isKeeper ? 0x87301a : isDyer ? 0x6b3a26 : isBirdWatcher ? 0x5c4430 : isGardenKeeper ? 0x877b62 : isShelterKeeper ? 0x797368 : isReedWorker ? 0x403b32 : isMiller ? 0x624731 : isCustodian ? 0x8e8b7d : isBridgeKeeper ? 0x42382e : isClerk ? 0x685445 : isTraveler ? 0x806044 : isCook ? 0x624330 : isDoomsayer ? 0xa2a293 : isPondFisher ? 0x5d5140 : role === 'harbormaster' ? 0x79776b : role === 'warden' ? 0x503d30 : 0x6b462c);
   const hairColors = hairStyle === 'long-tied' && Array.isArray(look?.hairColors)
     ? look.hairColors.filter(Number.isInteger).map(color => material(color)) : [];
@@ -1428,6 +1536,13 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       part(elbow, new THREE.CylinderGeometry(0.066, 0.062, 0.12, 8), steel, [0, -0.09, 0.004], [1, 1, 1.04]);
       part(wrist, new THREE.CylinderGeometry(0.07, 0.085, 0.07, 8), steel, [0, 0.03, 0], [1, 1, 1]);
       round(wrist, steel, [0, -0.02, 0.012], [0.07, 0.06, 0.068]);
+    }
+    if (isFeradomi) {
+      // The hauberk's sleeves to the forearm, and a leather bracer below them. No plate anywhere.
+      const mail = material(0x767a74);
+      part(pivot, new THREE.CylinderGeometry(0.093, 0.078, 0.21, 8), mail, [side * 0.018, -0.143, 0], [1, 1, 1.03]);
+      part(elbow, new THREE.CylinderGeometry(0.072, 0.066, 0.1, 8), mail, [0, -0.06, 0.004], [1, 1, 1.04]);
+      part(wrist, new THREE.CylinderGeometry(0.068, 0.08, 0.085, 8), leather, [0, 0.035, 0], [1, 1, 1]);
     }
   }
 
@@ -1967,8 +2082,8 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     }
     box(hair, hairMat, [0, 0.135, -0.155], [0.33, 0.315, 0.095]);
     box(hair, hairMat, [0, -0.015, -0.13], [0.3, 0.06, 0.13]);
-  } else if (!isElodiGuard && !isAmbroni) {
-    // (Ambron's bascinet covers the brow; a forelock would poke out through it.)
+  } else if (!isElodiGuard && !isAmbroni && !isFeradomi) {
+    // (Ambron's bascinet covers the brow, and Feradom's mail hood; a forelock would poke out through either.)
     const fringe = round(head, hairMat, [-0.055, 0.334, 0.08], [0.143, 0.061, 0.123]);
     fringe.rotation.z = -0.18;
   }
@@ -2103,7 +2218,50 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     box(body, gold, [0.253, 0.818, 0.134], [0.035, 0.029, 0.012]);
   }
 
+
+  if (look?.kelpBasket) {
+    const basket = new THREE.Group(); basket.name = 'Sivra kelp basket'; body.add(basket);
+    basket.position.set(.32, .67, -.04);
+    const wicker = material(0xac9168), rim = material(0x78613c), kelp = material(0x516443);
+    part(basket, new THREE.CylinderGeometry(.145, .105, .25, 9), wicker, [0, 0, 0], [1, 1, .82]);
+    for (const y of [-.075, -.02, .04, .11]) {
+      const ring = part(basket, new THREE.TorusGeometry(.13 + y * .12, .011, 4, 12), rim, [0, y, 0], [1, .82, 1]);
+      ring.rotation.x = Math.PI / 2;
+    }
+    for (const side of [-1, 1]) ribbon(basket, leather, [side * .105, .08, 0], [side * .07, .30, 0], .025, .016);
+    ribbon(basket, leather, [-.07, .30, 0], [.07, .30, 0], .025, .016);
+    for (let i = 0; i < 5; i++) {
+      const x = (i - 2) * .043;
+      ribbon(basket, kelp, [x, .08, .02], [x * 1.5, .25 + (i % 2) * .045, -.01], .055, .015);
+      ribbon(basket, kelp, [x * 1.5, .25 + (i % 2) * .045, -.01], [x * 1.8, .19, .065], .05, .013);
+    }
+  }
   let clothPivot = null;
+  // The three ferry hosts share practical sea clothing, while keeping their own hair.
+  // No role supplies a hat or bandanna: the neckline, stripes and rope identify the work.
+  if (look?.nautical) {
+    const seaKit = new THREE.Group(); seaKit.name = 'Ferry sailor clothing'; body.add(seaKit);
+    const rope = material(0xc5b795), oilskin = material(0x263e45);
+    for (const y of [1.015, 1.105, 1.195]) {
+      const radius = .217 + (y - .9225) / .395 * .035 + .006;
+      const stripe = part(seaKit, new THREE.CylinderGeometry(radius + .002, radius - .002, .036, 8), linen,
+        [0, y, 0], [1, 1, .69]); stripe.name = 'Cream jersey stripe';
+    }
+    ribbon(seaKit, linen, [-.12, 1.30, .13], [-.045, 1.20, .185], .07, .022);
+    ribbon(seaKit, linen, [.12, 1.30, .13], [.045, 1.20, .185], .07, .022);
+    const beltGroup = new THREE.Group(); beltGroup.name = 'Sailor rope belt'; seaKit.add(beltGroup);
+    const belt = part(beltGroup, new THREE.TorusGeometry(.237, .019, 5, 18), rope, [0, .944, 0], [1, .71, 1]);
+    belt.rotation.x = Math.PI / 2;
+    for (const side of [-1, 1]) {
+      const knot = part(seaKit, new THREE.TorusGeometry(.033, .011, 4, 10), rope, [side * .024, .941, .18]);
+      knot.rotation.z = side * .6;
+      ribbon(seaKit, rope, [side * .013, .925, .18], [side * .049, .813, .19], .017, .016);
+      const boot = new THREE.Group(); boot.name = 'Waterproof sea boot'; knees[side < 0 ? 0 : 1].add(boot);
+      part(boot, new THREE.CylinderGeometry(.09, .085, .245, 8), oilskin, [0, -.12, .01], [1, 1, 1.08]);
+      part(boot, UNIT_CYLINDER, leather, [0, -.004, .01], [.097, .042, .106]);
+    }
+  }
+
   if (isTraveler) {
     const cloakMat = material(0x68503b, { side: THREE.DoubleSide });
     const cloakFold = material(0x786047, { side: THREE.DoubleSide });
@@ -2279,9 +2437,11 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     ribbon(body, leather, [.23, .91, .018], [.25, .56, .025], .04, .033);
     const hammer = box(body, iron, [.244, .806, .025], [.19, .084, .094]); hammer.rotation.z = -.13;
     ribbon(body, linen, [-.228, .91, .055], [-.26, .72, .084], .063, .018);
+    if (look?.hat !== false) {
     part(head, UNIT_CYLINDER, bandanna, [0, .331, -.016], [.219, .06, .188]);
     round(head, bandanna, [-.207, .318, -.073], [.047, .04, .04]);
     ribbon(head, bandanna, [-.222, .31, -.076], [-.261, .191, -.082], .035, .021);
+    }
     // The keeper's moustache belongs to the keeper, not to the build: Jess has the boat and the
     // bandanna and no facial hair at all (the user, 22 September 2026).
     if (look?.beard !== false) round(head, hairMat, [0, .067, .112], [.12, .049, .093]);
@@ -2838,7 +2998,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     const ironDark = material(isElodiGuard ? 0x2f3033 : 0x62655f, { metalness: 0.46, roughness: 0.6 });
     const strap = material(isElodiGuard ? 0x1d1c1e : 0x4d3a2a);
     const armor = new THREE.Group();
-    armor.name = isSuvaliGuard ? 'Suvali studded jerkin' : isElodiGuard ? 'Elodi black lamellar' : 'Ambroni mail and tabard';
+    armor.name = isSuvaliGuard ? 'Suvali studded jerkin' : isElodiGuard ? 'Elodi black lamellar' : isFeradomi ? 'Feradom mail and surcoat' : 'Ambroni mail and tabard';
     body.add(armor);
     if (isElodiGuard) {
       // A short coat of small black lacquered plates laced in rows over charcoal wool: lighter than the army's bands.
@@ -2851,6 +3011,26 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       }
       for (const side of [-1, 1]) round(armor, lacquer, [side * 0.235, 1.305, 0], [0.11, 0.05, 0.12]);
       box(armor, material(0x6b6d70, { metalness: 0.3, roughness: 0.5 }), [0, 1.2, 0.19], [0.032, 0.05, 0.01]);
+    } else if (isFeradomi) {
+      // Mail to the knee, the Cref way, and over it the duchy's russet surcoat to mid-thigh, so the mail shows
+      // below it and at the sides. On the breast a green chevron edged pale: the ridge, the barrier hills the
+      // duchy keeps. The skirt of the hauberk is split front and back for walking.
+      const mail = material(0x767a74), hauberk = material(0x767a74, { side: THREE.DoubleSide });
+      const surcoat = material(tunic, { side: THREE.DoubleSide }), green = material(0x2f4a33), pale = material(0xd8cfb4);
+      part(armor, new THREE.CylinderGeometry(0.262, 0.236, 0.41, 10), mail, [0, 1.12, 0], [1, 1, 0.72]);
+      for (const start of [0.1, Math.PI + 0.1]) part(armor, new THREE.CylinderGeometry(0.25, 0.315, 0.52, 10, 1, true, start, Math.PI - 0.2), hauberk, [0, 0.69, 0], [1, 1, 0.76]);
+      for (const start of [-0.92, Math.PI - 0.92]) {
+        part(armor, new THREE.CylinderGeometry(0.272, 0.335, 0.74, 10, 1, true, start, 1.84), surcoat, [0, 0.975, 0], [1, 1, 0.78]);
+        part(armor, new THREE.CylinderGeometry(0.336, 0.338, 0.045, 10, 1, true, start, 1.84), green, [0, 0.625, 0], [1, 1, 0.78]);
+      }
+      for (const side of [-1, 1]) {
+        for (const [mat, z, thick] of [[pale, 0.226, 0.07], [green, 0.229, 0.045]]) {
+          const arm = box(armor, mat, [side * 0.062, 1.1, z], [0.16, thick, 0.01]);
+          arm.rotation.z = -side * 0.62;
+        }
+      }
+      part(armor, UNIT_CYLINDER, strap, [0, 0.9, 0], [0.292, 0.05, 0.232]);
+      box(armor, ironDark, [0, 0.9, 0.235], [0.05, 0.045, 0.014]);
     } else if (isSuvaliGuard) {
       part(armor, new THREE.CylinderGeometry(0.262, 0.236, 0.40, 8), strap, [0, 1.115, 0], [1, 1, 0.7]);
       for (let row = 0; row < 3; row++) for (let i = -2; i <= 2; i++) round(armor, iron, [i * 0.072, 1.245 - row * 0.1, 0.176 - Math.abs(i) * 0.022], [0.016, 0.016, 0.01]);
@@ -2879,7 +3059,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       }
     }
     // Leather pteruges hang from the belt around the front and sides; Elod's are short black tassets. Ambron's men have mail there instead.
-    if (!isAmbroni) for (let i = 0; i < 7; i++) {
+    if (!isAmbroni && !isFeradomi) for (let i = 0; i < 7; i++) {
       const angle = (i - 3) * 0.38;
       const strip = box(armor, i % 2 ? strap : isElodiGuard ? material(0x232326) : leather, [Math.sin(angle) * 0.235, isElodiGuard ? 0.9 : 0.86, Math.cos(angle) * 0.19], [0.058, isElodiGuard ? 0.12 : 0.17, 0.014]);
       strip.rotation.y = angle;
@@ -2890,11 +3070,13 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     box(armor, ironDark, [-0.283, 1.06, -0.03], [isElodiGuard ? 0.07 : 0.12, 0.02, 0.04]);
     part(armor, UNIT_CYLINDER, strap, [-0.29, 1.11, -0.03], [0.018, 0.09, 0.018]);
     // Greaves for Ambron and Suval, and for Ambron a rounded plate over the knee; soft boots with a black wrap for Elod.
-    for (const knee of knees) box(knee, isElodiGuard ? strap : iron, [0, isElodiGuard ? -0.06 : -0.135, 0.104], [isElodiGuard ? 0.17 : 0.15, isElodiGuard ? 0.05 : 0.2, 0.03]);
+    // Feradom goes in wool hose bound with leather wraps from the boot to the knee.
+    if (isFeradomi) for (const knee of knees) for (let k = 0; k < 3; k++) box(knee, strap, [0, -0.06 - k * 0.058, 0.014], [0.178, 0.02, 0.192]);
+    else for (const knee of knees) box(knee, isElodiGuard ? strap : iron, [0, isElodiGuard ? -0.06 : -0.135, 0.104], [isElodiGuard ? 0.17 : 0.15, isElodiGuard ? 0.05 : 0.2, 0.03]);
     if (isAmbroni) for (const knee of knees) round(knee, material(0x9ea19b, { metalness: 0.46, roughness: 0.6 }), [0, 0.01, 0.07], [0.075, 0.07, 0.05]);
     part(elbows[1], UNIT_CYLINDER, strap, [0, -0.1, 0.004], [0.077, 0.09, 0.079]);
     const helmet = new THREE.Group();
-    helmet.name = isSuvaliGuard ? 'Suvali iron cap' : isElodiGuard ? 'Elodi open helm' : isOfficer ? 'Ambroni plumed helm' : 'Ambroni helm';
+    helmet.name = isSuvaliGuard ? 'Suvali iron cap' : isElodiGuard ? 'Elodi open helm' : isFeradomi ? 'Feradom nasal helm' : isOfficer ? 'Ambroni plumed helm' : 'Ambroni helm';
     head.add(helmet);
     if (isElodiGuard) {
       // A black hood drawn over a light open helm: the face bare, the hood falling to the shoulders.
@@ -2910,6 +3092,16 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       round(helmet, iron, [0, 0.385, -0.03], [0.205, 0.115, 0.19]);
       part(helmet, UNIT_CYLINDER, ironDark, [0, 0.36, -0.03], [0.215, 0.024, 0.2]);
       box(helmet, ironDark, [0, 0.33, 0.17], [0.024, 0.1, 0.02]);
+    } else if (isFeradomi) {
+      // A mail hood under a conical iron helm: the coif frames the face and falls over the shoulders, and the
+      // helm is a plain cone with a broad nasal. The captain's has a gilt band at the brow.
+      const mail = material(0x767a74), steel = material(0x8d918a, { metalness: 0.46, roughness: 0.6 });
+      round(helmet, mail, [0, 0.215, -0.05], [0.238, 0.235, 0.205]);
+      for (const side of [-1, 1]) round(helmet, mail, [side * 0.186, 0.13, 0.005], [0.062, 0.16, 0.15]);
+      part(helmet, new THREE.CylinderGeometry(0.2, 0.33, 0.2, 10), mail, [0, -0.04, -0.02], [1, 1, 0.8]);
+      part(helmet, new THREE.ConeGeometry(0.232, 0.31, 8), steel, [0, 0.435, -0.035], [1, 1, 0.95]);
+      part(helmet, UNIT_CYLINDER, isFeradomOfficer ? gold : ironDark, [0, 0.29, -0.035], [0.236, 0.034, 0.222]);
+      box(helmet, steel, [0, 0.215, 0.2], [0.05, 0.15, 0.022]);
     } else if (isAmbroni) {
       // A bascinet: a tall rounded bowl drawn up to a low point, a brow band, a nasal, and mail hanging from it
       // round the sides and back of the neck and over the shoulders. The face stays open.
@@ -2947,6 +3139,15 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       part(body, new THREE.CylinderGeometry(0.22, 0.36, 0.86, 10, 1, true, Math.PI / 2 + .15, Math.PI - .3), cloakMat, [0, 0.9, -0.04], [1, 1, 0.85]);
       part(body, new THREE.CylinderGeometry(0.362, 0.362, 0.035, 10, 1, true, Math.PI / 2 + .15, Math.PI - .3), material(0xc8a250, { side: THREE.DoubleSide }), [0, 0.475, -0.04], [1, 1, 0.85]);
       for (const side of [-1, 1]) round(body, gold, [side * 0.2, 1.31, 0.16], [0.035, 0.035, 0.014]);
+    } else if (isFeradomi) {
+      // A green wool cloak for a cold coast, pinned at the right shoulder with an iron ring so the spear arm is
+      // free: to mid-thigh on the men, to the calf with a grey fur collar on a pass-lord's captain.
+      const cloak = new THREE.Group(); cloak.name = isFeradomOfficer ? 'Feradom captain cloak' : 'Feradom cloak'; body.add(cloak);
+      const wool = material(0x2f4a33, { side: THREE.DoubleSide }), long = isFeradomOfficer ? 0.9 : 0.66;
+      part(cloak, new THREE.CylinderGeometry(0.23, isFeradomOfficer ? 0.37 : 0.33, long, 10, 1, true, Math.PI / 2 + .1, Math.PI - .2), wool, [0, 1.34 - long / 2, -0.045], [1, 1, 0.86]);
+      if (isFeradomOfficer) part(cloak, new THREE.TorusGeometry(0.2, 0.05, 5, 12), material(0x8c867a), [0, 1.33, -0.02], [1, 0.8, 0.85]).rotation.x = Math.PI / 2;
+      round(cloak, material(0x7f837d, { metalness: 0.46, roughness: 0.55 }), [0.19, 1.31, 0.15], [0.04, 0.04, 0.016]);
+      if (!isFeradomOfficer && !armed) staff = makeSpearProp(wrists[1], 'Feradom long spear', 2.4, 0.3);
     } else if (isElodiGuard && !armed) {
       // A short spear held close, or a bow across the back; a small round shield either way.
       // Elod's frontier captain carries no spear: a charcoal half-cloak with a silver clasp marks him instead.
@@ -2973,6 +3174,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       // The heater shield rides on the left forearm, device outward, held in front of the body at attention.
       authoredShield = makeHeaterShield(elbows[0], { face: tunic });
     }
+    if (isFeradomi && !isFeradomOfficer) authoredShield = makeKiteShield(elbows[0]);
   } else if (isMercenary) {
     // A hired sword's kit follows the roster: spears and the staff stand planted, the bow rides on the back.
     const kit = look?.weapon;

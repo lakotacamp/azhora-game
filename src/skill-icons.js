@@ -13,6 +13,7 @@ export const SKILL_ICONS = Object.freeze({
   birding: '<circle cx="24" cy="11" r="3.6"/><path d="m27.4 9.8 4.6 1.8-4.6 1.8M25.6 10h.01"/>'
     + '<path d="M21.2 13.2C15 14.4 10 18.6 8 25c6.4 1.4 11.6-.6 14.8-4.4 2-2.4 3-4.8 3.2-7"/>'
     + '<path d="m8 25-4.4 3.4M16.6 17.6c1.8 1 3 2.6 3.4 4.6M6 30h24"/>',
+  flying: '<path d="M18 24V13M18 17C12 8 6 10 3 8l3 11 7-1 5 6 5-6 7 1 3-11c-3 2-9 0-15 9Z"/><path d="m15 11 3-4 3 4"/>',
   husbandry: '<path d="M8 17C3 5 8 3 13 12m10 0c5-9 10-7 5 5M10 12h16l-2 16-6 4-6-4Z"/><circle cx="14" cy="19" r="1"/><circle cx="22" cy="19" r="1"/><path d="M14 26h8"/>',
   // A hook on its line, eye at the top and barb at the turn.
   fishing: '<circle cx="23" cy="5.4" r="2.2"/><path d="m25.2 4.6 7-1.6"/>'
@@ -58,6 +59,9 @@ export const SKILL_ICONS = Object.freeze({
   // An open book: two leaves, the spine between them, and writing you cannot read yet.
   // An ear of barley on its stem: the one skill that ripens on a clock of its own.
   // A lowered hood and a quiet footstep.
+  // A climber reaching for the next hold on an uneven rock face.
+  climbing: '<path d="m27 3-4 7 5 5-3 6 4 5-2 7"/><circle cx="14" cy="9" r="3"/>'
+    + '<path d="m13 12-2 9 6 4 2 7M11 21l-6 6 1 5M12 16l7-4 1-7M12 17l-5 1-2-5"/>',
   stealth: '<path d="M8 21c0-9 4-16 10-18 6 2 10 9 10 18l-6 5H14Z"/>'
     + '<path d="M12 20c1-5 3-8 6-10 3 2 5 5 6 10M14 21h8M7 31h10m5-2h7"/>',
   farming: '<path d="M18 33V13"/><path d="M18 13c-4.6 0-7-2.6-7-7 4.6 0 7 2.6 7 7Z"/>'

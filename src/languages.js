@@ -173,7 +173,7 @@ export const LANGUAGES = freeze({
     from: 'the world-builder profile `mittoli`',
     note: 'The great western family and the tongue of commerce, governance and scholarship. The traveler meets three of its dialects: Luscian, thick with Elagosi and plains loanwords; the Plain’s eastern Mittoli, with an older layer under its place names that nobody has traced; and Amodian, a foothill dialect carrying a terrace-country substrate and a set of water-measure words Standard Mittoli lacks.',
     borrows: ['ambroni', 'pyrosi'],
-    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'isareos', 'nethrani'],
+    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'isareos', 'nethrani', 'lotharn'],
     onsets: ['al', 'ar', 'azh', 'bel', 'cael', 'dael', 'dor', 'el', 'gal', 'hom', 'kael', 'mel', 'mir', 'nil', 'sor', 'tal', 'thal', 'trel', 'vel', 'zael'],
     middles: ['a', 'ae', 'e', 'i', 'o', 'oe', 'u'],
     suffixes: ['a', 'ael', 'an', 'ath', 'el', 'eth', 'in', 'ith', 'oe', 'ol', 'om', 'on', 'or', 'os', 'oss', 'um'],
@@ -495,6 +495,9 @@ export const DIALECTS = freeze({
   nethrani: dialect('nethrani', 'Nethrani', 'mittoli',
     'An inner-branch Mittoli variant, plain to any Standard speaker, whose whole distinctive vocabulary is the flood: *nethvel*, "the return of the deep water", against *nethmorr* for one that exceeds its bounds and *nethgell* for one that fails to come; *haethoss*, the reliable line a family builds above; *nethoss*, the deep basin, used of any situation that cannot get worse. It borrows the Pyrosi elevated register *kael-* for the Flood Recall alone, which linguists find remarkable and the Nethrani explain by saying the flood has the standing of the land.',
     word => word.replace(/e([bcdfgklmnprstvz])/, 'eh$1')),
+  lotharn: dialect('lotharn', 'Lotharn valley Mittoli', 'mittoli',
+    'Mittoli-derived valley speech, recognisably the family and a little different in every valley, over an older substrate that is most of the place names - Kemrath, Olveth - and some of the craft terms of the mines, and that resists every Mittoli root. The pass inns speak a mix of it with the Plains languages and the Iberos trade vocabulary.',
+    word => word.replace(/v/, 'w').replace(/([aeiou])th$/, '$1rth')),
   highland: dialect('highland', 'the highland Izoli', 'izoli',
     'Conservative where the coastal towns have moved on, and carrying shrine-keeping vocabulary the towns do not have and the tribes do not translate.',
     word => word.replace(/([bcdfgklmnprstvz])$/, '$1$1')),
@@ -553,6 +556,17 @@ export const REGION_LANGUAGE = freeze({
   // Mittoli variant, recognizable to any Standard Mittoli speaker, with a vocabulary shaped
   // by the basin environment and the flood tradition." Mittoli again, and no new language.
   Nethereum: spoken('mittoli', 'nethrani'),
+  // From the Lotharn lore's Language section: "The valley peoples speak Mittoli-derived
+  // languages... but each valley has had enough isolation to develop distinctive features", over
+  // "an older system... most visible in place names". One dialect for the range; its valleys'
+  // own differences are for the day there are people in them to speak.
+  'East Lotharn Mountains': spoken('mittoli', 'lotharn'),
+  // Feradom speech, the Drentish of the domain country, which already had its entry above
+  // for the company's men who came from there.
+  Feradom: spoken('feradom'),
+  // Iscare's lore describes the Iberos coastal trade contact language. Use its existing
+  // coastal relative until Iscari vocabulary is authored, rather than inventing a tongue.
+  'Iscare Archipeligo': spoken('suvalen'),
 });
 
 /**

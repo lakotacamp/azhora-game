@@ -17,7 +17,7 @@ import { KOOPWOOD, WOODLOT_TREES, WOODLOT_LAYOUT, WOODLOT_SIGN, TREE_KINDS, lotP
  */
 const PHI = 2.39996;
 /** Which of Drent's tree shapes each kind is drawn with, and how big: the lot's trees are younger than the specimens in the wood. */
-const LOOKS = { pine: ['loblolly-pine', .62], oak: ['white-oak', .52], maple: ['red-maple', .78], walnut: ['black-walnut', .78] };
+const LOOK_SCALES = { pine: .62, oak: .52, maple: .78, walnut: .78 };
 
 function painted(width, height, draw, fallback) {
   if (typeof document === 'undefined') return new THREE.MeshStandardMaterial({ color: fallback, roughness: .9, side: THREE.DoubleSide });
@@ -63,8 +63,9 @@ export function createWoodlot({ parent, material, mesh, box, post, round, cylind
   for (const t of WOODLOT_TREES) {
     const k = TREE_KINDS[t.kind], y = heightAt(t.x, t.z);
     const group = new THREE.Group(); group.name = `Koopwood ${t.kind} ${t.id}`; group.position.set(t.x, y, t.z); root.add(group); movingGroups.add(group);
+    group.userData.species = t.species; group.userData.woodKind = t.woodKind; group.userData.log = t.log;
     const pivot = new THREE.Group(); pivot.rotation.order = 'YXZ'; group.add(pivot);   // turned to face away, then tipped that way
-    const [shape, scale] = LOOKS[t.kind] ?? [null, 1];
+    const shape = t.kind === 'willow' ? null : t.species, scale = LOOK_SCALES[t.kind] ?? 1;
     const tree = new THREE.Mesh(shape ? shapes[shape] : willow, leafy); tree.castShadow = true; tree.receiveShadow = true;
     tree.scale.setScalar(t.kind === 'willow' ? .95 : scale); tree.rotation.y = (t.x * 7.3 + t.z * 3.1) % (Math.PI * 2); pivot.add(tree);
     // The stump: bark round a pale cut face with a ring or two.

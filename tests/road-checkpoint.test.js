@@ -1,3 +1,7 @@
+import { BRANDY_HOME } from '../src/brandy-home-world.js';
+import { BRANDY_STAND } from '../src/brandy.js';
+import { createBrandyHome, createJonHomeVisit } from '../src/brandy-home.js';
+import { SALT_PORTS } from '../src/salt-sultan.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRoadCheckpoint, ROAD_CHECKPOINT_KEY } from '../src/road-checkpoint.js';
@@ -47,7 +51,7 @@ function fixture() {
   // business a Chapter 1 save can carry now that the middle of the road is off the slate.
   journey.start(); journey.act('meet-crossing-keeper');
   const data = {
-    version: 1, worldScale: METRES_PER_HEX, questStage: QUEST_DONE, journey: journey.snapshot(),
+    version: 1, ambronLayoutVersion: 2, worldScale: METRES_PER_HEX, questStage: QUEST_DONE, journey: journey.snapshot(),
     inventory: inventory.items().map(id => ({ id, quantity: inventory.count(id) })),
     weapons: weapons.snapshot(), journeyGathered: ['meadow-fruit'], meadowCleared: false,
     position: { x: 3, z: -190 }, heardDoom: true, lysaComplete: true, health: 74,
@@ -715,4 +719,28 @@ test('legacy Port Calos bodies for removed civilians disappear without affecting
   assert.deepEqual(legacy, original, 'Migration does not mutate its input');
   assert.equal(checkpoint.save(loaded.data).ok, true);
   assert.deepEqual(checkpoint.read().data.corpses.bodies, expected, 'Saving the migrated checkpoint does not resurrect old models');
+});
+
+
+test('household checkpoints preserve indoor Brandy and Jon and reject a corrupted doorway without replacing the save', () => {
+  const {data,checkpoint}=fixture();
+  const brandy=createBrandyHome({home:BRANDY_HOME,yard:BRANDY_STAND});brandy.restore(undefined,{playSeconds:960});
+  const jon=createJonHomeVisit({home:{...BRANDY_HOME,porch:BRANDY_HOME.visitor},pier:SALT_PORTS[0].stand});
+  const home={version:1,brandy:brandy.snapshot(),jon:jon.snapshot()};
+  assert.equal(checkpoint.save({...data,brandyHome:home}).ok,true);
+  assert.deepEqual(checkpoint.read().data.brandyHome,home);
+  const invalid=structuredClone(home);invalid.brandy.position.x+=40;
+  assert.equal(checkpoint.save({...data,brandyHome:invalid}).ok,false);
+  assert.deepEqual(checkpoint.read().data.brandyHome,home);
+});
+
+
+test('older checkpoints at the removed capital resume at the relocated gate without losing their inventory', () => {
+  const {data,checkpoint}=fixture();
+  const result=checkpoint.save({...data,ambronLayoutVersion:undefined,position:{x:-1240,z:290}});assert.equal(result.ok,true,result.reason);
+  const moved=checkpoint.read().data;assert.equal(moved.ambronLayoutVersion,2);
+  assert.ok(moved.position.z<180&&moved.position.x>-1100);
+  assert.deepEqual(moved.inventory,data.inventory);
+  assert.equal(checkpoint.save({...data,ambronLayoutVersion:2,position:{x:-1240,z:290}}).ok,true);
+  assert.deepEqual(checkpoint.read().data.position,{x:-1240,z:290},'a deliberate new visit to the old site stays there');
 });

@@ -26,12 +26,15 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
 /** What each rebuilt region should feel like, whatever the survey's raw terrain says. */
 export const REGION_BIOMES = Object.freeze({
+  'Iscare Archipeligo': Object.freeze({ id: 'iscare-islands', name: 'The burned Iscare islands', ground: '#909477', canopy: '#5d704b', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'salt-scrub', ownScatter: true,
+    relief: { amplitude: 2.5, wavelength: 80 }, clearings: ['zecron-ruins', 'burned-hamlets'],
+    note: 'Low fault-block islands and shoals, pale shore rock, sheltered coves, wind-bent scrub and the burned port of Zecron. Abandoned settlement shells tell of the Blood Prince.' }),
   Drent: Object.freeze({ id: 'dense-forest', name: 'Drent forest', ground: '#4d7a3e', canopy: '#2f5a2c', treesPerHex: perHex(42), rocksPerHex: perHex(1), undergrowth: 'dense',
     relief: { amplitude: 2.6, wavelength: 90 }, clearings: ['village', 'farm'],
     note: 'All of Drent is green forest: broadleaf canopy, ferns and sorrel, the village and one farm clearing cut out of it.' }),
@@ -129,6 +132,20 @@ export const REGION_BIOMES = Object.freeze({
   'South Suval': Object.freeze({ id: 'lake-hills', name: 'The South Suval hills', ground: '#a2a070', canopy: '#6b7a4c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
     relief: { amplitude: 7, wavelength: 125 }, clearings: ['imlamdris'],
     note: 'The peninsula’s southern hills, and the only lake on it. Pale limestone and thin soil on the ridge and the hills, aromatic scrub, olive and fig where the south-facing ground is warm; greener grass, reed and mist round the Stillwater, which is spring-fed and does not run dry; and Imlamdris on its north-east shore, facing the water and turning its back on the road.' }),
+  // The East Lotharn scatters its own forest (src/east-lotharn-scenery.js): old deciduous
+  // woodland from the valley floors nearly to the summits, broken by the valleys' fields, the
+  // grazed balds on the ridge tops and the sheep grass of the high valleys, and one count per hex
+  // cannot say where those are.
+  'East Lotharn Mountains': Object.freeze({ id: 'old-forested-mountains', name: 'The East Lotharn', ground: '#5d7044', canopy: '#3e5c32', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'forest-floor', ownScatter: true,
+    relief: { amplitude: 10, wavelength: 230 }, clearings: ['kemrath', 'pass-inn', 'iron-workings'],
+    note: 'Old mountains: rounded summits, broad-backed ridges and long forested slopes a traveller can climb, oak, chestnut, maple, beech and tulip poplar from the valley floors nearly to the tops, and the valleys between them, each with its own water. Stone in every cut shows the layers of seas older than the range; iron and coal are in it, and have been worked for as long as there have been valley people.' }),
+  // Feradom (src/feradom-world.js): "the barrier hills - a forested ridge system running along the
+  // country's inland edge, not dramatic in height but dense in tree cover and limited in crossing
+  // points", a castle or a tower on every pass, and behind them the plains and the cold coast. It
+  // scatters its own forest: the hills are thick oak and fir and the plains are fields and pasture.
+  Feradom: Object.freeze({ id: 'barrier-hills', name: 'Feradom', ground: '#5c7248', canopy: '#2e4c33', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'forest-floor', ownScatter: true,
+    relief: { amplitude: 2.4, wavelength: 160 }, clearings: ['pass-forts'],
+    note: 'The barrier hills: a band of forested ridges along the country’s inland edge, not high but steep-sided and thick with oak and fir, crossed in six places, each held by a fortress of the Duchy. North of them, fields and pasture in the river valleys and the cold northern coast.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

@@ -49,14 +49,18 @@
 export const TRIMMED = true;
 
 /** What may be started while the slate is trimmed. */
-export const LIVE = Object.freeze(['main', 'bridge', 'doomsayer', 'civil-war-drent']);
+export const LIVE = Object.freeze(['main', 'bridge', 'doomsayer', 'civil-war-drent', 'batman-suval']);
 
 /** Everything the trim closes, by the name this file knows it under. */
 export const CLOSED = Object.freeze(['courier', 'waymarkers', 'greenway', 'acorns', 'forest',
   'teachers', 'civil-war-vastos']);
 
+// Superseded content stays off even if the old broad slate is restored. Saved clue
+// data is retained for migration, but cannot reopen the former blue-trade story.
+export const RETIRED = Object.freeze(['batman-investigation']);
+
 /** Whether a quest can be started, offered, marked or listed today. */
-export const questLive = id => !TRIMMED || LIVE.includes(id);
+export const questLive = id => !RETIRED.includes(id) && (!TRIMMED || LIVE.includes(id));
 
 /**
  * The bridge over the Caloss, the copper good deed on the slate. It was

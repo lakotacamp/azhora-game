@@ -1,7 +1,9 @@
 import { BEN } from './spider-quest.js';
 import { LIZ } from './cat-quest.js';
 import { TROY } from './murder-quest.js';
+import { JESSE } from './jesse-carriage-world.js';
 import { CAGNEY } from './cagney-quest.js';
+import { KATY } from './katy.js';
 import { KAYLA } from './kayla.js';
 import { CUB } from './cub-honey-quest.js';
 import { regions } from './region-world.js';
@@ -34,7 +36,7 @@ export async function runTestingToolsChecks(h) {
     h.stop();
   };
   try {
-    for (const [kind, npc] of [['ben', BEN], ['liz', LIZ], ['troy', TROY], ['cagney', CAGNEY], ['race', KAYLA], ['cub', CUB]]) {
+    for (const [kind, npc] of [['ben', BEN], ['liz', LIZ], ['troy', TROY], ['cagney', CAGNEY], ['jesse', JESSE], ['catie', KATY], ['race', KAYLA], ['cub', CUB]]) {
       await open();
       control(`test-${kind==='race'?'kayla':kind}-autoplay`).click();
       check(h.autoplay.active && h.autoplay.id === kind && h.state().testingEnabled,

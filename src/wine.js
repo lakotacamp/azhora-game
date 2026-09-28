@@ -22,6 +22,7 @@
  * which is the making of it in order.
  * Pure: no DOM, no three.
  */
+import { questLive } from './quest-slate.js';
 import { VINTNER, CELLAR_HAND, WINEMAKER, KAT_LINES, WINERY, VARIETIES } from './winery.js';
 import { ATTIC_WINES, ATTIC_WINE_IDS } from './attic-wines.js';
 
@@ -275,7 +276,7 @@ export function winemakerConversation(npc, context) {
   const again = () => winemakerConversation(npc, { ...context, visits: visits + 1 });
   // One of the twelve barrels the Coalition requisitioned came back, and came back wrong. Kat is
   // the one who would notice, because she is the one who knows what a barrel of hers weighs.
-  const barrel = hunt && katy?.looking && !hunt.has('vial') ? [{ id: 'kat-barrel', label: 'Has anything odd come back off the war?',
+  const barrel = questLive('batman-investigation') && hunt && katy?.looking && !hunt.has('vial') ? [{ id: 'kat-barrel', label: 'Has anything odd come back off the war?',
     action: () => openDialogue(npc, [
       'Funny you should. One of the twelve the Coalition took “for the troops” came back to us in the spring, on a cart, with an apology nobody signed.',
       'And it came back heavier than it went out. I know what my own barrels weigh; I put the wine in them. So I broke the head off it, and the head had another head behind it, and the space between was packed with straw and little flat bottles.',

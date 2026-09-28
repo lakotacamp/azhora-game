@@ -14,11 +14,12 @@
  * can watch her do it. She will not sail while the traveler is standing with
  * John. Pure: no DOM, no three. The ship and the man are in src/salt-ship.js.
  */
+import { questLive } from './quest-slate.js';
 import { solisPoint } from './region-world.js';
 
 const freeze = Object.freeze;
 
-export const JOHN = freeze({ id: 'john-salt', name: 'John', role: 'Sultan of the Salt Trade', color: 0x27306e, skin: 0xb98460 });
+export const JOHN = freeze({ id: 'john-salt', name: 'Jon', role: 'Sultan of the Salt Trade', color: 0x27306e, skin: 0xb98460 });
 export const SHIP_NAME = 'the Sultana';
 /** Seconds in port; how near the traveler must stay to keep him there; how near to see her come and go; how near to hear him. */
 export const STAY = 480, KEEP = 30, SIGHT = 260, HEAR = 45;
@@ -64,8 +65,9 @@ export const SALT_PORTS = freeze([
   // Likewise: thirteen metres south-east, onto the island the quay belongs to.
   port('izolveth', 'Izolveth', 'West Izol', 'quay', spot(57, 1728.2, 0), spot(47, 1640, 0),
     [[40, 1400], [47, 1640]], 'Solis next, where my Chief Taster will have lost something.'),
-  port('solis', 'Solis', 'West Suval', 'quay', S(-72.5, -12, Math.PI / 2), spot(-626, 955, Math.PI / 2),
-    [[-860, 990], [-626, 955]], 'Home to Tidehaven next, if I have a home, which my mother says I don’t.'),
+  // Anchor beyond the timber pier's outer end; the old berth ran through its deck.
+  port('solis', 'Solis', 'West Suval', 'quay', S(-72.5, -12, Math.PI / 2), S(-130, -10, 0),
+    [[-860, 990], [-690, 976], [solisPoint(-130, -10).x, solisPoint(-130, -10).z]], 'Home to Brandy and Bosco in Tidehaven next. I am hardly ever there, but it is home.'),
 ]);
 export const SALT_PORT_IDS = freeze(SALT_PORTS.map(p => p.id));
 const portIndex = id => SALT_PORT_IDS.indexOf(id);
@@ -138,7 +140,7 @@ export function createSaltSultan({ start = null } = {}) {
   const near = (t, p, r) => !!t && Math.hypot(t.x - p.x, t.z - p.z) < r;
 
   /** One step. `traveler` is { x, z }. Events: 'sighted' and 'putting-out' for a traveler who can see, 'heard' near the quay, and 'moored' and 'gone' always. */
-  function update(dt, traveler = null) {
+  function update(dt, traveler = null, { holdDeparture = false, ashorePosition = null } = {}) {
     const events = [], p = here();
     // Math.max(0, NaN) is NaN, and a NaN clock is a save the checkpoint will not load back.
     if (!Number.isFinite(dt) || dt <= 0) return events;
@@ -149,8 +151,8 @@ export function createSaltSultan({ start = null } = {}) {
     }
     if (state.phase === 'arriving' && state.clock >= sailTime(p)) { state.phase = 'moored'; state.clock = 0; events.push({ type: 'moored', port: p }); }
     if (state.phase === 'moored') {
-      if (!state.heard && near(traveler, p.stand, HEAR)) { state.heard = true; events.push({ type: 'heard', port: p }); }
-      if (state.clock >= STAY && !near(traveler, p.stand, KEEP)) {
+      if (!state.heard && (!ashorePosition || near(ashorePosition, p.stand, 4)) && near(traveler, p.stand, HEAR)) { state.heard = true; events.push({ type: 'heard', port: p }); }
+      if (state.clock >= STAY && !holdDeparture && !near(traveler, ashorePosition ?? p.stand, KEEP)) {
         state.phase = 'departing'; state.clock = 0;
         if (near(traveler, p.stand, SIGHT)) events.push({ type: 'putting-out', port: p, next: SALT_PORTS[wrap(state.port + 1)] });
       }
@@ -188,7 +190,7 @@ export const PASTA_WATER = '“That’s pasta water.”';
 const FIRST = freeze([
   'A big man in a turban as white as a salt pan is crouched at the edge of the {edge} with one finger in the sea. He licks it. He considers.',
   PASTA_WATER,
-  'He wipes the finger on a sash that cost more than the {edge}, and stands up. “John. Sultan of the Salt Trade. Not a real sultan: there’s no such office. I asked. So I took it.”',
+  'He wipes the finger on a sash that cost more than the {edge}, and stands up. “Jon. Sultan of the Salt Trade. Not a real sultan: there’s no such office. I asked. So I took it.”',
 ]);
 const AGAIN = freeze([
   '“The traveler! Come here. Taste this.” He holds out a pinch of grey salt. You taste it. “Well?” You say it is salty. “Salty,” he says, to the sky. “Salty, they say.”',
@@ -235,29 +237,34 @@ export function johnConversation(npc, context) {
   if (npc.id !== JOHN.id) return false;
   const p = salt.port, fill = line => line.replaceAll('{edge}', p.edge);
   const again = () => johnConversation(npc, { ...context, back: true });
-  const talk = lines => openDialogue(npc, lines.map(fill), null, 'Back to John', { onComplete: again });
+  const talk = lines => openDialogue(npc, lines.map(fill), null, 'Back to Jon', { onComplete: again });
   const first = !salt.met;
   if (first) act('john-meet');
-  const opening = first ? FIRST.map(fill) : context.back ? ['“Anything else? Quickly. The tide is going out, and it is taking all that lovely pasta water with it.”'] : [AGAIN[salt.visits % AGAIN.length]];
-  openDialogue(npc, opening, null, 'Back to the ' + p.edge, { choices: [
+  const atHome = context.homeVisit?.managed && context.homeVisit?.phase === 'visiting';
+  const opening = atHome && !context.back ? ['Jon brushes a grain of salt from his sleeve. “Brandy and Bosco. This is home. The ship brings me back less often than I would like.”'] : first ? FIRST.map(fill) : context.back ? ['“Anything else? Quickly. The tide is going out, and it is taking all that lovely pasta water with it.”'] : [AGAIN[salt.visits % AGAIN.length]];
+  openDialogue(npc, opening, null, atHome ? 'Back to the yard' : 'Back to the ' + p.edge, { choices: [
     { id: 'john-sultan', label: 'Sultan of the Salt Trade?', action: () => talk(TALK.sultan) },
     { id: 'john-pasta', label: 'What’s wrong with the sea?', action: () => talk(TALK.pasta) },
     { id: 'john-crew', label: 'Who works for you?', action: () => { act('john-ed'); talk(TALK.crew); } },
     ...(salt.edTold ? [{ id: 'john-ed-good', label: 'Is Ed any good at it?', action: () => talk(TALK.edGood) }] : []),
     { id: 'john-bound', label: 'Where are you bound?', action: () => talk(johnBound(p.id)) },
+    ...(p.id === 'tidehaven' ? [{ id: 'john-home', label: 'Your home is here?', action: () => talk([
+      '“The cottage by Saltwind Lookout. Brandy paints her boards outside, and Bosco guards the place against everything except food.”',
+      '“I bring them what I can between voyages. I am rarely home. It is still the place I am coming back to.”',
+    ]) }] : []),
     // The hold has salt in it and things kept in salt. A dog in Drent knows this (src/bosco.js).
     ...(context.coppers >= BEEF_PRICE ? [{ id: 'john-beef', label: `A piece of salt beef (${BEEF_PRICE} copper).`,
       action: () => { closeDialogue(); act('buy-salt-beef'); } }] : []),
     // A man who sails four ports in a war is offered every kind of cargo (src/batman.js).
-    ...(context.hunt?.stage === 'hunting' && !context.hunt.has('pass') ? [{ id: 'john-refused', label: 'Has anyone offered you a cargo you would not take?',
+    ...(questLive('batman-investigation') && context.hunt?.stage === 'hunting' && !context.hunt.has('pass') ? [{ id: 'john-refused', label: 'Has anyone offered you a cargo you would not take?',
       action: () => openDialogue(npc, [
         '“Ha! Everyone offers me everything. I carry salt. Salt is honest: it is heavy, it is boring, and nobody has ever been hanged over a sack of it.”',
         '“But yes. Once. Two winters ago, at the east quay, a very polite young man with very clean boots, and crates that weighed nothing and smelled — my friend, they smelled like rain on a hot road, right through the wood.”',
         '“Three hundred silver for one night’s sailing. Three hundred! For salt I make forty and I am at sea a week.” A shrug that uses the whole body. “So of course I said no. That price is not a price, it is a warning.”',
         '“He had a pass, for the lines, after dark. Signed by a Coalition captain, Trelith. He left it with me while he went for his master, to prove the thing was official, and he did not come back for it, because I had already told the harbourman and the harbourman told the quay and the boots went away.”',
-        '“I wrote my refusal on the back of it, in my own hand, so that if it ever came to it there would be a paper that said John said no. Here. I have been carrying it for two years waiting for somebody to want it. Somebody wants it, I think.”',
+        '“I wrote my refusal on the back of it, in my own hand, so that if it ever came to it there would be a paper that said Jon said no. Here. I have been carrying it for two years waiting for somebody to want it. Somebody wants it, I think.”',
       ], null, 'Take the pass', { onComplete: () => { closeDialogue(); act('take-trelith-pass'); } }) }] : []),
-    { id: 'leave-john', label: 'Fair winds, John.', action: closeDialogue },
+    { id: 'leave-john', label: 'Fair winds, Jon.', action: closeDialogue },
   ] });
   return true;
 }
@@ -267,6 +274,6 @@ export function saltToast(event) {
   const where = event.port?.name;
   if (event.type === 'sighted') return { title: where.toUpperCase(), line: `A ship is coming in to ${where} under a white sail, low in the water and crusted white along her waterline: ${SHIP_NAME}, the salt ship.` };
   if (event.type === 'heard') return { title: where.toUpperCase(), line: `Somebody on the ${event.port.edge} has tasted the sea, and is telling it so: “That’s pasta water!”` };
-  if (event.type === 'putting-out') return { title: where.toUpperCase(), line: `${SHIP_NAME[0].toUpperCase()}${SHIP_NAME.slice(1)} is putting out, bound for ${event.next.name}. John waves from her stern. It might be at you. It might be at the sea, rudely.` };
+  if (event.type === 'putting-out') return { title: where.toUpperCase(), line: `${SHIP_NAME[0].toUpperCase()}${SHIP_NAME.slice(1)} is putting out, bound for ${event.next.name}. Jon waves from her stern. It might be at you. It might be at the sea, rudely.` };
   return null;
 }

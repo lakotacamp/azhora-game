@@ -31,7 +31,7 @@ test('Kayla waits outside the east gate until acceptance and Ed appears exactly 
 test('running the road beats Ed fairly, dismounts at the finish, and gives honey exactly once across saves', () => {
   const f = fixture(); f.quest.accept();
   const result = race(f); assert.equal(result.stage, 'won');
-  assert.ok(result.elapsed > 50 && result.elapsed < 90); assert.equal(f.mounts.at(-1)[0], 'dismount');
+  assert.ok(result.elapsed > 35 && result.elapsed < 90); assert.equal(f.mounts.at(-1)[0], 'dismount');
   assert.ok(gap(result.ed, result.kayla) > 10, 'Ed is still physically behind rather than rubber-banding to the finish');
   assert.equal(f.quest.takeReward(), 3); assert.equal(f.quest.takeReward(), 0);
   const restored = createKaylaRace(); assert.equal(restored.restore(f.quest.snapshot()), true);
@@ -131,4 +131,27 @@ test('external NPC movement cannot overwrite the mounted racers or the completed
   assert.equal(f.quest.rememberKayla({ x: 42, z: 16 }), false); assert.equal(gap(position, f.quest.position), 0);
   race(f); f.quest.takeReward(); const saved = f.quest.snapshot();
   assert.equal(f.quest.rememberKayla({ x: 42, z: 16 }), false); assert.deepEqual(f.quest.snapshot(), saved);
+});
+
+
+test('legacy race saves survive the moved city without losing a reward or retaining obsolete checkpoints',()=>{
+  for(const stage of ['available','countdown','racing','returning','lost','won','complete']) {
+    const quest=createKaylaRace(), saved=quest.snapshot();delete saved.courseVersion;
+    saved.stage=stage;saved.attempts=stage==='available'?0:2;
+    saved.kayla={...saved.kayla,x:-1168,z:278,next:['won','complete'].includes(stage)?14:7};
+    saved.ed={...saved.ed,x:-1120,z:258,next:14};
+    assert.equal(validateKaylaRaceSnapshot(saved),true,stage);
+    assert.equal(quest.restore(saved),true);assert.equal(quest.snapshot().courseVersion,2);
+    if(['won','complete'].includes(stage)) {
+      assert.equal(quest.state().stage,stage);assert.equal(quest.position.next,KAYLA_RACE_LANE.length);
+      assert.equal(quest.takeReward(),stage==='won'?3:0);assert.equal(quest.takeReward(),0);
+    } else {
+      assert.equal(quest.state().stage,stage==='available'?'available':'lost');
+      assert.equal(gap(quest.position,KAYLA_RACE_LANE[0]),0);
+      assert.equal(gap(quest.edPosition,ED_RACE_LANE[0]),0);
+      assert.equal(quest.state().attempts,saved.attempts);
+    }
+    assert.equal(validateKaylaRaceSnapshot(quest.snapshot()),true);
+    const current=quest.snapshot();assert.equal(quest.restore(current),true);assert.deepEqual(quest.snapshot(),current);
+  }
 });

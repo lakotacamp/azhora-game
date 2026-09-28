@@ -17,6 +17,7 @@
  * src/homestead-world.js; the workbench and the saw pit by src/woodlot-world.js.
  */
 import { lotPoint, WOODLOT_LAYOUT } from './woodcutting.js';
+import { timberForKind } from './wood-species.js';
 
 const freeze = Object.freeze;
 export const CONSTRUCTION_SKILL = 'construction';
@@ -24,7 +25,7 @@ export const CONSTRUCTION_VERSION = 1;
 export const TOOLS = freeze(['hammer', 'saw']);
 
 /** The planks, what they are sawn from, Bowden's fee a plank, and the experience a plank is worth when it is built into something. */
-const plank = (id, name, log, fee, xp) => freeze({ id, name, log, fee, xp });
+const plank = (id, name, log, fee, xp) => freeze({ ...timberForKind(id.replace('-plank', '')), id, name, log, fee, xp });
 export const PLANKS = freeze({
   'pine-plank': plank('pine-plank', 'Pine plank', 'pine-logs', 1, 29),
   'oak-plank': plank('oak-plank', 'Oak plank', 'oak-logs', 2, 60),

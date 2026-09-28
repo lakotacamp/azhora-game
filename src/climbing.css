@@ -1,0 +1,32 @@
+#climbing-status {
+  position: fixed; left: calc(50% + 8rem); top: 51%; z-index: 12;
+  display: flex; align-items: center; gap: .7rem; max-width: 20rem;
+  padding: .7rem .9rem .7rem .65rem; border-radius: .4rem;
+  background: rgba(15, 45, 36, .91); color: #f4edd3; pointer-events: none;
+  box-shadow: 0 2px 12px #0003; border: 1px solid #b1c09566;
+}
+#climbing-status[hidden], #climbing-hint[hidden] { display: none; }
+.climbing-grip {
+  --grip: 100%; --grip-color: #b4dc78;
+  width: 3.1rem; height: 3.1rem; flex: 0 0 3.1rem; border-radius: 50%;
+  display: grid; place-items: center;
+  background: conic-gradient(var(--grip-color) var(--grip), #233d33 0);
+  box-shadow: 0 0 0 1px #f4edd333;
+}
+.climbing-grip span {
+  width: 2.35rem; height: 2.35rem; border-radius: 50%; display: grid; place-items: center;
+  background: #18392e; font-size: .9rem; font-weight: bold;
+}
+#climbing-status strong { display: block; font-size: .9rem; color: #ede1b3; }
+#climbing-status small { display: block; margin-top: .3rem; font-size: .76rem; line-height: 1.45; }
+#climbing-status[data-warning="true"] .climbing-grip { --grip-color: #f2a064; }
+#climbing-status[data-warning="true"] strong { color: #ffcc97; }
+#climbing-hint {
+  position: fixed; bottom: 10rem; left: 50%; transform: translateX(-50%); z-index: 12;
+  padding: .65rem 1rem; border-radius: .3rem; pointer-events: none;
+  color: #f4edd3; background: #193e34ed; border: 1px solid #cfda9d99; font-size: .9rem;
+}
+@media(max-width: 700px) {
+  #climbing-status { top: auto; bottom: 10rem; left: auto; right: .8rem; max-width: 15rem; }
+  #climbing-hint { bottom: 11rem; max-width: 75vw; width: max-content; }
+}

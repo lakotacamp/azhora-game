@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { FARMER, FARM_ROWS } from './farming.js';
+import { FARMER, ALL_FARM_ROWS as FARM_ROWS } from './farming.js';
 
-/** Four small, walkable beds. Crop geometry is instanced; a stage change never rebuilds meshes. */
+/** Small, walkable garden beds at the commons and regional farms. Crop geometry is instanced; a stage change never rebuilds meshes. */
 export function createFarmingView({ scene, world, farming }) {
-  const group = new THREE.Group(); group.name = 'Stanley commons garden'; scene.add(group);
+  const group = new THREE.Group(); group.name = 'Player garden beds'; scene.add(group);
   const material = color => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true });
   const soil = material(0x6d4c31), wetSoil = material(0x493a27), timber = material(0x79603c);
   const leaf = material(0x4e7332), stem = material(0x7f9150), produce = material(0xe39336);
@@ -16,20 +16,21 @@ export function createFarmingView({ scene, world, farming }) {
     mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); return mesh;
   };
   const beds = FARM_ROWS.map((row, index) => {
+    const rowGroup = new THREE.Group(); rowGroup.name = row.name; group.add(rowGroup);
     const ground = new THREE.PlaneGeometry(2.8, 3.1, 2, 2); ground.rotateX(-Math.PI / 2);
     const vertex = ground.attributes.position;
     for (let i = 0; i < vertex.count; i++) vertex.setY(i, height(row.x + vertex.getX(i), row.z + vertex.getZ(i)) + .035);
     ground.computeVertexNormals(); geometries.push(ground);
-    const bed = new THREE.Mesh(ground, soil); bed.name = `Commons row ${index + 1} soil`;
-    bed.position.set(row.x, 0, row.z); bed.receiveShadow = true; group.add(bed);
+    const bed = new THREE.Mesh(ground, soil); bed.name = `${row.name} soil`;
+    bed.position.set(row.x, 0, row.z); bed.receiveShadow = true; rowGroup.add(bed);
     for (const dx of [-1.5, 1.5]) for (const dz of [-1.65, 1.65])
-      box('Low garden stake', row.x + dx, height(row.x + dx, row.z + dz) + .14, row.z + dz, .07, .28, .07);
+      rowGroup.add(box('Low garden stake', row.x + dx, height(row.x + dx, row.z + dz) + .14, row.z + dz, .07, .28, .07));
     const foliage = new THREE.InstancedMesh(leaves, leaf, 24), roots = new THREE.InstancedMesh(round, produce.clone(), 8);
     const stalks = new THREE.InstancedMesh(unit, stem.clone(), 8);
     materials.push(roots.material, stalks.material);
     foliage.name = `Row ${index + 1} crop leaves`; roots.name = `Row ${index + 1} crop produce`; stalks.name = `Row ${index + 1} crop stalks`;
-    for (const mesh of [foliage, roots, stalks]) { mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false; group.add(mesh); }
-    return { row, bed, foliage, roots, stalks, key: null };
+    for (const mesh of [foliage, roots, stalks]) { mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false; rowGroup.add(mesh); }
+    return { row, rowGroup, bed, foliage, roots, stalks, key: null };
   });
   // A shared seed crate and watering can sit on the edge; neither blocks feet or row access.
   const supply = { x: FARMER.x + .2, z: FARMER.z - 1.9 }, y = height(supply.x, supply.z);
@@ -42,8 +43,10 @@ export function createFarmingView({ scene, world, farming }) {
   const instance = (mesh, index, x, y, z, sx, sy, sz, rotation = 0) => {
     pose.position.set(x, y, z); pose.scale.set(sx, sy, sz); pose.rotation.set(0, rotation, 0); pose.updateMatrix(); mesh.setMatrixAt(index, pose.matrix);
   };
-  function update(playSeconds) {
+  function update(playSeconds, observer = null) {
     for (const part of beds) {
+      part.rowGroup.visible = !observer || Math.hypot(part.row.x - observer.x, part.row.z - observer.z) < 110;
+      if (!part.rowGroup.visible) continue;
       const row = farming.rowState(part.row.id, playSeconds), growth = Math.floor(row.progress * 12) / 12;
       const key = `${row.crop}:${row.stage}:${growth}:${row.watered}`;
       if (part.key === key) continue; part.key = key;

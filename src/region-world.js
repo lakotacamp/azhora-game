@@ -14,6 +14,8 @@
  * Ids: 1 Drent, 2 Luscia, 3 Moros Plain, 4 East Suval, 5 West Suval, 6 Pueth, 7 Peblos, 8 Elagos.
  */
 import { PLAYABLE_SURVEY, LAND_HEXES, SURVEY_ORIGIN } from './region-survey.js';
+import { PORT_CALOS_REGION_IDS } from './port-calos-roster.js';
+import { ambronTerraceWeight } from './ambron-city-layout.js';
 import {
   HEX_WORLD_TRANSFORM, REGION_BIOMES, PLAYABLE_REGIONS, METRES_PER_HEX, ATLAS_HEX_SIZE, ATLAS_HEX_WIDTH,
   regionCells, regionOutline, worldBoundsFor, routeAnchors, borderMidpoint, pointInPolygon,
@@ -23,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -141,6 +143,7 @@ export const VILLAGE_LOCAL_BOX = Object.freeze({ minX: -112, maxX: 112, minZ: -1
 // Terrain: a base level and relief per biome, blended between neighbouring hexes
 // ---------------------------------------------------------------------------
 export const REGION_TERRAIN = Object.freeze({
+  'Iscare Archipeligo': Object.freeze({base:8, amp:2.5, wave:80, ground:'#909477', byTerrain:Object.freeze({hills:Object.freeze({base:20,amp:6,wave:90,ground:'#969382'})})}),
   Drent: Object.freeze({ base: 4.6, amp: 2.6, wave: 90, ground: REGION_BIOMES.Drent.ground }),
   Luscia: Object.freeze({ base: 8.6, amp: 4.5, wave: 140, ground: REGION_BIOMES.Luscia.ground }),
   'Moros Plain': Object.freeze({ base: 6.4, amp: .9, wave: 260, ground: REGION_BIOMES['Moros Plain'].ground }),
@@ -276,14 +279,56 @@ export const REGION_TERRAIN = Object.freeze({
       grassland: Object.freeze({ base: 16.5, amp: 2.2, wave: 150, ground: '#8f9e66' }),
       lake: Object.freeze({ base: 15.5, amp: .8, wave: 200, ground: '#86996a' }),
     }) }),
+  // The East Lotharn: old mountains, "the peaks are rounded, the ridgelines are broad-backed rather
+  // than knife-edged, the faces... long, forested slopes inclined at angles that feet can manage".
+  // So high and long rather than high and sharp: the waves here are the longest in the world, and
+  // the mountain hexes stand above Amod's (78) because Amod is the Lotharn's foothills.
+  'East Lotharn Mountains': Object.freeze({ base: 70, amp: REGION_BIOMES['East Lotharn Mountains'].relief.amplitude, wave: REGION_BIOMES['East Lotharn Mountains'].relief.wavelength,
+    ground: REGION_BIOMES['East Lotharn Mountains'].ground, byTerrain: Object.freeze({
+      hills: Object.freeze({ base: 58, amp: 8, wave: 215, ground: '#5f7445' }),
+      mountain: Object.freeze({ base: 96, amp: 13, wave: 250, ground: '#5a6a46' }),
+    }) }),
+  // Feradom: low behind its hills. The barrier ridges, their scarps and their passes are
+  // src/feradom-world.js's, laid on this; the hex blend only sets the country's floor, the hills a
+  // little above the plains and the two mountain hexes at its north-west corner against the Lotharn.
+  Feradom: Object.freeze({ base: 11, amp: REGION_BIOMES.Feradom.relief.amplitude, wave: REGION_BIOMES.Feradom.relief.wavelength, ground: REGION_BIOMES.Feradom.ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 20, amp: 3, wave: 140, ground: '#566b44' }),
+    plains: Object.freeze({ base: 9.5, amp: 1.8, wave: 170, ground: '#6d8250' }),
+    mountain: Object.freeze({ base: 58, amp: 9, wave: 190, ground: '#5d6a4c' }),
+  }) }),
   outland: Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
 const cellProfile = (name, terrain) => REGION_TERRAIN[name].byTerrain?.[terrain] ?? REGION_TERRAIN[name];
 
-/** Biome weights around a world point: the containing hex and its six neighbours. */
+/** Suval's hills use every hex in the blend's reach. The old seven-cell stencil changes
+ * abruptly when the containing hex changes, leaving artificial steps across mountain faces.
+ * Feather this correction through the border neighborhood; older ground elsewhere keeps its
+ * original height and scenery placement. The full correction includes all three Suvals.
+ */
+const SUVAL_BLEND_NAMES = Object.freeze(['West Suval', 'South Suval', 'East Suval']);
+const SUVAL_BLEND_BOUNDS = (() => {
+  const cells = SUVAL_BLEND_NAMES.flatMap(name => REGION_CELLS[name]);
+  const margin = METRES_PER_HEX * 1.28;
+  return Object.freeze({ minX: Math.min(...cells.map(c => c.x)) - margin,
+    maxX: Math.max(...cells.map(c => c.x)) + margin,
+    minZ: Math.min(...cells.map(c => c.z)) - margin,
+    maxZ: Math.max(...cells.map(c => c.z)) + margin });
+})();
 export function terrainMix(x, z) {
-  return blendHexes(x, z, HOME_AND_NEIGHBORS);
+  const b = SUVAL_BLEND_BOUNDS;
+  if (x <= b.minX || x >= b.maxX || z <= b.minZ || z >= b.maxZ) return blendHexes(x, z, HOME_AND_NEIGHBORS);
+  const complete = seamlessTerrainMix(x, z);
+  const share = SUVAL_BLEND_NAMES.reduce((sum, name) => sum + (complete.weights[name] ?? 0), 0);
+  const amount = smooth(0, .3, share);
+  if (amount >= 1) return complete;
+  const original = blendHexes(x, z, HOME_AND_NEIGHBORS);
+  if (amount <= 0) return original;
+  const blendValues = (a, c) => Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(c)])]
+    .map(key => [key, lerp(a[key] ?? 0, c[key] ?? 0, amount)]));
+  return { base: lerp(original.base, complete.base, amount), amp: lerp(original.amp, complete.amp, amount),
+    wave: lerp(original.wave, complete.wave, amount), weights: blendValues(original.weights, complete.weights),
+    grounds: blendValues(original.grounds, complete.grounds) };
 }
 const HOME_AND_NEIGHBORS = Object.freeze([[0, 0], ...AXIAL_NEIGHBORS]);
 /** Every hex within two steps: all of them that the blend's reach can ever touch from a point of the home hex. */
@@ -294,8 +339,8 @@ const WITHIN_TWO = Object.freeze([[0, 0], ...AXIAL_NEIGHBORS,
  * its hex's corner takes in a few hexes two steps away; `terrainMix` leaves those out until the
  * point crosses into a neighbour of theirs and then counts them all at once, so the ground has a
  * seam along the hex edge - a few metres high where one of them is a ridge. This blend has none.
- * A region uses it where it has chosen to (South Suval); everything placed on the world before it
- * keeps the blend it was placed on.
+ * The Suval countries use it in their base terrain; other region modules can opt in locally.
+ * Ground beyond those authored corrections keeps the blend it was placed on.
  */
 export function seamlessTerrainMix(x, z) {
   return blendHexes(x, z, WITHIN_TWO);
@@ -531,22 +576,13 @@ export const IZOL_CAMP_GROUND = Object.freeze({ id: 'izol-camp', x: 176, z: 1886
 export const ARDVETH_SHELF = Object.freeze({ id: 'ardveth', x: -88, z: 1818, halfX: 16, halfZ: 14, feather: 16, level: 3.8, slopeX: .06, slopeZ: 0, shore: true });
 export const KELVATH_SHELF = Object.freeze({ id: 'kelvath', x: 250, z: 1748, halfX: 18, halfZ: 13, feather: 14, level: 3.4, slopeX: 0, slopeZ: .05, shore: true });
 
-/**
- * Ambron, the walled city on the Lake Ela narrows: the seat of the empire and
- * the toll that pays for it. Like Solis it is laid out in its own frame, square
- * to the world: `ambronPoint(a, b)` is `a` metres east and `b` metres south of
- * the head of the causeway, which stands in the middle of the water.
- *
- * The channel of the Ela-south runs north to south straight through the city at
- * a = 0, so the walls enclose ground on both banks and every barge going south
- * passes under the city's chain. The east bank is the old city and stands
- * higher; the west bank is the timber strand and stands nearly at the water.
- */
-export const AMBRON = Object.freeze({ name: 'Ambron', centre: point(-1274, 286), halfA: 92, halfB: 68, channelHalf: 23 });
+/** Ambron occupies dry interlake ground. The detailed outline follows the
+ * lakes; these rectangular extents are only a broad-phase bound. */
+export const AMBRON = Object.freeze({ name: 'Ambron', centre: point(-1130, 10), halfA: 164, halfB: 180, channelHalf: 0, hasChannel: false });
 export const ambronPoint = (a, b) => point(AMBRON.centre.x + a, AMBRON.centre.z + b);
 /** The made ground the city stands on: level, tilting up to the old east bank. */
 export const AMBRON_TERRACE = Object.freeze({ id: 'ambron', x: AMBRON.centre.x, z: AMBRON.centre.z,
-  halfX: AMBRON.halfA + 12, halfZ: AMBRON.halfB + 12, feather: 30, level: 17.2, slopeX: .012, slopeZ: 0 });
+  halfX: AMBRON.halfA + 12, halfZ: AMBRON.halfB + 12, feather: 30, weightAt: ambronTerraceWeight, level: 19.2, slopeX: .012, slopeZ: 0 });
 
 export const TERRAIN_PADS = Object.freeze([
   Object.freeze({ id: 'solis', x: SOLIS.centre.x, z: SOLIS.centre.z, halfX: SOLIS.halfX + 13, halfZ: SOLIS.halfZ + 13, feather: 28, level: 6.5, slopeX: .05, slopeZ: 0 }),
@@ -726,6 +762,7 @@ function outlineBounds(loops) {
 }
 
 const REGION_TEXT = {
+  'Iscare Archipeligo': {subtitle:'The burned island passages', spawn:point(-650,1155), description:'Low islands, shoals and narrow sea channels. Zecron and the small settlements were burned by the Blood Prince; only ruins and returning wildlife remain.', palette:{ground:'#909477',accent:'#d9caaa',fog:'#b8c4b9',sky:0xadc9d1,haze:0xb8c4b9,hazeDensity:.005}, npcIds:[],landmarks:['zecron-ruins','iscare-hamlets']},
   Drent: { subtitle: 'The forest coast and Tidehaven', spawn: at(-15, 29),
     description: 'All of Drent is broadleaf forest: ferns, sorrel and deer, with Tidehaven on the eastern shore, one farm clearing inland, and the ruins of Rena at its centre, where the region’s principal town stood until eighty years ago.',
     palette: { ground: '#4d7a3e', accent: '#c9d3a0', fog: '#b6c6ad' },
@@ -734,7 +771,7 @@ const REGION_TEXT = {
   Luscia: { subtitle: 'Across the Caloss', spawn: at(-362, 110),
     description: 'Rolling grass and thinning copses beyond the border river: the shrines of the valley, Nothom on the road, and the field at the Lauvel.',
     palette: { ground: '#8fa35a', accent: '#dfc77d', fog: '#bdc9b5' },
-    npcIds: ['crossing-keeper', 'ridge-keeper', 'relay-clerk', 'reed-worker', 'town-innkeeper', 'timber-stall', 'town-sawyer'],
+    npcIds: ['crossing-keeper', 'ridge-keeper', 'relay-clerk', 'reed-worker', 'town-innkeeper', 'timber-stall', 'town-sawyer', ...PORT_CALOS_REGION_IDS],
     landmarks: ['reedwater', 'reed-bridge', 'reedwater-bank', 'river-camp', 'landing-workshop', 'threefold', 'beacon-ridge', 'north-relay', 'lauvel-field', 'lumber-town', 'burned-hamlet'] },
   'Moros Plain': { subtitle: 'The army’s open country', spawn: at(-452, 278),
     description: 'Flat treeless grassland under an enormous sky. The army camp is visible from a long way off, and horses graze the line.',
@@ -769,7 +806,7 @@ const REGION_TEXT = {
   Peblos: { subtitle: 'The islands off the Drent coast', spawn: point(316, 428),
     description: 'Low barrier islands south-east of Drent, an hour under oars from Tidehaven: salt grass and thrift, grey rock at the waterline, gulls, and one fishing village on the quay at Cobble.',
     palette: { ground: '#76855f', accent: '#e7e0c0', fog: '#bdcdc9' },
-    npcIds: ['cobble-jessi', 'cobble-ari', 'cobble-imani', 'cobble-weighmaster', 'bee-keeper',
+    npcIds: ['cobble-boatwright', 'cobble-ledgerkeeper', 'cobble-kelp-trader', 'cobble-weighmaster', 'bee-keeper',
       'peblos-decurion', 'peblos-legionary-1', 'peblos-legionary-2', 'peblos-legionary-3', 'cobble-harbourmaster'],
     landmarks: ['cobble', 'cobble-quay', 'sea-shrine', 'headland-light', 'seal-cove', 'drowned-field', 'longstone-beacon', 'gull-scarp', 'pilots-stone', 'wreck-of-the-sea-mare', 'saltings'] },
   // West Izol is authored in world metres too (src/izol-world.js); its spawn is the quay a ship puts the traveler ashore on.
@@ -781,8 +818,8 @@ const REGION_TEXT = {
     palette: { ground: '#7e8b62', accent: '#d8d0ae', fog: '#b4c3c0' },
     npcIds: [], landmarks: [] },
   // Elagos is authored in world metres too (src/elagos-world.js); its spawn is the haul road below Ambron's Plain Gate.
-  Elagos: { subtitle: 'The Lake Lands and Ambron', spawn: point(-1221, 386),
-    description: 'The northern shelf, and the lakes that made an empire: Ela running north out of sight, Brul and Ossen and the Thelas chain beyond it, and Ambron astride the narrows where all of that water goes south. Everything that floats out of the Lake Lands pays the chain.',
+  Elagos: { subtitle: 'The Lake Lands and Ambron', spawn: point(-1178, 196),
+    description: 'The northern shelf, and the lakes that made an empire: Ela running north out of sight, Brul and Ossen and the Thelas chain beyond it, and Ambron filling the dry interlake ground. Its high courts, crowded market and working southern quarters gather the trade of the four lakes.',
     palette: { ground: '#7d9560', accent: '#cfe0e4', fog: '#b4c6c4' },
     npcIds: ['ambron-toll-clerk', 'ambron-legate', 'ambron-committee', 'ambron-gate-optio'],
     landmarks: ['ambron', 'ambron-chain', 'ambron-causeway', 'ambron-plain-gate', 'physic-garden', 'lake-ela', 'nemmel', 'ice-road-stone', 'drowned-causeway', 'lake-shrine', 'the-stair', 'thelas-link', 'lake-brul', 'lake-ossen'] },
@@ -861,11 +898,9 @@ const REGION_TEXT = {
     description: 'A broad shallow dish of grass between the Isa and the Neth, and the greenest ground in the west. Water gathers in the middle of it every spring and leaves slowly, and what it leaves is the richest pasture in the inner branch country: rank wet meadow on the floor, ordinary humid grass up the sides and over the rim, and wet threads of rush and sedge in the low ground where the hill-streams run out and stop. Willow and alder on the water and nowhere else. There is no lake here and there never was one on this map — only the hollow, the cattle loose on it, and an overcast that makes the light feel like something held.',
     palette: { ground: '#5f8c46', accent: '#cfdaa2', fog: '#b0c3ac', sky: 0xa7b3ad, haze: 0xb4bcb1, hazeDensity: .0071 },
     npcIds: [], landmarks: ['nethereum-hollow', 'nethereum-basin', 'nethereum-threads', 'neth-ford', 'neth-lower', 'nethereum-dry-corner'] },
-  // **South Suval is terrain, wildlife and the stones of one city** (the user, 25 September
-  // 2026: "don't add any characters yet"). Imlamdris is built - its terraces, its streets, the
-  // Stillwater Temple and the road through the hill pass - and nobody lives in it; the city's
-  // people, the Conclave it ignores and the astronomers in the temple are all somebody's, and
-  // somebody is not built.
+  // South Suval retains its lake and old terraces, but Wilhelm razed Imlamdris.
+  // Its ruins and broken temple stand beside a small timber rebuilding quarter.
+  // The highlands shelter the vigilante; civilian town characters remain unassigned.
   //
   // **A sky of its own.** Ten of its fifteen land hexes are Csa and the air over them is dry and
   // clear, as Eer's is; but the lake country is Cfb and "its own microclimate - cooler, with
@@ -873,9 +908,20 @@ const REGION_TEXT = {
   // The haze is Eer's clearness with the mist's grey-green in it, a little denser than Eer and a
   // little clearer than the default; the mist itself lies on the water (src/south-suval-scenery.js).
   'South Suval': { subtitle: 'The lake country of the peninsula', spawn: point(-50, 1155),
-    description: 'The southern hills of the peninsula, and the only lake on it. A ridge of pale limestone runs across the north; below it the ground falls to the Stillwater, which is fed from springs and does not run dry, and beyond the lake the hills drop steeply to a cliffed sea. Olive and fig on the warm slopes, aromatic scrub on the stony ones, green grass and reed and morning mist round the water. On the north-east shore stands Imlamdris, the oldest city on the peninsula, facing the lake and not the road.',
+    description: 'The southern hills of the peninsula, and the only lake on it. Tall limestone ridges, narrow passes and twisting tracks shelter the Stillwater below. Olive and fig survive on the warm slopes; charred groves and abandoned offering stones mark the devastation of the Blood Prince. Beside the lake stand the roofless stone ruins of Imlamdris and its broken temple. A smaller timber town is beginning again beside them, while morning mist gathers over the water.',
     palette: { ground: '#a2a070', accent: '#dcd6b4', fog: '#c2ccc4', sky: 0xb6d4dc, haze: 0xc9d0c4, hazeDensity: .0056 },
     npcIds: [], landmarks: ['imlamdris', 'stillwater', 'stillwater-temple', 'star-terrace', 'landward-gate', 'imlamdris-pass', 'eastern-slopes', 'south-cove', 'east-landing', 'southern-cliffs'] },
+  'East Lotharn Mountains': { subtitle: 'The old mountains', spawn: point(-1087, -887),
+    description: 'Old mountains, rounded and forested from the valley floors to within a few hundred metres of the summits: oak, chestnut, maple, beech and tulip poplar, managed for centuries and never cleared. Broad-backed ridges and long slopes a traveller can climb, and between them the valleys, each with its own water and, the lore says, its own people. The stone in every cut is a record of seas older than the range, and the iron and coal in it have been worked for as long as there have been valley communities.',
+    palette: { ground: '#5d7044', accent: '#d8c79a', fog: '#b9c6bb', sky: 0xa8c4d2, haze: 0xbac8be, hazeDensity: .0036 },
+    npcIds: [], landmarks: ['kemrath', 'pass-inn', 'stonegate', 'upper-olveth', 'iron-workings', 'central-bald', 'eastern-bald', 'olveth-passage', 'border-water'] },
+  // The barrier hills and their passes, and the Duchy's garrison in them (src/feradom-world.js,
+  // src/feradom-forts.js, src/feradom-people.js). The coast behind them is not built yet.
+  Feradom: { subtitle: 'Behind the barrier hills', spawn: point(-421.129, -608.917),
+    description: 'The domain country: lords in their valleys, harbours in the coves of a cold coast, and along its inland edge the barrier hills, a band of steep forested ridges that are not high but are hard to cross, with a fortress of the Duchy on every pass. Oak and fir on the hills, the best ship timber in the north-east; fields and pasture behind them.',
+    palette: { ground: '#5c7248', accent: '#c9b58a', fog: '#b6c1c0', sky: 0xa3bdca, haze: 0xb5c2c4, hazeDensity: .0042 },
+    npcIds: ['feradom-road-captain', 'feradom-road-gate-a', 'feradom-road-gate-b', 'feradom-ordel-gap-gate', 'feradom-birch-pass-gate', 'feradom-amod-pass-gate', 'feradom-stone-pass-gate', 'feradom-fir-pass-gate'],
+    landmarks: ['barrier-hills', 'ordel-gap', 'road-pass', 'birch-pass', 'amod-pass', 'stone-pass', 'fir-pass'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

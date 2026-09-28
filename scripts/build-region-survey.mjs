@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
-  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval'];
+  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom'];
 /**
  * **Lake hexes that belong to the region all round them.** The World Builder map paints these
  * `lake`; the dev atlas this script reads leaves them unclaimed, because a lake is nobody's
@@ -52,7 +52,7 @@ export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Obje
  * at q = -31. Two hexes of slack, and no more, because every hex in the window
  * is a line in a generated file.
  */
-export const WINDOW = { minQ: -33, maxQ: 34, minR: 92, maxR: 133 };
+export const WINDOW = { minQ: -33, maxQ: 34, minR: 90, maxR: 133 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

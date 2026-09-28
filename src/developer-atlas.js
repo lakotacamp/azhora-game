@@ -44,6 +44,12 @@ const nethereumAnchor = point(1150.081, 2656, -14, 110);
 // The Imlamdris hex on the Stillwater's north-east shore: grassland, and the city's own ground.
 // For (7, 119) the atlas's formula gives this point and no other.
 const southSuvalAnchor = point(1856.757, 2872, 7, 119);
+// Kemrath's hex in the East Lotharn: hills, the valley floor the pass comes up onto. For (7, 96)
+// the atlas's formula gives this point and no other.
+const iscareAnchor = point(1690.482,2872,1,119);
+const eastLotharnAnchor = point(1538.060, 2320, 7, 96);
+// The barrier-hill hex the Feradom road comes through from Pueth, the road pass's.
+const feradomAnchor = point(1745.907, 2392, 13, 99);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -72,6 +78,9 @@ const LOCALS = [
   [16, 'Isareos', 'isareos', 'Isareos', isareosAnchor],
   [17, 'Nethereum', 'nethereum', 'Nethereum', nethereumAnchor],
   [18, 'South Suval', 'south-suval', 'South Suval', southSuvalAnchor],
+  [19, 'Iscare', 'iscare', 'Iscare Archipeligo', iscareAnchor],
+  [20, 'East Lotharn', 'east-lotharn', 'East Lotharn Mountains', eastLotharnAnchor],
+  [21, 'Feradom', 'feradom', 'Feradom', feradomAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

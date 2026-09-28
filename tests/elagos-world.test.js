@@ -19,6 +19,7 @@ import {
 import { SUBREGIONS } from '../src/map-fog.js';
 import { BUILD_STATUS, regionBuildStatus } from '../src/build-status.js';
 import { RIDE } from '../src/riding.js';
+import {cityGatePoint,inAmbronOutline} from '../src/ambron-city-layout.js';
 
 const { createWorld } = await sourceModule('../src/world.js');
 const scene = new THREE.Scene();
@@ -123,7 +124,7 @@ test('the ground is cut to the water: a lake is water at its shore, a bed nobody
   }
 });
 
-test('the Ela-south leaves Lake Ela, runs through Ambron and only ever falls', () => {
+test('the Ela-south leaves Lake Ela, remains west of Ambron and only ever falls', () => {
   const points = ELA_SOUTH.points;
   assert.ok(elagosWaterDistance(points[0].x, points[0].z) < 0, 'it starts in the lake');
   for (let i = 1; i < points.length; i++) assert.ok(points[i].surface <= points[i - 1].surface + 1e-9, 'water never runs uphill');
@@ -134,11 +135,7 @@ test('the Ela-south leaves Lake Ela, runs through Ambron and only ever falls', (
     const banks = [regionBase(p.x - p.half - 16, p.z), regionBase(p.x + p.half + 16, p.z)];
     assert.ok(Math.max(...banks) > p.surface + .8, `the Ela-south at z=${p.z} has a bank`);
   }
-  // It goes through the city, not round it: the channel crosses both wall lines.
-  const north = points.find(p => Math.abs(p.z - (AMBRON.centre.z - AMBRON.halfB)) < 1);
-  const south = points.find(p => Math.abs(p.z - (AMBRON.centre.z + AMBRON.halfB)) < 1);
-  assert.ok(north && south, 'the channel meets both water gates');
-  assert.ok(Math.abs(north.half * 2 - 46) < 1 && Math.abs(south.half * 2 - 46) < 1, 'the narrows is forty-six metres through the walls');
+  for(const p of points)assert.equal(inAmbronOutline(p.x,p.z),false,'the river is preserved beyond the relocated walls');
   // The Link brings the Thelas chain down into Ela.
   assert.ok(THELAS_LINK.points[0].surface > THELAS_LINK.points.at(-1).surface, 'the Link falls');
   assert.ok(elagosWaterDistance(THELAS_LINK.points.at(-1).x, THELAS_LINK.points.at(-1).z) < 0, 'and reaches Lake Ela');
@@ -178,11 +175,11 @@ test('the haul road comes up from the Moros to Ambron’s Plain Gate, and a ride
   }
   assert.ok(best < .01, 'the junction stands on the road');
   assert.equal(hexOwnerAt(AMBRON_JUNCTION.x, AMBRON_JUNCTION.z), 'Moros Plain');
-  const gate = ambronPoint(56, AMBRON.halfB);
+  const gate = cityGatePoint('plain-gate');
   assert.ok(AMBRON_ROAD.some(p => Math.hypot(p.x - gate.x, p.z - gate.z) < 1e-6), 'and passes through the Plain Gate');
   assert.ok(AMBRON_ROAD.at(-1).z < gate.z, 'ending inside the walls');
   const length = AMBRON_ROAD.reduce((sum, p, i) => i ? sum + Math.hypot(p.x - AMBRON_ROAD[i - 1].x, p.z - AMBRON_ROAD[i - 1].z) : 0, 0);
-  assert.ok(length > 180 && length < 400, `the haul road is ${length.toFixed(0)} m`);
+  assert.ok(length > 400 && length < 700, `the haul road is ${length.toFixed(0)} m`);
   assert.deepEqual(world.elagosRoute, AMBRON_ROAD.map(p => ({ x: p.x, z: p.z })));
   for (const road of ELAGOS_ROADS)
     assert.ok(world.paths.some(path => road.every(point => nearestOnPath(path, point).distance < 1)), 'drawn as a sampled world path through its authored controls');
@@ -222,10 +219,10 @@ test('the Caloss fork offers a continuous west road into Elagos and preserves th
     assert.ok(Math.hypot(rider.x - target.x, rider.z - target.z) < .02, 'a mounted traveler can traverse every section');
   }
   assert.ok(greatestGrade < .3, `the shelf road has no cliff or sudden step (grade ${greatestGrade})`);
-  const west = roadRoute(world.paths, CALOSS_ROAD_FORK, ambronPoint(92, -6));
+  const west = roadRoute(world.paths, CALOSS_ROAD_FORK, cityGatePoint('ossen-gate'));
   assert.ok(west?.length, 'the road graph reaches Ambron');
   assert.ok(west.every(p => p.z < 310), 'the direct route does not detour through the Moros');
-  assert.ok(Math.hypot(west.at(-1).x - ambronPoint(92, -6).x, west.at(-1).z - ambronPoint(92, -6).z) < 8);
+  assert.ok(Math.hypot(west.at(-1).x - cityGatePoint('ossen-gate').x, west.at(-1).z - cityGatePoint('ossen-gate').z) < 8);
   const south = roadRoute(world.paths, CALOSS_ROAD_FORK, LUMBER_TOWN.square);
   assert.ok(south?.length && Math.hypot(south.at(-1).x - LUMBER_TOWN.square.x, south.at(-1).z - LUMBER_TOWN.square.z) < 8,
     'the original south route still reaches Nothom');

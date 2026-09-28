@@ -16,7 +16,7 @@ import { SUVAL_HILL_PASSES, hillPassPoint } from '../src/frontier-ridges.js';
 
 const { createWorld } = await sourceModule('../src/world.js');
 const world = createWorld(new THREE.Scene());
-const ROLES = new Set(['legion-soldier', 'legion-officer', 'suvali-guard', 'elodi-guard', 'commons-miller', 'reed-worker', 'shelter-keeper', 'forest-woodcutter', 'bridge-keeper', 'acorn-cook']);
+const ROLES = new Set(['legion-soldier', 'legion-officer', 'suvali-guard', 'elodi-guard', 'feradom-soldier', 'feradom-officer', 'commons-miller', 'reed-worker', 'shelter-keeper', 'forest-woodcutter', 'bridge-keeper', 'acorn-cook']);
 
 test('each new person has a name, a known look and at least two lines, and nobody says what Luscia must not hear', () => {
   assert.equal(TOWN_LIFE_IDS.size, TOWN_LIFE_NPCS.length, 'ids are unique');
@@ -87,7 +87,8 @@ test('every new stand can be walked to from its road or hill-pass approach', () 
   };
   for (const npc of TOWN_LIFE_NPCS) {
     const gate = SUVAL_HILL_PASSES.find(gate => gate.id === npc.hillPass);
-    const start = gate ? hillPassPoint(gate, 0, -12) : nearestRoadPoint(npc.x, npc.z), limit = Math.hypot(start.x - npc.x, start.z - npc.z) + 45;
+    // A stand behind a shut border says where it is reached from (Feradom's garrison, from inside the duchy).
+    const start = gate ? hillPassPoint(gate, 0, -12) : npc.approach ?? nearestRoadPoint(npc.x, npc.z), limit = Math.hypot(start.x - npc.x, start.z - npc.z) + 45;
     const seen = new Set([key(start.x, start.z)]), queue = [start];
     let reached = false;
     for (let i = 0; i < queue.length && !reached && i < 60000; i++) {

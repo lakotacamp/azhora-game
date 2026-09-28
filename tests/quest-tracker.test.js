@@ -139,7 +139,7 @@ test('magic quest adapters list accepted errands, update destinations and omit u
   const tasks = activeOptionalQuests({ spider: { stage: 'walking' }, murder: { stage: 'asking', heard: ['light-boats'] }, cat: { stage: 'following' } });
   assert.deepEqual(tasks.map(quest => quest.id), ['ben-spider', 'cobble-murder', 'liz-cat']);
   assert.deepEqual(tasks[0].target, { x: -796, z: 276, id: 'thorn-den', name: 'The spider den' });
-  assert.deepEqual(tasks[1].destinationIds, ['cobble-ari', 'cobble-imani']);
+  assert.deepEqual(tasks[1].destinationIds, ['cobble-ledgerkeeper', 'cobble-kelp-trader']);
   assert.deepEqual(tasks[2].destinationIds, ['liz-beekeeper']);
   const ready = activeOptionalQuests({ spider: { stage: 'killed' }, murder: { stage: 'asking', heard: ['light-boats', 'weights-not-counts', 'lamp-under-the-beam'] }, cat: { stage: 'home' } });
   assert.deepEqual(ready[0].destinationIds, ['ben-sorcerer']);

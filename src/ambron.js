@@ -1,35 +1,14 @@
 /**
- * Ambron: the walled city on the Lake Ela narrows, and the seat of the empire.
- *
- * Pure: no three, no DOM. `src/elagos-scenery.js` builds it, `src/ambron-people.js`
- * gives its people words, and the tests read these tables.
- *
- * The city is laid out in its own frame, square to the world (`ambronPoint(a, b)`
- * is `a` metres east and `b` metres south of the middle of the causeway), and the
- * channel of the Ela-south runs north to south straight through the middle of it
- * at a = 0. The walls are built across the water: a water gate at each end of the
- * channel, the **chain** in the southern one, and the **causeway** over the middle.
- * Everything the Lake Lands send south stops here, and that is the empire.
- *
- * Three things the lore insists on, built as ground:
- *  - **No single period.** The wall is one line in four masonries: old lake-stone
- *    at the water where the first settlement was, the high imperial ashlar of the
- *    east and north, patched contraction-period rubble on the west, and new
- *    coursed work where the last siege took a piece out of it. The street paving
- *    changes with it, from worn lake-stone slabs by the chain to fresh setts at
- *    the Ossen Gate.
- *  - **The toll.** The chain, its capstan house, the toll house over it, the tally
- *    boards, the queue of barges above it and the empty water below.
- *  - **The winters.** Ice-road stones, sledge runners stacked against walls,
- *    steep roofs, and a lake gauge cut into the quay.
- *
- * Fortification follows the shared standard (`src/fortification.js`) with the
- * measures of a capital rather than an outpost: a higher wall, a thicker one, and
- * a tower every thirty metres or so of it.
+ * Ambron: the capital on dry interlake ground between Ela, Thelas, Brul and
+ * Ossen. Its irregular walls follow the available land, leaving the lakes and
+ * rivers intact. Imperial courts crown the northern district; a narrow market
+ * spine connects them to the southern guild and residential quarters.
+ * Pure data shared by scenery, residents, routes and save migration.
  */
 import { AMBRON, ambronPoint } from './region-world.js';
 import { AMBRON_TERRACE } from './region-world.js';
 import { fortCircuit, FORT_STANDARD } from './fortification.js';
+import { AMBRON_OUTLINE, inAmbronOutline, CITY_GATES, CITY_STREETS, CITY_BUILDING_PLOTS, CITY_EXTRA_BUILDINGS, CITY_MARKET, CITY_GARDEN, cityInfill, cityGatePoint } from './ambron-city-layout.js';
 
 const freeze = Object.freeze;
 const point = (x, z) => freeze({ x, z });
@@ -49,30 +28,24 @@ export const AMBRON_STANDARD = freeze({
 });
 
 const HALF_A = AMBRON.halfA, HALF_B = AMBRON.halfB;
-/** The wall line: north-west, north-east, south-east, south-west. */
-export const AMBRON_CORNERS = freeze([P(-HALF_A, -HALF_B), P(HALF_A, -HALF_B), P(HALF_A, HALF_B), P(-HALF_A, HALF_B)]);
+/** The wall line follows the irregular dry shoulders between the lakes. */
+export const AMBRON_CORNERS = AMBRON_OUTLINE;
 
 /**
- * Six gates. Four for the road and two for the water: the channel passes through
- * the wall at each end of the city, and the chain hangs in the southern one.
+ * Five land gates connect the interlake roads. No water is enclosed.
  * `at` is measured from the first corner of the edge, as `fortCircuit` wants it.
  */
-export const AMBRON_GATES = freeze([
-  freeze({ id: 'lake-gate', name: 'The Lake Gate', edge: 0, at: HALF_A + 56, kind: 'gate', face: 'north', a: 56 }),
-  freeze({ id: 'north-water-gate', name: 'The North Water Gate', edge: 0, at: HALF_A, kind: 'water', face: 'north', a: 0, width: 46, causeway: 0 }),
-  freeze({ id: 'ossen-gate', name: 'The Ossen Gate', edge: 1, at: HALF_B - 6, kind: 'gate', face: 'east', b: -6 }),
-  freeze({ id: 'south-water-gate', name: 'The South Water Gate', edge: 2, at: HALF_A, kind: 'water', face: 'south', a: 0, width: 46, causeway: 0 }),
-  freeze({ id: 'plain-gate', name: 'The Plain Gate', edge: 2, at: HALF_A - 56, kind: 'gate', face: 'south', a: 56 }),
-  freeze({ id: 'raft-gate', name: 'The Raft Gate', edge: 3, at: HALF_B - 22, kind: 'gate', face: 'west', b: 22 }),
-]);
+export const AMBRON_GATES = CITY_GATES;
 
 /** Towers between the gates, so no curtain run stands much beyond thirty metres uncovered. */
-export const AMBRON_EXTRA_TOWERS = freeze([
-  { edge: 0, at: 32 }, { edge: 0, at: 172 },
-  { edge: 1, at: 28 }, { edge: 1, at: 100 },
-  { edge: 2, at: 22 }, { edge: 2, at: 140 }, { edge: 2, at: 162 },
-  { edge: 3, at: 20 }, { edge: 3, at: 78 }, { edge: 3, at: 108 },
-].map(freeze));
+export const AMBRON_EXTRA_TOWERS = freeze(AMBRON_CORNERS.flatMap((a,edge) => {
+  const b=AMBRON_CORNERS[(edge+1)%AMBRON_CORNERS.length], length=Math.hypot(b.x-a.x,b.z-a.z);
+  const anchors=[0,length,...AMBRON_GATES.filter(g=>g.edge===edge).flatMap(g=>[g.at-5.5,g.at+5.5])].sort((a,b)=>a-b);
+  return anchors.slice(1).flatMap((end,i)=>{
+    const start=anchors[i],steps=Math.ceil((end-start)/32);
+    return Array.from({length:Math.max(0,steps-1)},(_,k)=>freeze({edge,at:start+(end-start)*(k+1)/steps}));
+  });
+}));
 
 export const AMBRON_CIRCUIT = fortCircuit({
   id: 'ambron', kind: 'city', standard: AMBRON_STANDARD,
@@ -85,10 +58,10 @@ export const AMBRON_LAND_GATES = freeze(AMBRON_GATES.filter(gate => gate.kind ==
 export const AMBRON_WATER_GATES = freeze(AMBRON_GATES.filter(gate => gate.kind === 'water'));
 
 // ---------------------------------------------------------------------------
-// The water through the city
+// Legacy water feature metadata: retained for imports, disabled at the new site
 // ---------------------------------------------------------------------------
 /** The channel's own edges inside the walls: the quay faces, in the city frame. */
-export const CHANNEL = freeze({ half: AMBRON.channelHalf, surface: 14.6,
+export const CHANNEL = freeze({ enabled: false, half: AMBRON.channelHalf, surface: 14.6,
   eastQuay: AMBRON.channelHalf, westQuay: -AMBRON.channelHalf });
 
 /**
@@ -101,6 +74,7 @@ export const CAUSEWAY = freeze({ b: 0, halfWidth: 4.2, deckY: 17.7, level: 24, f
 
 /** The deck of the causeway under a world point, or null: `world.heightAt` asks this. */
 export function ambronDeckHeight(x, z) {
+  if (!CHANNEL.enabled) return null;
   const a = x - AMBRON.centre.x, b = z - AMBRON.centre.z - CAUSEWAY.b;
   if (Math.abs(b) > CAUSEWAY.halfWidth || Math.abs(a) > CAUSEWAY.foot) return null;
   if (Math.abs(a) <= CAUSEWAY.level) return CAUSEWAY.deckY;
@@ -109,7 +83,7 @@ export function ambronDeckHeight(x, z) {
 }
 /** True on the causeway's lane, where the water below it must not block the way. */
 export const onCauseway = (x, z, margin = 0) =>
-  Math.abs(z - AMBRON.centre.z - CAUSEWAY.b) <= CAUSEWAY.halfWidth + margin && Math.abs(x - AMBRON.centre.x) <= CAUSEWAY.foot + margin;
+  CHANNEL.enabled && Math.abs(z - AMBRON.centre.z - CAUSEWAY.b) <= CAUSEWAY.halfWidth + margin && Math.abs(x - AMBRON.centre.x) <= CAUSEWAY.foot + margin;
 
 /**
  * The chain, in the south water gate: a chain the thickness of a man's arm
@@ -120,12 +94,7 @@ export const AMBRON_CHAIN = freeze({ b: HALF_B, halfSpan: 23, ringY: 16.4, sagY:
   capstan: freeze({ a: 29, b: 58 }), tally: freeze({ a: 33, b: 50 }) });
 
 /** The quays: paved aprons along both banks, with steps down to the water. */
-export const AMBRON_QUAYS = freeze([
-  freeze({ id: 'east-quay', name: 'The Barge Quay', from: 23, to: 34, minB: -62, maxB: 62, side: 1,
-    steps: freeze([-40, -6, 30, 52]), cranes: freeze([-46, -14, 22, 44]) }),
-  freeze({ id: 'west-quay', name: 'The Timber Strand', from: -34, to: -23, minB: -60, maxB: 60, side: -1,
-    steps: freeze([-30, 10, 44]), cranes: freeze([-22, 26]) }),
-]);
+export const AMBRON_QUAYS = freeze([]);
 
 // ---------------------------------------------------------------------------
 // Streets
@@ -137,22 +106,12 @@ const street = (id, width, layer, points) => freeze({ id, width, layer, points: 
  * it: `lake-stone` the first settlement by the water, `imperial` the high periods,
  * `patched` the contractions, `new` what has been relaid since the last siege.
  */
-export const AMBRON_STREETS = freeze([
-  street('causeway-street', 8, 'imperial', [[-23, -6], [23, -6], [56, -6], [92, -6]]),
-  street('ela-street', 8, 'imperial', [[56, -66], [56, -6], [56, 66]]),
-  street('quay-street', 7, 'lake-stone', [[30, -58], [30, -6], [30, 48]]),
-  street('toll-lane', 5, 'lake-stone', [[34, 40], [60, 40], [80, 40]]),
-  street('upper-lane', 5, 'new', [[34, -40], [60, -40], [88, -40]]),
-  street('strand-street', 6, 'patched', [[-32, -52], [-32, -6], [-32, 52]]),
-  street('raft-street', 6, 'patched', [[-58, -64], [-58, -6], [-58, 64]]),
-  street('raft-way', 6.5, 'patched', [[-23, -6], [-46, -6], [-64, -2], [-80, 8], [-92, 22]]),
-  street('strand-lane', 4, 'patched', [[-86, 40], [-58, 40], [-38, 40]]),
-]);
+export const AMBRON_STREETS = CITY_STREETS;
 
 /** The market of the narrows: the widened part of the causeway street, and where it is fought over if it ever is. */
-export const AMBRON_MARKET = freeze({ minA: 34, maxA: 60, minB: -20, maxB: 4 });
+export const AMBRON_MARKET = CITY_MARKET;
 /** The plaza before the Lord Marshal's Seat. */
-export const SEAT_COURT = freeze({ minA: 60, maxA: 62, minB: 3, maxB: 33 });
+export const SEAT_COURT = freeze({ minA: -42, maxA: 4, minB: -103, maxB: -87 });
 
 // ---------------------------------------------------------------------------
 // Buildings
@@ -161,9 +120,13 @@ export const SEAT_COURT = freeze({ minA: 60, maxA: 62, minB: 3, maxB: 33 });
  * `a`/`b` centre, `w` along a, `d` along b, `h` to the eaves. `layer` is the age
  * of the building; `door` the face its door is on; `kind` changes how it is drawn.
  */
-const building = entry => freeze({ layer: 'imperial', kind: 'house', door: 'north', ...entry });
+const building = entry => {
+  const plot = CITY_BUILDING_PLOTS[entry.id];
+  const shifted = plot ? { a:plot[0], b:plot[1], w:plot[2], d:plot[3], h:plot[4] } : {};
+  return freeze({ layer: 'imperial', kind: 'house', door: 'north', ...entry, ...shifted });
+};
 
-export const AMBRON_BUILDINGS = freeze([
+const CORE_BUILDINGS = [
   // The east bank: the old city, the administration and the toll.
   building({ id: 'toll-house', name: 'The Toll House', a: 43, b: 54, w: 16, d: 18, h: 9.5, layer: 'imperial', kind: 'hall', door: 'north' }),
   building({ id: 'chain-house', name: 'The Capstan House', a: 29, b: 58, w: 10, d: 11, h: 6, layer: 'lake-stone', door: 'north' }),
@@ -191,7 +154,8 @@ export const AMBRON_BUILDINGS = freeze([
   // way. A forge is fire and hammering, so it stands on the working bank and not among the
   // granaries: the plot was measured rather than chosen (see AMBRON_FORGE below).
   building({ id: 'ambron-forge', name: 'The Strand Forge', a: -78, b: -3, w: 9, d: 7, h: 5.2, layer: 'patched', kind: 'shed', door: 'south' }),
-]);
+];
+export const AMBRON_BUILDINGS = freeze([...CORE_BUILDINGS, ...CITY_EXTRA_BUILDINGS, ...cityInfill([...CORE_BUILDINGS, ...CITY_EXTRA_BUILDINGS])]);
 
 /**
  * The Outside: the straggle of houses along the haul road below the Plain Gate,
@@ -199,39 +163,23 @@ export const AMBRON_BUILDINGS = freeze([
  * the thin ones. Three of these are roofless and two have been re-roofed since.
  * `b` is metres south of the wall line; `side` which side of the road.
  */
-export const AMBRON_OUTSIDE = freeze([
-  freeze({ id: 'out-1', a: 72, b: 84, w: 10, d: 9, h: 5.4, state: 'kept' }),
-  freeze({ id: 'out-2', a: 72, b: 100, w: 9, d: 8, h: 5, state: 'roofless' }),
-  freeze({ id: 'out-3', a: 72, b: 116, w: 11, d: 9, h: 5.2, state: 'kept' }),
-  freeze({ id: 'out-4', a: 40, b: 88, w: 10, d: 9, h: 5.2, state: 'roofless' }),
-  freeze({ id: 'out-5', a: 38, b: 106, w: 9, d: 9, h: 4.8, state: 'reroofed' }),
-  freeze({ id: 'out-6', a: 36, b: 126, w: 11, d: 9, h: 5.4, state: 'kept' }),
-  freeze({ id: 'out-7', a: 70, b: 134, w: 9, d: 8, h: 4.8, state: 'roofless' }),
-  freeze({ id: 'out-8', a: 34, b: 146, w: 10, d: 9, h: 5, state: 'reroofed' }),
-]);
+export const AMBRON_OUTSIDE = freeze([]);
 
 /** Market stalls round the widened street, and the well at its middle. */
-export const AMBRON_STALLS = freeze([[36, -18], [36, -12], [36, 2], [44, -18], [50, -18], [44, 2], [50, 2]]
-  .map(([a, b], index) => freeze({ id: `stall-${index + 1}`, a, b })));
-export const AMBRON_WELL = freeze({ a: 47, b: -16, r: 1.9 });
+export const AMBRON_STALLS = freeze([[-26,-12],[-26,-5],[-26,2],[10,-12],[10,-5],[10,9]].map(([a,b],index)=>freeze({id:`stall-${index+1}`,a,b})));
+export const AMBRON_WELL = freeze({ a: -17, b: 7, r: 1.9 });
 /**
  * The Physic Garden of the Record House: the city's own beds of plants, kept by the
  * botanist, with a stone-cutter's specimen wall along its north side and a dovecote
  * and pigeon loft over its gate. Ambron has a specialist for everything; this is
  * where four of them work. Walled on three sides, open to Ela Street in the west.
  */
-export const PHYSIC_GARDEN = freeze({
-  minA: 64, maxA: 86, minB: 34, maxB: 44,
-  beds: freeze([[68, 36.2], [68, 41.8], [74, 36.2], [74, 41.8], [80, 36.2], [80, 41.8]].map(([a, b]) => freeze({ a, b }))),
-  // Three trees, in the corners, clear of the walk down the middle between the beds.
-  trees: freeze([[65.4, 35.4], [84.4, 36.4], [84.4, 41.6]].map(([a, b]) => freeze({ a, b }))),
-  specimenWall: freeze({ a: 76, b: 34.6 }), dovecote: freeze({ a: 85, b: 39 }),
-});
+export const PHYSIC_GARDEN = CITY_GARDEN;
 
 /** The lake gauge cut into the east quay: a limewashed post with the flood years on it. */
 export const AMBRON_GAUGE = freeze({ a: 24.5, b: 20 });
 /** Where the sledges and ice-road stakes are stacked all summer, against the granary wall. */
-export const AMBRON_SLEDGES = freeze({ a: 62.5, b: 48 });
+export const AMBRON_SLEDGES = freeze({ a: -20, b: 146 });
 
 // ---------------------------------------------------------------------------
 // Colliders
@@ -250,7 +198,7 @@ export function ambronColliders() {
     out.push(box(entry.a - entry.w / 2, entry.a + entry.w / 2, entry.b - entry.d / 2, entry.b + entry.d / 2, 'ambron-suburb', { id: entry.id }));
   for (const stall of AMBRON_STALLS) out.push(box(stall.a - 1.5, stall.a + 1.5, stall.b - 1.1, stall.b + 1.1, 'market-stall'));
   out.push(freeze({ ...P(AMBRON_WELL.a, AMBRON_WELL.b), r: AMBRON_WELL.r + .2, kind: 'ambron-well' }));
-  out.push(box(AMBRON_CHAIN.capstan.a - 2.4, AMBRON_CHAIN.capstan.a + 2.4, AMBRON_CHAIN.capstan.b - 2.4, AMBRON_CHAIN.capstan.b + 2.4, 'ambron-capstan'));
+  if (CHANNEL.enabled) out.push(box(AMBRON_CHAIN.capstan.a - 2.4, AMBRON_CHAIN.capstan.a + 2.4, AMBRON_CHAIN.capstan.b - 2.4, AMBRON_CHAIN.capstan.b + 2.4, 'ambron-capstan'));
   // The physic garden's three walls; its fourth side is open to the street.
   out.push(box(PHYSIC_GARDEN.minA, PHYSIC_GARDEN.maxA, PHYSIC_GARDEN.minB - .3, PHYSIC_GARDEN.minB + .3, 'garden-wall'));
   out.push(box(PHYSIC_GARDEN.minA, PHYSIC_GARDEN.maxA, PHYSIC_GARDEN.maxB - .3, PHYSIC_GARDEN.maxB + .3, 'garden-wall'));
@@ -260,7 +208,7 @@ export function ambronColliders() {
   // The causeway's parapets: the deck is the only walkable line over the water. They
   // reach a metre past each quay face and no further, so the quays stay walkable.
   const parapet = CHANNEL.half + 1;
-  for (const side of [-1, 1]) out.push(box(-parapet, parapet, CAUSEWAY.b + side * (CAUSEWAY.halfWidth + .3) - .25, CAUSEWAY.b + side * (CAUSEWAY.halfWidth + .3) + .25, 'causeway-parapet'));
+  if (CHANNEL.enabled) for (const side of [-1, 1]) out.push(box(-parapet, parapet, CAUSEWAY.b + side * (CAUSEWAY.halfWidth + .3) - .25, CAUSEWAY.b + side * (CAUSEWAY.halfWidth + .3) + .25, 'causeway-parapet'));
   return freeze(out);
 }
 
@@ -291,53 +239,52 @@ export const AMBRON_FORGE = freeze({ ...FORGE_PLOT, ...P(FORGE_PLOT.a, FORGE_PLO
 /** Stands in the city's frame. Who each of them is, is in `src/ambron-people.js`. */
 export const AMBRON_STANDS = freeze({
   // The toll, at the chain and over it
-  'ambron-toll-clerk': stand(43, 43, NORTH),
-  'ambron-tally-boy': stand(33, 43, EAST),
-  'ambron-chainman': stand(29, 50, NORTH),
-  'ambron-bargemaster': stand(31, 36, WEST),
-  'ambron-bargewoman': stand(31, 22, WEST),
+  'ambron-toll-clerk': stand(-40, 17, NORTH),
+  'ambron-tally-boy': stand(-51, 18, EAST),
+  'ambron-chainman': stand(-64, 29, NORTH),
+  'ambron-bargemaster': stand(-52, 45, WEST),
+  'ambron-bargewoman': stand(-42, 44, WEST),
   // The empire's own
-  'ambron-legate': stand(57, 18, EAST),
-  'ambron-adjutant': stand(57, 27, EAST),
-  'ambron-scrivener': stand(59, -50, EAST),
-  'ambron-gate-optio': stand(56, 60, SOUTH),
-  'ambron-gate-legionary': stand(60.5, 62, SOUTH),
-  'ambron-lake-gate-guard': stand(56, -60, NORTH),
-  'ambron-causeway-legionary': stand(26, -2, WEST),
+  'ambron-legate': stand(-39, -95, EAST),
+  'ambron-adjutant': stand(-35, -94, EAST),
+  'ambron-scrivener': stand(12, -103, EAST),
+  'ambron-gate-optio': stand(-40, 136, SOUTH),
+  'ambron-gate-legionary': stand(-36, 139, SOUTH),
+  'ambron-lake-gate-guard': stand(-12, -151, NORTH),
+  'ambron-causeway-legionary': stand(-7, 29, WEST),
   // The revolution, one day old
-  'ambron-committee': stand(52, -14, EAST),
-  'ambron-printer': stand(47, -3, NORTH),
+  'ambron-committee': stand(-19, -20, EAST),
+  'ambron-printer': stand(-27, -23, NORTH),
   // The market and the lake country
-  'ambron-fishwife': stand(38, -8, EAST),
-  'ambron-grain-factor': stand(56.5, -13, WEST),
-  'ambron-farmer': stand(52, -20, SOUTH),
-  'ambron-farmwife': stand(56.5, -24, WEST),
-  'ambron-brul-fisher': stand(31, -30, WEST),
-  'ambron-ice-warden': stand(33, -46, EAST),
+  'ambron-fishwife': stand(10, 3, EAST),
+  'ambron-grain-factor': stand(-25, 13, WEST),
+  'ambron-farmer': stand(-27, -20, SOUTH),
+  'ambron-farmwife': stand(-22, -23, WEST),
+  'ambron-brul-fisher': stand(8, -17, WEST),
+  'ambron-ice-warden': stand(-48, 131, EAST),
   // The west bank
-  'ambron-raftsman': stand(-31, 20, EAST),
-  'ambron-sawyer': stand(-36, -26, WEST),
-  'ambron-ropewalker': stand(-63, -34, EAST),
+  'ambron-raftsman': stand(-77, 17, EAST),
+  'ambron-sawyer': stand(-64, 63, WEST),
+  'ambron-ropewalker': stand(-97, 60, EAST),
   // The specialists: Ambron keeps one of everybody, and these five teach what
   // Drent's own people teach (src/ambron-people.js).
-  'ambron-aviarist': stand(63, -42, SOUTH),
-  'ambron-fishmaster': stand(33, 16, WEST),
-  'ambron-mushroomer': stand(40, 1, NORTH),
-  'ambron-botanist': stand(70, 39, WEST),
-  'ambron-stonecutter': stand(-36, -46, WEST),
+  'ambron-aviarist': stand(19, 53, SOUTH),
+  'ambron-fishmaster': stand(-28, 21, WEST),
+  'ambron-mushroomer': stand(12, 15, NORTH),
+  'ambron-botanist': stand(26, 61, WEST),
+  'ambron-stonecutter': stand(-76, 48, WEST),
   // The ones the toll does not reach
-  'ambron-beggar': stand(25.5, 6, EAST),
-  'ambron-widow': stand(-63, 44, EAST),
+  'ambron-beggar': stand(-15, 26, EAST),
+  'ambron-widow': stand(-69, 85, EAST),
 });
 
 /**
- * Ambron for the autopilot: a walled place entered only by its four land gates.
- * The water gates are not ways in, and the causeway is inside the walls.
+ * Ambron for the autopilot: five gates in an irregular, concave wall circuit.
  */
 const REACH_A = HALF_A - AMBRON_STANDARD.wallThickness / 2, REACH_B = HALF_B - AMBRON_STANDARD.wallThickness / 2;
 export const AMBRON_ENCLOSURE = freeze({
   id: 'ambron', name: AMBRON.name,
-  contains: (x, z) => Math.abs(x - AMBRON.centre.x) < REACH_A && Math.abs(z - AMBRON.centre.z) < REACH_B,
+  contains: inAmbronOutline,
   gates: freeze(AMBRON_LAND_GATES.map(gate => {
     const g = AMBRON_CIRCUIT.gates.find(entry => entry.id === gate.id);
     const reach = AMBRON_STANDARD.wallThickness / 2 + AMBRON_STANDARD.berm + AMBRON_STANDARD.ditchWidth + 8;
@@ -348,3 +295,12 @@ export const AMBRON_ENCLOSURE = freeze({
 });
 
 export { AMBRON, ambronPoint, P as ambronLocal };
+
+/** Arrival frontages shared by the carriage lesson, residents and route tests. */
+export const AMBRON_CARPENTERS_GUILD = freeze({
+  homeId:'ambron-carpenters-guild', buildingId:'carpenters-guild', name:"The Carpenters' Guild", npcId:'cobble-jessi',
+  house:freeze({...P(-44,91),width:16,depth:16,height:9,yaw:0}),
+  facade:P(-44,83), door:P(-44,81.9), threshold:P(-44,81.9), porch:P(-44,79.5), entry:P(-44,77), yaw:0,
+  cartParking:P(-32,77), mailbox:freeze({...P(-38,80),name:"Carpenters' Guild",yaw:0}),
+  route:freeze([cityGatePoint('ossen-gate'),P(115,132),P(120,120),P(70,120),P(0,120),P(-20,110),P(-20,77),P(-44,77),P(-44,79.5),P(-44,81.9)]),
+});

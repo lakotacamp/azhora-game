@@ -20,9 +20,8 @@
  *    (0,108) and runs north-west out of sight. Its whole drainage leaves by one
  *    outlet at its south-east tip.
  *  - **The narrows and the Ela-south**: the outlet pinches to forty-six metres
- *    and runs due south. Ambron's walls are built across it, so every barge,
- *    raft and load of dried fish going south passes under the city's chain. Below
- *    the city the shelf ends and the water falls to the Moros down **the Stair**;
+ *    and runs due south, west of the interlake capital. Beyond the narrows
+ *    the shelf ends and the water falls to the Moros down **the Stair**;
  *    the reach beyond is the upper Ros, navigable to the grain towns, and it
  *    leaves the built world to the south-west.
  *  - **Lake Brul** in the north-east, cold and deep and stormy;
@@ -37,6 +36,7 @@
  * so `elagosGround` can answer any point in the world in one bilinear sample.
  */
 import { AMBRON, ambronPoint, MAIN_ROAD, AMBRON_TERRACE, CALOSS_ROAD_FORK } from './region-world.js';
+import { cityGatePoint, AMBRON_OUTLINE, inAmbronOutline, CAGNEY_ROADSIDE_HAMLET } from './ambron-city-layout.js';
 
 const freeze = Object.freeze;
 const point = (x, z) => freeze({ x, z });
@@ -265,9 +265,9 @@ export function elagosGround(x, z, natural) {
   // The bed drops below footing within five metres of the shore, so a lake is water
   // and not shallows. The opaque surface hides the drop; the tests hold it to it.
   if (d < 0) return Math.min(natural, lerp(surface, WATER_FLOOR, smooth(0, -5, d)));
-  // Inside Ambron's made ground the bank is a built quay, not a slope: the terrace
-  // stands to the water's edge and the quay wall is what holds it up.
-  if (Math.abs(x - AMBRON_TERRACE.x) < AMBRON_TERRACE.halfX && Math.abs(z - AMBRON_TERRACE.z) < AMBRON_TERRACE.halfZ) return natural;
+  // Only the actual dry city interior is graded. The concave lake shoulders
+  // outside its outline retain their natural banks.
+  if (inAmbronOutline(x,z)) return natural;
   const bank = surface + 1.2 * smooth(0, 12, d);
   const depth = clamp(natural - bank, 0, 18);
   const valley = 8 + depth * 2.3;
@@ -299,10 +299,8 @@ export const AMBRON_JUNCTION = mainRoadAt(-1258);
  * has already walked, and the way the toll's grain goes south.
  */
 export const AMBRON_ROAD = freeze([
-  AMBRON_JUNCTION,
-  point(-1250, 566), point(-1246, 524), point(-1242, 482), point(-1234, 442),
-  point(-1226, 410), point(-1220, 382),
-  ambronPoint(56, 68), ambronPoint(56, 52),
+  AMBRON_JUNCTION, point(-1250,566), point(-1246,524), point(-1242,482), point(-1234,442), point(-1226,410),
+  point(-1220,382),point(-1200,320),point(-1185,260),point(-1178,196),cityGatePoint('plain-gate'),ambronPoint(-45,145),ambronPoint(-20,120),
 ]);
 
 /**
@@ -320,22 +318,20 @@ export const LINK_BRIDGE = (() => {
 
 /** Out of the Lake Gate, north along Ela's eastern shore, over the Link, to the shrine. */
 export const LAKE_ROAD = freeze([
-  ambronPoint(56, -52), ambronPoint(56, -68),
-  point(-1222, 200), point(-1240, 178), point(-1248, 152), point(-1258, 126),
-  point(-1270, 100), point(-1280, 74), point(-1276, 50),
-  LINK_BRIDGE.south, LINK_BRIDGE.north,
-  point(-1292, -6), point(-1314, -4), point(-1332, 4),
+  ambronPoint(-15,-150),cityGatePoint('lake-gate'),point(-1145,-174),point(-1190,-182),point(-1240,-187),
+  point(-1320,-145),point(-1340,-100),point(-1350,-30),point(-1332,4),
 ]);
 
 /** The farm track east out of the Ossen Gate, toward the warm lake and its grain. */
 export const OSSEN_TRACK = freeze([
-  ambronPoint(92, -6), ambronPoint(106, -8), point(-1150, 270), point(-1120, 258), point(-1096, 240),
+  cityGatePoint('ossen-gate'),point(-1007,178),point(-1004,190),point(-984,210),point(-976,236),
 ]);
 
 /** The strand road west out of the Raft Gate, to where the timber rafts are broken up. */
 export const RAFT_TRACK = freeze([
-  ambronPoint(-92, 22), ambronPoint(-106, 20), point(-1394, 300), point(-1408, 288), point(-1416, 272),
+  cityGatePoint('raft-gate'),point(-1250,58),point(-1276,50),point(-1280,74),point(-1270,100),point(-1258,126),
 ]);
+export const LINK_TRACK=freeze([point(-1276,50),LINK_BRIDGE.south,LINK_BRIDGE.north,point(-1292,-6),point(-1314,-4),point(-1332,4)]);
 
 /**
  * The west fork immediately beyond the Caloss. The old south road still takes
@@ -344,13 +340,12 @@ export const RAFT_TRACK = freeze([
  */
 export const CALOSS_ELAGOS_ROAD = freeze([
   CALOSS_ROAD_FORK, point(-670, 166), point(-710, 164), point(-760, 172),
-  point(-812, 184), point(-866, 196), point(-922, 202), point(-976, 203),
-  point(-1026, 205), point(-1068, 218), OSSEN_TRACK.at(-1),
+  point(-812, 184), point(-866, 196), point(-922, 202), point(-946, 211), point(-959, 226), OSSEN_TRACK.at(-1),
 ]);
 /** A dry shoulder beside the fork, facing the traveler coming off the bridge. */
 export const CALOSS_PROPHET_STAND = freeze({ ...point(-652, 158), yaw: Math.atan2(CALOSS_ROAD_FORK.x + 652, CALOSS_ROAD_FORK.z - 158) });
 
-export const ELAGOS_ROADS = freeze([AMBRON_ROAD, LAKE_ROAD, OSSEN_TRACK, RAFT_TRACK, CALOSS_ELAGOS_ROAD]);
+export const ELAGOS_ROADS = freeze([AMBRON_ROAD, LAKE_ROAD, OSSEN_TRACK, RAFT_TRACK, LINK_TRACK, CALOSS_ELAGOS_ROAD]);
 /** Ground the water colliders leave open: the causeway's lane is handled by src/ambron.js. */
 export const onLinkBridge = (x, z, margin = 0) => {
   const b = LINK_BRIDGE, dx = x - b.crossing.x, dz = z - b.crossing.z;
@@ -375,15 +370,15 @@ export const ELAGOS_PLACES = freeze({ nemmel: NEMMEL, iceRoad: ICE_ROAD_STONE, s
   drowned: DROWNED_CAUSEWAY, stair: THE_STAIR });
 
 export const ELAGOS_LANDMARKS = freeze([
-  freeze({ id: 'ambron', name: 'Ambron', ...AMBRON.centre, radius: 108,
-    description: 'The largest city on the continent, built across the narrows where Lake Ela goes south. Walls of four ages on one line, a causeway over the water, quays on both banks, and a chain in the south water gate that every barge on the lake system has to wait for.' }),
-  freeze({ id: 'ambron-chain', name: 'The Chain of Ambron', ...ambronPoint(0, 60),
+  freeze({ id: 'ambron', name: 'Ambron', ...AMBRON.centre, radius: 190,
+    description: 'The imperial capital fills the dry land between four lakes. Old lake-stone lanes, a busy market, workshop courts and high civic roofs sit inside a wall that follows the shores.' }),
+  freeze({ id: 'ambron-chain', name: 'The Toll House', ...ambronPoint(-40,30),
     description: 'A chain the thickness of a man’s arm, slung between two towers across the water gate, and a capstan house to wind it. Nothing goes south until the toll is counted. The lore of the empire is written on a tally board beside it.' }),
-  freeze({ id: 'ambron-causeway', name: 'The Ambron Causeway', ...ambronPoint(0, 0),
-    description: 'Seven arches on old lake-stone piers, carrying the main street from the old city over to the timber strand. The piers are older than the arches, and the arches are older than the parapet.' }),
-  freeze({ id: 'ambron-plain-gate', name: 'The Plain Gate', ...ambronPoint(56, 74),
+  freeze({ id: 'ambron-causeway', name: 'The Interlake Market', ...ambronPoint(-5,0),
+    description: 'The interlake road opens into a market of worn stone, striped stalls and a deep well. The high civic roofs rise to the north; workshops and homes fill the broad southern quarter.' }),
+  freeze({ id: 'ambron-plain-gate', name: 'The Plain Gate', ...cityGatePoint('plain-gate'),
     description: 'Ambron’s southern gate, on the haul road up from the Moros. The toll board over the arch lists what is owed on grain, fish, timber, salt and hides, in Elagosi and in Mittoli.' }),
-  freeze({ id: 'physic-garden', name: 'The Physic Garden', ...ambronPoint(75, 39),
+  freeze({ id: 'physic-garden', name: 'The Physic Garden', ...ambronPoint(36,61),
     description: 'The Record House’s own beds, behind a low wall off Ela Street: nineteen plants under written labels, a loft the tower birds use, and a specimen wall holding one squared block of every stone Ambron has ever built with, in the order it came into the city.' }),
   freeze({ id: 'lake-ela', name: 'Lake Ela', ...LAKE_ELA.centre, radius: 96,
     description: 'Cold, clear and old. It runs north-west further than the eye follows, and the whole of it comes south through one gap forty-six metres wide.' }),
@@ -410,9 +405,11 @@ export const ELAGOS_LANDMARKS = freeze([
 // ---------------------------------------------------------------------------
 /** Water, made ground and every built place of Elagos, as circles the scatter keeps out of. */
 export const ELAGOS_CLEARINGS = freeze([
+  freeze({x:CAGNEY_ROADSIDE_HAMLET.x,z:CAGNEY_ROADSIDE_HAMLET.z,r:CAGNEY_ROADSIDE_HAMLET.radius}),
   freeze({ ...CALOSS_PROPHET_STAND, r: 5 }),
   freeze({ x: -658, z: 176, r: 4 }), // one fingerpost between the two outgoing lanes
-  freeze({ x: AMBRON.centre.x, z: AMBRON.centre.z, r: 124 }),
+  ...AMBRON_OUTLINE.flatMap((p,i) => { const b=AMBRON_OUTLINE[(i+1)%AMBRON_OUTLINE.length],length=Math.hypot(b.x-p.x,b.z-p.z),steps=Math.ceil(length/12);return Array.from({length:steps+1},(_,k)=>freeze({x:p.x+(b.x-p.x)*k/steps,z:p.z+(b.z-p.z)*k/steps,r:14})); }),
+  ...Array.from({length:23},(_,i)=>-1260+i*14).flatMap(x=>Array.from({length:26},(_,i)=>-170+i*14).filter(z=>inAmbronOutline(x,z)).map(z=>freeze({x,z,r:12}))),
   freeze({ x: NEMMEL.x, z: NEMMEL.z, r: NEMMEL.radius + 4 }),
   freeze({ x: ICE_ROAD_STONE.x, z: ICE_ROAD_STONE.z, r: 11 }),
   freeze({ x: LAKE_SHRINE.x, z: LAKE_SHRINE.z, r: 11 }),

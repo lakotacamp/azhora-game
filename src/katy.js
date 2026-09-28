@@ -1,16 +1,16 @@
 /**
- * Katy now watches Port Calos's harbor. Her next quest will be authored later;
- * the Batman-search state and dialogue below are retained for legacy saves and
- * the existing quest modules, not offered by her current in-world conversation.
+ * Catie watches Port Calos's harbor and asks travelers to find its misunderstood vigilante.
+ * The composition host supplies the new Suval quest; this legacy search state
+ * and its drawing keep older version-one saves compatible.
  * Pure: no DOM, no three.
  */
 
 const freeze = Object.freeze;
 
-// Never the traveler's own model. Katy is slight, with long straight blonde hair, a dusk-violet
+// Never the traveler's own model. Catie is slight, with long straight blonde hair, a dusk-violet
 // dress, a short black cape cut like a bat's wing, a bat on a cord at her throat and a spyglass.
 export const KATY = freeze({
-  id: 'katy', name: 'Katy', role: 'Watching the harbor at Port Calos',
+  id: 'katy', name: 'Catie', role: 'A friend of the Suval vigilante',
   modelRole: 'bat-seeker', color: 0x4a3f63, skin: 0xe8c6a6,
 });
 /** Beside the lower harbor street, leaving room to approach from the town. */
@@ -53,13 +53,13 @@ export function createKaty({ onEvent = () => {} } = {}) {
   return { meet, accept, snapshot, restore, get stage() { return state.stage; }, get looking() { return state.stage === 'looking'; } };
 }
 
-/** Who Batman is, the way Katy tells it. */
+/** Who Batman is, the way Catie tells it. */
 export const BATMAN_TOLD = freeze([
   'Batman. And before you picture a man in a cape: no. A beast. Head and a half taller than you, and never straight — hunched over onto his hands, because the arms are the wings and the wings are too long to stand up with.',
   'Furred all over, close and dark, like a mole is furred. A bat’s head and nothing else: a short muzzle, the nose folded back on itself like a leaf, teeth the mouth does not close over. Ears as long as your forearm that move one at a time. And the eyes take the light the way a dog’s do at a fire, and that is the part that makes people run, every time.',
   'When the wings are folded they hang off his shoulders in rags down to the ground. Everybody who has seen him says cloak. He does not own a cloak. That is what a wing looks like folded.',
   'And he is not a monster. He goes after the ones who hurt people — the men who rob the carts on the south road, the ones who burn a farm to settle a debt — and he has never once touched anybody who was not one of them. Ask anybody who has actually seen him and lived. Nobody asks them. They ask me, and laugh, and I let them.',
-  'I have watched the sky over these vines every night for a year. I watch the birds in the day while I wait; they are good practice. You learn to see the thing that does not want to be seen.',
+  'I have watched the sky over this harbor every night for a year. I watch the birds in the day while I wait; they are good practice. You learn to see the thing that does not want to be seen.',
 ]);
 
 /** What she says while the traveler is looking, one at a time, round and round. */
@@ -71,7 +71,7 @@ export const KATY_WAITING = freeze([
 ]);
 
 /**
- * Katy's conversation. `act('accept-batman')` starts the search in the host (it hands over the
+ * Catie's conversation. `act('accept-batman')` starts the search in the host (it hands over the
  * drawing); `katy.meet()` is called here the first time she asks.
  */
 export function katyConversation(npc, context) {
@@ -85,14 +85,14 @@ export function katyConversation(npc, context) {
     { onComplete: () => act('accept-batman') });
   } };
   const who = { id: 'who-is-batman', label: 'Who is Batman?', action: () => openDialogue(npc, [...BATMAN_TOLD, 'Will you help me find him? Keep your eyes open on the roads, and at night especially.'],
-    null, 'Back to Katy', { choices: [yes, { ...leave, label: 'Not now.' }] }) };
+    null, 'Back to Catie', { choices: [yes, { ...leave, label: 'Not now.' }] }) };
 
   if (katy.stage === 'unmet') {
     katy.meet();
     openDialogue(npc, [
       'Shh. Do not move. There is a kingfisher on the reed by the far bank, and it has not seen you yet.',
       '…There. Gone. It was worth it. It always is.',
-      'Katy. I watch the harbor birds here. Boats bring people in, and the birds see them all before I do.',
+      'Catie. I watch the harbor birds here. Boats bring people in, and the birds see them all before I do.',
       'That is not really why I am here, though. Can I ask you something? You have been out on the roads. Have you seen Batman?',
     ], null, 'Back to the terrace', { choices: [who, { id: 'not-seen-batman', label: 'I have not.', action: who.action }, leave] });
     return true;
@@ -115,8 +115,8 @@ export function katyConversation(npc, context) {
       '“Where.” Not a question. “No. No, do not tell me where. I will only go and sit there and scare him off and then it will be my fault.”',
       '“Is he— ” She tries again. “Everybody says the eyes. Was it the eyes?”',
       '“Then help him. Whatever he wants, help him, and do not you dare be frightened of him where he can see it. I have waited a year to be able to say that to somebody and mean it.”',
-    ], null, 'Back to Katy', { onComplete: again }) }] : [];
+    ], null, 'Back to Catie', { onComplete: again }) }] : [];
   openDialogue(npc, [KATY_WAITING[visits % KATY_WAITING.length]], null, 'Back to the terrace',
-    { choices: [...seen, { id: 'more-katy', label: 'Tell me about him again.', action: () => openDialogue(npc, [...BATMAN_TOLD], null, 'Back to Katy', { onComplete: again }) }, leave] });
+    { choices: [...seen, { id: 'more-katy', label: 'Tell me about him again.', action: () => openDialogue(npc, [...BATMAN_TOLD], null, 'Back to Catie', { onComplete: again }) }, leave] });
   return true;
 }

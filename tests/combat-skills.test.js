@@ -213,7 +213,7 @@ test('the country pushes back, and level 0 is today', async () => {
   assert.equal(countryHealth(1e6), countryHealth(COUNTRY.top), 'and a level past the ladder is its top');
 });
 
-test('timing never scales, with any level of anything', () => {
+test('timing never scales, with any level of anything', async () => {
   // The law that makes the whole design work: a level-8 ogre is not faster and does not
   // telegraph less, so a traveler who reads the tell can still dodge it - he simply cannot
   // afford to miss. Nothing that is a duration may be multiplied by a country level or a skill.
@@ -225,7 +225,16 @@ test('timing never scales, with any level of anything', () => {
   // One contact-time damage value is shared by every body in a physical swing, whichever team.
   assert.equal((combat.match(/countryHealth\(/g) ?? []).length, 1, 'health is scaled in exactly one place');
   assert.equal((combat.match(/countryDamage\(/g) ?? []).length, 1, 'enemy strike damage is scaled once, before applying its contacts');
-  assert.match(combat, /makeEnemy\(enemy\.id,[\s\S]*?Math\.round\(enemy\.hp \* countryHealth\(next\.level\)\)\)/, 'health is scaled once, where the enemy is made');
+  const { createCombat } = await import('../src/combat.js');
+  const { countryHealth } = await import('../src/combat-skills.js');
+  const world={bounds:{minX:-100,maxX:100,minZ:-100,maxZ:100},colliders:[],heightAt:()=>0};
+  for(const level of [0,3,8])for(const kind of ['goblin','bear','batman']) {
+    const fight=createCombat({world,position:{x:0,y:0,z:0}});
+    fight.startEncounter({id:'scaling',level,center:{x:0,z:0},checkpoint:{x:0,z:0},retreatZ:40,
+      enemies:[{id:'test-enemy',kind,x:0,z:5,hp:100}]});
+    assert.equal(fight.state.enemies[0].maxHp,kind==='goblin'?Math.round(100*countryHealth(level)):100,
+      `${kind} at country level ${level} is scaled exactly once, except a persistent creature's fixed body`);
+  }
 });
 
 test('the host gives a fight the level of the country it happens in', () => {
@@ -256,6 +265,6 @@ test('the host reads the margins rather than writing numbers of its own', () => 
   assert.match(main, /damageScale:id=>arms\?\.margins\(\)\.damageFor\(id\)\?\?1/, 'as do the weapons');
   assert.match(source('weapons.js'), /damage: type\.damage\.map\(hit => hit \* scale\)/, 'the multiplier is on the weapon’s own damage');
   // New craft and art lessons do not add or remove any of the seven fighting skills.
-  assert.equal(SKILL_IDS.length, 33, 'twenty of the world, seven of fighting, six of sorcery');
+  assert.equal(SKILL_IDS.length, 35, 'twenty-two of the world, seven of fighting, six of sorcery');
   assert.equal(SKILL_IDS.filter(id => SKILLS[id].group === ARMS_HEADING).length, 7);
 });

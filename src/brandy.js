@@ -16,8 +16,8 @@ const freeze = Object.freeze;
 export const BRANDY = freeze({ id: 'brandy-frank', name: 'Brandy Frank', role: 'Dyer of impossible colours', modelRole: 'rainbow-dyer', color: 0x1ec8d8, skin: 0xe0b394 });
 export const RIBBON_ITEM = 'rainbow-ribbon';
 export const BRANDY_SIGN = 'Brandy Frank, Dyer';
-/** The yard's frame: level open ground on the north side of the village, found by tests/find-brandy-yard.mjs; +z faces the lane. */
-export const BRANDY_YARD = freeze({ x: -14, z: 76.8, yaw: .785 });
+/** The open coastal shoulder beyond Saltwind Lookout, beside Jon and Brandy's cottage; +z faces the shore path. */
+export const BRANDY_YARD = freeze({ x: -5, z: 103, yaw: Math.PI / 2 });
 export function yardPoint(lx, lz) {
   const { x, z, yaw } = BRANDY_YARD, c = Math.cos(yaw), s = Math.sin(yaw);
   return { x: x + lx * c + lz * s, z: z - lx * s + lz * c };
@@ -104,6 +104,11 @@ const TALK = freeze({
     'What does a dyer look like? Stained, I suppose. Look at my fingers.',
     'People tell me I’m ordinary looking. Other people tell me other things. I don’t really listen to either. It’s all just weather.',
   ],
+  jon: [
+    'Jon lives here. When the salt trade remembers to lend him back. The mailbox has both our names, which is more than I can say for the timetable.',
+    'He comes up from the pier when the Sultana visits Drent. Bosco hears him before I do. You would think the dog had never been fed in his life.',
+    'There is always a place for him here. I leave the colours outside. He brings enough salt into the house as it is.',
+  ],
 });
 const RIBBON = freeze([
   'She fishes in her apron and comes out with a ribbon dyed in every colour she has, one after another, the way nothing in nature would dare.',
@@ -124,6 +129,7 @@ export function brandyConversation(npc, context) {
     { id: 'brandy-colours', label: 'Where do the colours come from?', action: () => talk(TALK.colours) },
     // The one subject she is not mildly sorry about (src/bosco.js).
     { id: 'brandy-bosco', label: 'Whose dog is this?', action: () => talk(BRANDY_ON_BOSCO) },
+    { id: 'brandy-jon', label: 'Does Jon the Salt Sultan live here too?', action: () => talk(TALK.jon) },
     { id: 'brandy-boards', label: 'What are those paintings?', action: () => talk(TALK.boards) },
     { id: 'brandy-loved', label: 'Everybody in the village seems to love you.', action: () => talk(TALK.loved) },
     { id: 'brandy-looks', label: 'You don’t look much like a dyer.', action: () => talk(TALK.looks) },

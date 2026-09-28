@@ -1,5 +1,6 @@
 /** Kayla and Ed race on the ordinary Ossen road. Collision belongs to the host. */
 import { OSSEN_TRACK, CALOSS_ELAGOS_ROAD } from './elagos-world.js';
+import { AMBRON_LAYOUT_VERSION } from './ambron-city-layout.js';
 
 const freeze = Object.freeze, point = p => freeze({ x: p.x, z: p.z });
 export const KAYLA_RACE = freeze({ id: 'kayla-race', title: 'The Honey Race', reward: 3,
@@ -26,21 +27,22 @@ const validPoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.z)
   && Math.abs(p.x) < 10000 && Math.abs(p.z) < 10000;
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const newRunner = route => ({ ...route[0], yaw: KAYLA_RACE_START.yaw, next: 1, returnNext: 0, speed: 0 });
-const fresh = () => ({ version: 1, stage: 'available', attempts: 0, countdown: 3, elapsed: 0,
+const fresh = () => ({ version: 1, courseVersion: AMBRON_LAYOUT_VERSION, stage: 'available', attempts: 0, countdown: 3, elapsed: 0,
   reason: '', kayla: newRunner(KAYLA_RACE_LANE), ed: newRunner(ED_RACE_LANE) });
 const copy = s => ({ ...s, kayla: { ...s.kayla }, ed: { ...s.ed } });
 export function validateKaylaRaceSnapshot(s, { allowMissing = true } = {}) {
   if (s === undefined) return allowMissing;
-  if (!s || s.version !== 1 || !stages.includes(s.stage) || !Number.isInteger(s.attempts)
+  if (!s || s.version !== 1 || (s.courseVersion !== undefined && ![1, AMBRON_LAYOUT_VERSION].includes(s.courseVersion)) || !stages.includes(s.stage) || !Number.isInteger(s.attempts)
     || s.attempts < 0 || s.attempts > 100000 || !Number.isFinite(s.countdown) || s.countdown < 0 || s.countdown > 3
     || !Number.isFinite(s.elapsed) || s.elapsed < 0 || s.elapsed > 86400 || typeof s.reason !== 'string' || s.reason.length > 160) return false;
+  const courseLength = s.courseVersion === AMBRON_LAYOUT_VERSION ? KAYLA_RACE_ROUTE.length : 14;
   for (const runner of [s.kayla, s.ed]) if (!validPoint(runner) || !Number.isFinite(runner.yaw)
     || !Number.isFinite(runner.speed) || runner.speed < 0 || runner.speed > KAYLA_RACE.speed
-    || !Number.isInteger(runner.next) || runner.next < 1 || runner.next > KAYLA_RACE_ROUTE.length
-    || !Number.isInteger(runner.returnNext) || runner.returnNext < -1 || runner.returnNext >= KAYLA_RACE_ROUTE.length) return false;
+    || !Number.isInteger(runner.next) || runner.next < 1 || runner.next > courseLength
+    || !Number.isInteger(runner.returnNext) || runner.returnNext < -1 || runner.returnNext >= courseLength) return false;
   if (s.stage === 'available' && s.attempts !== 0) return false;
   if (s.stage !== 'available' && s.attempts < 1) return false;
-  if (['won', 'complete'].includes(s.stage) && s.kayla.next !== KAYLA_RACE_ROUTE.length) return false;
+  if (['won', 'complete'].includes(s.stage) && s.kayla.next !== courseLength && !(s.courseVersion === undefined && s.kayla.next === KAYLA_RACE_ROUTE.length)) return false;
   return true;
 }
 function sweptDistance(from, to, target) {
@@ -138,7 +140,26 @@ export function createKaylaRace({ onEvent = () => {} } = {}) {
   }
   function restore(saved) {
     if (!validateKaylaRaceSnapshot(saved)) return false;
-    s = saved === undefined ? fresh() : copy(saved); return true;
+    s = saved === undefined ? fresh() : copy(saved);
+    if (saved && saved.courseVersion !== AMBRON_LAYOUT_VERSION) {
+      // The capital and its road moved. A completed race stays completed, and an
+      // unclaimed win still pays once. An interrupted old course becomes a retry
+      // at the new starting line, rather than resuming in water or skipping gates.
+      if (['won', 'complete'].includes(s.stage)) {
+        s.kayla.next = KAYLA_RACE_ROUTE.length;
+        s.ed.next = Math.min(s.ed.next, KAYLA_RACE_ROUTE.length);
+        s.ed.returnNext = Math.min(s.ed.returnNext, KAYLA_RACE_ROUTE.length - 1);
+        s.kayla.returnNext = Math.min(s.kayla.returnNext, KAYLA_RACE_ROUTE.length - 1);
+      } else {
+        s.kayla = newRunner(KAYLA_RACE_LANE); s.ed = newRunner(ED_RACE_LANE);
+        s.countdown = KAYLA_RACE.countdown; s.elapsed = 0;
+        if (s.stage !== 'available') {
+          s.stage = 'lost'; s.reason = 'The road has changed. Speak to Kayla at the east gate to race again.';
+        }
+      }
+      s.courseVersion = AMBRON_LAYOUT_VERSION;
+    }
+    return true;
   }
   function state() {
     return { ...copy(s), mounted: mountedStage(s.stage), edVisible: !['available', 'complete'].includes(s.stage),

@@ -17,6 +17,7 @@
  * (colliders are flat, so the same wall keeps the street out of the ground
  * floor and the attic's people off the edge). Pure: no DOM, no three.
  */
+import { questLive } from './quest-slate.js';
 import { SOLIS, solisPoint } from './region-world.js';
 import { ATTIC_WINES, ATTIC_WINE_IDS } from './attic-wines.js';
 
@@ -223,7 +224,7 @@ export function juanConversation(npc, context) {
     { id: 'attic-shelf', label: 'What is the dusty bottle on the top shelf?', action: () => talk(JUAN_TOPICS.shelf) },
     // Every crate that comes up that stair is packed with whatever paper the shipper had spare,
     // and one of them was careless with an Empire requisition (src/batman.js).
-    ...(context.hunt?.stage === 'hunting' && !context.hunt.has('chit') ? [{ id: 'attic-packing', label: 'What do they pack your crates with?',
+    ...(questLive('batman-investigation') && context.hunt?.stage === 'hunting' && !context.hunt.has('chit') ? [{ id: 'attic-packing', label: 'What do they pack your crates with?',
       action: () => openDialogue(npc, [
         'Waste paper, my friend, always. Nobody has ever wrapped a bottle in anything anybody wanted to keep. Old bills, old sermons, somebody’s terrible poem — I read it all while I unpack, it is the best hour of my week.',
         'Now. Since you ask, and nobody has ever asked: the last crate down from the coast was packed in army paper, which is unusual, because the army does not waste paper, it hoards it.',

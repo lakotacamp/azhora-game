@@ -39,9 +39,32 @@ export const PORT_CALOS_NPC_POSITIONS = freeze({
   'port-calos-harbourmaster': point(-416,282.5,{yaw:Math.PI/2}),
   // Christina, in the street between the market house and the custom house, facing the quay.
   christina: point(-461,293,{yaw:Math.PI/2}),
+  'cobble-ari': point(-485,290,{yaw:Math.PI/2}),
+  'cobble-imani': point(-456,319,{yaw:Math.PI/2}),
+  'port-calos-kendall': point(-489,273,{yaw:Math.PI/2}),
+  'port-calos-jay': point(-489,280,{yaw:Math.PI/2}),
+  'port-calos-robert': point(-489,287,{yaw:Math.PI/2}),
+  'port-calos-vic': point(-489,294,{yaw:Math.PI/2}),
+  'port-calos-madi': point(-488,315,{yaw:Math.PI/2}),
+  'port-calos-madison': point(-478,264,{yaw:Math.PI/2}),
+  'port-calos-sierra': point(-464,261,{yaw:Math.PI/2}),
+  'port-calos-franz': point(-453,257,{yaw:Math.PI/2}),
+  'port-calos-marissa': point(-442,265,{yaw:Math.PI/2}),
+  'port-calos-sean': point(-435,278,{yaw:Math.PI/2}),
+  'port-calos-flor': point(-457,290,{yaw:Math.PI/2}),
+  'port-calos-melissa': point(-474,299,{yaw:Math.PI/2}),
+  'port-calos-richard': point(-472,306,{yaw:Math.PI/2}),
+  'port-calos-laurie': point(-464,311,{yaw:Math.PI/2}),
+  'port-calos-zach': point(-458,310,{yaw:Math.PI/2}),
+  'port-calos-courtney': point(-458,326,{yaw:Math.PI/2}),
+  'port-calos-kathy': point(-469,326,{yaw:Math.PI/2}),
+  'port-calos-karen': point(-447,322,{yaw:Math.PI/2}),
+  'port-calos-kirk': point(-445,293,{yaw:Math.PI/2}),
+  'port-calos-zkayla': point(-410,290,{yaw:Math.PI/2}),
+  'port-calos-pswtr': point(-390,282,{yaw:Math.PI/2}),
 });
 export const PORT_CALOS_LANDMARKS = freeze([
-  freeze({ ...PORT_CALOS, description: 'A small Luscian harbor at the Caloss mouth: timber houses above the river, fish stalls and a stone quay reaching into the inlet. Maddie keeps the harbor and sails to Tidewater Haven and Peblos.' }),
+  freeze({ ...PORT_CALOS, description: 'A small Luscian harbor at the Caloss mouth: timber houses above the river, fish stalls and a stone quay reaching into the inlet. Hallie keeps the harbor and sails to Tidewater Haven and Peblos.' }),
 ]);
 
 export function inPortCalos(x, z, padding = 0) {

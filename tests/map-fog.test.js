@@ -100,7 +100,7 @@ test('every named area stands in the region it claims, and none of them swallow 
     // A border post, a harbour and a river bank are meant to straddle: ten areas sit between 63%
     // and 75%. Most of the disc inside is the real bar, and it catches the two that were half out.
     assert.ok(owned / samples > .6, `${area.name} is only ${Math.round(owned / samples * 100)}% inside ${area.region}`);
-    assert.ok(area.radius >= 18 && area.radius <= 130, `${area.id} is a believable size`);
+    assert.ok(area.radius >= 18 && area.radius <= (area.id === 'ambron' ? 155 : 130), `${area.id} is a believable size`);
     // The usual floor is 28. A ground under it has to have a *reason* to be small, and the reason
     // is always the same one: a neighbour's reach is right there and the ground is sized to what
     // is actually in it. The Toll House, Drent's tenth, is the first - the Caloss Bank's disc
@@ -147,7 +147,7 @@ test('the developer chart says how far every region is built, Drent furthest', (
   assert.ok(drent.order > luscia.order, 'Drent is further along than Luscia');
   assert.ok(luscia.order > suval.order, 'a region you can walk beats a shut border');
   assert.ok(drent.playable && luscia.playable && !suval.playable);
-  assert.deepEqual([regionBuildStatus('Feradom').state, regionBuildStatus('Feradom').playable], ['unbuilt', false]);
+  assert.deepEqual([regionBuildStatus('Feradom').state, regionBuildStatus('Feradom').playable], ['edge', false]);
   assert.ok(list.length > PLAYABLE_REGIONS.length, 'the unbuilt regions are listed too');
   assert.deepEqual(list.slice(0, PLAYABLE_REGIONS.length).map(item => item.id), [...PLAYABLE_REGIONS], 'the playable regions come first');
   assert.equal(new Set(list.map(item => item.id)).size, list.length, 'each region once');

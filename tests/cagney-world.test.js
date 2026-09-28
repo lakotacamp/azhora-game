@@ -9,7 +9,7 @@ import { canStand } from '../src/game-state.js';
 const { createWorld } = await sourceModule('../src/world.js');
 const scene = new THREE.Scene(), world = createWorld(scene);
 
-test('Cagney can walk from the prophet along the actual west road and through Ambron to her front door', () => {
+test('Cagney can walk from the roadside hamlet along the actual west road and through Ambron to her front door', () => {
   const position = { ...CAGNEY_START }, nav = bodyWorld(world).moving(position, BODY.person);
   assert.ok(canStand(position.x, position.z, world, BODY.person), 'her starting place is clear');
   for (const [index, target] of CAGNEY_ROUTE.entries()) {

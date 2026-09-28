@@ -7,13 +7,15 @@ export const CAGNEY = Object.freeze({
   look: Object.freeze({ slight: true, beard: false, hat: false, glasses: true,
     hair: 0x171310, hairStyle: 'long', straightHair: true, shirtRibbons: true }),
 });
-export const CAGNEY_START = point(CALOSS_PROPHET_STAND.x - 4, CALOSS_PROPHET_STAND.z - 2);
+export const CAGNEY_START = point(-922,194);
+export { CAGNEY_ROADSIDE_HAMLET as CAGNEY_HAMLET } from './ambron-city-layout.js';
 // The existing clerks' house, reached through the Ossen Gate and the upper lane.
-export const CAGNEY_HOME = Object.freeze({ ...ambronPoint(84, -37), id: 'cagney-home', name: "Cagney's home" });
+export const CAGNEY_HOME = Object.freeze({ ...ambronPoint(22, -40), id: 'cagney-home', name: "Cagney's home" });
 export const CAGNEY_ROUTE = Object.freeze([
-  ...CALOSS_ELAGOS_ROAD, ...OSSEN_TRACK.slice(0, -1).reverse(),
-  ambronPoint(80, -6), ambronPoint(56, -6), ambronPoint(56, -40), ambronPoint(84, -40), CAGNEY_HOME,
-].map(p => point(p.x, p.z)));
+  point(-922,202),...CALOSS_ELAGOS_ROAD.slice(7),...OSSEN_TRACK.slice(0,-1).reverse(),
+  ambronPoint(115,132),ambronPoint(120,120),ambronPoint(70,120),ambronPoint(0,120),ambronPoint(-20,110),
+  ambronPoint(-20,80),ambronPoint(-5,35),ambronPoint(-5,-42),ambronPoint(22,-42),CAGNEY_HOME,
+].map(p=>point(p.x,p.z)));
 /**
  * She goes home at a run (the user, 26 September 2026): a little slower than the traveler's own
  * run of 7.2, so she is faster than anybody walking with her and a traveler who runs can always
@@ -67,14 +69,6 @@ const BREAK = [.3, 1.8, 3.3];
 const gang = (ids, stands) => stands.map((p, i) => Object.freeze({ id: ids[i], x: p.x, z: p.z, name: 'Cagnapper', kind: 'rebel', hp: 48, entry: BREAK[i],
   model: Object.freeze({ role: 'mercenary', tunic: TUNICS[i], look: Object.freeze({ hat: false }) }) }));
 
-/** The first gang anybody met, and still where they were: on the Luscian side, before the road enters Elagos. */
-export const CAGNAPPERS = Object.freeze(gang(['cagnapper-1', 'cagnapper-2', 'cagnapper-3'],
-  [{ x: -946, z: 195 }, { x: -937, z: 194 }, { x: -943, z: 210 }]));
-export const CAGNEY_AMBUSH = Object.freeze({
-  id: 'cagnapper-ambush', center: point(-940, 202.33), checkpoint: point(-918, 202.1),
-  retreatAxis: 'x', retreatLine: -909, enemies: CAGNAPPERS, forward: Object.freeze({ dx: -1, dz: 0 }),
-});
-
 /**
  * **Two more waves** (the user, 26 September 2026): "one midway between the start and the current
  * attack and one midway between the current attack and the end". Each is laid out exactly as the
@@ -85,16 +79,19 @@ function waveAt(id, ids, arc) {
   const p = alongRoad(arc), d = { x: p.dx, z: p.dz }, n = { x: d.z, z: -d.x };
   const at = (a, b) => point(p.x + d.x * a + n.x * b, p.z + d.z * a + n.z * b);
   const axis = Math.abs(d.x) >= Math.abs(d.z) ? 'x' : 'z';
-  return Object.freeze({ id, center: point(p.x, p.z), checkpoint: at(-22, 0), retreatAxis: axis,
+  return Object.freeze({ id, center: point(p.x, p.z), checkpoint: at(-22, 0), retreatAxis: axis, retreatSign: -Math.sign(d[axis]),
     retreatLine: p[axis] - Math.sign(d[axis]) * 31, forward: Object.freeze({ dx: d.x, dz: d.z }),
     enemies: Object.freeze(gang(ids, [at(6, -7.3), at(-3, -8.3), at(3, 7.7)])) });
 }
-const START_ARC = arcOf(CAGNEY_START), MIDDLE_ARC = arcOf(CAGNEY_AMBUSH.center), END_ARC = RUNS.at(-1);
+// All three attacks occur after accepting at the wayside hamlet and before the
+// capital's gate. Moving the city must not leave a gang waiting inside its market.
+export const CAGNEY_AMBUSH = waveAt('cagnapper-ambush',['cagnapper-1','cagnapper-2','cagnapper-3'],76);
+export const CAGNAPPERS = CAGNEY_AMBUSH.enemies;
 export const CAGNEY_WAVES = Object.freeze([
-  waveAt('cagnapper-ambush-first', ['cagnapper-a1', 'cagnapper-a2', 'cagnapper-a3'], (START_ARC + MIDDLE_ARC) / 2),
+  waveAt('cagnapper-ambush-first',['cagnapper-a1','cagnapper-a2','cagnapper-a3'],30),
   CAGNEY_AMBUSH,
-  waveAt('cagnapper-ambush-last', ['cagnapper-c1', 'cagnapper-c2', 'cagnapper-c3'], (MIDDLE_ARC + END_ARC) / 2),
-].map((wave, index) => Object.freeze({ ...wave, index, waypoint: alongRoad(arcOf(wave.center) + .01).next })));
+  waveAt('cagnapper-ambush-last',['cagnapper-c1','cagnapper-c2','cagnapper-c3'],123),
+].map((wave,index)=>Object.freeze({...wave,index,waypoint:alongRoad(arcOf(wave.center)+.01).next})));
 export const ALL_CAGNAPPERS = Object.freeze(CAGNEY_WAVES.flatMap(wave => wave.enemies));
 export const cagneyWave = id => CAGNEY_WAVES.find(wave => wave.id === id) ?? null;
 
@@ -110,7 +107,7 @@ const stages = ['unmet', 'asked', 'escorting', 'ambushed', 'home', 'complete', '
 const WAVES = CAGNEY_WAVES.length;
 const FULL = () => CAGNEY_WAVES[0].enemies.map(e => e.hp);
 const validPoint = p => Number.isFinite(p?.x) && Number.isFinite(p?.z);
-const fresh = () => ({ version: 2, stage: 'unmet', wave: 0, hp: CAGNEY_HEALTH, enemies: FULL(), walk: { ...CAGNEY_START, waypoint: 0, waiting: false } });
+const fresh = () => ({ version: 2, layoutVersion: 2, stage: 'unmet', wave: 0, hp: CAGNEY_HEALTH, enemies: FULL(), walk: { ...CAGNEY_START, waypoint: 0, waiting: false } });
 const allDown = enemies => enemies.every(hp => hp === 0);
 
 /** The first saves had one gang; theirs becomes the middle one, and where she had got to decides the rest. */

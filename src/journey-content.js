@@ -53,6 +53,10 @@ export function journeyConversation(npc,context) {
       ]),
     ],
     'crossing-keeper':[
+      tangent('hollis-jesse','Where can I learn more carpentry?',[
+        'Try Jesse, just west of the fork beyond this bridge. Take the road toward Ambron. The workshop is across the road from Calum, the prophet; you will see the wheels before you see Jesse.',
+        'I mend things that stay put. Jesse mends things that roll. They can show you how to assemble a carriage and take it to the Carpenter\'s Guild in Ambron. Sound timber matters there as much as it does here: learning your trees and cutting good wood will serve you well.'
+      ]),
       // **Glun** (the user, 22 September 2026): the two of them grew up in Drent and fished it
       // together, and the officer at the practice post is a Drent man who went into the army and
       // came back up it (src/instructor.js). The id keeps the old prefix, like everything of his.
@@ -145,7 +149,7 @@ export function journeyConversation(npc,context) {
     ],[choice('meet-crossing-keeper','Teach me. I’ll mend the crossing.')]);
     if(!state.bridgeRepaired)return tell([`Three branches will brace the planks. You carry ${inventory.count('forest-stick')} sticks. Driftwood lies along the bank; gather enough, then use the repair point at the bridge. Remember the carpentry lesson: sound timber, a straight brace, and tight lashings. Keep a few spares if you want to cook afterward.`],[]);
     return tell([
-      'A straight brace and tight cord. That is your first piece of carpentry, and it holds. Take four spare branches. Bowden in the Koopwood can teach you more, with a proper hammer and saw. Your army has its crossing, but you have helped the people on both banks as well.',
+      'A straight brace and tight cord. That is your first piece of carpentry, and it holds. Take four spare branches. Jesse can teach you more at the carriage workshop west of the fork, across the road from Calum. Take the road toward Ambron and look for the wheels. Your army has its crossing, but you have helped the people on both banks as well.',
       'A quiet word: most households here shelter or feed the people the Empire calls rebels. They are our neighbors. Goblins take from us out of the north; the army takes grain and calls it protection. Speak with Sava on the rise before you decide whose side these families are on.'
     ],[choice('return-crossing-keeper','Tell Chip the bridge is repaired')]);
   }

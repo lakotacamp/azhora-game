@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createSceneryBuilder } from './scenery-builder.js';
 import { BEN_HOME, TROY_HOME, CAGNEY_RESIDENCE } from './quest-homes.js';
+import { CAGNEY_ROADSIDE_HAMLET, inAmbronOutline } from './ambron-city-layout.js';
 import {
   ELAGOS_BASINS, ELAGOS_REACHES, ELAGOS_PLACES, ELAGOS_SIGNS, NEMMEL, ICE_ROAD_STONE, LAKE_SHRINE,
   DROWNED_CAUSEWAY, THE_STAIR, LINK_BRIDGE, onLinkBridge, elagosWaterDistance, elagosWaterSurface,
@@ -8,7 +9,7 @@ import {
 import {
   AMBRON, ambronPoint, AMBRON_CIRCUIT, AMBRON_STANDARD, AMBRON_GATES, AMBRON_BUILDINGS, AMBRON_OUTSIDE,
   AMBRON_STREETS, AMBRON_QUAYS, AMBRON_STALLS, AMBRON_WELL, AMBRON_GAUGE, AMBRON_SLEDGES, AMBRON_CHAIN,
-  AMBRON_MARKET, CAUSEWAY, CHANNEL, PHYSIC_GARDEN, ambronColliders, onCauseway, cityGround,
+  AMBRON_CARPENTERS_GUILD, AMBRON_MARKET, CAUSEWAY, CHANNEL, PHYSIC_GARDEN, ambronColliders, onCauseway, cityGround,
 } from './ambron.js';
 
 /**
@@ -505,7 +506,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
       const context = canvas.getContext('2d');
       context.fillStyle = '#ead9bd'; context.fillRect(0, 0, 256, 64);
-      context.fillStyle = '#473c3a'; context.font = 'bold 38px Georgia'; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText('Cagney', 128, 33);
+      context.fillStyle = '#473c3a'; context.font = home === AMBRON_CARPENTERS_GUILD ? 'bold 23px Georgia' : 'bold 38px Georgia'; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText('Cagney', 128, 33);
       const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
       nameplate.dispose(); nameplate = new THREE.MeshStandardMaterial({ map: texture, roughness: .95 });
     }
@@ -520,7 +521,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     const building = AMBRON_BUILDINGS.find(entry => entry.id === home.buildingId);
     const base = cityGround(building.a) - .3;
     const detail = createSceneryBuilder(`${home.name}'s home frontage`);
-    const path = home === TROY_HOME ? [P(-58, -22), home.entry, home.porch] : [home.entry, home.porch];
+    const path = [home.entry, home.porch];
     ribbon(detail, palette.paving, path, 1.8, .075);
     detail.frame(home.facade.x, base, home.facade.z, home.yaw, () => {
       detail.block(palette.door, 0, 1.1, -.13, 1.52, 2.4, .12);
@@ -584,7 +585,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
       const context = canvas.getContext('2d');
       context.fillStyle = '#ead9bd'; context.fillRect(0, 0, 256, 64);
-      context.fillStyle = '#473c3a'; context.font = 'bold 38px Georgia'; context.textAlign = 'center'; context.textBaseline = 'middle';
+      context.fillStyle = '#473c3a'; context.font = home === AMBRON_CARPENTERS_GUILD ? 'bold 23px Georgia' : 'bold 38px Georgia'; context.textAlign = 'center'; context.textBaseline = 'middle';
       context.fillText(home.name, 128, 33);
       const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
       material.dispose(); material = new THREE.MeshStandardMaterial({ map: texture, roughness: .95 });
@@ -596,6 +597,18 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   }
   questHomeExterior(BEN_HOME, { door: '#7c5238', trim: '#b38755', shutter: '#705975', roof: '#877043', paving: '#a99a80' });
   questHomeExterior(TROY_HOME, { door: '#526c6a', trim: '#849a8d', shutter: '#667d75', roof: '#515d6c', paving: '#aaa391' });
+
+  questHomeExterior(AMBRON_CARPENTERS_GUILD, {door:'#766047',trim:'#b49a66',shutter:'#738279',roof:'#5b6665',paving:'#a99b80'});
+  // The guild's open work apron: a wheel in progress and stacked squared timber.
+  // Props flank the doorway and leave Jesse's cart parking/approach clear.
+  {
+    const guild = AMBRON_CARPENTERS_GUILD, base=y(guild.house.x,guild.house.z), x=guild.house.x-6,z=guild.house.z-9;
+    town.box(WOOD_LIGHT,x,base+1,z,2.7,.18,1.1);
+    for(const dx of [-1,1])for(const dz of [-.4,.4])town.block(WOOD_DARK,x+dx,base,z+dz,.13,1,.13);
+    for(let k=0;k<6;k++){const a=k*Math.PI/3;town.beam(WOOD,[x,base+1.7,z],[x+Math.cos(a)*.67,base+1.7+Math.sin(a)*.67,z],.07);}
+    for(let k=0;k<12;k++){const a=k*Math.PI/6,b=(k+1)*Math.PI/6;town.beam(WOOD_LIGHT,[x+Math.cos(a)*.67,base+1.7+Math.sin(a)*.67,z],[x+Math.cos(b)*.67,base+1.7+Math.sin(b)*.67,z],.1);}
+    for(let k=0;k<5;k++)town.box(WOOD_LIGHT,guild.house.x+6,base+.25+k*.2,guild.house.z-9.3,2.2,.18,.36);
+  }
 
   // The Lord Marshal's Seat: a colonnade and a standard over the plaza.
   {
@@ -698,7 +711,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   }
 
   // The capstan that winds the chain, and its tally board.
-  {
+  if (CHANNEL.enabled) {
     const spot = P(AMBRON_CHAIN.capstan.a, AMBRON_CHAIN.capstan.b), ground = y(spot.x, spot.z);
     town.cylinder(WOOD_DARK, spot.x, ground, spot.z, 1.35, 1.5, 0, 7);
     for (let k = 0; k < 6; k++) {
@@ -718,7 +731,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   // pair against the timber strand, laden and waiting their turn at the tally.
   // Nothing moves south until it has paid, and on any day there are more of these
   // than there are below the chain.
-  {
+  if (CHANNEL.enabled) {
     const loads = ['grain', 'fish', 'timber', 'grain', 'barrels', 'fish', 'grain'];
     const barge = (a, b, load, yaw = 0) => {
       const spot = P(a, b), water = CHANNEL.surface;
@@ -761,7 +774,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     town.roof(SHINGLE, well.x, ground + 3.2, well.z, 4.4, 2.2, .8, 0);
   }
   // A lake gauge cut into the quay: the flood years, limewashed and read every spring.
-  {
+  if (CHANNEL.enabled) {
     const spot = P(AMBRON_GAUGE.a, AMBRON_GAUGE.b), ground = y(spot.x, spot.z);
     town.block(LIME, spot.x, ground, spot.z, .34, 3.4, .34);
     for (let k = 0; k < 9; k++) town.block('#33302a', spot.x, ground + .4 + k * .32, spot.z - .18, .36, .06, .04);
@@ -829,7 +842,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   }
 
   // The timber strand on the west bank: stacked lake-timber, rafts drawn up, sawpits, a slip.
-  {
+  if (CHANNEL.enabled) {
     for (const [ai, bi, count] of [[-40, -38, 6], [-40, -8, 5], [-40, 30, 6], [-56, 56, 4]]) {
       for (let k = 0; k < count; k++) {
         const spot = P(ai + (k % 2) * 2.4, bi + Math.floor(k / 2) * 2.6), ground = y(spot.x, spot.z);
@@ -865,7 +878,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   // =========================================================================
   // The causeway
   // =========================================================================
-  {
+  if (CHANNEL.enabled) {
     const cause = createSceneryBuilder('The Ambron causeway');
     const deck = CAUSEWAY.deckY;
     for (const pier of CAUSEWAY.piers) {
@@ -923,6 +936,14 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     });
     push({ x, z, hx: (Math.abs(Math.cos(yaw)) > .5 ? width : depth) / 2 + .2, hz: (Math.abs(Math.cos(yaw)) > .5 ? depth : width) / 2 + .2, kind: 'lake-house' });
     metrics.buildings++;
+  }
+
+  // Three modest roadside cottages: a stopping place along Cagney's shorter
+  // escort approach, not a second named town or an invented set of residents.
+  for(const [i,h] of CAGNEY_ROADSIDE_HAMLET.buildings.entries()){
+    lakeHouse(h.x,h.z,h.w,h.d,h.h,Math.PI,{roof:i===1?THATCH:SHINGLE,wall:['#b0a78e','#97967d','#b7ab93'][i]});
+    country.patch('#a99775',heightAt,h.x,h.z+9,2.0,11,0,.045,4);
+    for(const dx of [-h.w/2+1,h.w/2-1])country.block(WOOD_LIGHT,h.x+dx,y(h.x+dx,h.z+4.3)+1.1,h.z+4.3,1.4,.32,.55);
   }
 
   // Nemmel: six roofs on the shore, drying frames, boats hauled up, and the smoke shed.
@@ -1087,7 +1108,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     const shore = water.shore[Math.floor(random() * water.shore.length)];
     const dx = shore.x - water.centre.x, dz = shore.z - water.centre.z, l = Math.hypot(dx, dz) || 1;
     const out = range(-2.5, 7), x = shore.x + dx / l * out, z = shore.z + dz / l * out;
-    if (Math.abs(x - AMBRON.centre.x) < 130 && Math.abs(z - AMBRON.centre.z) < 110) continue;
+    if (inAmbronOutline(x,z)) continue;
     if (roadDistance(x, z) < 4) continue;
     const ground = y(x, z);
     if (ground < 1) continue;

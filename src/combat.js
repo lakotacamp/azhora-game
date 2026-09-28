@@ -4,6 +4,7 @@ import { countryHealth, countryDamage, COUNTRY, allyHealthScale, allyDamageScale
 import { BOW, drawnBy, groundAt, inTheLine, shotAt, solidAt, survives } from './archery.js';
 import { meleeContacts, meleeLineClear } from './melee-contact.js';
 import { castWith } from './sorcery.js';
+import { BATMAN_COMBAT } from './batman-quest.js';
 
 const TAU = Math.PI * 2;
 const SWINGS = [
@@ -23,6 +24,13 @@ const PROVOKED_FOR = 4;
 // Each enemy kind has its own pace. Goblins keep the original timings; wolves
 // close faster, bite sooner and hit a little lighter.
 export const ENEMY_KINDS = Object.freeze({
+  // A living, powerful protector. He uses the same lethal combat and collision
+  // rules as any creature once attacked, with no regional rescaling of his body.
+  batman: Object.freeze({ tell: BATMAN_COMBAT.windup, attack: .44, contact: .19,
+    recovery: BATMAN_COMBAT.recovery, damage: BATMAN_COMBAT.damage, speed: BATMAN_COMBAT.speed,
+    engage: 2.2, reach: BATMAN_COMBAT.reach, lunge: 2.2, arc: Math.PI * .42,
+    armor: BATMAN_COMBAT.armor, standoff: 1.6, poise: true, stagger: false,
+    knockback: .12, pack: 1, fixedStats: true }),
   goblin: Object.freeze({ tell: ENEMY_TELL, attack: ENEMY_ATTACK, contact: ENEMY_CONTACT, recovery: ENEMY_RECOVERY, damage: 17, speed: 1.8, engage: 2.12, reach: 2.15, lunge: 1.3 }),
   wolf: Object.freeze({ tell: .7, attack: .5, contact: .2, recovery: 1.05, damage: 14, speed: 2.9, engage: 2.35, reach: 2.4, lunge: 3.2 }),
   // Kayla has her own strength wherever she travels; crossing a border does not change her body.
@@ -343,7 +351,7 @@ const TODAY = Object.freeze({ maxHp: 100, maxStamina: 100, dodgeWindow: .37, swi
  */
 export const GUARD_ARC = Math.PI / 3;
 
-export function createCombat({ world, position, onEvent = () => {}, getWeapon, onWeaponContact = () => {}, getMargins = null, getLevel = null, getAllies = null, getArrows = null, getBodies = null, isFallen = null }) {
+export function createCombat({ world, position, onEvent = () => {}, getWeapon, onWeaponContact = () => {}, getMargins = null, getLevel = null, getAllies = null, getArrows = null, getBodies = null, isFallen = null, canMovePlayer = null }) {
   const margins = () => ({ ...TODAY, ...(getMargins?.() ?? {}) });
   const first = margins();
   const state = {
@@ -486,10 +494,10 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
   }
 
   function makeEnemy(id, kind, point, entry = 0, hp = kind === 'dummy' ? 100 : 75) {
-    const radius = kind === 'spider' ? BODY.spider : kind === 'bear' ? BODY.bear : .45;
+    const radius = kind === 'spider' ? BODY.spider : kind === 'bear' ? BODY.bear : kind === 'batman' ? BODY.batman : .45;
     const enemy = {
       id, kind, ...(kind === 'dummy' ? {x:point.x,z:point.z} : safePoint(point.x, point.z, radius)), yaw: 0,
-      ...(['spider', 'bear'].includes(kind) ? { r: radius } : {}),
+      ...(['spider', 'bear', 'batman'].includes(kind) ? { r: radius } : {}),
       hp, maxHp: hp,
       action: 'idle', progress: 0, speed: 0, active: true,
       // Read from the same state as mitigation; the view and autopilot must never
@@ -814,7 +822,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
       motionWorld.setBodies(motionBodies);
     }
     const radius = bodyRadius(actor), id = actor === position ? 'traveler' : actor.id;
-    moveCharacter(actor, dx, dz, motionWorld.moving(actor, radius, id), radius);
+    moveCharacter(actor, dx, dz, motionWorld.moving(actor, radius, id), radius, {canTraverse:actor===position?canMovePlayer:null});
   }
   // Personal space steers a crowd before contact, but an existing close overlap
   // must still be allowed to open rather than freezing both walkers in place.
@@ -1934,7 +1942,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
    * 24-a-second recovery in `updatePlayer` would cancel most of the drain and nobody would ever
    * run out of wind.
    */
-  function exhaust(wind = 0, harm = 0, { hold = true } = {}) {
+  function exhaust(wind = 0, harm = 0, { hold = true, cause = 'drowning' } = {}) {
     if (player.action === 'dead' || state.phase === 'defeated') return { stamina: player.stamina, hp: player.hp, defeated: true };
     if (wind > 0) player.stamina = Math.max(0, player.stamina - wind);
     if (hold) staminaDelay = Math.max(staminaDelay, .25);
@@ -1947,7 +1955,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
         state.enemies.forEach(target => {
           if (target.active) { target.action = 'idle'; target.progress = 0; target.speed = 0; }
         });
-        emit('defeat', { encounterId: state.encounterId, drowned: true });
+        emit('defeat', { encounterId: state.encounterId, drowned: cause === 'drowning', fell: cause === 'fall' });
       }
     }
     return { stamina: player.stamina, hp: player.hp, defeated: !player.hp };

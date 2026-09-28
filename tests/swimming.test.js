@@ -97,7 +97,7 @@ test('a traveler on his own two feet can walk off a beach into the sea', async (
   // The shape of the old bug, kept as the thing that must stay false.
   assert.equal(walk('inWater').inWater, false, 'passing the state back to itself is the closed loop');
   // And the game passes the flag unconditionally on foot.
-  assert.match(source('main.js'), /moveCharacter\(player\.group\.position,dx,dz,playerWorld,undefined,\{swimming:true\}\)/,
+  assert.match(source('main.js'), /moveCharacter\(player\.group\.position,dx,dz,playerWorld,undefined,\{swimming:true(?:,canTraverse:[^}]+)?\}\)/,
     'the on-foot move opens the water every frame');
 });
 
@@ -314,7 +314,7 @@ test('getting wet in the middle of a fight resets nothing', async () => {
   // also suppresses ordinary stamina regeneration while a swimmer remains wet.
   // The actual boundary behavior is exercised in the beach-fight test below.
   assert.match(main, /const windBefore=combat\.state\.player\.stamina;/, 'the host remembers what the water had taken');
-  assert.match(main, /if\(inWater&&combat\.state\.player\.stamina>windBefore\)combat\.state\.player\.stamina=windBefore;/,
+  assert.match(main, /if\(\(inWater\|\|climbingFrame\)&&combat\.state\.player\.stamina>windBefore\)combat\.state\.player\.stamina=windBefore;/,
     'and while the water has him his wind only ever goes down');
   // A save is never written from the water, so no crossing can be reloaded with a fresh bar of
   // wind - which is also why the save holding health and not wind does not matter.
@@ -346,8 +346,8 @@ test('the two ways out of the water both pay for the swim, and drowning ends a q
   // aftermath is not, because the ordinary retry restarts its fight and leaves it running.
   const returnDrowned = new Function('combat', 'world', 'lastDry', 'player', 'events', `
     let drownedDefeat=true,inWater=true,drowning=true,swimMetres=23,retriesTaken=0,
-      mode='defeated',grounded=false,verticalSpeed=-2,yaw=1;
-    const stopAutopilot=()=>{},clearArrows=()=>{},stopInput=()=>{},show=()=>{},toast=()=>{},canvas={focus(){}};
+      mode='defeated',grounded=false,verticalSpeed=-2,yaw=1,climbRecovery=null;
+    const stopAutopilot=()=>{},clearArrows=()=>{},stopInput=()=>{},show=()=>{},toast=()=>{},canvas={focus(){}},cancelClimbing=()=>{};
     const inAftermathFight=()=>true,aftermath={endEncounter:id=>events.push(['end',id])};
     ${hostFunction('returnToSafety')}
     returnToSafety();
@@ -356,7 +356,7 @@ test('the two ways out of the water both pay for the swim, and drowning ends a q
   for(const lastDry of [{x:6,z:8},null]) {
     const events=[],world={spawn:{x:1,z:2},heightAt:(x,z)=>x+z};
     const player={group:{position:new THREE.Vector3(20,-1,30),rotation:{y:0}}};
-    const combat={state:{encounterId:'water-quest'},revive(){events.push(['revive']);},
+    const combat={state:{encounterId:'water-quest',player:{hp:0}},revive(){events.push(['revive']);},
       resetEncounter(){assert.fail('drowning must not restart a fight');}};
     const returned=returnDrowned(combat,world,lastDry,player,events),ashore=lastDry??world.spawn;
     assert.deepEqual(events,[['end','water-quest'],['revive']],'quest fight ends before the combat state is revived');
@@ -380,8 +380,9 @@ test('the game refuses the water to a rider, and a sword to a swimmer', () => {
   assert.match(main, /const wet=canSwim\(p\.x,p\.z,playerWorld,\.34\);/, 'the water is what canSwim says it is');
   assert.match(main, /if\(riding\.mounted\)\{[\s\S]{0,400}He will not go in, and he is right/, 'a horse will not go in');
   assert.match(main, /if\(inWater\)\{toast\('Both your hands are busy/, 'and a swimmer cannot swing');
-  const tryDodge=new Function('inWater','mounted','passenger',`
+  const tryDodge=new Function('inWater','mounted','passenger','suspendedFlag',`
     const mode='playing',grounded=true,riding={mounted},living={recall:()=>({status:passenger?'passenger':'idle'})};
+    const suspended=()=>!!suspendedFlag;
     const keys=new Set(),yaw=0,player={group:{rotation:{y:0}}};
     let dodges=0;
     const getMovementInput=()=>({forward:1,side:0}),combat={dodge(){dodges++;}};
@@ -391,14 +392,21 @@ test('the game refuses the water to a rider, and a sword to a swimmer', () => {
   assert.equal(tryDodge(true,false,false),0,'a swimmer cannot dodge');
   assert.equal(tryDodge(false,true,false),0,'a rider cannot dodge');
   assert.equal(tryDodge(false,false,true),0,'a passenger cannot dodge');
+  assert.equal(tryDodge(false,false,false,true),0,'a climber or airborne traveler cannot dodge');
   assert.equal(tryDodge(false,false,false),1,'an ordinary traveler still can dodge');
   assert.match(main, /const speed=inWater\?swimSpeed\(swimLevel\)/, 'and moves at his own pace once he is in');
   assert.match(main, /combat\.exhaust\(step\.spent,step\.damage\)/, 'the wind and the blood are combat’s');
   assert.match(main, /swimming:swimming\.snapshot\(\)/, 'and the skill is saved with the road');
   // He floats at the surface with a swimmer's posture, rather than walking the seabed - the surface
   // of whatever water he is in, which for the Stillwater is fifteen metres above the sea.
-  assert.match(main, /const surface=waterAt\(player\.group\.position\.x,player\.group\.position\.z,world\)/, 'the water he is in, not the sea');
-  assert.match(main, /floor<surface\)\?surface-SWIM\.sink:/, 'the feet hang below the surface');
+  const footSurface = new Function('SWIM','bed','level',`
+    const world={heightAt:()=>bed},waterAt=()=>level,lotharnCave={floorAt:()=>null};
+    ${hostFunction('fallSurfaceAt')}
+    return fallSurfaceAt(0,0);
+  `);
+  assert.equal(footSurface(SWIM,5,15).height,15-SWIM.sink,'the feet hang below the local lake surface, not the sea');
+  assert.equal(footSurface(SWIM,14.8,15).height,14.8,'shallow water does not push the feet through the bed');
+  assert.equal(footSurface(SWIM,20,15).water,false,'dry ground remains dry');
   assert.match(main, /swimming:inWater,riding:/, 'and the rig is told');
   assert.match(source('characters.js'), /if \(pose\.swimming\) \{/, 'which the rig has a posture for');
   assert.ok(SWIM.sink > .8 && SWIM.sink < 1.4, `sunk ${SWIM.sink} m: head and shoulders, not a periscope or a drowning`);
@@ -416,7 +424,7 @@ test('swimming beyond a beach fight leash gives no health or second bar of wind'
   const main=source('main.js'),start=main.indexOf('const windBefore=combat.state.player.stamina;');
   const end=main.indexOf('{const casting=magic.pose();',start);
   assert.ok(start>=0&&end>start,'the host combat update and swimming wind guard exist');
-  const hostUpdate=new Function('combat','dt','inWater',`let combatClock=0;${main.slice(start,end)}`);
+  const hostUpdate=new Function('combat','dt','inWater',`let combatClock=0;const climbingFrame=false;${main.slice(start,end)}`);
   const events=[],position={x:0,z:0},controlPosition={x:0,z:0};
   const combat=createCombat({world,position,onEvent:event=>events.push(event)});
   const control=createCombat({world,position:controlPosition});

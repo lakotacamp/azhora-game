@@ -136,17 +136,14 @@ test('she is a sailor first and a keeper second, and says so in that order', () 
   assert.match(FROM_THE_GALLERY.join(' '), /ledge/, 'from the gallery she shows you what the light is for');
 });
 
-test('what she has seen over the water is only mentioned to somebody already looking', () => {
+test('retired blue-trade clues do not return through an old active hunt save', () => {
   const keeper = createLightKeeper(), hunt = createBatmanHunt();
   keeper.meet();
   assert.equal(talk(npc, { light: keeper, hunt }).has('light-seen'), false, 'she does not bring it up');
   hunt.find('vial'); hunt.sight();
   const seen = talk(npc, { light: keeper, hunt });
-  assert.equal(seen.has('light-seen'), true);
-  seen.pick('light-seen');
-  const said = seen.screens.at(-1).lines.join(' ');
-  assert.match(said, /none of them have hands/);
-  assert.match(said, /welcome on this rock/, 'and she is on his side about it');
+  assert.equal(seen.has('light-seen'), false);
+  assert.equal(seen.has('light-climb'), true, 'the lighthouse visit is still available');
 });
 
 test('the visit survives a save', () => {

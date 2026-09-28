@@ -27,12 +27,14 @@ export async function runCagneyAutoplayChecks(h) {
   check(!!h.checkpointCopy(),'A normal adventure checkpoint exists before testing');
   await startFromMenu();
   const start=performance.now(),initialMoney=h.inventory.count('copper-piece'),initial=h.position();
-  let last=initial,travelled=0,largestStep=0,combatSeen=false,attackSeen=false,saveChecked=false,lastReport=0;const gangs=new Set();
+  let last=initial,travelled=0,largestStep=0,combatSeen=false,attackSeen=false,saveChecked=false,lastReport=0;const gangs=new Set();let lastProgress=performance.now(),escortFeet=h.person();
   while(h.pilot().enabled){
     if(performance.now()-start>1200000)fail('The live escort exceeded its twenty-minute limit');
     if(h.mode()==='defeated'||['dead','captured'].includes(h.quest().stage))fail('A member of the escort party fell');
     await frames();const now=h.position(),step=gap(last,now);last=now;travelled+=step;largestStep=Math.max(largestStep,step);
     const q=h.quest(),c=h.combat.state;stages.add(q.stage);
+    const escortNow=h.person();if(q.stage!=='escorting'||c.phase==='active'||h.mode()!=='playing'||gap(escortFeet,escortNow)>.05){lastProgress=performance.now();escortFeet=escortNow;}
+    if(performance.now()-lastProgress>50000)fail('Escort stopped progressing for fifty seconds');
     motion.observe(h.motion(),q.stage==='escorting'&&c.phase!=='active'&&h.mode()==='playing');
     if(['escorting','ambushed','home'].includes(q.stage)&&h.tracked()!=='cagney-escort')fail('The escort lost objective focus');
     if(c.phase==='active'){

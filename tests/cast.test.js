@@ -8,6 +8,7 @@ import { FERRY_HOST_IDS } from '../src/ferry.js';
 import { VINTNER, CELLAR_HAND, WINEMAKER, WINERY_STANDS } from '../src/winery.js';
 import { IMANI } from '../src/vineyard.js';
 import { KATY } from '../src/katy.js';
+import { BATSMASHER } from '../src/batman-quest.js';
 import { LUSCIA_PROPHET } from '../src/luscia-prophet.js';
 import { TRIMMED, KEEP_IDS, QUEST_IDS, OWN_IDS, SMITH_IDS, DROP_IDS, SOLDIER_ROLES, keepsNpc, trimCast } from '../src/cast.js';
 
@@ -67,8 +68,8 @@ test('every id on the list is somebody the world actually places', async () => {
   }
   const known = new Set([...placed,
     // Pushed in by src/main.js from their own modules rather than by the world.
-    'harbormaster', 'instructor', 'garden-keeper', 'lee-anne', 'sylvia', 'cagney', 'alex', LUSCIA_PROPHET.id, FARMER.id, ...FERRY_HOST_IDS, 'brandy-frank', 'bird-watcher', 'attic-juan', 'attic-nika',
-    'solis-secretary', 'john-salt', 'katy', 'vintner', 'winemaker', 'cellar-hand', 'light-keeper',
+    'kayla', 'kayla-cub', 'harbormaster', 'instructor', 'garden-keeper', 'lee-anne', 'sylvia', 'cagney', 'alex', LUSCIA_PROPHET.id, FARMER.id, ...FERRY_HOST_IDS, 'brandy-frank', 'bird-watcher', 'attic-juan', 'attic-nika',
+    'solis-secretary', 'john-salt', 'katy', BATSMASHER.id, 'vintner', 'winemaker', 'cellar-hand', 'light-keeper',
     'rival-keeper', 'tidehaven-smith', 'moros-armourer', 'ambron-armourer', 'lumber-ostler',
     'aftermath-tribune', 'aftermath-captain', 'aftermath-envoy', 'post-camp-legate',
     'solis-captain', 'coalition-envoy', 'coalition-captain', 'battle-tribune', 'courier-satchel',

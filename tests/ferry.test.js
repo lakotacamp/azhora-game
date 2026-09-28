@@ -349,7 +349,7 @@ test('The destination choice closes dialogue before ferry mode starts, and swimm
   }
 });
 
-test('Maddie offers both other ports from Port Calos', () => {
+test('Hallie offers both other ports from Port Calos', () => {
   const { ferry, state } = harness({ at: FERRY_LANDINGS['port-calos'].ashore });
   let opened;
   ferryConversation(FERRY_HOSTS['port-calos'], {
@@ -383,7 +383,7 @@ test('A delayed ferry frame still transfers under cover exactly once', () => {
 });
 
 test('The three requested resident hosts offer every directed coastal route, including Cobble to Port Calos', () => {
-  assert.deepEqual(Object.values(FERRY_HOSTS).map(npc => npc.name), ['Jess', 'Hallie', 'Maddie']);
+  assert.deepEqual(Object.values(FERRY_HOSTS).map(npc => npc.name), ['Jess', 'Maddie', 'Hallie']);
   assert.equal(new Set(FERRY_HOST_IDS).size, 3);
   for (const host of Object.values(FERRY_HOSTS)) assert.ok(keepsNpc(host), `${host.name} is in the active cast`);
   for (const [from, host] of Object.entries(FERRY_HOSTS)) {

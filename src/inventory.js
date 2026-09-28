@@ -1,8 +1,10 @@
 /** The small, physical things carried through the first journey out of Drent. */
 import { ATTIC_WINES, ATTIC_WINE_IDS } from './attic-wines.js';
+import { JESSE_ITEMS } from './jesse-carriage-world.js';
 import { SLOT_NAMES, SLOTS, gearId } from './gear.js';
 
 export const INVENTORY_ITEMS = Object.freeze({
+  ...JESSE_ITEMS,
   'jojo-sandwich': Object.freeze({name:'Jojo’s sandwich',type:'Food',icon:'loaf',stackable:true,eatName:'sandwich',brief:'A filling sandwich for the road. Restores up to 35 health.',description:'Jojo wrapped bread and a savoury filling for your journey. Restores up to 35 health. Open the satchel and eat it when you need health.'}),
   'courier-satchel': Object.freeze({name:'The courier’s satchel',type:'Quest item',icon:'letter',stackable:false,
     brief:'The one missing army satchel, carrying the Lauvel muster rolls.',
@@ -114,10 +116,15 @@ export const INVENTORY_ITEMS = Object.freeze({
     brief: 'Ambroni copper. Ten make a silver piece, a hundred a gold.',
     description: 'The Empire’s small coin, good in any market that answers to Ambron. Traders and beggars take it; the army pays in it.',
   }),
+  'batman-head': Object.freeze({
+    name: "Batman\u2019s head", type: 'Quest item', icon: 'bundle',
+    brief: 'The proof Officer Verradross demanded for his bounty.',
+    description: 'Wrapped for the journey. The vigilante of Suval will protect no more travelers. Bring this to Officer Verradross if you accepted his commission.',
+  }),
   'katy-batman-sketch': Object.freeze({
-    name: 'Katy’s drawing of Batman', type: 'Quest item', icon: 'letter',
+    name: 'Catie’s drawing of Batman', type: 'Quest item', icon: 'letter',
     brief: 'Charcoal on the back of a wine label: a bat’s head and a bat’s wings on a man’s body. Underneath, underlined twice: HE IS NOT A MONSTER.',
-    description: 'Katy drew him from what the people who have seen him told her, so that you would know him when you see him, and not run. She wants to hear the moment you do.',
+    description: 'Catie drew him from what the people who have seen him told her, so that you would know him when you see him, and not run. She wants to hear the moment you do.',
   }),
   'elodi-lens': Object.freeze({
     name: 'The stepped lens', type: 'Quest item', icon: 'token',
@@ -629,6 +636,7 @@ const iconPaths = {
   cloak: '<path d="M12 8c0-8 12-8 12 0l7 23c-8 3-18 3-26 0ZM12 8l6 6 6-6M18 14v19"/>',
   shield: '<path d="m18 4 12 4v10c0 7-7 12-12 15-5-3-12-8-12-15V8ZM18 9v18M11 16h14"/>',
   helmet: '<path d="M7 21v-6a11 11 0 0 1 22 0v6l-4 3v7h-5V20h-4v11h-5v-7ZM7 18h22M18 4v10"/>',
+  bundle: '<path d="M13 11 10 5l8 3 8-3-3 6c7 5 10 15 5 19-4 4-16 4-20 0-5-4-2-14 5-19Z"/><path d="M12 12h12M14 16l-3 10m10-10 4 11"/>',
   letter: '<rect x="4" y="7" width="28" height="22" rx="2"/><path d="m5 9 13 10L31 9M5 27l9-9m17 9-9-9"/><circle cx="18" cy="19" r="3" fill="currentColor" stroke="none"/>',
   sword: '<path d="m13 23 14-19 5-1-1 6-16 16M15 21 28 7M9 20l9 8M12 25l-6 7-3-3 6-7M4 28l4 4"/>',
   stick: '<path d="m10 32 5-14 8-14 4 1-8 15-5 13ZM18 15l-6-5-2 2 6 7M21 12l8-3 1 2-10 5M12 28l3 1M15 21l3 1"/>',

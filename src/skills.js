@@ -42,6 +42,12 @@ export const SKILLS = Object.freeze({
     unlocks: Object.freeze([unlock(1, 'Observe birds with B; first sightings and patient repeat observations earn experience'),
       unlock(2, 'Imitate a familiar bird call from Actions (U)'), unlock(4, 'Observe from farther away'), unlock(7, 'Your observation range reaches thirty metres')]),
   }),
+  flying: Object.freeze({
+    id: 'flying', name: 'Flying',
+    blurb: 'Balance, wind, and seeing the country from the air. The first lesson is a carried tour of Suval with Batman; independent flight is not yet available.',
+    teacher: 'Batman in the Suval highlands', thresholds: RUNESCAPE_TABLE,
+    unlocks: Object.freeze([unlock(1, 'Ride with Batman on his guided tour of Suval')]),
+  }),
   husbandry: Object.freeze({
     id: 'husbandry', name: 'Animal Husbandry', kind: 'working',
     blurb: 'Caring for livestock and working animals. Calm, patient handling earns experience each time an animal needs attention again.',
@@ -147,7 +153,7 @@ export const SKILLS = Object.freeze({
   swimming: Object.freeze({
     id: 'swimming', name: 'Swimming', kind: 'working',
     blurb: 'Crossing water on your own, which is slower than walking, harder than it looks, and the only way to some of this country. Your wind runs out before your arms do, and what happens after that is drowning.',
-    teacher: 'Jess at Tidehaven, Maddie at Port Calos, Hallie at Cobble, or Ed the Word in the traveling company',
+    teacher: 'Jess at Tidehaven, Hallie at Port Calos, Maddie at Cobble, or Ed the Word in the traveling company',
     thresholds: RUNESCAPE_TABLE,
     // What each level opens is a crossing; the distances are measured shore to shore in
     // docs/swimming.md and re-measured by tests/swimming.test.js.
@@ -158,6 +164,15 @@ export const SKILLS = Object.freeze({
       unlock(25, 'Pilot’s Stone to Gull Scarp · 98 m, if you are willing to drown for the end of it'),
       unlock(43, 'The same 98 m on wind alone'),
       unlock(99, '280 m on one breath — and the open crossing to Cobble is 355, so you still island-hop')]),
+  }),
+  climbing: Object.freeze({
+    id: 'climbing', name: 'Climbing', kind: 'working',
+    blurb: 'Find a grip on Suval rock, choose your route, and leave enough stamina to reach the next ledge. Moving on a cliff earns experience; hanging still does not restore stamina.',
+    teacher: 'Learn by taking your first grip on a climbable face in Suval',
+    thresholds: RUNESCAPE_TABLE,
+    unlocks: Object.freeze([unlock(1, 'Space at a rock face to grab; WASD to climb or traverse; X to let go'),
+      unlock(1, 'Space while climbing makes a faster reach at a greater stamina cost'),
+      unlock(2, 'Practice gradually improves climbing speed and reduces stamina use')]),
   }),
   stealth: Object.freeze({
     id: 'stealth', name: 'Stealth', kind: 'working',

@@ -72,6 +72,7 @@ export function offsetPolygon(corners, distance, { open = false, hand = null } =
  *   extraTowers: [{ edge, at }] optional, standard = FORT_STANDARD overrides,
  *   cornerTowers: true | [corner indices], gateTowers: true,
  *   open: false, outside: {x, z}   an open line (a frontier) and a point on its outer side
+ *   ditchEdges: [edge indices]    optional: a ditch outside these walls only, where the others stand against a slope
  * }
  */
 export function fortCircuit(spec) {
@@ -165,6 +166,7 @@ export function fortCircuit(spec) {
   const innerRing = ring(inner), outerRing = ring(outer), midRing = ring(middle);
   const ditch = [];
   edges.forEach((edge, i) => {
+    if (spec.ditchEdges && !spec.ditchEdges.includes(i)) return;
     const next = open ? i + 1 : (i + 1) % corners.length;
     const a = midRing[i], b = midRing[next], d = unit(sub(b, a)), length = len(sub(b, a));
     // Offsets along the mid-ring edge, measured from the edge's own corner projection.

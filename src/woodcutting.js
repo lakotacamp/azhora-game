@@ -19,6 +19,8 @@
  * Pure: no DOM, no three. The lot is built in src/woodlot-world.js and the man
  * in src/woodcutter-model.js.
  */
+import { timberForKind } from './wood-species.js';
+
 const freeze = Object.freeze;
 
 export const WOODCUTTING_SKILL = 'woodcutting';
@@ -33,7 +35,7 @@ export const SWING = 1.3, CHOP_REACH = 2.7;
  * seconds its stump takes to come back, `price` what Bowden pays a log.
  * Experience is RuneScape's, rounded to whole points.
  */
-const kind = (id, name, short, level, xp, chance, logs, regrow, price, trunk) => freeze({ id, name, short, level, xp, log: `${id}-logs`, chance, logs: freeze(logs), regrow, price, trunk });
+const kind = (id, name, short, level, xp, chance, logs, regrow, price, trunk) => freeze({ ...timberForKind(id), id, name, short, level, xp, chance, logs: freeze(logs), regrow, price, trunk });
 export const TREE_KINDS = freeze({
   pine: kind('pine', 'Loblolly pine', 'pine', 1, 25, .52, [1, 1], 25, 1, .32),
   oak: kind('oak', 'White oak', 'oak', 15, 38, .34, [2, 4], 40, 2, .45),
@@ -81,7 +83,7 @@ export function inKoopwood(x, z, margin = 0) {
   const lx = dx * c - dz * s, lz = dx * s + dz * c;
   return Math.abs(lx) <= KOOPWOOD.halfW + margin && Math.abs(lz) <= KOOPWOOD.halfD + margin;
 }
-const tree = (kindId, n, lx, lz) => freeze({ id: `koopwood-${kindId}-${n}`, kind: kindId, lx, lz, ...lotPoint(lx, lz) });
+const tree = (kindId, n, lx, lz) => freeze({ ...timberForKind(kindId), id: `koopwood-${kindId}-${n}`, kind: kindId, harvestable: true, lx, lz, ...lotPoint(lx, lz) });
 /** The trees Bowden lets you cut: pines at the front, oaks behind them, willows by the spring, two maples, and his old walnut. */
 export const WOODLOT_TREES = freeze([
   tree('pine', 1, 4.5, 5.5), tree('pine', 2, 8.5, 7), tree('pine', 3, 12.5, 5), tree('pine', 4, 6.5, 1.8), tree('pine', 5, 10.5, 1.5), tree('pine', 6, 13.5, -1.8),
@@ -108,7 +110,7 @@ export const BOWDEN_STAND = freeze({ ...lotPoint(-1.5, 6.6), yaw: KOOPWOOD.yaw }
 
 /** The lot's colliders, in world terms: trunks (a stump is as solid as a tree), the keep, the kiln, the block, the log pile, the spring. */
 export function woodlotColliders() {
-  const out = WOODLOT_TREES.map(t => ({ x: t.x, z: t.z, r: TREE_KINDS[t.kind].trunk + .1, kind: 'woodlot-tree', id: t.id }));
+  const out = WOODLOT_TREES.map(t => ({ x: t.x, z: t.z, r: TREE_KINDS[t.kind].trunk + .1, kind: 'woodlot-tree', id: t.id, species: t.species, woodKind: t.woodKind }));
   const L = WOODLOT_LAYOUT, keep = lotPoint(L.keep.lx, L.keep.lz);
   out.push({ x: keep.x, z: keep.z, hx: L.keep.w / 2, hz: L.keep.d / 2, kind: 'woodlot-keep' });
   out.push({ ...lotPoint(L.kiln.lx, L.kiln.lz), r: L.kiln.r, kind: 'charcoal-kiln' });

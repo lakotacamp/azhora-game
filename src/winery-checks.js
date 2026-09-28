@@ -48,7 +48,7 @@ export async function runWineryChecks(h) {
     const winemakers=[...h.npcById.values()].filter(npc=>npc.modelRole==='wine-maker').map(npc=>npc.id).sort();
     check(same(winemakers,people.map(person=>person.id).sort()),'Only Rob, MAT and KAT are spawned as winemakers');
     check(!h.npcById.has('vine-keeper'),'The former winery vine keeper is not spawned');
-    check(h.npcById.has(KATY.id),'Katy remains available in Port Calos');
+    check(h.npcById.has(KATY.id),'Catie remains available in Port Calos');
     check(WINE_INTRO_TEACHERS.length===5,'The five requested Wine introductions are registered');
     for(const id of WINE_INTRO_TEACHERS) {
       await h.prepare();
@@ -74,9 +74,9 @@ export async function runWineryChecks(h) {
     await h.prepare();
     const before=h.snapshot();
     await talk(KATY.id);
-    check(!ids().some(id=>/batman|bat-search/i.test(id)),'Katy offers no old Batman quest at Port Calos');
+    check(!ids().includes('bat-search'),'Catie no longer offers the retired blue-trade Batman investigation');
     await h.close();await h.frames(2);
-    check(same(quests(before),quests(h.snapshot())),'Talking to Katy does not alter other quests');
+    check(same(quests(before),quests(h.snapshot())),'Talking to Catie does not alter the magic quests');
     check(!h.state().frameErrors?.count,'All winery and Wine teacher conversations complete without renderer errors');
   } catch(error) {
     failures.push({message:error.stack??error.message});

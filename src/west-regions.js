@@ -40,6 +40,7 @@ import { RIVER_EDGES } from './region-rivers.js';
 import { riverCourses } from './region-layout.js';
 import { hexOwnerAt, REGION_CELLS, METRES_PER_HEX } from './region-world.js';
 import { ELAGOS_REACHES } from './elagos-world.js';
+import { LOTHARN_WATER_LINES, LOTHARN_BOX } from './east-lotharn-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const point = (x, z) => Object.freeze({ x, z });
@@ -705,6 +706,34 @@ export const WEST_BRAIDS = Object.freeze([
 ]);
 
 // ---------------------------------------------------------------------------
+// The East Lotharn: the border water and the three valleys' own
+// ---------------------------------------------------------------------------
+/**
+ * The water of the old range (`src/east-lotharn-world.js` shapes the valleys it runs in). The
+ * atlas draws one river, small, along the whole South Mithala border and down to the sea; the lore
+ * gives every valley its own water, "each valley has its own drainage", and the three built here
+ * are derived from the valleys and say so. None of them is named in the lore, so each is called
+ * by the valley it drains, which is what the valley people would call it.
+ *
+ *  - **The border water**, the atlas's own line, runs east with the ground to the sea. Small on
+ *    the atlas, and a mountain foot's river: wadeable, two and a half metres of water either side.
+ *  - **The Kemrath water** rises under the col and runs west down Kemrath's floor and out of the
+ *    range toward the West Lotharn, widening as it goes, as Meneth's becks leave theirs.
+ *  - **The Stonegate water** falls north from the col through the gorge - "rivers run white" - to
+ *    the border water, one in seven.
+ *  - **The Olveth beck** drains Upper Olveth's sheep grass north to the border water.
+ */
+export const LOTHARN_BORDER_WATER = river('lotharn-border-water', 'The border water', LOTHARN_WATER_LINES.border,
+  { halfWidth: 2.4, cut: 1.1, bed: .55 });
+export const KEMRATH_WATER = river('kemrath-water', 'The Kemrath water', LOTHARN_WATER_LINES.kemrath,
+  { halfWidth: 1.5, halfWidthEnd: 2.4, cut: .8, bed: .4 });
+export const STONEGATE_WATER = river('stonegate-water', 'The Stonegate water', LOTHARN_WATER_LINES.stonegate,
+  { halfWidth: 2.3, cut: 1, bed: .5 });
+export const OLVETH_BECK = river('olveth-beck', 'The Olveth beck', LOTHARN_WATER_LINES.olveth,
+  { halfWidth: 1.1, cut: .7, bed: .3 });
+export const LOTHARN_WATERS = Object.freeze([LOTHARN_BORDER_WATER, KEMRATH_WATER, STONEGATE_WATER, OLVETH_BECK]);
+
+// ---------------------------------------------------------------------------
 // Every piece of western water, and the questions the rest of the game asks of it
 // ---------------------------------------------------------------------------
 /**
@@ -715,7 +744,7 @@ export const WEST_BRAIDS = Object.freeze([
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -723,7 +752,7 @@ export const WEST_POOLS = Object.freeze([
 ]);
 
 /** The regions this module shapes, in the order they were built. */
-export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum']);
+export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {
@@ -754,6 +783,8 @@ export const WEST_GROUND = Object.freeze((() => {
   }
   for (const pool of WEST_POOLS) grow(box, pool.x, pool.z, pool.radius + 24);
   grow(box, VASTOS_SINTER.x, VASTOS_SINTER.z, VASTOS_SINTER.radius + 24);
+  // The East Lotharn's landforms reach further than its hexes: the north face and the plain.
+  if (Number.isFinite(LOTHARN_BOX.minX)) { grow(box, LOTHARN_BOX.minX, LOTHARN_BOX.minZ, 0); grow(box, LOTHARN_BOX.maxX, LOTHARN_BOX.maxZ, 0); }
   for (const name of WEST_REGION_NAMES) {
     const region = WEST_REGION_BOXES[name];
     if (!Number.isFinite(region.minX)) continue;

@@ -26,6 +26,7 @@
  * across and no longer read as limbs, but a red tabard still reads as red.
  */
 export const FIGURE_LOD = Object.freeze({ out: 62, in: 56 });
+export const BLANK_SLATE_COLOUR = 0xb8b8b8;
 
 /**
  * Who is never a stand-in, however far off. Each is somebody the player is, or is about to be,
@@ -74,14 +75,14 @@ const mix = (a, b, t) => [16, 8, 0].reduce((out, shift) => out | (Math.round(cha
  * because nearly everybody's are darker than their coat and nothing records them. Sizes are
  * metres for somebody of ordinary height, scaled by `height` and `girth` as the full figure is.
  */
-export function standInLook({ tunic = 0x7a6a55, skin = 0xd7ad7e, hair = null, height = 1, girth = 1 } = {}) {
+export function standInLook({ tunic = 0x7a6a55, skin = 0xd7ad7e, hair = null, height = 1, girth = 1, blankSlate = false } = {}) {
   const tall = Number.isFinite(height) && height > 0 ? height : 1, wide = Number.isFinite(girth) && girth > 0 ? girth : 1;
   return Object.freeze({
     castShadow: false,
     pieces: Object.freeze([
-      Object.freeze({ part: 'legs', colour: mix(tunic, 0x201a16, .55), size: Object.freeze([.34 * wide, .82 * tall, .24 * wide]), y: .41 * tall }),
-      Object.freeze({ part: 'body', colour: tunic, size: Object.freeze([.48 * wide, .66 * tall, .30 * wide]), y: 1.15 * tall }),
-      Object.freeze({ part: 'head', colour: hair === null ? skin : mix(skin, hair, .45), size: Object.freeze([.24 * wide, .26 * tall, .24 * wide]), y: 1.62 * tall }),
+      Object.freeze({ part: 'legs', colour: blankSlate ? BLANK_SLATE_COLOUR : mix(tunic, 0x201a16, .55), size: Object.freeze([.34 * wide, .82 * tall, .24 * wide]), y: .41 * tall }),
+      Object.freeze({ part: 'body', colour: blankSlate ? BLANK_SLATE_COLOUR : tunic, size: Object.freeze([.48 * wide, .66 * tall, .30 * wide]), y: 1.15 * tall }),
+      Object.freeze({ part: 'head', colour: blankSlate ? BLANK_SLATE_COLOUR : hair === null ? skin : mix(skin, hair, .45), size: Object.freeze([.24 * wide, .26 * tall, .24 * wide]), y: 1.62 * tall }),
     ]),
   });
 }

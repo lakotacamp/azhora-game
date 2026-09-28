@@ -21,6 +21,8 @@ import {
 } from '../src/south-suval-world.js';
 import { hillPassPoint } from '../src/frontier-ridges.js';
 import { SOUTH_SUVAL_WILDLIFE_ZONES } from '../src/south-suval-wildlife.js';
+import { BAT_CAVE, BAT_LANDING, SUVAL_HIGHLAND_TRAILS, IMLAMDRIS_REBUILD } from '../src/suval-highlands.js';
+import { ISCARE_ISLANDS, ISCARE_WILDLIFE_ZONES } from '../src/iscare-world.js';
 
 /**
  * South Suval: the peninsula's southern hills, the Stillwater, and Imlamdris on its shore - built
@@ -38,6 +40,28 @@ const world = createWorld(scene);
 const B = BODY.person;
 const region = regions.find(entry => entry.name === 'South Suval');
 const WWMAP = new URL('../../world-builder/map/resources/examples/azhora.wwmap', import.meta.url);
+
+test('the completed world leaves the cave approach, flight apron, landing and winding highland paths unobstructed', () => {
+  for (const p of [BAT_CAVE.entrance, BAT_CAVE.perch, BAT_CAVE.apron, BAT_CAVE.approach, BAT_LANDING]) {
+    assert.ok(canStand(p.x, p.z, world, B), `blocked quest point ${p.x},${p.z}`);
+  }
+  for (const trail of SUVAL_HIGHLAND_TRAILS) for (let i = 1; i < trail.points.length; i++) {
+    const a = trail.points[i - 1], b = trail.points[i], length = Math.hypot(b.x - a.x, b.z - a.z), n = Math.ceil(length);
+    for (let k = 0; k <= n; k++) {
+      const x = a.x + (b.x - a.x) * k / n, z = a.z + (b.z - a.z) * k / n;
+      assert.ok(canStand(x, z, world, B), `${trail.id} is blocked by world scenery at ${x.toFixed(2)},${z.toFixed(2)}: ${JSON.stringify(world.nearColliders(x,z,1).filter(c=>Math.hypot(c.x-x,c.z-z)<(c.r??1)+1).map(c=>c.kind))}`);
+    }
+  }
+  assert.equal(world.suvalHighlandMetrics.woodenHomes, 4);
+  assert.equal(world.suvalHighlandMetrics.buildingFrames, 1);
+  assert.equal(world.iscareMetrics.islands, 10);
+  assert.equal(world.iscareMetrics.ruinedBuildings, 27);
+  assert.equal(world.paths[0].kind, 'road', 'the new footpaths never replace the main road');
+});
+
+test('Iscare wildlife anchor points stand on actual island footing clear of every ruin and prop', () => {
+  for (const zone of ISCARE_WILDLIFE_ZONES) for (const [x,z] of zone.sites) assert.ok(canStand(x,z,world,zone.radius), `${zone.id} starts in scenery ${x},${z}`);
+});
 
 test('the atlas: fifteen hexes of hill, ridge and grass round one lake, and three climates', () => {
   assert.ok(PLAYABLE_REGIONS.includes('South Suval'));
@@ -173,14 +197,17 @@ test('no harbour: the city comes down to the water in stone, and nothing is moor
   assert.ok(Math.abs(stillwaterDistance(edge.x, edge.z)) < 1.2, 'the city’s front is the lake’s shore');
 });
 
-test('the Stillwater Temple opens on the lake and is closed to the land, and the land comes in at the back', () => {
+test('the razed Stillwater Temple has real breaches and keeps its lake-facing foundation', () => {
   const T = STILLWATER_TEMPLE, front = T.b - T.depth / 2 + .6;
   // Between the colonnade's middle columns, and in the hall, a traveler walks in off the steps.
   assert.ok(canStand(cityPoint(0, front).x, cityPoint(0, front).z, world, B), 'the colonnade is shut');
   assert.ok(canStand(T.x, T.z, world, B), 'the hall cannot be stood in');
-  // The three other sides are wall, except the one door at the back.
+  // Surviving back-wall stubs remain solid; the old doorway and the blast breach are open.
   const back = T.b + T.depth / 2 - .45;
-  for (const a of [-8, -4, 4, 8]) assert.equal(canStand(cityPoint(a, back).x, cityPoint(a, back).z, world, B), false, `the back wall is open at ${a}`);
+  for (const a of [-8, 4, 8]) assert.equal(canStand(cityPoint(a, back).x, cityPoint(a, back).z, world, B), false, `the surviving back wall is open at ${a}`);
+  assert.ok(canStand(cityPoint(-4, back).x, cityPoint(-4, back).z, world, B), 'the ruined wall has a usable breach');
+  assert.equal(world.southSuvalMetrics.ruinedHomes, 16);
+  assert.equal(world.southSuvalMetrics.ruinedTemple, true);
   for (const side of [-1, 1]) assert.equal(canStand(cityPoint(side * (T.width / 2 - .45), T.b).x, cityPoint(side * (T.width / 2 - .45), T.b).z, world, B), false);
   assert.ok(canStand(cityPoint(0, back + .6).x, cityPoint(0, back + .6).z, world, B), '"visitors arriving overland enter from the back": the door is shut');
   // The temple's broad steps come up from the Lake Walk to its colonnade.

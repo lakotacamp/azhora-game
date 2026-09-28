@@ -3,7 +3,7 @@
  * small garrison there.
  *
  * Ambient conversation only: nobody here moves a quest. Most islanders speak
- * plainly and at their own speed; Jessi runs on workshop enthusiasm and slang.
+ * in the compressed Drentish of the pilot families: few words, concrete work.
  * The army speaks in orders and requisitions. Only Imperial soldiers wear army
  * armour, and soldiers are men by default.
  *
@@ -13,7 +13,6 @@
  * No render or DOM dependencies; the host supplies the dialogue box.
  */
 import { COBBLE_STANDS } from './peblos-world.js';
-import { IMANI } from './vineyard.js';
 
 const person = (id, name, role, modelRole, color, look = null, skin = undefined) =>
   Object.freeze({ id, name, role, modelRole, color, yaw: COBBLE_STANDS[id].yaw,
@@ -29,21 +28,16 @@ const soldier = (id, name, role, modelRole) =>
  * of 22 September 2026, and these four stand in their places.
  */
 export const PEBLOS_NPCS = Object.freeze([
-  // **Jessi**: a carriage-repair obsessive, with twelve ponytail colours and glasses.
-  person('cobble-jessi', 'Jessi', 'Carriage mechanic of Cobble', 'carriage-mechanic', 0x4d6f63,
-    { hair: 0x8c2f2a, hairColors: Object.freeze([0xc83d49, 0xed7139, 0xe7b343, 0xc5d94f,
-      0x54a653, 0x329b87, 0x4dc8cc, 0x4086cf, 0x5654a8, 0x9665c0, 0xc04496, 0xee8dac]),
-      hairStyle: 'long-tied', glasses: true, beard: false }),
-  // **Ari**: brown skin, long black curls and a violet dress. The village's own accountant, who keeps Cobble's books
-  // against the Empire's tally — and who was not where she says she was.
-  person('cobble-ari', 'Ari', 'Keeper of the village books', 'rise-custodian', 0x6a5f7d,
-    { hair: 0x1d1a18, hairStyle: 'long-curly', slight: true, dress: true,
-      beard: false, glasses: false, cloak: false, staff: false }, 0xa9713f),
-  // **Imani**: the vine keeper, in Cobble for kelp for Vaervelm Caelazh, and therefore the only
-  // person who was at the racks before light. She is the same woman who keeps the vines at the
-  // winery and she is built from the same entry (src/vineyard.js), so her skin and her green
-  // cannot drift from hers by somebody typing a second Imani out by hand.
-  person('cobble-imani', IMANI.name, 'Vine keeper, here for the kelp', IMANI.modelRole, IMANI.color, null, IMANI.skin),
+  // Brenna repairs salvaged hulls and refuses to flatter the mainland's tally.
+  person('cobble-boatwright', 'Brenna Vell', 'Boatwright of the Long Bars', 'bridge-keeper', 0xb07943,
+    { hair: 0xac5832, hairStyle: 'cropped', slight: true, beard: false, cloak: false, hat: false }, 0xcf9c71),
+  // Orren keeps written cargo accounts, never the pilotage his family teaches by eye.
+  person('cobble-ledgerkeeper', 'Orren Pell', 'Keeper of Cobble’s cargo books', 'rise-custodian', 0x38556e,
+    { hair: 0xc8c0aa, hairStyle: 'receding', beard: true, glasses: true,
+      glassesColor: 0xa98747, cloak: false, staff: false, hat: false }, 0xb78562),
+  // Sivra trades the kelp from Sorven. Her tied hair and reed basket form a narrow silhouette.
+  person('cobble-kelp-trader', 'Sivra Noll', 'Kelp trader from Sorven', 'reed-worker', 0x924957,
+    { hair: 0x241f1b, hairStyle: 'long-tied', slight: true, beard: false, hat: false, kelpBasket: true }, 0x79553d),
   // **Torven Oss**: he holds the weigh-beam, and he has held it a long time.
   person('cobble-weighmaster', 'Torven Oss', 'Weighmaster of the quay', 'commons-miller', 0x6f6657),
   soldier('peblos-decurion', 'Lieutenant Berold Ossan', 'Ambroni officer', 'legion-officer'),
@@ -56,22 +50,23 @@ export const PEBLOS_NPC_IDS = Object.freeze(PEBLOS_NPCS.map(npc => npc.id));
 export const PEBLOS_AMBIENT = Object.freeze({
   // **What each of them will say when they are only passing the time.** What they say about the
   // murder is Troy's quest and lives in src/murder-quest.js; this is the rest of them.
-  'cobble-jessi': Object.freeze([
-    'Yo, pal! Jessi. Carriage mechanic, axle goblin, certified wheel nerd. Got a clapped-out rattler? Bring that absolute wagon-shaped disaster here. We are so back, bud.',
-    'Bruv, a wonky spoke is sending the whole wheel sideways. That hub has zero chill. I will true the wheel, grease the axle, snug the linchpin, and have your carriage rolling buttery. No cap. That is my actual favourite thing.',
-    'New springs? Oh, we are cooking now, chief. Give me a carriage that goes clonk-clonk and an afternoon with my tools and I am living the dream. Absolute top-tier tinkering. Squeaks are cringe. A sweet-running axle? That slaps.',
-    'The hair? Twelve colours, mate. Maximum drip, full-spectrum nonsense, immaculate workshop vibes. The axle grease is a bonus colour. Very exclusive. You have to earn that one.',
-    'And, yeah, the whole quay is giving me the side-eye because I said I am not sorry about Bregga. Bestie, I said what I said. I can fix a busted carriage; I cannot put a polite little bow on a dodgy tally.',
+  'cobble-boatwright': Object.freeze([
+    'Brenna Vell. Boats, not promises. If the seam opens, bring it before the next tide.',
+    'A wreck belongs to the island that gets to it. That plank was a merchant’s rail. Now it keeps a fishing boat afloat. Better work for it.',
+    'My mother called the inlet from the bow. I mend the hulls she brings through. Follow her boat without hiring a pilot and you may bring me work too.',
+    'Bregga called our full loads short three weeks running. I said I was not sorry when she died. Cruel thing to say. Still said it. That does not mean I struck her.',
   ]),
-  'cobble-ari': Object.freeze([
-    'Ari. I keep the village’s books, which means I write down what we actually landed and then I read what the Empire says we landed, and then I have a think.',
-    'Two of those numbers have disagreed for years. Nobody wanted to hear it from a woman with a ledger, and now somebody is dead about it.',
-    'I like it up here. You can see a long way out, and you can see who is coming in.',
+  'cobble-ledgerkeeper': Object.freeze([
+    'Orren Pell. Cargo goes in the book. The bar does not. A written channel is yesterday’s channel; my grandchildren learn the water from the bow.',
+    'The Empire wants one barrel in five. It counts every barrel. I count them too. Counts agree. Weights do not. I have put that in writing twice.',
+    'Up here I can see the skerry. Sometimes people need a boat brought through quietly. No names. The water does not ask whose coat you wore.',
+    'We settle things together here. When the whole quay stops lending you rope, you tend to listen. A mainland court would take longer.',
   ]),
-  'cobble-imani': Object.freeze([
-    'Imani. I keep the vines at Vaervelm Caelazh, and the vines want kelp, and the kelp is here — so twice a year I am here, smelling of the sea and getting in everybody’s way.',
-    'They have been very kind to me and nobody has told me anything. I am the outsider, so I am the one it is safe to be kind to.',
-    'I am up before light for the racks. That is when the weed is heaviest and cheapest, and nobody else wants it.',
+  'cobble-kelp-trader': Object.freeze([
+    'Sivra Noll. Sorven. I bring kelp across the Stills, before the mainland buyers decide what it ought to cost.',
+    'Fresh water holds better under Sorven than the northern sands. My aunt moved her house twice. Never left the island. The island moved under her.',
+    'The racks are fullest before light. I sort the dry from the wet then. A buyer can cheat a stranger on weight; not on what is in her own hands.',
+    'They offer me a chair and tell me the weather. Kind people. Very careful kindness since the woman died.',
   ]),
   'cobble-weighmaster': Object.freeze([
     'Torven Oss. I hold the beam. Every barrel that goes off this quay goes across it first and I have written the number for eleven years.',

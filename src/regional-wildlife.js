@@ -1,4 +1,5 @@
 import { REGION_CELLS, SOLIS } from './region-world.js';
+import { ISCARE_WILDLIFE_ZONES } from './iscare-world.js';
 
 /** Small authored flocks for regions that had scenery but no ambient animals.
  * Reuse the existing western animal rigs and distance culling. Hex anchors follow
@@ -17,6 +18,7 @@ function habitat(region, id, species, q, r, count, note, options = {}) {
 }
 
 export const REGIONAL_WILDLIFE_ZONES = Object.freeze([
+  ...ISCARE_WILDLIFE_ZONES,
   habitat('West Suval', 'suval-inland-sheep', 'hill-sheep', 3, 114, 4,
     'A small flock grazes inland from the abandoned Shepherds Fold, away from Solis and the armies.', { dx: 22, dz: -24 }),
   habitat('West Suval', 'suval-downs-hares', 'upland-hare', 4, 115, 3,

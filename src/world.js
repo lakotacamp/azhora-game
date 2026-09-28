@@ -1,3 +1,5 @@
+import { createRegionalFarmlandScenery } from './regional-farmland-scenery.js';
+import { FARMSTEADS } from './regional-farmland.js';
 // `WATERLINE` is the line the predicates judge wet by; `waterAt` below answers it for the sea
 // and each river's own surface for a river (src/game-state.js). game-state imports nothing, so
 // there is no cycle here.
@@ -30,13 +32,17 @@ import { SOLIS_ROAD } from './region-world.js';
 import { WEST_SUVAL_LANDMARKS, SOLIS_ENCLOSURES, SOLIS_STREETS, WEST_SUVAL_SEA } from './west-suval.js';
 import { SOLIS_HARBOR, SOLIS_HARBOR_PATHS, solisHarborDeckHeight } from './solis-harbor.js';
 import { atticDeckHeight } from './wine-attic.js';
+import { createJesseCarriageScenery } from './jesse-carriage-scenery.js';
+import { jesseWorkshopClear } from './jesse-carriage-world.js';
 import { createBrandyYard } from './brandy-yard.js';
+import { createBrandyHomeScenery } from './brandy-home-scenery.js';
 import { createLighthouse } from './lighthouse-world.js';
 import { ELOD_LIGHT } from './rival-light.js';
 import { createSmugglersDoorScenery } from './smugglers-door-world.js';
 import { createWoodlot } from './woodlot-world.js';
 import { createHomestead } from './homestead-world.js';
 import { inKoopwood } from './woodcutting.js';
+import { forestTimber } from './wood-species.js';
 import { createWestSuvalScenery } from './west-suval-world.js';
 import { createWineryScenery } from './winery-world.js';
 import { buildBirdGarden, birdGardenSites, inBirdGarden } from './bird-garden.js';
@@ -54,12 +60,24 @@ import { buildRenaWorks } from './rena-works.js';
 import { EAST_SUVAL_PLACES, ELOD_STANDS, EAST_SUVAL_STANDS, ELOD_QUAY, ELOD_LANDING, quayHeight as elodQuayHeight } from './east-suval.js';
 import { createEastSuvalScenery } from './east-suval-world.js';
 import { createSouthSuvalScenery } from './south-suval-scenery.js';
+import { createEastLotharnScenery } from './east-lotharn-scenery.js';
+import { createFeradomScenery } from './feradom-scenery.js';
+import { feradomTerrainSink } from './feradom-world.js';
+import { FERADOM_LANDMARKS } from './feradom-forts.js';
+import { PASS_ROAD_LINE as LOTHARN_ROAD_LINE, WORKINGS_TRACK, EAST_LOTHARN_LANDMARKS, lotharnTerrainSink } from './east-lotharn-world.js';
+import { createCaves } from './east-lotharn-caves.js';
+import { createSuvalHighlandScenery } from './suval-highlands-scenery.js';
+import { BAT_CAVE, IMLAMDRIS_REBUILD, suvalHighlandTerrainSink } from './suval-highlands.js';
+import { createIscareScenery } from './iscare-scenery.js';
+import { ISCARE_RUIN_SITES } from './iscare-world.js';
 import { PASS_ROAD_LINE, SOUTH_SUVAL_LANDMARKS, SOUTH_SUVAL_CHART_WATERS, imlamdrisTerrainSink } from './south-suval-world.js';
 import { IZOL_LANDMARKS, IZOL_NPC_POSITIONS, IZOL_PATHS, IZOL_SEA, IZOL_QUAY, izolDeckHeight } from './izol-world.js';
 import { createIzolScenery } from './izol-scenery.js';
 import { drapeRoadOnTerrain, terrainRoadHeight } from './terrain-road.js';
+import { treeGroundingOffset } from './tree-grounding.js';
+import { brandyHomeClear, brandyHomeGround } from './brandy-home-world.js';
 import { ELAGOS_ROADS, AMBRON_ROAD, LAKE_ROAD, CALOSS_ELAGOS_ROAD, ELAGOS_LANDMARKS, ELAGOS_CHART_WATERS, inElagosWater } from './elagos-world.js';
-import { AMBRON_ENCLOSURE, ambronDeckHeight } from './ambron.js';
+import { AMBRON_ENCLOSURE, AMBRON_STREETS, ambronPoint, ambronDeckHeight } from './ambron.js';
 import { ELAGOS_NPC_POSITIONS } from './ambron-people.js';
 import { createElagosScenery } from './elagos-scenery.js';
 import { AMOD_ROAD, AMOD_NPC_POSITIONS, AMOD_LANDMARKS, tarvelDistance } from './amod-world.js';
@@ -124,7 +142,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     || pondPathDistance(x, z) < (tree ? 2.35 : 1.45)
     || [doomsayer, pondFisher, ...firePits].some(p => Math.hypot(x - p.x, z - p.z) < (tree ? 2.1 : 1.0))
     || firePits.some(p => Math.hypot(x - p.fireX, z - p.fireZ) < (tree ? 2.1 : 1.25))
-    || forestFeatureClear(x, z, tree) || drentFeatureClear(x, z, tree);
+    || forestFeatureClear(x, z, tree) || drentFeatureClear(x, z, tree)
+    || (p => brandyHomeClear(p.x, p.z, tree ? .8 : .1) || jesseWorkshopClear(p.x, p.z, tree ? 2.5 : .2))(villageToWorld(x, z));
   const encounter = { x: 0, z: -34, radius: 8 };
   const northTrail = { x: -5, z: -108, name: FERNWAY_REST.name };
   // Where Tidehaven's ground ends and the Avrel road begins. There was a gate on this line
@@ -221,13 +240,14 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   }
   /** World ground: the hex biomes, Tidehaven where it stands, the Caloss channel. */
   const avrelSurface = groundWithRiver(AVREL_POND.x, AVREL_POND.z) - 1.15;
-  function groundHeight(x, z) {
+  function rawGroundHeight(x, z) {
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight <= 0) return portCalosGround(x, z, avrelPondGround(x, z, groundWithRiver(x, z), avrelSurface));
     const village = localGround(local.x, local.z);
     if (weight >= 1) return village;
     return lerp(groundWithRiver(x, z), village, weight);
   }
+  function groundHeight(x, z) { return brandyHomeGround(x, z, rawGroundHeight); }
   pond.surfaceY = villageBase(pond.x, pond.z) - .55;
   pond.castPoint.y = pond.surfaceY + .035;
   const pondWorld = villageToWorld(pond.x, pond.z);
@@ -439,7 +459,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
     // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
     // src/south-suval-scenery.js); the coarse grid is sunk out of sight beneath them.
-    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z), z], index * 3);
+    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - feradomTerrainSink(x, z), z], index * 3);
     groundTint(color, x, z, THREE);
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight > 0) {
@@ -1093,13 +1113,20 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const canopyMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), material('#ffffff', { flatShading: true }), broadTrees.length * 4);
   const pineMesh = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 7), material('#ffffff', { flatShading: true }), pineTrees.length * 3);
   let broadIndex = 0, pineIndex = 0;
+  const treeGroundAt = (x, z) => terrainRoadHeight(x, z, terrainXs, terrainZs, terrainPositions, 0);
   trees.forEach((tree, i) => {
-    const { x, z, s, h, rot } = tree, y = localGround(x, z), th = h * s;
+    const { x, z, s, h, rot } = tree, th = h * s;
+    let y = localGround(x, z);
     // Hidden trees keep their index, so oak ids, acorns and squirrel homes never shuffle.
     tree.hidden = featureClear(x, z, true) || forestFeatureClear(x, z, true, th * .52)
-      || (spot => landDistance(spot.x, spot.z) < 3 || inKoopwood(spot.x, spot.z, 2.5))(villageToWorld(x, z));   // and none in Bowden's woodlot but his own
+      || (spot => landDistance(spot.x, spot.z) < 3 || inKoopwood(spot.x, spot.z, 2.5) || brandyHomeClear(spot.x, spot.z, th * .35))(villageToWorld(x, z));   // and none in Bowden's woodlot but his own
     dummy.position.set(x, y + th * .41, z); dummy.rotation.set(range(-.025, .025), rot, range(-.025, .025));
-    dummy.scale.set(s, th * .82, s); if (tree.hidden) dummy.scale.setScalar(0); dummy.updateMatrix(); trunkMesh.setMatrixAt(i, dummy.matrix);
+    dummy.scale.set(s, th * .82, s); dummy.updateMatrix();
+    // The local height field diverges from the blended, triangulated hillside near
+    // Saltwind. Seat the actual tilted trunk footprint on those visible triangles.
+    const grounding = treeGroundingOffset(dummy.matrix, treeGroundAt, { toWorld: villageToWorld });
+    y += grounding; tree.groundY = y; dummy.position.y += grounding;
+    if (tree.hidden) dummy.scale.setScalar(0); dummy.updateMatrix(); trunkMesh.setMatrixAt(i, dummy.matrix);
     const axis = new THREE.Vector3(0, 1, 0).applyEuler(dummy.rotation);
     const base = villageToWorld(x - axis.x * th * .41, z - axis.z * th * .41);
     tree.trunk = { axis: [axis.z, axis.y, -axis.x], base: { x: base.x, y: y + th * .41 - axis.y * th * .41, z: base.z } };
@@ -1135,7 +1162,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       leaf.userData.passable=true;
     }
     colliders.push({...spot,r:radius,kind:'avrel-edge-tree'});
-    return {id:`avrel-edge-${i}`,...spot,y,height,radius,trunkHeight:height*.82,trunkTopRadius:.19,
+    return {...forestTimber(false),harvestable:false,id:`avrel-edge-${i}`,...spot,y,height,radius,trunkHeight:height*.82,trunkTopRadius:.19,
       axis:[0,1,0],base:{...spot,y}};
   });
 
@@ -1224,6 +1251,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   measurePath(AMBRON_ROAD, 4.6); measurePath(LAKE_ROAD, 3.6); for (const track of ELAGOS_ROADS.slice(2)) measurePath(track, track === CALOSS_ELAGOS_ROAD ? 4.2 : 2.6);
   for (const path of PORT_CALOS_PATHS) measurePath(path.points, path.width);
   for (const spur of roadSpurs) measurePath(spur, 2.2);
+  measurePath(LOTHARN_ROAD_LINE, 4.4);
+  measurePath(WORKINGS_TRACK, 2.2);
   measurePath(PASS_ROAD_LINE, 4.2);   // Imlamdris's road through the hill pass (src/south-suval-world.js)
   for (const path of REGIONAL_PATHS) measurePath(path, 1.85);
   measurePath(SYLVIA_PATH.points, SYLVIA_PATH.width);
@@ -1280,6 +1309,14 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     root: world, material, mesh, box, post, pebble, wornPatch,
     groundHeight, colliders, dummy, color, cylinder, round, roofGeometry,
   });
+  const suvalHighlands = createSuvalHighlandScenery({ root: world, material, mesh, box, post, round, groundHeight, colliders, roofGeometry, wornPatch });
+  const iscare = createIscareScenery({ root: world, material, mesh, box, post, pebble, groundHeight, colliders, round, wornPatch });
+  const lotharnCaves = createCaves(groundHeight);
+  const feradom = createFeradomScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
+  const eastLotharn = createEastLotharnScenery({
+    root: world, material, mesh, box, post, pebble, wornPatch,
+    groundHeight, colliders, dummy, color, cylinder, round, roofGeometry, caves: lotharnCaves,
+  });
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
   const westSuval = createWestSuvalScenery({ root: world, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
     wood, woodLight, darkWood, cream, movingGroups, roadDistance, sign: roadsideSign, signs, barrel });
@@ -1292,6 +1329,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // Elagos and Ambron (src/elagos-scenery.js): the lakes, the walled city on the narrows, and the lake country.
   const elagos = createElagosScenery({ parent: world, heightAt: groundHeight, colliders, signs, roadDistance });
   bridgeDecks.push(elagos.bridge);
+  const regionalFarmland = createRegionalFarmlandScenery({root:world,groundHeight,colliders});
   signs.direction({ x: -658, z: 176, label: 'Elagos', toward: CALOSS_ELAGOS_ROAD[1],
     backLabel: 'Nothom', back: MAIN_ROAD[22], parent: world });
   // The four western regions (src/west-regions-scenery.js): their water, their gravel,
@@ -1305,7 +1343,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // The three Renas: the razed town at Drent's centre, Applegarth, and Rena's own wayside (src/rena-works.js).
   buildRenaWorks({ parent: world, heightAt: groundHeight, colliders, signs, roadDistance });
   // Brandy Frank's dye yard, on the lane up to Saltwind Lookout (src/brandy-yard.js).
+  const jesseCarriage=createJesseCarriageScenery({parent:world,heightAt,colliders,movingGroups});
   createBrandyYard({ parent: world, material, mesh, box, post, round, cylinder, heightAt, colliders, signs });
+  const brandyHome = createBrandyHomeScenery({ parent: world, cottage, material, mesh, box, post, round, cylinder, heightAt: groundHeight, colliders });
   // The two lights of this coast (src/lighthouse-world.js): Addison's on the West Suval head
   // south of the winery lane, and her sister's across the water on the head below Elod, which
   // is taller, blacker, and has a derrick over the cliff for bringing up what the sea leaves.
@@ -1333,8 +1373,22 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     }
     paths.push(Object.assign(line, { kind: 'road', width: street.width }));
   }
+  // Ambron draws its paving in its own scenery. Navigation uses the same lanes.
+  for (const street of AMBRON_STREETS) {
+    const line=[];
+    for(let i=1;i<street.points.length;i++){
+      const a=ambronPoint(street.points[i-1].a,street.points[i-1].b),b=ambronPoint(street.points[i].a,street.points[i].b);
+      const steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/3));
+      if(i===1)line.push(a);
+      for(let k=1;k<=steps;k++)line.push({x:a.x+(b.x-a.x)*k/steps,z:a.z+(b.z-a.z)*k/steps});
+    }
+    paths.push(Object.assign(line,{kind:'road',width:street.width}));
+  }
   for (const line of SOLIS_HARBOR_PATHS) paths.push(Object.assign(line.map(p => ({ ...p })), { kind: 'road', width: 3 }));
   for (const spur of roadSpurs) addPath(spur, 2.2);
+  // Keep the main road first: autoplay uses paths[0]. This new coastal approach
+  // is an ordinary narrow walking route for Jon and for visitors to the cottage.
+  paths.push(brandyHome.path);
   // Tidehaven's own lanes and woodland spurs stay in the village's frame.
   function addLocalPath(points, width, kind = 'trail') {
     const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p.x, 0, p.z)));
@@ -1367,6 +1421,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   addPath(FOREST_HIDEOUT.trail.map(p => hideoutToWorld(p.x, p.z)), 1.85);
   addPath(PUETH_ROAD, 4.2);
   addPath(PASS_ROAD_LINE, 4.2);
+  addPath(LOTHARN_ROAD_LINE, 4.4);
+  addPath(WORKINGS_TRACK, 2.2);
+  paths.push(...suvalHighlands.paths);
   addPath(AMOD_ROAD, 4.2);
   addPath(HIDEOUT_APPROACH_TRAIL, 1.85);
   addPath(RENA_ROAD, 2.6);
@@ -1809,8 +1866,15 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     if (!colliderIndex || indexedFor !== colliders.length) { colliderIndex = createColliderGrid(colliders); indexedFor = colliders.length; }
     return colliderIndex;
   };
+  const villageTimber = (list, prefix) => list.flatMap((tree, i) => {
+    if (tree.hidden) return [];
+    const spot = villageToWorld(tree.x, tree.z);
+    return [{ ...forestTimber(tree.pine), harvestable: false, id: `${prefix}-${i}`, x: spot.x, z: spot.z, y: tree.groundY, height: tree.h * tree.s,
+      radius: .38 * tree.s, trunkHeight: tree.h * tree.s * .82, trunkTopRadius: .21 * tree.s, ...tree.trunk }];
+  });
+  const villageBroadleafTrees = villageTimber(broadTrees, 'oak').concat(avrelEdgeTrees);
   const api = {
-    heightAt,
+    heightAt, groundHeight, lotharnCaves,
     roadSurfaceMetrics,
     mapWaters,
     mapBridges: bridgeDecks,
@@ -1819,6 +1883,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     woodlot,
     /** The traveler's house and the birdhouse posts, built as Construction goes (src/homestead-world.js). */
     homestead,
+    jesseCarriage,
+    brandyHome,
     /** The burial ground at the Lauvel, whose open grave is filled in if Sela's son is found (src/lauvel-burying.js). */
     lauvelField: regionScenery.lauvelField,
     /** The colliders that could reach within `reach` of a point; see src/collider-grid.js. */
@@ -1880,6 +1946,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     lakeRoute: LAKE_ROAD.map(p => ({ x: p.x, z: p.z })),
     elagosMetrics: elagos.metrics,
     southSuvalMetrics: southSuval.metrics,
+    eastLotharnMetrics: eastLotharn.metrics,
+    feradomMetrics: feradom.metrics,
+    farmlandMetrics: regionalFarmland.metrics, farmsteads: FARMSTEADS,
+    suvalHighlandMetrics: suvalHighlands.metrics,
+    iscareMetrics: iscare.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
     puethMetrics: puethScenery.metrics,
@@ -1967,12 +2038,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     // Actual country trunks for wildlife homes. Kept separate so the village's
     // existing flora, acorn and mushroom site IDs do not shift.
     regionalBroadleafTrees: regionScenery.broadleafTrees,
-    broadleafTrees: broadTrees.flatMap((tree, i) => {
-      if (tree.hidden) return [];
-      const spot = villageToWorld(tree.x, tree.z);
-      return [{ id: `oak-${i}`, x: spot.x, z: spot.z, y: localGround(tree.x, tree.z), height: tree.h * tree.s,
-        radius: .38 * tree.s, trunkHeight: tree.h * tree.s * .82, trunkTopRadius: .21 * tree.s, ...tree.trunk }];
-    }).concat(avrelEdgeTrees),
+    broadleafTrees: villageBroadleafTrees,
+    timberTrees: [...villageBroadleafTrees, ...villageTimber(pineTrees, 'pine'), ...regionScenery.timberTrees],
     ringBell(time = worldTime) { bellStarted = time; },
     /**
      * The arrival boat, for the opening sequence (src/opening-sequence.js): world metres and a world
@@ -2027,6 +2094,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...WEST_SUVAL_LANDMARKS,
       ...ELAGOS_LANDMARKS,
       ...SOUTH_SUVAL_LANDMARKS,
+      ...EAST_LOTHARN_LANDMARKS,
+      ...FERADOM_LANDMARKS,
+      { id: 'hollow-ridge-refuge', name: 'The Hollow Ridge', ...BAT_CAVE.entrance, radius: 15, description: 'A narrow worn ledge disappears behind a limestone spur. The wind sounds like wings inside the hollow.' },
+      { id: 'imlamdris-rebuilding', name: 'Imlamdris rebuilding', ...IMLAMDRIS_REBUILD.centre, radius: 30, description: 'Four timber roofs and a fifth frame stand beside the old city, built from salvaged stone and new-cut boards.' },
+      ...ISCARE_RUIN_SITES.map(site => ({ ...site, description: site.id === 'zecron-ruins' ? 'The Blood Prince burned this island port. Roofless houses, a broken lighthouse and burned quay piles remain; nobody lives here.' : 'A small island settlement burned in the Blood Prince\'s passage. Wildlife lives among the fallen rafters.' })),
       ...WEST_REGION_LANDMARKS,
     ],
     paths,
@@ -2042,6 +2114,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       regionScenery.riverMaterial.uniforms.time.value = time;
       elagos.waterMaterial.uniforms.time.value = time;
       westScenery.update(time);
+      eastLotharn.update(time);
       regionScenery.millSails.rotation.z = time * .115;
       for (const [i, camp] of [...campfires.values()].entries()) if (camp.fire.lit) {
         camp.flames.scale.set(1 + Math.sin(time * 8 + i) * .04, .94 + Math.sin(time * 11 + i) * .10, 1);

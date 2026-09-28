@@ -2,7 +2,7 @@ import { roadRoute } from './autopilot.js';
 import { CALOSS_ELAGOS_ROAD, OSSEN_TRACK } from './elagos-world.js';
 import { FERRY_LANDINGS } from './ferry.js';
 import { QUEST_HOMES } from './quest-homes.js';
-import { AMBRON } from './region-world.js';
+import { inAmbronOutline } from './ambron-city-layout.js';
 import { BODY, stepToward } from './bodies.js';
 
 const point = p => ({ x: p.x, z: p.z });
@@ -62,12 +62,13 @@ export function homeReturnQuayRoute(world, from) {
 export function homeReturnRoute(world, id, from, residence = QUEST_HOMES[id]) {
   if (!residence) return [];
   if (distance(from, residence.door) < 9) return [point(residence.door)];
-  // A restored walker inside the city must continue from the street they have
-  // already reached. In particular, the west bank is reached over the actual
-  // causeway deck; routing back to the east gate would undo that crossing.
-  if (Math.abs(from.x - AMBRON.centre.x) < AMBRON.halfA - 2
-    && Math.abs(from.z - AMBRON.centre.z) < AMBRON.halfB - 2)
-    return remainingStreet(from, residence.route);
+  // The shoreline city is concave. Its bounding rectangle includes countryside
+  // outside the walls, so only actual indoor streets can skip the gate approach.
+  if (inAmbronOutline(from.x, from.z)) {
+    const remaining = remainingStreet(from, residence.route);
+    const join = roadRoute(world.paths, from, remaining[0]);
+    return dedupe([...(join ?? []), ...remaining]);
+  }
   const gate = OSSEN_TRACK[0];
   let approach = roadRoute(world.paths, from, gate);
   if (id === 'ben-sorcerer' && distance(from, BEN_HOME_ROAD_JOIN[0]) < 65) {

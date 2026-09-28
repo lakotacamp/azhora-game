@@ -11,9 +11,13 @@ import {
 import { PUETH_RIVERS, TESSEN, TESSEN_BRIDGE, nearestPuethRiver } from './pueth-world.js';
 import { elagosGround } from './elagos-world.js';
 import { southSuvalGround } from './south-suval-world.js';
+import { eastLotharnGround } from './east-lotharn-world.js';
+import { feradomGround, feradomSeam } from './feradom-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { wineryGround } from './winery.js';
+import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
+import { iscareGround } from './iscare-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const smooth = (a, b, x) => { const v = clamp((x - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
@@ -70,7 +74,8 @@ function padded(x, z, natural) {
     const outside = Math.max(Math.abs(x - pad.x) - pad.halfX, Math.abs(z - pad.z) - pad.halfZ, 0);
     if (outside >= pad.feather) continue;
     const plane = pad.level + (x - pad.x) * pad.slopeX + (z - pad.z) * pad.slopeZ;
-    const strength = (1 - smooth(0, pad.feather, outside)) * (pad.shore ? smooth(-.2, 1.7, natural) : 1);
+    const shapeWeight = pad.weightAt ? pad.weightAt(x, z) : 1 - smooth(0, pad.feather, outside);
+    const strength = shapeWeight * (pad.shore ? smooth(-.2, 1.7, natural) : 1);
     height = lerp(height, plane, strength);
   }
   return height;
@@ -223,6 +228,11 @@ function bridgeEmbankment(x, z, ground) {
 
 /** Ground with the river channels cut, before any deck or pier override. */
 export function groundWithRiver(x, z) {
+  // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
+  return feradomGround(x, z, groundBeforeFeradom(x, z), groundBeforeFeradom);
+}
+
+export function groundBeforeFeradom(x, z) {
   const bedrock = bedrockHeight(x, z), distance = calossDistance(x, z);
   let ground = distance < CALOSS_BANK_DISTANCE ? calossChannel(x, z, bedrock) : bedrock;
   ground = calossEmbankment(x, z, ground);
@@ -246,7 +256,9 @@ export function groundWithRiver(x, z) {
   // (src/west-ground.js). South Suval cuts the Stillwater to its own level and lays
   // Imlamdris's terraces on the slope above it (src/south-suval-world.js). None of the four
   // boxes overlaps another, nor the winery's (src/winery.js), which is in its own hex at Port Calos.
-  return southSuvalGround(x, z, wineryGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))));
+  // Lotharn's valleys are cut before western water; level the pass road and made places afterward.
+  // Keep the Suval climbing landscape and Iscare ground, then blend Feradom's inland seam.
+  return feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -263,6 +275,22 @@ export function groundTint(color, x, z, THREE) {
   }
   if (total) { target.r /= total; target.g /= total; target.b /= total; }
   color.copy(target);
+  const suval = (mix.weights['West Suval'] ?? 0) + (mix.weights['South Suval'] ?? 0) + (mix.weights['East Suval'] ?? 0);
+  if (suval > .01) {
+    // Broad heath and grass patches read as hills from the air. Bare limestone
+    // follows the steep, exposed shoulders instead of painting every peak alike.
+    const patch = .5 + .5 * Math.sin(x * .021 + Math.sin(z * .012) * 1.6) * Math.cos(z * .018 - x * .009);
+    swatch.set('#798768'); color.lerp(swatch, suval * (.08 + patch * .18));
+    if (x > -625 && x < 65 && z > 555 && z < 1215) {
+      const rise = suvalLandformRise(x, z);
+      if (rise > 5) {
+        const slope = Math.hypot(suvalLandformRise(x + 2, z) - suvalLandformRise(x - 2, z),
+          suvalLandformRise(x, z + 2) - suvalLandformRise(x, z - 2)) / 4;
+        const bare = smooth(5, 28, rise) * smooth(.4, 1.35, slope) * .58 + smooth(70, 125, rise) * .22;
+        swatch.set('#989485'); color.lerp(swatch, bare * suval);
+      }
+    }
+  }
   color.lerp(new THREE.Color('#cdb98a'), 1 - smooth(1, 15, distance));
   return color;
 }

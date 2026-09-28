@@ -16,9 +16,9 @@ function home(npcId, name, buildingId, { porch, mailbox } = {}) {
   const facade = point(frontA, frontB), door = point(frontA + dx * 1.1, frontB + dz * 1.1);
   const entry = point(frontA + dx * 5, frontB + dz * 5);
   const stand = porch ?? point(frontA + dx * 2.5, frontB + dz * 2.5);
-  const street = building.a < 0
-    ? [point(56, -6), point(34, -6), point(34, 0), point(-34, 0), point(-34, -6), point(-58, -6), point(-58, building.b)]
-    : [point(56, -6), point(56, frontB + dz * 5)];
+  const street = [point(115,132),point(120,120),point(70,120),point(0,120),point(-20,110),
+    ...(building.a < -50 ? [point(-20,77),point(-68,77),point(-68,building.b)]
+      : [point(-20,80),point(-5,35),point(-5,-42),point(building.a,-42)])];
   return Object.freeze({
     npcId, name, homeId: `${name.toLowerCase()}-home`, buildingId,
     facade, door, porch: stand, entry, routeEndpoint: door,
@@ -31,7 +31,7 @@ function home(npcId, name, buildingId, { porch, mailbox } = {}) {
 
 // Cagney's quest destination and mailbox remain exactly where they already were.
 export const CAGNEY_RESIDENCE = home('cagney', 'Cagney', 'clerks-house', {
-  porch: CAGNEY_HOME, mailbox: point(86.8, -36.55),
+  porch: CAGNEY_HOME, mailbox: point(28.8, -40.55),
 });
 export const BEN_HOME = home('ben-sorcerer', 'Ben', 'house-ne');
 export const TROY_HOME = home('bee-keeper', 'Troy', 'poor-row-1');

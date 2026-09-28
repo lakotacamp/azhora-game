@@ -1,6 +1,6 @@
 /** A journal index: reading a quest is separate from choosing a tracked objective. */
 const STATUSES = ['active', 'complete', 'note'];
-const TYPES = { main: { label: 'Main quest', grade: 'main', order: 0 }, secondary: { label: 'Secondary quest', grade: 'plot', order: 1 }, tertiary: { label: 'Tertiary quest', grade: 'deed', order: 2 } };
+const TYPES = { main: { label: 'Main quest', grade: 'main', order: 0 }, secondary: { label: 'Secondary quest', grade: 'plot', order: 1 }, tertiary: { label: 'Tertiary quest', grade: 'deed', order: 2 }, skill: { label: 'Skill training', grade: 'skill', order: 3 } };
 const STATUS_LABELS = { active: 'Active', complete: 'Completed', note: 'Notes' };
 const text = value => typeof value === 'string' ? value.trim() : '';
 const notesText = value => Array.isArray(value) ? value.map(text).filter(Boolean).join('\n\n') : text(value);
@@ -12,7 +12,7 @@ export function normalizeJourneyEntries(source = []) {
   return (Array.isArray(source) ? source : []).flatMap(entry => {
     if (!entry || !text(entry.id) || !text(entry.title) || !STATUSES.includes(entry.status) || seen.has(entry.id)) return [];
     seen.add(entry.id);
-    const type = Object.hasOwn(TYPES, entry.type) ? entry.type : 'tertiary';
+    const type = Object.hasOwn(TYPES, entry.type) ? entry.type : entry.grade === 'skill' ? 'skill' : 'tertiary';
     return [Object.freeze({
       id: entry.id, title: text(entry.title), type, grade: TYPES[type].grade, status: entry.status,
       detail: text(entry.detail), objective: text(entry.objective), region: text(entry.region), kicker: text(entry.kicker),

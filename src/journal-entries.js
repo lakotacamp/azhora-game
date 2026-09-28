@@ -1,9 +1,9 @@
 /** A journal is a record of the player's experiences, not a catalogue of future content. */
-import { BRIDGE_QUEST, CLOSED, LIVE, questLive } from './quest-slate.js';
+import { BRIDGE_QUEST, CLOSED, LIVE, RETIRED, questLive } from './quest-slate.js';
 
 const gates = new Set([...LIVE, ...CLOSED]);
-const types = new Set(['main', 'secondary', 'tertiary']);
-const grades = { main: 'main', secondary: 'plot', tertiary: 'deed' };
+const types = new Set(['main', 'secondary', 'tertiary', 'skill']);
+const grades = { main: 'main', secondary: 'plot', tertiary: 'deed', skill: 'skill' };
 const unstarted = new Set(['unmet', 'asked', 'offered', 'not-started']);
 const unresolvedEndings = new Set(['abandoned', 'failed', 'lost', 'closed']);
 const completed = entry => entry?.complete === true || ['complete', 'done', 'paid', 'taught'].includes(entry?.stage);
@@ -17,13 +17,13 @@ function copy(value) {
 }
 
 function allowed(entry, live) {
-  if (!entry || entry.enabled === false) return false;
+  if (!entry || entry.enabled === false || RETIRED.includes(entry.slateId ?? entry.id)) return false;
   const gate = entry.slateId ?? (gates.has(entry.id) ? entry.id : null);
   return !gate || live(gate);
 }
 
 function typeFor(entry, fallback = 'tertiary') {
-  return types.has(entry.type) ? entry.type : entry.grade === 'main' ? 'main' : entry.grade === 'plot' ? 'secondary' : fallback;
+  return types.has(entry.type) ? entry.type : entry.grade === 'main' ? 'main' : entry.grade === 'plot' ? 'secondary' : entry.grade === 'skill' ? 'skill' : fallback;
 }
 
 function entryView(source, status, fallbackType) {
@@ -45,7 +45,7 @@ function entryView(source, status, fallbackType) {
  * its next stage, or enumerates content from another region. `live` mirrors the quest slate.
  */
 export function buildJournalEntries({ tracker = {}, mainSteps = [], completedChapters = [],
-  bridge = null, spider = null, murder = null, cat = null, burying = null, vastos = null, drent = null, notes = [], live = questLive } = {}) {
+  bridge = null, spider = null, murder = null, cat = null, batman = null, burying = null, vastos = null, drent = null, notes = [], live = questLive } = {}) {
   const entries = [], ids = new Set();
   function add(entry) {
     if (typeof entry?.id !== 'string' || !entry.id || typeof entry.title !== 'string' || !entry.title || ids.has(entry.id)) return;
@@ -92,6 +92,13 @@ export function buildJournalEntries({ tracker = {}, mainSteps = [], completedCha
     // Such events belong in explicit discovered notes, never a magically updated quest archive.
     if (!ending.state || !['paid', 'taught'].includes(ending.state.stage) || !allowed({ ...ending.state, id: ending.id }, live)) continue;
     add(entryView({ id: ending.id, title: ending.title, type: ending.type, detail: ending[ending.state.stage] }, 'complete'));
+  }
+
+  if (batman && allowed({ ...batman, id: 'batman-suval' }, live) && (batman.stage === 'complete' || batman.bounty === 'paid')) {
+    add(entryView({ id: 'batman-suval', title: 'A Kindness with Wings', type: 'secondary', region: 'Suval',
+      detail: batman.bounty === 'paid'
+        ? 'You killed the winged vigilante and brought his head to Officer Verradross for the bounty.'
+        : 'The vigilante carried you over Suval and showed you the devastation of the Blood Prince. You learned the beginnings of Flying, charted the three regions, and landed safely beside the eastern border.' }, 'complete'));
   }
 
   if (vastos && allowed({ ...vastos, id: 'civil-war-vastos' }, live) && completed(vastos)) {

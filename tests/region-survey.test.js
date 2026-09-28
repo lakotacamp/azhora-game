@@ -27,7 +27,7 @@ test('the baked survey is exactly what the atlas says, and has not drifted', () 
     'src/region-survey.js is stale: run `node scripts/build-region-survey.mjs`');
 });
 
-test('the baked survey carries the four playable regions and the land around them', () => {
+test('the baked survey carries every playable region and the land around them', () => {
   assert.deepEqual(PLAYABLE_SURVEY.regions.map(region => region.name), PLAYABLE);
   assert.deepEqual(SURVEY_ORIGIN, atlas.origin);
   for (const name of PLAYABLE) {

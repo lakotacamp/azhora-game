@@ -569,11 +569,11 @@ export function onCliffFoot(x, z) {
 const hillPass = PASS_ROAD[3];   // the saddle
 export const SOUTH_SUVAL_LANDMARKS = freeze([
   freeze({ id: 'imlamdris', name: 'Imlamdris', ...cityPoint(0, 45), radius: 58,
-    description: 'The oldest city on the peninsula, on the Stillwater’s north-east shore: terraces of pale stone climbing from the water to the Star Terrace, wide streets, low tiled roofs, and every door and window turned to the lake. No harbour. Its trade comes in by road, through the hill pass and the gate at the back.' }),
+    description: 'The oldest city on the peninsula was razed by the Blood Prince. Roofless ashlar shells and charred beams follow the old terraced streets above the Stillwater. Four small timber homes and a new frame stand beside the ruins as rebuilding begins.' }),
   freeze({ id: 'stillwater', name: 'The Stillwater', ...STILLWATER.centre, radius: 50,
     description: 'The only lake on the peninsula, fed by springs from below and not by any river. It does not run dry. Grey-green in the morning mist, blue in the afternoon, black at night; reed round the open shore and stone along the city’s.' }),
   freeze({ id: 'stillwater-temple', name: 'The Stillwater Temple', x: STILLWATER_TEMPLE.x, z: STILLWATER_TEMPLE.z,
-    description: 'A long hall on the terrace above the water, open on its lake side behind a colonnade and closed on the other three. It keeps the peninsula’s archive of astronomical records. Visitors arriving overland come in by the door at the back.' }),
+    description: 'The Stillwater Temple is a roofless shell: broken columns face the lake, burned rafters lie across the floor, and a blast breach opens the back wall. Some of the old astronomical archive was rescued; the building has not been restored.' }),
   freeze({ id: 'star-terrace', name: 'The Star Terrace', x: STAR_TERRACE.gnomon.x, z: STAR_TERRACE.gnomon.z,
     description: 'The top of the city: open paving, a gnomon and a half-ring of sighting stones turned to the southern sky over the lake, and a stone table for the night’s record. The inland hills are far from the coastal haze.' }),
   freeze({ id: 'landward-gate', name: 'The Landward Gate', x: LANDWARD_GATE.x, z: LANDWARD_GATE.z,

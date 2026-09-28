@@ -13,16 +13,12 @@
  * do not add up to a murder — and the fourth person, who is not a suspect at all, is the only one
  * they can add up to.
  *
- *   **Jessi**   repairs carriages. The full barrel loads carried from the boats were called
- *               light three weeks running. They think Bregga was covering for the short
- *               weights and are not sorry Bregga is dead, which they say plainly.
- *   **Ari**     the village's own accountant, who keeps Cobble's books against the Empire's
- *               tally. She will not say where she was that night, because she was out at the
- *               rocky skerry with men who mutinied off Ed the Word's ship, and that is a hanging
- *               matter on its own. Her evasion is the red herring and it does all the work.
- *   **Imani**   in Cobble for kelp for the vineyard, and therefore at the drying racks before
- *               light, and therefore the only person who saw somebody at the weigh-beam in the
- *               dark. She does not know that is unusual. Nobody thought to ask the outsider.
+ *   Brenna Vell repairs salvaged fishing boats. Her full loads were weighed short;
+ *   she spoke cruelly about Bregga, but was mending a hull with witnesses that night.
+ *   Orren Pell keeps cargo ledgers. His family teaches pilotage by eye, never in a
+ *   book. He hides a visit to deserters on the skerry, not a visit to the crime scene.
+ *   Sivra Noll brings kelp from Sorven. At the racks before dawn, she saw a lamp
+ *   under Torven's beam before there was any cargo to weigh.
  *
  * **Torven Oss** holds the beam. The boats were coming in light because the *weights* were light,
  * not the counts — he had been shaving the barrels for years — and Bregga's tally had finally got
@@ -51,26 +47,32 @@ export const VICTIM = Object.freeze({ name: 'Bregga Sell', was: 'net-mistress of
  * out of them by asking, if you ask the right way. Mind makes it quicker and kinder, not possible.
  */
 export const TESTIMONY = Object.freeze({
-  'cobble-jessi': Object.freeze({
-    id: 'cobble-jessi', name: 'Jessi',
-    says: 'Mate, I fix the carriages hauling those barrels off the quay. Three weeks straight: full loads, same boats, and Bregga kept saying they came in light. Bruv, that tally was cooked. Proper dodgy. Am I sorry? Nah. I am not going to cap about it.',
-    reading: 'They are checking the carriage deliveries again: three weeks of full barrels from the boats, and every load weighed short at the beam. Nothing had fallen off a carriage. The missing weight was on the quay.',
+  'cobble-boatwright': Object.freeze({
+    id: 'cobble-boatwright', name: 'Brenna Vell',
+    says: 'I patched those hulls myself. Same boats, full barrels, no leaks. Three weeks running the loads weighed short on Torven’s beam. Bregga wrote them short. I thought she was helping him. No, I was not sorry. That is all I did: say it.',
+    reading: 'She checks each repaired hull in her mind: full barrels, no water in the bilge, no cargo lost between boat and quay. The missing weight began at the weigh-beam.',
     gives: 'light-boats',
   }),
-  'cobble-ari': Object.freeze({
-    id: 'cobble-ari', name: 'Ari',
-    says: 'I keep the village’s books against theirs. The counts have matched for years. It is the weights that have not, and I have said so in writing twice.',
-    reading: 'She is not thinking about the books at all. She is thinking about a rocky little island with a boat behind it, and whether you are the sort of person who asks.',
+  'cobble-ledgerkeeper': Object.freeze({
+    id: 'cobble-ledgerkeeper', name: 'Orren Pell',
+    says: 'I keep the village’s cargo books against the Empire’s tally. The counts have matched for years. The weights have not. Bregga came asking for my old columns two days before she died. I gave them to her.',
+    reading: 'He is not thinking about the books. He is thinking about the skerry, a boat tucked behind it, and the men who deserted Ed the Word’s ship. He brought them water that night. Naming them would turn one investigation into a hanging.',
     gives: 'weights-not-counts',
   }),
-  'cobble-imani': Object.freeze({
-    id: 'cobble-imani', name: 'Imani',
-    says: 'I am here for kelp, so I am at the racks before it is light. There was a man at the weigh-beam that morning with a lamp. I assumed that was when it is done.',
-    reading: 'She is going back over it and getting to the same place: the lamp was under the beam, not over the barrels. You do not need a lamp under a beam to weigh anything.',
+  'cobble-kelp-trader': Object.freeze({
+    id: 'cobble-kelp-trader', name: 'Sivra Noll',
+    says: 'I came from Sorven for the kelp. Before light is best at the racks. A man had a lamp under the weigh-beam that morning. Not over the barrels. Under the beam, where the little weights hang. Thought it was his work.',
+    reading: 'She sees the lamp again, low under the beam, and a hand at the weights. The barrels had not been brought down yet. There was nothing to weigh.',
     gives: 'lamp-under-the-beam',
   }),
 });
 export const WITNESS_IDS = Object.freeze(Object.keys(TESTIMONY));
+export const LEGACY_WITNESS_IDS = Object.freeze({
+  'cobble-jessi': 'cobble-boatwright',
+  'cobble-ari': 'cobble-ledgerkeeper',
+  'cobble-imani': 'cobble-kelp-trader',
+});
+const currentWitnessId = id => LEGACY_WITNESS_IDS[id] ?? id;
 
 /** The three things that have to be in hand before the fourth name is the only one left. */
 export const CLUES = Object.freeze(['light-boats', 'weights-not-counts', 'lamp-under-the-beam']);
@@ -98,7 +100,8 @@ export function validateMurderQuestSnapshot(value) {
   if (!value || typeof value !== 'object' || value.version !== MURDER_QUEST_VERSION) return false;
   if (!STAGES.includes(value.stage)) return false;
   if (!listOf(value.heard, [...CLUES])) return false;
-  if (!listOf(value.accused, [...WITNESS_IDS, MURDERER])) return false;
+  if (!listOf(value.accused, [...WITNESS_IDS, ...Object.keys(LEGACY_WITNESS_IDS), MURDERER])) return false;
+  if (new Set(value.accused.map(currentWitnessId)).size !== value.accused.length) return false;
   if (!Number.isFinite(value.restUntil) || value.restUntil < 0) return false;
   // He cannot have been paid for a case that is not closed, and it is not closed until the
   // right name has been said.
@@ -177,7 +180,7 @@ export function createMurderQuest({ onEvent = () => {} } = {}) {
   function restore(data) {
     if (!validateMurderQuestSnapshot(data)) return false;
     state = { version: MURDER_QUEST_VERSION, stage: data.stage, heard: [...data.heard],
-      accused: [...data.accused], restUntil: data.restUntil };
+      accused: data.accused.map(currentWitnessId), restUntil: data.restUntil };
     return true;
   }
 
@@ -222,15 +225,15 @@ export const TROY_OPENING = Object.freeze([
 
 /** What he says while you are still short of it. */
 export const TROY_PRESSING = Object.freeze([
-  'Go and be talked to. Jessi is angry and honest, Ari is frightened and careful, and the outsider has been treated kindly and asked nothing at all.',
+  'Speak with Brenna Vell, the boatwright; Orren Pell, who keeps the cargo books; and Sivra Noll from Sorven, by the kelp racks. Three people with reasons to keep quiet. Ask them anyway.',
   'When the three of them have told you what they will not tell me, come back and say a name. Not before — I will not act on a guess.',
 ]);
 
 /** What Troy says to a name that is not the one. Each of the three has its own reason. */
 export const CLEARED = Object.freeze({
-  'cobble-jessi': 'Jessi says out loud that they are not sorry, which is not what somebody who did it says. They were repairing a broken carriage axle with two witnesses until after light. It was not Jessi.',
-  'cobble-ari': 'Ari is lying about that night, and she is lying about something that is not this. Whatever she was doing out at the skerry, she was not at the quay root, and I will not be the man who hangs her for the wrong thing.',
-  'cobble-imani': 'She came four days ago for kelp and did not know the woman’s name until I said it to her. No.',
+  'cobble-boatwright': 'Brenna said something cruel. That is not a murder. Two fishers were holding the hull while she repaired its split seam until after light. She could not have been at the quay root.',
+  'cobble-ledgerkeeper': 'Orren is hiding a journey to the skerry. He took water to the deserters from Ed the Word’s ship. That may interest the Empire. It does not put him beside Bregga, and I will not hang him for the wrong thing.',
+  'cobble-kelp-trader': 'Sivra arrived from Sorven four days ago. She did not know Bregga’s name until I gave it to her. Her ignorance is precisely why she noticed something everybody here had learned not to see.',
 });
 /** And what he says to the right name, said too early. */
 export const UNPROVEN =

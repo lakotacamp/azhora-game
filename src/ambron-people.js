@@ -100,24 +100,24 @@ export const isElagosNpc = id => ids.has(id);
 
 export const ELAGOS_AMBIENT = freeze({
   'ambron-toll-clerk': freeze([
-    'Sabbis Orenn, Clerk of the Chain. Fourth book, nineteenth year. If you are going south with anything on the water, you come to me before you come to the chain.',
+    'Sabbis Orenn, Clerk of the Chain. Fourth book, nineteenth year. Lake cargo is tallied here before it leaves for the southern roads.',
     'Grain a twentieth, fish a fifteenth, sawn timber a tenth, salt a twentieth going north and nothing going south because nothing goes south. It has been those numbers since before my grandfather kept this desk.',
     'Yesterday I wrote the entries under King Cedric. This morning I wrote them under the King-in-Council. The hand is the same hand and so is the number, and a bargeman cannot tell one page from the other without reading the top of it.',
     'People say the toll pays for the army. It does. Then the army makes the toll be paid, and what is left over pays for the prefects, and the prefects raise the taxes that pay for the army. You can start that sentence anywhere you like. It comes round.',
   ]),
   'ambron-tally-boy': freeze([
-    'Dreo. I run the tally down to the chainman and back up to the clerk, and I have done it four hundred times since the ice went out.',
-    'Forty-one boats waiting this morning. It was nine yesterday, because nobody moved anything the day of the proclamation. Everyone waited to see whether the chain went up, and it went up.',
-    'If you want to know how the Lake Lands are doing, do not ask the Lord Marshal. Count the boats above the chain, and then count the ones below it.',
+    'Dreo. I run the tally from the lake carriers to the clerk, and I have done it four hundred times since the ice went out.',
+    'Forty-one boats waiting this morning. It was nine yesterday, because nobody moved anything the day of the proclamation. Everyone waited to see whether the toll office opened, and it opened.',
+    'If you want to know how the Lake Lands are doing, do not ask the Lord Marshal. Count the full carts coming in, and then count the empty ones going back.',
   ]),
   'ambron-chainman': freeze([
-    'Orrec Damm. I wind it up at first light and down at dusk, and I have never once been asked whether I thought it should go up.',
+    'Orrec Damm. They still call me the chainman. These days I maintain the lifting gear and check the lake freight. Same work, drier boots.',
     'Eighty links a turn, twenty-two turns, and a chain a man’s arm thick lying across the water gate. Nothing on this lake is strong enough to take it and nobody has ever been stupid enough to try.',
     'The chain is not to keep anybody out. Ambron does not need keeping out of. It is to make them stop, and a thing that makes people stop is worth more than a wall.',
   ]),
   'ambron-bargemaster': freeze([
     'Kess Vollo. Three boats, fifty tons of Ossen barley, and a place in the line since the day before yesterday.',
-    'I have paid this toll every season of my working life and I will tell you the truth of it: I do not mind the number. I mind the waiting. Three days above the chain is three days of a crew eating, and the clerk does not weigh that.',
+    'I have paid this toll every season of my working life and I will tell you the truth of it: I do not mind the number. I mind the waiting. Three days waiting for a tally is three days of a crew eating, and the clerk does not weigh that.',
     'They pulled the prince down and put another one up and I am still forty-first in the line. That is what a revolution looks like from a barge.',
   ]),
   'ambron-bargewoman': freeze([
@@ -127,13 +127,13 @@ export const ELAGOS_AMBIENT = freeze({
   ]),
   'ambron-legate': freeze([
     'Lord Marshal Duvo Harn. I hold the narrows. Whatever else is being argued in this city, the narrows are held.',
-    'You will hear that I turned my coat at dawn yesterday. I did not turn anything. My orders are to keep the chain, the quays and the granaries, and a proclamation nailed to the Toll House door does not alter one of the three.',
+    'You will hear that I turned my coat at dawn yesterday. I did not turn anything. My orders are to keep the roads, the lake trade and the granaries, and a proclamation nailed to the Toll House door does not alter one of the three.',
     'Cedric is gone east. Wilhelm is shut up in Nylon and may the gods keep him there. Prince Valroy came ashore in the east four days ago with an army that has been fighting across the sea for six years, and he has not written to me. That is the only fact in this city worth your attention.',
     'If you are a sellsword, the pay is the pay and the army does not haggle. If you are a messenger, say so and say from whom.',
   ]),
   'ambron-adjutant': freeze([
     'Lieutenant Bral Osser. The Lord Marshal is at the Seat and will not be drawn on the succession. Do not try.',
-    'Three cohorts on the walls, one on the quays, one standing down. We have had one broken window and no fires. For a revolution that is an orderly one.',
+    'Three cohorts on the walls, one on the lake roads, one standing down. We have had one broken window and no fires. For a revolution that is an orderly one.',
     'The rebels in the south call us the Empire’s dogs. The council upstairs calls us the King’s garrison. The rota has not changed.',
   ]),
   'ambron-scrivener': freeze([
@@ -155,7 +155,7 @@ export const ELAGOS_AMBIENT = freeze({
     'They say a prince has landed in the east. They say it every autumn. This time the boats came in early from the Ossen shore, which is not nothing.',
   ]),
   'ambron-causeway-legionary': freeze([
-    'Keep to the deck. The parapet is old and the water under it is deeper than it looks.',
+    'Keep the market lane clear. The carts need room, and the people with carts will remind you.',
     'Seven arches. They rebuilt the top of it twice in my father’s lifetime and never once touched the piers, because nobody alive knows how the piers were made.',
   ]),
   'ambron-committee': freeze([

@@ -83,7 +83,7 @@ export function createLivingStoryHost({ story, inventory, npcById, combat, posit
     if(npc.id==='crossing-keeper') {
       const b=s.bridge();
       if(b.status==='complete'&&b.completedBy!=='player') {
-        openDialogue(npc,[`${name(b.completedBy)} gathered sound timber and helped me repair the bridge. The crossing is open. That job is done; Bowden in the Koopwood can teach you carpentry on another project.`],null,'Back to the road');return true;
+        openDialogue(npc,[`${name(b.completedBy)} gathered sound timber and helped me repair the bridge. The crossing is open. That job is done; Jesse can teach you carpentry at the carriage workshop west of the fork, across from Calum on the road toward Ambron.`],null,'Back to the road');return true;
       }
       if(b.owner&&b.owner!=='player') {
         openDialogue(npc,[`${name(b.owner)} is helping me with the bridge. You can wait for the repair or swim across. The main road does not depend on doing this job yourself.`],null,'Back to the road');return true;

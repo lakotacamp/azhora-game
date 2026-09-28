@@ -50,9 +50,9 @@ rather not say:
 
 | Who | What they give | Their secret |
 |-----|----------------|--------------|
-| **Jessi** — fishes, teaches it; red and green hair, glasses | `light-boats` — three weeks of light boats that were not light | she is not sorry, and says so |
-| **Ari** — the village's accountant; brown skin, curly black hair | `weights-not-counts` — the counts have matched for years, the weights have not | she was out at the skerry with Ed the Word's mutineers |
-| **Imani** — the vine keeper, in Cobble for kelp | `lamp-under-the-beam` — a man at the weigh-beam with a lamp before light | nothing; nobody thought to ask the outsider |
+| **Brenna Vell** — Long Bars boatwright; cropped copper hair, ochre tunic and hammer | `light-boats` — full cargo in sound hulls weighed short | she spoke cruelly about Bregga; witnesses place her repairing a hull |
+| **Orren Pell** — cargo bookkeeper from a pilot family; silver hair, brass glasses and blue coat | `weights-not-counts` — the counts match, the weights do not | he brought water to Ed the Word's mutineers on the skerry |
+| **Sivra Noll** — kelp trader from Sorven; dark tied hair, rose tunic and reed basket | `lamp-under-the-beam` — a lamp under the beam before any cargo arrived | nobody thought to ask the outsider |
 
 **Torven Oss**, the weighmaster, has been shaving the barrels for eleven years, and Bregga's tally
 had got close enough to say so. He is the only person who says the book was never *found* rather
@@ -94,5 +94,4 @@ for. Reward for getting him home alive: **30 copper or beast sorcery**.
   a school (`spellXp`). Mind has `perReading`; Beast has nothing.
 - **Whether Olive can be killed in play.** The module has the ending; nothing in the host can reach
   it, because goblins do not attack the cat.
-- **Whether Imani has moved to Cobble or is visiting.** She says she is there for kelp twice a
-  year, which reads as visiting, and the vineyard still has her.
+- **Resolved, 27 September:** Ari, Imani and Jesse now live in Port Calos as named placeholders. Brenna Vell, Orren Pell and Sivra Noll carry the Cobble investigation. See `port-calos-residents-and-cobble.md`.

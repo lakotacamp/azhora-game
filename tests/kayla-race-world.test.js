@@ -6,12 +6,12 @@ import { canStand } from '../src/game-state.js';
 import { createKaylaRace, KAYLA_RACE, KAYLA_RACE_LANE, ED_RACE_LANE } from '../src/kayla-race.js';
 import { createKaylaRaceHost } from '../src/kayla-race-host.js';
 import { createKaylaRaceAutopilot } from '../src/kayla-race-autopilot.js';
-import { CAGNEY_START } from '../src/cagney-quest.js';
+import { CALOSS_PROPHET_STAND } from '../src/elagos-world.js';
 
 const { createWorld } = await sourceModule('../src/world.js');
 const world = createWorld(new THREE.Scene());
 const gap = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
-test('the race lanes run on the real dry road from the east gate to Cagney and the prophet', () => {
+test("the race lanes run on the real dry road from the east gate to the prophet's crossroads", () => {
   for (const [route, radius] of [[KAYLA_RACE_LANE, KAYLA_RACE.radius], [ED_RACE_LANE, KAYLA_RACE.edRadius]]) {
     for (let i = 0; i < route.length; i++) {
       const a = route[Math.max(0, i - 1)], b = route[i], count = Math.max(1, Math.ceil(gap(a, b) / .5));
@@ -21,7 +21,7 @@ test('the race lanes run on the real dry road from the east gate to Cagney and t
       }
     }
   }
-  assert.ok(gap(KAYLA_RACE_LANE.at(-1), CAGNEY_START) < 20);
+  assert.ok(gap(KAYLA_RACE_LANE.at(-1), CALOSS_PROPHET_STAND) < 20);
 });
 test('real-world race autoplay wins without clipping props, skipping gates, or moving Ed by teleport', t => {
   const quest = createKaylaRace(), host = createKaylaRaceHost({ quest, world }); quest.accept();

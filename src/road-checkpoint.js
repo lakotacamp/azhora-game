@@ -1,3 +1,5 @@
+import { AMBRON_LAYOUT_VERSION } from './ambron-city-layout.js';
+import { migrateAmbronPlayer, migrateAmbronCagney } from './ambron-checkpoint-migration.js';
 import { createFireMaking, validateFireMakingSnapshot } from './fire-making.js';
 import { createFishingLessons, validateFishingLessonsSnapshot } from './fishing-lessons.js';
 import { createGlunWoodcutting, validateGlunWoodcuttingSnapshot } from './glun-woodcutting.js';
@@ -55,6 +57,9 @@ import { createJimson, validateJimsonSnapshot } from './jimson-quest.js';
 import { createKaty, validateKatySnapshot } from './katy.js';
 import { createVineyard, validateVineyardSnapshot } from './vineyard.js';
 import { createBatmanHunt, validateHuntSnapshot } from './batman.js';
+import { BATMAN_QUEST, BATMAN_HISTORY, validateBatmanQuestSnapshot } from './batman-quest.js';
+import { SUVAL_FLIGHT_REGIONS, validateBatmanFlightSnapshot } from './batman-flight.js';
+import { REGION_CELLS } from './region-world.js';
 import { createBurying, validateBuryingSnapshot } from './lauvel-burying.js';
 import { createLightKeeper, validateLightSnapshot } from './lighthouse.js';
 import { createBosco, validateBoscoSnapshot } from './bosco.js';
@@ -69,6 +74,8 @@ import { validateWineAtticSnapshot } from './wine-attic.js';
 import { validatePuckSnapshot, createPuck } from './wine-goblin.js';
 import { validateChameleonSnapshot, createChameleon } from './chameleon.js';
 import { validateTroupeSnapshot } from './troupe.js';
+import { validateJesseCarriage } from './jesse-carriage-quest.js';
+import { validateBrandyHousehold } from './brandy-home-state.js';
 import { validateBrandySnapshot } from './brandy.js';
 import { validateSaltSnapshot } from './salt-sultan.js';
 import { validateWoodcuttingSnapshot } from './woodcutting.js';
@@ -92,6 +99,29 @@ export const ROAD_CHECKPOINT_VERSION = 1;
 // saved position is judged against the ground that actually exists.
 const WORLD_BOUNDS = Object.freeze({ ...PLAYABLE_BOUNDS });
 const failed = reason => ({ ok: false, data: null, reason });
+const suvalFlightCells = new Set(SUVAL_FLIGHT_REGIONS.flatMap(name => REGION_CELLS[name].map(cell => `${name}:${cell.q},${cell.r}`)));
+function validBatmanSave(data, stock) {
+  const quest = data.batmanQuest, flight = data.batmanFlight;
+  if (!validateBatmanQuestSnapshot(quest) || !validateBatmanFlightSnapshot(flight)) return false;
+  const flying = flight?.stage === 'flying', landed = ['landed', 'returning', 'home'].includes(flight?.stage);
+  if ((quest?.stage === 'flying') !== flying || (quest?.stage === 'complete') !== landed) return false;
+  if (quest?.returned && flight?.stage !== 'home') return false;
+  if (flight?.stage === 'home' && !quest?.returned) return false;
+  if (flight && (flight.visited.some(key => !suvalFlightCells.has(key))
+    || (landed && (flight.visited.length !== suvalFlightCells.size || flight.narration !== BATMAN_HISTORY.length)))) return false;
+  const hasHead = quest?.headTaken === true && quest.bounty !== 'paid';
+  if (stock.has(BATMAN_QUEST.headItem) !== hasHead) return false;
+  const person = data.crime?.people?.batman;
+  if (flying && person && person.status !== 'alive') return false;
+  if (quest?.stage === 'dead' && person?.status === 'alive') return false;
+  for (const key of ['batmanCorpse', 'batmanGround']) {
+    const p = data[key]; if (p == null) continue;
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.z) || p.x <= WORLD_BOUNDS.minX || p.x >= WORLD_BOUNDS.maxX
+      || p.z <= WORLD_BOUNDS.minZ || p.z >= WORLD_BOUNDS.maxZ || (key === 'batmanGround' && !Number.isFinite(p.yaw))) return false;
+  }
+  if (data.batmanCorpse && quest?.stage !== 'dead' && !(quest?.stage === 'complete' && person?.status === 'dead')) return false;
+  return true;
+}
 // These unrequested Port Calos residents were removed from the authored town.
 // Their old body models must not reintroduce them independently of the NPC cast.
 const REMOVED_PORT_CALOS_CIVILIANS = new Set(['innkeeper', 'fishmonger', 'netmaker', 'shipwright', 'carter', 'resident', 'dockhand']
@@ -107,6 +137,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
       || !Number.isInteger(data.questStage) || data.questStage < 0 || data.questStage > QUEST_DONE
       || (data.questStage < QUEST_DONE && !data.woodland))
       return failed('This is not a supported road checkpoint.');
+    if(data.cagney)data={...data,cagney:migrateAmbronCagney(data.cagney)};
     const campaign = createCampaign();
     if (Object.hasOwn(data, 'campaign') && !campaign.restore(data.campaign)) return failed('The saved campaign is invalid.');
     // A late courier can collect someone still on the pier. The campaign keeps
@@ -191,6 +222,8 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (!validateChameleonSnapshot(data.chameleon)) return failed('The saved chameleon is invalid.');
     if (!validateTroupeSnapshot(data.troupe)) return failed('The saved players of Nylon are invalid.');
     if (!validateBrandySnapshot(data.brandy)) return failed('The saved visit to Brandy Frank is invalid.');
+    if (!validateJesseCarriage(data.jesseCarriage)) return failed('The saved carriage lesson is invalid.');
+    if (!validateBrandyHousehold(data.brandyHome)) return failed('The saved household of Jon and Brandy is invalid.');
     if (!validateSaltSnapshot(data.salt)) return failed('The saved voyage of the Sultana is invalid.');
     if (!validateWoodcuttingSnapshot(data.woodcutting)) return failed('The saved woodcutting is invalid.');
     if (!validateConstructionSnapshot(data.construction)) return failed('The saved building is invalid.');
@@ -228,8 +261,11 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
       return failed('The saved checkpoint was taken in a world this build cannot place you in.');
     const saved = data.position;
     const migrate = !Object.hasOwn(data, 'worldScale') || data.worldScale === AUTHORED_METRES_PER_HEX;
-    const p = saved && Number.isFinite(saved.x) && Number.isFinite(saved.z) && migrate
+    if (data.ambronLayoutVersion !== undefined && ![1, AMBRON_LAYOUT_VERSION].includes(data.ambronLayoutVersion))
+      return failed('The saved capital layout is invalid.');
+    const scaled = saved && Number.isFinite(saved.x) && Number.isFinite(saved.z) && migrate
       ? toWorld(saved.x, saved.z) : saved;
+    const p = migrateAmbronPlayer(scaled, data.ambronLayoutVersion);
     if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.z)
       || p.x <= WORLD_BOUNDS.minX || p.x >= WORLD_BOUNDS.maxX
       || p.z <= WORLD_BOUNDS.minZ || p.z >= WORLD_BOUNDS.maxZ) return failed('The saved position lies outside the playable road.');
@@ -244,6 +280,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.spider !== undefined && !validateSpiderQuestSnapshot(data.spider)) return failed('The saved errand for Ben is invalid.');
     if (data.murder !== undefined && !validateMurderQuestSnapshot(data.murder)) return failed('The saved case in Cobble is invalid.');
     if (data.cat !== undefined && !validateCatQuestSnapshot(data.cat)) return failed('The saved errand for Liz is invalid.');
+    if (!validBatmanSave(data, stock)) return failed('The saved vigilante quest, carried flight, or bounty proof is inconsistent.');
     if (!validateKaylaSnapshot(data.kayla)) return failed('The saved honey rounds are invalid.');
     if (!validateKaylaRaceSnapshot(data.kaylaRace)) return failed('The saved race for Kayla is invalid.');
     if (!validateCubHoneySnapshot(data.cubHoney)) return failed('The saved honey lesson for the cub is invalid.');
@@ -328,7 +365,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     // Store only the known schema. Fresh objects keep callers from modifying a
     // validated value through a previously retained array or nested reference.
     const result = {
-      version: ROAD_CHECKPOINT_VERSION, worldScale: METRES_PER_HEX, questStage: data.questStage, journey: journey.snapshot(),
+      version: ROAD_CHECKPOINT_VERSION, ambronLayoutVersion:AMBRON_LAYOUT_VERSION, worldScale: METRES_PER_HEX, questStage: data.questStage, journey: journey.snapshot(),
       inventory: [...stock].map(([id, quantity]) => ({ id, quantity })),
       weapons: { version: 1, equippedId: data.weapons.equippedId,
         sword: { ...data.weapons.sword }, stick: { ...data.weapons.stick }, ...(data.weapons.extra ? { extra: { ...data.weapons.extra } } : {}) },
@@ -383,6 +420,8 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (Object.hasOwn(data, 'chameleon')) { const ed = createChameleon(); ed.restore(data.chameleon); result.chameleon = ed.snapshot(); }
     if (Object.hasOwn(data, 'troupe')) result.troupe = { ...data.troupe };
     if (Object.hasOwn(data, 'brandy')) result.brandy = { ...data.brandy };
+    if (data.jesseCarriage) result.jesseCarriage = JSON.parse(JSON.stringify(data.jesseCarriage));
+    if (data.brandyHome) result.brandyHome = JSON.parse(JSON.stringify(data.brandyHome));
     if (Object.hasOwn(data, 'salt')) result.salt = { ...data.salt };
     if (Object.hasOwn(data, 'woodcutting')) result.woodcutting = { ...data.woodcutting };
     if (Object.hasOwn(data, 'construction')) result.construction = { ...data.construction, posts: { ...data.construction.posts } };
@@ -403,6 +442,8 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (Object.hasOwn(data, 'ogreToll')) { const toll = createOgreToll(); toll.restore(data.ogreToll); result.ogreToll = toll.snapshot(); }
     if (Object.hasOwn(data, 'ambush')) { const road = createRoadAmbush(); road.restore(data.ambush); result.ambush = road.snapshot(); }
     if (Object.hasOwn(data, 'spider')) { const den = createSpiderQuest(); den.restore(data.spider); result.spider = den.snapshot(); }
+    for (const key of ['batmanQuest', 'batmanFlight', 'batmanCorpse', 'batmanGround'])
+      if (data[key] !== undefined) result[key] = JSON.parse(JSON.stringify(data[key]));
     if (Object.hasOwn(data, 'kayla')) result.kayla = JSON.parse(JSON.stringify(data.kayla));
     if (data.kaylaRace !== undefined) { const race = createKaylaRace(); race.restore(data.kaylaRace); result.kaylaRace = race.snapshot(); }
     if (data.cubHoney !== undefined) result.cubHoney = JSON.parse(JSON.stringify(data.cubHoney));

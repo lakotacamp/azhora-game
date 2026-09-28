@@ -18,6 +18,8 @@ import {
 } from '../src/ambron-people.js';
 import { elagosWaterDistance, AMBRON_ROAD } from '../src/elagos-world.js';
 import { RIDE } from '../src/riding.js';
+import {AMBRON_OUTLINE,inAmbronOutline,ambronTerraceWeight} from '../src/ambron-city-layout.js';
+import {ELAGOS_BASINS} from '../src/elagos-world.js';
 
 const { createWorld } = await sourceModule('../src/world.js');
 const world = createWorld(new THREE.Scene());
@@ -42,7 +44,7 @@ test('Ambron is built to the shared fortification standard, at the measures of a
   assert.ok(AMBRON_CIRCUIT.perimeter > solisPerimeter * 1.6, `${AMBRON_CIRCUIT.perimeter.toFixed(0)} m of circuit against Solis's ${solisPerimeter.toFixed(0)}`);
   assert.ok(AMBRON.halfA * AMBRON.halfB > SOLIS.halfX * SOLIS.halfZ * 2.5, 'and three times the ground');
   assert.ok(AMBRON_CIRCUIT.towers.length >= 20, `${AMBRON_CIRCUIT.towers.length} towers`);
-  assert.equal(AMBRON_CIRCUIT.towers.filter(tower => tower.kind === 'corner').length, 4, 'a tower at every corner');
+  assert.equal(AMBRON_CIRCUIT.towers.filter(tower => tower.kind === 'corner').length, AMBRON_OUTLINE.length, 'a tower at every bend');
   for (const gate of AMBRON_GATES) assert.equal(AMBRON_CIRCUIT.towers.filter(tower => tower.id.startsWith(`${gate.id}-tower`)).length, 2, `${gate.name} has two flanking towers`);
   // No curtain run goes far uncovered, once the two water gates (which are water, not wall) are set aside.
   const along = tower => { let before = 0; for (let i = 0; i < tower.edge; i++) before += AMBRON_CIRCUIT.edges[i].length; return before + tower.at; };
@@ -95,68 +97,16 @@ test('the walls of Ambron are a closed circuit: the four land gates are the only
   }
 });
 
-test('the narrows runs through the city, and the causeway is the only way over it', () => {
-  // The channel is water inside the walls, from wall to wall.
-  for (let b = -AMBRON.halfB + 2; b <= AMBRON.halfB - 2; b += 4) {
-    const spot = P(0, b);
-    if (Math.abs(b - CAUSEWAY.b) <= CAUSEWAY.halfWidth) continue;
-    assert.ok(elagosWaterDistance(spot.x, spot.z) < 0, `the narrows is water at b=${b}`);
-    assert.equal(canStand(spot.x, spot.z, world, WALKER), false, `and nobody walks it at b=${b}`);
-  }
-  // The causeway carries the main street across, at one level between its piers.
-  for (let a = -CAUSEWAY.level; a <= CAUSEWAY.level; a += 5) {
-    const spot = P(a, CAUSEWAY.b);
-    assert.equal(world.heightAt(spot.x, spot.z), CAUSEWAY.deckY, `the deck is level at a=${a}`);
-    assert.ok(canStand(spot.x, spot.z, world, WALKER), `the deck carries a traveler at a=${a}`);
-  }
-  assert.ok(CAUSEWAY.deckY - CHANNEL.surface >= 2.8, 'with headroom for a barge under it');
-  // The deck ramps to the made ground of each bank rather than stepping off it.
-  for (const side of [-1, 1]) {
-    const foot = P(side * CAUSEWAY.foot, CAUSEWAY.b);
-    assert.ok(Math.abs(ambronDeckHeight(foot.x, foot.z) - cityGround(side * CAUSEWAY.foot)) < .01, 'the ramp meets the bank');
-  }
-  assert.equal(ambronDeckHeight(P(0, 12).x, P(0, 12).z), null, 'and the deck is only as wide as the street');
-  // Walk it: east bank to west bank, the whole way.
-  const walker = { ...P(36, CAUSEWAY.b) }, target = P(-36, CAUSEWAY.b);
-  for (let frame = 0; frame < 1400 && Math.hypot(walker.x - target.x, walker.z - target.z) > .5; frame++) {
-    const dx = target.x - walker.x, dz = target.z - walker.z, d = Math.hypot(dx, dz), step = Math.min(d, .15);
-    moveCharacter(walker, dx / d * step, dz / d * step, nearAmbron, WALKER);
-  }
-  assert.ok(Math.hypot(walker.x - target.x, walker.z - target.z) <= .5, `the causeway is crossed; stopped at ${walker.x.toFixed(1)}, ${walker.z.toFixed(1)}`);
-});
-
-test('the chain hangs in the south water gate, over the water and under nothing', () => {
-  const gate = AMBRON_CIRCUIT.gates.find(entry => entry.id === 'south-water-gate');
-  assert.ok(gate, 'the chain has a gate to hang in');
-  assert.ok(Math.abs(AMBRON_CHAIN.b - AMBRON.halfB) < 1e-9, 'it lies on the south wall line');
-  assert.ok(AMBRON_CHAIN.sagY > CHANNEL.surface && AMBRON_CHAIN.sagY < CHANNEL.surface + 2, 'it sags just clear of the water');
-  assert.ok(AMBRON_CHAIN.halfSpan * 2 >= 46, 'and spans the whole channel');
-  // Its capstan stands on the east quay, where a clerk can watch both the chain and the toll house.
-  const capstan = P(AMBRON_CHAIN.capstan.a, AMBRON_CHAIN.capstan.b);
-  assert.ok(elagosWaterDistance(capstan.x, capstan.z) > 0, 'the capstan is on the quay, not in the water');
-  assert.ok(world.colliders.some(c => c.kind === 'ambron-capstan'), 'and it is solid');
-  const toll = AMBRON_BUILDINGS.find(entry => entry.id === 'toll-house');
-  assert.ok(Math.hypot(toll.a - AMBRON_CHAIN.capstan.a, toll.b - AMBRON_CHAIN.capstan.b) < 40, 'the toll house overlooks the chain');
-});
-
-test('the quays line both banks, and the traveler can walk the waterfront without getting wet', () => {
-  assert.equal(AMBRON_QUAYS.length, 2, 'a quay on each bank');
-  for (const quay of AMBRON_QUAYS) {
-    const edge = quay.side > 0 ? quay.from : quay.to;
-    for (let b = quay.minB + 4; b <= quay.maxB - 4; b += 6) {
-      const a = edge + quay.side * 6;
-      // The capstan house stands on the quay at the chain: the walk ends there, by design.
-      if (AMBRON_BUILDINGS.some(entry => Math.abs(entry.a - a) < entry.w / 2 + 1 && Math.abs(entry.b - b) < entry.d / 2 + 1)) continue;
-      const inner = P(a, b);
-      assert.ok(canStand(inner.x, inner.z, world, WALKER), `${quay.id} is walkable at b=${b}`);
-      if (Math.abs(b - CAUSEWAY.b) <= CAUSEWAY.halfWidth + 1) continue;      // the causeway crosses here
-      const over = P(edge - quay.side * 6, b);
-      assert.equal(canStand(over.x, over.z, world, WALKER), false, `${quay.id} does not walk out over the water at b=${b}`);
-    }
-  }
-  // The east bank stands higher than the west: the old city above the timber strand.
-  assert.ok(cityGround(60) > cityGround(-60) + 1, 'the east bank is the high one');
-  assert.ok(cityGround(60) > CHANNEL.surface + 2.5, 'and its quay is well above the water');
+test('the enlarged capital occupies dry land between unchanged lakes', () => {
+  let twiceArea=0;
+  for(let i=0;i<AMBRON_OUTLINE.length;i++){const a=AMBRON_OUTLINE[i],b=AMBRON_OUTLINE[(i+1)%AMBRON_OUTLINE.length];twiceArea+=a.x*b.z-b.x*a.z;
+    for(let t=0;t<=1;t+=.05){const x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;assert.ok(elagosWaterDistance(x,z)>10,'walls leave a natural shore');}}
+  assert.ok(Math.abs(twiceArea)/2>184*136*2,'more than twice the former footprint');
+  assert.ok(AMBRON_BUILDINGS.length>=45,'expanded districts have substantial building density');
+  assert.equal(CHANNEL.enabled,false);assert.equal(AMBRON_QUAYS.length,0);
+  assert.equal(ambronDeckHeight(AMBRON.centre.x,AMBRON.centre.z),null,'no phantom causeway deck on the market');
+  for(const lake of ELAGOS_BASINS){assert.ok(elagosWaterDistance(lake.centre.x,lake.centre.z)<0);assert.equal(canStand(lake.centre.x,lake.centre.z,world,WALKER),false);}
+  assert.equal(ambronTerraceWeight(-1260,-30),0,'concave lake shoulder is not a rectangular made-ground pad');
 });
 
 test('everyone in Ambron and the lake country has footing, and every stand in the city is reachable from the Plain Gate', () => {
@@ -167,12 +117,12 @@ test('everyone in Ambron and the lake country has footing, and every stand in th
   }
   for (const [id, stand] of Object.entries(AMBRON_STANDS)) assert.ok(Number.isFinite(stand.yaw), `${id} faces somewhere`);
   // Flood the ground from the haul road outside the Plain Gate, on a half-metre grid.
-  const minA = -110, maxA = 110, minB = -90, maxB = 100, cell = .5;
+  const minA = -152, maxA = 184, minB = -188, maxB = 194, cell = 1;
   const columns = Math.round((maxA - minA) / cell) + 1;
   const seen = new Uint8Array(columns * (Math.round((maxB - minB) / cell) + 1)), queue = [];
   const index = (a, b) => Math.round((b - minB) / cell) * columns + Math.round((a - minA) / cell);
   const open = (a, b) => { const p = P(a, b); return canStand(p.x, p.z, nearAmbron, WALKER); };
-  const start = [56, 84];
+  const g=AMBRON_ENCLOSURE.gates.find(g=>g.id==='plain-gate').inner; const start=[Math.round(g.x-AMBRON.centre.x),Math.round(g.z-AMBRON.centre.z)];
   assert.ok(open(...start), 'the haul road outside the Plain Gate is open');
   seen[index(...start)] = 1; queue.push(start);
   while (queue.length) {
@@ -195,8 +145,7 @@ test('everyone in Ambron and the lake country has footing, and every stand in th
   assert.ok(canStand(AMBRON_FORGE.stand.x, AMBRON_FORGE.stand.z, world, WALKER), 'the armourer has footing at his own door');
   assert.ok(reached(AMBRON_FORGE.stand.x, AMBRON_FORGE.stand.z), 'and can be walked to from the haul road');
   // And the places that matter: the market, the Seat's plaza, both quays and the far bank.
-  for (const [a, b, what] of [[47, -10, 'the market'], [58, 18, 'the Seat'], [28, 40, 'the east quay'],
-    [-28, 10, 'the timber strand'], [-58, -40, 'the west bank'], [92 - 8, -6, 'the Ossen Gate']])
+  for (const [a, b, what] of [[-5,0,'the market'],[-39,-95,'the Seat'],[-20,77,'the guild lane'],[-68,85,'the homes']])
     assert.ok(reached(P(a, b).x, P(a, b).z), `${what} can be reached`);
 });
 
@@ -221,7 +170,7 @@ test('Ambron’s streets and buildings are laid out on the ground, not through e
   for (const entry of AMBRON_BUILDINGS) {
     assert.ok(Math.abs(entry.a) + entry.w / 2 <= inset + .01, `${entry.id} stands clear of the east and west walls`);
     assert.ok(Math.abs(entry.b) + entry.d / 2 <= insetB + .01, `${entry.id} stands clear of the north and south walls`);
-    assert.ok(entry.a - entry.w / 2 >= CHANNEL.half || entry.a + entry.w / 2 <= -CHANNEL.half, `${entry.id} is not built in the channel`);
+    for(const dx of [-1,1])for(const dz of [-1,1]){const p=P(entry.a+dx*(entry.w/2+1),entry.b+dz*(entry.d/2+1));assert.ok(inAmbronOutline(p.x,p.z),`${entry.id} fits the dry irregular outline`);}
   }
   for (const street of AMBRON_STREETS) for (let i = 1; i < street.points.length; i++) {
     const a = street.points[i - 1], b = street.points[i];
@@ -235,7 +184,7 @@ test('Ambron’s streets and buildings are laid out on the ground, not through e
   assert.equal(new Set(AMBRON_STREETS.map(street => street.layer)).size, 4, 'four periods of paving');
   assert.equal(new Set(AMBRON_BUILDINGS.map(entry => entry.layer)).size >= 3, true, 'and at least three of building');
   // The market is a widening of the main street, not a separate square behind it.
-  const main = AMBRON_STREETS.find(street => street.id === 'causeway-street');
+  const main = AMBRON_STREETS.find(street => street.id === 'ela-street');
   assert.ok(main.points.some(p => p.a > AMBRON_MARKET.minA && p.a < AMBRON_MARKET.maxA + 40 && p.b > AMBRON_MARKET.minB && p.b < AMBRON_MARKET.maxB),
     'the main street runs through the market');
   // The road from the Moros arrives at the Plain Gate and the spawn stands on it.

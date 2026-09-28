@@ -68,14 +68,14 @@ export function canSwim(x, z, world, radius = 0.34) {
  * may cross the waterline in either direction, which is what lets somebody swim to a beach and
  * walk out of the sea without a prompt or a key.
  */
-export function moveCharacter(position, dx, dz, world, radius, { swimming = false } = {}) {
+export function moveCharacter(position, dx, dz, world, radius, { swimming = false, canTraverse = null } = {}) {
   const passable = swimming
     ? (x, z) => canStand(x, z, world, radius) || canSwim(x, z, world, radius)
     : (x, z) => canStand(x, z, world, radius);
   const steps = Math.max(1, Math.ceil(Math.hypot(dx,dz)/0.18));
   for(let i=0;i<steps;i++) {
-    if(passable(position.x+dx/steps,position.z)) position.x+=dx/steps;
-    if(passable(position.x,position.z+dz/steps)) position.z+=dz/steps;
+    if(passable(position.x+dx/steps,position.z) && (!canTraverse || canTraverse(position.x,position.z,position.x+dx/steps,position.z))) position.x+=dx/steps;
+    if(passable(position.x,position.z+dz/steps) && (!canTraverse || canTraverse(position.x,position.z,position.x,position.z+dz/steps))) position.z+=dz/steps;
   }
   return position;
 }

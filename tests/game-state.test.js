@@ -28,6 +28,25 @@ test('Movement slides along obstacles while water and world edges remain impassa
   const p={x:5.5,z:0};moveCharacter(p,2,2,world);assert.ok(p.x<5.7);assert.ok(p.z>1.8);
   assert.equal(canStand(0,16,world),false);assert.equal(canStand(21,0,world),false);assert.equal(canStand(-5,-5,world),true);
 });
+test('An optional traversal rule checks each actual axis step and cannot be skipped by a long diagonal move',()=>{
+  const clear={bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20},heightAt:()=>1,colliders:[]};
+  const traveler={x:0,z:0},calls=[];
+  moveCharacter(traveler,8,8,clear,.34,{canTraverse:(x,z,nextX,nextZ)=>{
+    assert.deepEqual({x,z},traveler,'the rule sees the position after the preceding accepted axis step');
+    assert.ok(Math.hypot(nextX-x,nextZ-z)<=.18+1e-12,'a long frame is still swept');
+    calls.push([nextX,nextZ]);
+    return nextX+nextZ<=1;
+  }});
+  assert.ok(calls.length>30);assert.ok(traveler.x+traveler.z<=1);
+  assert.ok(traveler.x+traveler.z>.7,'movement still reaches the permitted edge');
+});
+test('Traversal restrictions are opt-in and can leave movement along a forbidden face available',()=>{
+  const clear={bounds:{minX:-20,maxX:20,minZ:-20,maxZ:20},heightAt:()=>1,colliders:[]};
+  const unrestricted={x:0,z:0};moveCharacter(unrestricted,3,4,clear,.34);
+  assert.ok(Math.abs(unrestricted.x-3)<1e-9&&Math.abs(unrestricted.z-4)<1e-9);
+  const restricted={x:0,z:0};moveCharacter(restricted,3,4,clear,.34,{canTraverse:(_x,_z,nextX)=>nextX<=.5});
+  assert.ok(restricted.x<=.5);assert.ok(Math.abs(restricted.z-4)<1e-9,'the traveler can move across the face');
+});
 /**
  * **Chapter 1 in three subquests** (the user, 22 September 2026): report to Jojo, train with
  * Glun, report to Nothom. The eleven-step spine this replaced ran through the goblins in the

@@ -5,6 +5,8 @@ import { westWaterSurface } from './west-ground.js';
 import { REGIONAL_WILDLIFE_ZONES, WEST_SUVAL_WILDLIFE_ZONES } from './regional-wildlife.js';
 import { DRENT_WILDLIFE_ZONES } from './drent-wildlife.js';
 import { SOUTH_SUVAL_WILDLIFE_ZONES } from './south-suval-wildlife.js';
+import { EAST_LOTHARN_WILDLIFE_ZONES } from './east-lotharn-wildlife.js';
+import { FERADOM_WILDLIFE_ZONES } from './feradom-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -845,6 +847,8 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...DRENT_WILDLIFE_ZONES,
   ...WEST_SUVAL_WILDLIFE_ZONES,
   ...SOUTH_SUVAL_WILDLIFE_ZONES,
+  ...EAST_LOTHARN_WILDLIFE_ZONES,
+  ...FERADOM_WILDLIFE_ZONES,
 ]);
 
 /**

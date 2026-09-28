@@ -25,8 +25,8 @@ test('every playable country is offered, in the world’s own order, with somewh
     assert.ok(country.subtitle.length > 4, `${country.name} says what it is`);
     assert.ok(Number.isFinite(country.spawn.x) && Number.isFinite(country.spawn.z), `${country.name} has a spawn`);
   }
-  // The eight built since the last hand-written button, which is why this exists at all.
-  for (const name of ['Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum'])
+  // Newly integrated regions appear beside the previously built countries, including Iscare.
+  for (const name of ['Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom'])
     assert.ok(countries.some(one => one.name === name), `${name} is reachable`);
 });
 

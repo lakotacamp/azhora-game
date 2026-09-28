@@ -24,6 +24,7 @@
  * cycle — the same arrangement `amod-terraces.js` uses.
  */
 import { terrainMix, relief } from './region-world.js';
+import { lotharnGround, lotharnCoast } from './east-lotharn-world.js';
 import {
   WEST_RIVERS, WEST_POOLS, WEST_GROUND, VASTOS_SINTER, VASTOS_BRAID, VASTOS_RIVER,
   MENETH_RIDGES, menethRidgePhase, CARICAS_SHELF, WEST_BRAIDS, WEST_REGION_BOXES, inBox,
@@ -223,8 +224,13 @@ export function nethereumHollow(x, z) {
  */
 export const nethereumWet = (x, z) => clamp(nethereumHollow(x, z) / NETHEREUM_HOLLOW.depth, 0, 1);
 
-/** The ground the water is measured against: the region's own relief, plus every landform on it. */
-const baseBeforeWater = (x, z) => westNaturalGround(x, z)
+/**
+ * The ground the water is measured against: the region's own relief, plus every landform on it.
+ * The East Lotharn's shapes the ground it is handed rather than adding to it, and its north-east
+ * corner is the one piece of the west that comes down to the sea, so the coast's slope is put
+ * back there first (`lotharnCoast`).
+ */
+const baseBeforeWater = (x, z) => lotharnGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z))
   + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z);
 
 // ---------------------------------------------------------------------------
@@ -418,12 +424,12 @@ export function westShaping(x, z) {
  */
 export function westGround(x, z, natural) {
   if (!westShaping(x, z)) return natural;
-  return channel(x, z, pooled(x, z, natural
+  return channel(x, z, pooled(x, z, lotharnGround(x, z, natural)
     + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z)));
 }
 
 /** The western ground of a point on its own, for the scenery and the tests. */
-export const westGroundAt = (x, z) => westGround(x, z, westNaturalGround(x, z));
+export const westGroundAt = (x, z) => westGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z));
 
 /**
  * The water surface over a point, or null on dry ground. The scenery draws its

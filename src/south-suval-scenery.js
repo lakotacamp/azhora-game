@@ -8,6 +8,8 @@ import {
   SOUTH_SUVAL_CLIMATE, southSuvalClear, onCliffFoot, imlamdrisPatchLines,
 } from './south-suval-world.js';
 import { groundTint } from './world-terrain.js';
+import { suvalHighlandClear, IMLAMDRIS_REBUILD } from './suval-highlands.js';
+import { suvalFalsePassClear } from './frontier-ridges.js';
 
 const smooth = (a, b, x) => { const v = Math.min(1, Math.max(0, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
 
@@ -262,91 +264,67 @@ export function createSouthSuvalScenery(kit) {
     for (let a = -half + 3; a <= half - 3; a += 6) { const p = cityPoint(a, b); wornPatch(p.x, p.z, width * .55, '#cbc1a4', .62, group); }
   }
 
-  /**
-   * A house of Imlamdris: pale ashlar on a footing course, a low roof of fired tile, and a front to
-   * the lake - a door, and windows with grey-green shutters, one row or two. The back is blank.
+  /** The Blood Prince's sack left foundations, ragged ashlar and charred roof beams.
+   * Keep the old street plan so the ruined city remains recognizable beside its new timber homes.
+   * Doors and missing walls really are openings; ruin collision follows surviving stone only.
    */
+  const burned = material('#443e37'), ash = material('#6c685d');
   function imlamdrisHouse(h, index) {
-    const y = cityLevel(h.a, h.b), g = cityGroup(h.a, h.b, y, h.id);
-    const w = h.width, d = h.depth, H = h.height, front = d / 2;
-    box(footing, 0, .12, 0, w + .3, .55, d + .3, g);
-    box(index % 3 === 0 ? ashlarWarm : index % 3 === 1 ? ashlar : ashlarPale, 0, H / 2 + .1, 0, w, H, d, g);
-    if (h.storeys === 2) box(coping, 0, H * .52, 0, w + .08, .14, d + .08, g);
-    const roof = mesh(roofGeometry(d + .7, w + .7, Math.min(1.5, w * .17)), [tileA, tileB, tileC][index % 3], 0, H + .1, 0, 1, 1, 1, g);
-    roof.rotation.y = Math.PI / 2;
-    // The lake side: a door off-centre and the windows round it.
-    const doorAt = (index % 2 ? 1 : -1) * w * .22;
-    box(door, doorAt, 1.12, front + .04, 1.15, 2.2, .1, g);
-    box(coping, doorAt, 2.3, front + .06, 1.45, .16, .16, g);
-    const rows = h.storeys === 2 ? [1.55, H * .72] : [1.6];
-    for (const row of rows) for (const side of [-1, 1]) {
-      const wx = side * w * .3;
-      if (row < 2 && Math.abs(wx - doorAt) < 1.4) continue;
-      box(dark, wx, row, front + .03, .8, 1, .06, g);
-      box(shutter, wx - .62, row, front + .06, .42, 1.04, .05, g);
-      box(shutter, wx + .62, row, front + .06, .42, 1.04, .05, g);
+    const y = cityLevel(h.a, h.b), g = cityGroup(h.a, h.b, y, `${h.id} burned ruin`);
+    const w = h.width, d = h.depth;
+    const floor = box(ash, 0, .025, 0, w, .08, d, g); floor.userData.passable = true;
+    for (let side = 0; side < 3; side++) {
+      const height = .8 + ((index * 7 + side * 3) % 7) * .34;
+      const x = side === 0 ? -w / 2 : side === 1 ? w / 2 : 0, z = side === 2 ? -d / 2 : -.8;
+      box(side === 1 ? ash : ashlarWarm, x, height / 2, z, side === 2 ? w : .65, height, side === 2 ? .65 : d - 1.6, g);
+      const length = side === 2 ? w : d - 1.6;
+      for (let s = -length / 2; s <= length / 2; s += 1.2) {
+        const p = cityPoint(h.a + (side === 2 ? s : x), h.b - (side === 2 ? z : z + s));
+        push({ x: p.x, z: p.z, r: .5, kind: 'imlamdris-ruin' });
+      }
     }
-    // Colliders round the footprint: the corners and every metre and a half between.
-    const outline = [];
-    for (let s = -w / 2; s <= w / 2; s += 1.5) outline.push([s, -d / 2], [s, d / 2]);
-    for (let s = -d / 2; s <= d / 2; s += 1.5) outline.push([-w / 2, s], [w / 2, s]);
-    for (const [la, lz] of outline) { const p = cityPoint(h.a + la, h.b - lz); push({ x: p.x, z: p.z, r: .75, kind: 'imlamdris-house' }); }
-    // And the middle, so nothing is ever set down inside a house the walls already seal.
-    push({ x: h.x, z: h.z, r: Math.min(w, d) / 2 - .4, kind: 'imlamdris-house' });
-    metrics.buildings++;
+    for (let k = 0; k < 4; k++) {
+      const x = (k % 2 ? 1 : -1) * (w * .2), z = -d * .28 + k * .85;
+      const beam = box(burned, x, .26 + k * .04, z, w * .65, .18, .2, g); beam.rotation.y = (index + k) * .73;
+      beam.userData.passable = true;
+      const rubble = mesh(round, ashlar, x, .25, z + .3, .46, .42, .53, g); rubble.userData.passable = true;
+    }
+    metrics.buildings++; metrics.ruinedHomes = (metrics.ruinedHomes ?? 0) + 1;
   }
   IMLAMDRIS_HOUSES.forEach(imlamdrisHouse);
 
-  /**
-   * The Stillwater Temple. The great hall "opens on its lakeside face and is closed on its landward
-   * side": a colonnade and a pediment toward the water, three blank walls, and one door in the back
-   * wall onto the lane behind - "visitors arriving overland enter from the back". The floor is the
-   * terrace itself, so a traveler can walk in off the steps and stand where the hall looks out.
-   */
+  // The temple's lake-facing foundation survives. Its roof and pediment do not: the archive
+  // is an open shell with broken columns and scorched shelves, rather than an intact city hall.
   {
-    const T = STILLWATER_TEMPLE, y = cityLevel(T.a, T.b), g = cityGroup(T.a, T.b, y, T.name);
-    const W = T.width, D = T.depth, H = T.height, front = D / 2;
-    box(templeStone, 0, .03, 0, W + 1.2, .12, D + 1.2, g);                                  // the paving of the hall
-    box(templeStone, 0, H / 2, -front + .45, W, H, .9, g);                                    // the back wall, blank
-    for (const side of [-1, 1]) box(templeStone, side * (W / 2 - .45), H / 2, -.3, .9, H, D - .6, g);   // the two ends
-    // The back door: dark, and the only opening on the landward side. An opening and not a slab:
-    // world.js makes a board across a doorway solid unless it is told it can be walked through.
-    box(dark, 0, 1.4, -front - .02, 1.8, 2.8, .12, g).userData.passable = true;
-    box(coping, 0, 2.95, -front - .05, 2.3, .22, .2, g);
-    // The colonnade on the lake side, the architrave over it and the pediment above.
+    const T = STILLWATER_TEMPLE, y = cityLevel(T.a, T.b), g = cityGroup(T.a, T.b, y, 'Stillwater Temple ruins');
+    const W = T.width, D = T.depth, front = D / 2;
+    box(templeStone, 0, .03, 0, W + 1.2, .12, D + 1.2, g).userData.passable = true;
+    for (const side of [-1, 1]) {
+      box(ash, side * (W / 2 - .45), 1.3, -.3, .9, 2.6, D - .6, g);
+      for (let s = -front + .4; s <= front - 1.2; s += 1.4) {
+        const p = cityPoint(T.a + side * (W / 2 - .45), T.b - s); push({ x: p.x, z: p.z, r: .6, kind: 'temple-wall' });
+      }
+    }
+    // Broken back wall leaves the old doorway and a wider blast breach open.
+    for (const [x, width, height] of [[-8, 5, 2.8], [6, 5, 1.5]]) {
+      box(ashlarWarm, x, height / 2, -front + .45, width, height, .9, g);
+      cityLine(x - width / 2, x + width / 2, T.b + front - .45, .6, 'temple-wall');
+    }
     for (let i = 0; i < T.columns; i++) {
-      const cx = -W / 2 + .9 + i * (W - 1.8) / (T.columns - 1);
-      post(column, cx, H / 2, front - .6, .42, H, g);
+      const cx = -W / 2 + .9 + i * (W - 1.8) / (T.columns - 1), height = .8 + (i % 3) * 1.3;
+      post(column, cx, height / 2, front - .6, .42, height, g);
       box(templeStone, cx, .18, front - .6, 1.1, .36, 1.1, g);
-      box(templeStone, cx, H - .12, front - .6, 1.05, .28, 1.05, g);
       const p = cityPoint(T.a + cx, T.b - (front - .6)); push({ x: p.x, z: p.z, r: .55, kind: 'temple-column' });
+      if (i % 2 === 0) {
+        const fallen = post(ashlar, cx + .4, .42, front - 2.5, .4, 3.7, g); fallen.rotation.x = Math.PI / 2; fallen.rotation.z = .3;
+        fallen.userData.passable = true;
+      }
     }
-    box(templeStone, 0, H + .3, front - .6, W + .5, .65, 1.4, g);
-    box(templeStone, 0, H + .3, -.3, W + .5, .65, D + .5, g);
-    // The hall's ceiling: the world's light from below is the grass's, which turns an underside
-    // green, so the stone overhead is given a little light of its own - a coffered ceiling in shade.
-    box(material('#d6cdb4', { emissive: '#6e6652' }), 0, H - .06, -.3, W - 1.6, .06, D - 1.4, g);
-    // The roof in two pieces, so the gable ends are the pediments and not more roof: slopes and
-    // soffit in the roof's grey, the two triangles in the temple's stone, each face flat.
-    {
-      const w = (W + 1.4) / 2, d = (D + 1.6) / 2, rise = 2.6;
-      const corner = [[-w, 0, -d], [w, 0, -d], [0, rise, -d], [-w, 0, d], [w, 0, d], [0, rise, d]];
-      const faces = (...triangles) => {
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(triangles.flat().flatMap(i => corner[i]), 3));
-        geometry.computeVertexNormals();
-        return geometry;
-      };
-      mesh(faces([0, 3, 5], [0, 5, 2], [1, 2, 5], [1, 5, 4], [0, 1, 4], [0, 4, 3]), templeRoof, 0, H + .62, 0, 1, 1, 1, g);
-      mesh(faces([0, 2, 1], [3, 4, 5]), templeStone, 0, H + .62, 0, 1, 1, 1, g);
+    for (let i = 0; i < 6; i++) {
+      const beam = box(burned, -7 + i * 2.7, .28, -2 + i % 3, .3, .45, 6, g); beam.rotation.y = i * .57;
+      beam.userData.passable = true;
     }
-    // The walls' colliders: the back (open at the door) and both ends.
-    const backB = T.b + front - .45;
-    cityLine(-W / 2, -1.1, backB, .6, 'temple-wall'); cityLine(1.1, W / 2, backB, .6, 'temple-wall');
-    for (const side of [-1, 1]) for (let s = -front + .4; s <= front - 1.2; s += 1.4) {
-      const p = cityPoint(T.a + side * (W / 2 - .45), T.b - s); push({ x: p.x, z: p.z, r: .6, kind: 'temple-wall' });
-    }
-    metrics.buildings++;
+    metrics.buildings++; metrics.ruinedTemple = true;
   }
 
   /**
@@ -425,7 +403,7 @@ export function createSouthSuvalScenery(kit) {
 
   const cells = [...REGION_CELLS['South Suval']].filter(cell => cell.terrain !== 'lake').sort((p, q) => p.r - q.r || p.q - q.q);
   const ours = (x, z) => hexOwnerAt(x, z) === 'South Suval';
-  const clear = (x, z, margin) => southSuvalClear(x, z, margin);
+  const clear = (x, z, margin) => southSuvalClear(x, z, margin) || suvalHighlandClear(x, z, margin) || suvalFalsePassClear(x, z, margin) || Math.hypot(x - IMLAMDRIS_REBUILD.centre.x, z - IMLAMDRIS_REBUILD.centre.z) < 31 + margin;
   for (let index = 0; index < cells.length; index += 2) {
     const block = cells.slice(index, index + 2);
     const rocks = [], scrub = [], tufts = [], trees = [];

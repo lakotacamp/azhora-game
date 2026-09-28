@@ -22,6 +22,7 @@
  *
  * Pure: no DOM, no three. The tower is src/lighthouse-world.js.
  */
+import { questLive } from './quest-slate.js';
 import { ADDISON_AFTER, CROSSING_PLAN, HEIST_ENDINGS, HEIST_ENDING_IDS } from './rival-light.js';
 
 const freeze = Object.freeze;
@@ -202,7 +203,7 @@ export function addisonConversation(npc, context) {
     { id: 'light-weather', label: 'What is the weather going to do?', action: () => tell([WEATHER_LORE[visits % WEATHER_LORE.length]]) },
     { id: 'light-her', label: 'Were you at sea?', action: () => tell(HER_OWN) },
     // She has been watching him hunt over the water for a year and a half and told nobody.
-    ...(hunt && hunt.stage !== 'unknown' ? [{ id: 'light-seen', label: 'Have you seen anything strange over the water?',
+    ...(questLive('batman-investigation') && hunt && hunt.stage !== 'unknown' ? [{ id: 'light-seen', label: 'Have you seen anything strange over the water?',
       action: () => tell(SEEN_FROM_THE_LIGHT) }] : []),
     leave,
   ];

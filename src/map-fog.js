@@ -6,7 +6,9 @@
  * village the game opens in, is the first. Pure: no DOM, no three.
  */
 import { hexAt } from './region-world.js';
+import { FARMSTEADS } from './regional-farmland.js';
 import { WINERY } from './winery.js';
+import { ISCARE_RUIN_SITES, ISCARE_REGION } from './iscare-world.js';
 
 export const MAP_FOG_VERSION = 1;
 /** The chart records ground the traveler has actually stood on: one authored hex at a time. */
@@ -24,6 +26,9 @@ const area = (id, name, region, x, z, radius, note) => Object.freeze({ id, name,
 
 /** The named ground of Azhora, as the traveler's own chart records it. */
 export const SUBREGIONS = Object.freeze([
+  ...FARMSTEADS.map(farm => area(farm.id, farm.name, farm.region, farm.x, farm.z, 28, 'Worked fields, an open tool shelter and shared garden beds. Take seeds, sow, water, and return for the harvest.')),
+  ...ISCARE_RUIN_SITES.map(site => area(site.id, site.name, ISCARE_REGION, site.x, site.z, 45, 'Burned, roofless stone and charred beams remain from the Blood Prince\'s passage. The islands have wildlife, but these settlements are abandoned.')),
+  area('imlamdris-rebuilding', 'Imlamdris rebuilding', 'South Suval', -126, 1154, 40, 'Four small timber homes and a new building frame stand beside the razed city.'),
   // Drent
   // The id stays `eastreena` so older charts keep loading; the name on the chart is the one the village uses now.
   area('eastreena', 'Tidehaven', 'Drent', -6, 29, 55, 'The port village on Drent’s east coast, where the road begins. It was East Rena once — Eastreena — when there was a Rena to be east of, and the old people still call it that.'),
@@ -79,7 +84,7 @@ export const SUBREGIONS = Object.freeze([
   area('feradom-road', 'The Feradom Road', 'Pueth', -424, -522, 60, 'The barrier at the edge of Pueth. Feradom lies beyond it, and the road is shut.'),
   // Elagos
   area('the-stair', 'The Stair', 'Elagos', -1256, 400, 52, 'Where the lake water falls to the Moros in four steps of shelved rock, and the ox capstan that hauls a laden barge back up it.'),
-  area('ambron', 'Ambron', 'Elagos', -1274, 300, 130, 'The city on the narrows: four ages of wall on one line, the causeway over the water, the quays on both banks, and the chain every barge in the Lake Lands waits for.'),
+  area('ambron', 'Ambron', 'Elagos', -1130, 10, 155, 'The imperial capital fills dry ground between four lakes: high civic roofs in the north, an interlake market, and guild courts and homes along the southern avenues.'),
   area('the-narrows', 'The Narrows', 'Elagos', -1274, 176, 60, 'Where Lake Ela pinches to forty-six metres before it goes south. Everything the Lake Lands sells passes this gap.'),
   area('lake-ela', 'Lake Ela', 'Elagos', -1345, 100, 110, 'Cold, clear and old, running north-west out of sight, with one outlet at its south-eastern tip.'),
   area('nemmel', 'Nemmel', 'Elagos', -1258, 126, 42, 'A fishing hamlet on Ela’s eastern shore: six roofs, drying frames, and a smoke shed that works all year.'),
@@ -135,6 +140,22 @@ export const SUBREGIONS = Object.freeze([
   area('imlamdris-pass', 'The Hill Pass', 'South Suval', -40, 1050, 75, 'The saddle east of the ridge and the road over it, then west under the ridge to the barred southern hill gate in the East Suval frontier.'),
   area('eastern-slopes', 'The Eastern Slopes', 'South Suval', 0, 1241, 55, 'Vines in rows on the hill across the water from the city, facing the morning sun.'),
   area('southern-cliffs', 'The Southern Cliffs', 'South Suval', -150, 1335, 100, 'The ridge country’s drop to the sea: high ground to the edge, then rock and swell. A cove where the grass comes down, and seabirds on the tops.'),
+  // Feradom: the barrier hills along its inland edge, and the six passes through them (src/feradom-world.js).
+  area('feradom-barrier-hills', 'The Barrier Hills', 'Feradom', -307, -629, 125, 'Steep forested hills along the duchy’s inland edge, faced with a band of bare rock toward the border, with beacons on the summits between the passes.'),
+  area('feradom-ordel-gap', 'The Ordel Gap', 'Feradom', -148, -587, 60, 'The easternmost pass: a gorge above the Ordel, a tower on its rim, and a castle across the basin behind.'),
+  area('feradom-road-pass', 'The Road Pass', 'Feradom', -421, -610, 70, 'The Feradom road’s pass: a gorge, a tower above the narrows, and the great castle of the passes, its gate toward Pueth shut.'),
+  area('feradom-birch-pass', 'The Birch Pass', 'Feradom', -586, -705, 60, 'A narrow gorge on the Amod border, west of the corner where Pueth’s border turns, and a small castle behind it.'),
+  area('feradom-amod-pass', 'The Amod Pass', 'Feradom', -728, -850, 60, 'The pass over against Amod: a gorge, its tower, and a castle filling the basin.'),
+  area('feradom-stone-pass', 'The Stone Pass', 'Feradom', -830, -908, 60, 'A castle in a basin cut from the East Lotharn’s foothills, the range’s grey slopes above it.'),
+  area('feradom-fir-pass', 'The Fir Pass', 'Feradom', -896, -1022, 60, 'The westernmost pass, deep in the firs between the East Lotharn and the sea.'),
+  // The East Lotharn: the old range's valleys and tops (src/east-lotharn-world.js).
+  area('kemrath', 'Kemrath', 'East Lotharn Mountains', -1330, -835, 125, 'A broad high valley with a flat floor of deep soil, fields in strips down both sides of its water and vines on its north wall.'),
+  area('the-col', 'The Col', 'East Lotharn Mountains', -1080, -895, 60, 'The saddle at Kemrath’s head between the two massifs, the divide and the pass’s highest section. The pass inn stands on it.'),
+  area('stonegate', 'Stonegate', 'East Lotharn Mountains', -1080, -1080, 110, 'The gorge the pass goes down to the Mithala plain: white water between walls of layered stone.'),
+  area('upper-olveth', 'Upper Olveth', 'East Lotharn Mountains', -1330, -1060, 110, 'An open high valley of the north face, sheep grass at its head and its beck running down to the border water.'),
+  area('central-massif', 'The Central Massif', 'East Lotharn Mountains', -1300, -955, 110, 'Old forest to a grazed top, and the iron and coal of the central range in its south face.'),
+  area('eastern-massif', 'The Eastern Massif', 'East Lotharn Mountains', -930, -830, 110, 'The highest ground in the range, forested to a rounded open summit.'),
+  area('border-water', 'The Border Water', 'East Lotharn Mountains', -1250, -1165, 90, 'The range’s northern foot, where the forest gives out above a mountain river and the Mithala plain begins.'),
   area('lizeem-reach', 'The Lower Lizeem', 'Eer', -1420, 1080, 110, 'The last reach of the great river, going grey with what it is carrying. Gala is on the far bank and there is no way to it: not here, and not anywhere along this side.'),
   // Peblos: the islands, which are charted from the water as much as from the land.
   area('cobble', 'Cobble', 'Peblos', 336, 432, 45, 'The one village in the Pebbles: a stone quay, drying racks, ten roofs on a shelf of rock, and the Empire’s tally shed.'),

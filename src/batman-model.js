@@ -44,6 +44,13 @@ export const BATMAN_HEIGHT = 2.35;
 export function createBatman() {
   const group = new THREE.Group(); group.name = 'Batman';
   const rig = new THREE.Group(); group.add(rig);
+  const passengerSeat = new THREE.Group(); passengerSeat.name = 'Batman passenger seat';
+  passengerSeat.position.set(0, 1.3, -.4); rig.add(passengerSeat);
+  // The character animator places seated hips .566m above its feet-root. Keep
+  // that origin below the physical contact point, rather than standing a rider
+  // on the creature's shoulders. The upright seat counteracts his flying lean.
+  const passengerAnchor = new THREE.Group(); passengerAnchor.name = 'Batman passenger feet origin';
+  passengerAnchor.position.y = -.57; passengerSeat.add(passengerAnchor);
 
   const fur = mat(0x2a221e), darkFur = mat(0x1d1815), membrane = mat(0x3e2f38, { side: THREE.DoubleSide, roughness: .78 });
   const claw = mat(0xb9b2a0, { roughness: .5 }), teeth = mat(0xe4ddc9, { roughness: .45 });
@@ -138,14 +145,17 @@ export function createBatman() {
    * He breathes deep and slow, the ears work the whole time, and he shifts his weight without
    * ever standing straight. `flare` (0..1) opens the wings off his sides, for when he means it.
    */
-  function update(seconds, { flare = 0 } = {}) {
+  function update(seconds, { flare = 0, flying = false, speed = 0, bank = 0 } = {}) {
     const breath = Math.sin(seconds * .9), sway = Math.sin(seconds * .31);
-    rig.position.y = breath * .012;
-    rig.rotation.x = .2 + breath * .01;
-    rig.rotation.y = sway * .05;
+    rig.position.y = flying ? 0 : breath * .012;
+    rig.rotation.x = flying ? 1.02 : .2 + breath * .01;
+    rig.rotation.y = flying ? 0 : sway * .05;
+    rig.rotation.z = flying ? THREE.MathUtils.clamp(bank, -.24, .24) : 0;
+    // Keep the carried traveler upright while the bat's body leans into flight.
+    passengerSeat.quaternion.copy(rig.quaternion).invert();
     chest.scale.set(1 + breath * .02, 1 + breath * .015, 1 + breath * .025);
-    head.rotation.y = Math.sin(seconds * .23 + 1) * .3;
-    head.rotation.x = -.05 + Math.sin(seconds * .41) * .06;
+    head.rotation.y = flying ? 0 : Math.sin(seconds * .23 + 1) * .3;
+    head.rotation.x = flying ? -.55 : -.05 + Math.sin(seconds * .41) * .06;
     for (const [index, ear] of ears.entries()) {
       const side = index ? 1 : -1;
       ear.rotation.z = side * (.3 + Math.sin(seconds * (index ? 1.7 : 2.3) + index) * .12);
@@ -155,13 +165,34 @@ export function createBatman() {
       const side = index ? 1 : -1;
       // Folded, they hang down his sides. Flared, they go out and up and he is suddenly twice as wide,
       // which is the entire point of the gesture and the reason people fall over backwards.
-      wing.rotation.z = side * (.5 + flare * 1.15 + Math.sin(seconds * .37 + index) * .02);
-      wing.rotation.x = flare * -.28;
-      wing.rotation.y = side * flare * -.42;
+      const stroke = flying ? Math.sin(seconds * (speed > 10 ? 5.6 : 4.3)) * .25 : 0;
+      wing.rotation.z = side * (flying ? 1.6 + stroke : .5 + flare * 1.15 + Math.sin(seconds * .37 + index) * .02);
+      wing.rotation.x = flying ? -.35 : flare * -.28;
+      wing.rotation.y = side * (flying ? -.32 : flare * -.42);
     }
     for (const eye of eyes) eye.material.emissiveIntensity = .5 + Math.pow(Math.max(0, Math.sin(seconds * .5)), 3) * .5;
   }
 
   update(0);
-  return { group, rig, head, wings, ears, update };
+  function animate(seconds, speed = 0, grounded = true, pose = {}) {
+    const action = pose.action ?? 'idle', progress = THREE.MathUtils.clamp(pose.progress ?? 0, 0, 1);
+    const striking = action === 'attack' || action === 'strike';
+    const flare = action === 'windup' ? .5 + progress * .5 : striking ? 1 - progress * .35 : pose.alert ? .28 : 0;
+    update(seconds, { flare, flying: !!pose.flying, speed, bank: pose.bank ?? 0 });
+    rig.position.z = 0;
+    if (!pose.flying && speed > .1) {
+      rig.position.y += Math.abs(Math.sin(seconds * 7)) * .04;
+      rig.rotation.y += Math.sin(seconds * 3.5) * .06;
+    }
+    if (striking) {
+      rig.position.z = Math.sin(progress * Math.PI) * .28;
+      rig.rotation.y = Math.sin(progress * Math.PI) * .45;
+      wings[0].rotation.y -= Math.sin(progress * Math.PI) * .65;
+    } else if (action === 'hit' || action === 'stagger') {
+      rig.rotation.x -= Math.sin(progress * Math.PI) * .2;
+    } else if (action === 'dead') {
+      rig.rotation.set(1.55, 0, .12); rig.position.y = -.1;
+    }
+  }
+  return { group, rig, head, wings, ears, passengerSeat, passengerAnchor, update, animate };
 }

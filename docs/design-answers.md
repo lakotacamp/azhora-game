@@ -542,3 +542,39 @@ Jessi has twelve distinct hair colors in streaks across her crown and long tied 
 Liz's rescue quest, dialogue, journal, playtest card and autoplay status use the name
 **Olive**. This renames the existing cat; keep the `liz-cat` identity and saved quest
 progress, behavior and rewards compatible with older checkpoints.
+
+### 2026-09-27 - Literal blank-slate residents
+
+The user corrected the Port Calos placeholders: people whose physical appearance has not been supplied must be visually blank too. The 21 newly named residents use identical featureless neutral-gray figures, with no hair, facial features, clothing details, accessories, or individualized proportions. Their names and exact placeholder dialogue remain. Previously specified/designed moved characters and the harbor hosts keep their existing requested appearances. Do not invent provisional personal appearances for future named blank slates.
+
+### 2026-09-27 - Catie quest playtest
+
+Add a Catie computer-autoplay card under Quest playtests, alongside the other named quests. It starts an isolated fresh quest beside Catie, follows the highland search, chooses the peaceful Batman conversation and completes the carried tour. Pause, taking control and resuming should work like the existing quest demonstrations, while preserving the normal adventure save.
+
+### 2026-09-27 - Short scenic Suval tour
+
+Shorten Batman's carried tour to a scenic route through the three Suvals. He does not need to fly through every hex. Reveal every authored hex in West, South and East Suval once the player lands. Keep the history narration, first Flying lesson, Cartography reward, northern West Suval landing, physical return to the cave, pause and checkpoint behavior.
+
+
+### 2026-09-27 - Natural Suval mountains and climbing status
+
+Make Suval's mountains and hills more natural: varied ridges and shoulders, irregular bedded rock, and smooth terrain transitions. Preserve the mountain hiking routes and locked East Suval frontier. The user also asked whether climbing had been introduced; it has not. Hiking up graded paths and the Flying lesson are implemented, but no player Climbing skill or cliff-climbing mechanic exists.
+
+### 2026-09-27 - Developer bat Tab turbo
+
+Holding Tab makes the testing-only developer bat fly at 240 metres per second, ten times its normal 24 m/s pace. Releasing Tab immediately returns to normal speed, or the existing 72 m/s Shift boost if Shift is still held. Keep pause, terrain clearance, bounds and landing rules; do not change the scripted Batman tour.
+
+
+### 2026-09-27 - Implement climbing in Suval
+
+The user authorized a playable climbing system inspired by Breath of the Wild, with Suval as the proof of concept. This supersedes the earlier climbing-status note: gripping natural terrain, directional traversal, stamina and upward boosts, ledge rest, physical falls, and a Climbing skill are now implemented. Keep the East Suval border closed and existing walking quest routes usable. See [Climbing: Suval proof of concept](climbing-suval.md).
+
+Claude’s East Lotharn mountain integration is available separately in the east-lotharn worktree at b108263; it has not been merged here. It has a distinct automatic scrambling policy, so its terrain and caves must be reconciled with the Suval controller before merging overlapping movement code.
+
+### 2026-09-27 - Brandy and Jon's coastal home
+
+Move Brandy and her boards to the coastward Saltwind Lookout clearing shown by the player. Give her an accessible cottage, Bosco's corner, and a mailbox reading Jon and Brandy. Brandy works outside mornings and afternoons, goes indoors at midday and evening, and sleeps at night; knock to invite her out while awake. Jon the Salt Sultan treats this as his own home and walks there during rare Tidehaven calls, returning to his ship before departure. His stable saved ID remains john-salt; his displayed name is Jon. Tree roots follow the rendered hillside, including the tilt of trunks.
+
+### 2026-09-27 - Ambron between the four lakes and Jesse's carriage
+
+Expand and relocate Ambron onto dry land between Ela, Thelas, Brul, and Ossen, preserving the water geography. Use an irregular capital layout with distinct districts, existing characters and named homes. Cagney starts at a roadside hamlet farther along the Ambron road so her escort does not grow excessively; Kayla's race may be longer. Jesse leaves Port Calos for the opposite shoulder farther west from Cagney's former crossroads. Chip recommends Jesse. Jesse teaches assembling collected carriage parts with species-specific timber, awards Construction XP, then drives the player to Ambron's Carpenter's Guild with road conversation. Jesse goes inside and answers a knock; clearly mark the future Carpenter Guild arc as not yet fleshed out.

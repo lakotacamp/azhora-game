@@ -2,6 +2,7 @@
  * this owns the same person's feet and whether they are behind their own door. */
 import { QUEST_HOMES } from './quest-homes.js';
 import { FERRY_LANDINGS } from './ferry.js';
+import { AMBRON_LAYOUT_VERSION, AMBRON_LEGACY_BOUNDS, AMBRON_SAFE_ARRIVAL } from './ambron-city-layout.js';
 
 export const HOME_PACE = 2.8;
 export const HOME_FERRY_SECONDS = 60;
@@ -12,17 +13,30 @@ const validPoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.z)
 const gap = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const clone = value => JSON.parse(JSON.stringify(value));
 
+// Version-one saves predate the city relocation. Recognize only the actual old
+// thresholds; arbitrary coordinates must still fail stationary-state validation.
+const LEGACY_HOMES = Object.freeze({
+  'ben-sorcerer': { door: { x: -1189, z: 242.1 }, porch: { x: -1189, z: 243.5 } },
+  cagney: { door: { x: -1190, z: 249.9 }, porch: { x: -1190, z: 249 } },
+  'bee-keeper': { door: { x: -1337.9, z: 264 }, porch: { x: -1336.5, z: 264 } },
+});
+const legacyLayout = data => data.layoutVersion === undefined || data.layoutVersion === 1;
+const inLegacyCity = p => p.x >= AMBRON_LEGACY_BOUNDS.minX && p.x <= AMBRON_LEGACY_BOUNDS.maxX
+  && p.z >= AMBRON_LEGACY_BOUNDS.minZ && p.z <= AMBRON_LEGACY_BOUNDS.maxZ;
+const nearHome = (data, id, p, kind, radius) => gap(p.position, QUEST_HOMES[id][kind]) < radius
+  || legacyLayout(data) && gap(p.position, LEGACY_HOMES[id][kind]) < radius;
+
 export function validateHomeResidents(data, { allowMissing = true } = {}) {
   if (data === undefined) return allowMissing;
-  if (!data || data.version !== 1 || !data.people || typeof data.people !== 'object' || Array.isArray(data.people)) return false;
+  if (!data || data.version !== 1 || (data.layoutVersion !== undefined && ![1, AMBRON_LAYOUT_VERSION].includes(data.layoutVersion)) || !data.people || typeof data.people !== 'object' || Array.isArray(data.people)) return false;
   return Object.entries(data.people).every(([id, p]) => QUEST_HOMES[id] && p
     && phases.includes(p.phase) && ['home', 'quay'].includes(p.leg) && validPoint(p.position)
     && Number.isFinite(p.yaw) && Number.isFinite(p.clock) && p.clock >= 0 && p.clock <= HOME_FERRY_SECONDS
     && (p.phase !== 'sailing' || (id === 'bee-keeper' && p.leg === 'quay'))
     && (p.leg !== 'quay' || id === 'bee-keeper')
     && (['walking', 'sailing'].includes(p.phase) || p.leg === 'home')
-    && (!['inside', 'entering'].includes(p.phase) || gap(p.position, QUEST_HOMES[id].door) < .35)
-    && (p.phase !== 'outside' || gap(p.position, QUEST_HOMES[id].porch) < 2.1)
+    && (!['inside', 'entering'].includes(p.phase) || nearHome(data, id, p, 'door', .35))
+    && (p.phase !== 'outside' || nearHome(data, id, p, 'porch', 2.1))
     && (p.phase !== 'sailing' || gap(p.position, FERRY_LANDINGS.peblos.ashore) < .35));
 }
 
@@ -41,7 +55,16 @@ export function createHomeResidents({ route, move, onEvent = () => {} } = {}) {
   function reset(id) { if (id) { delete people[id]; routes.delete(id); } else { people = {}; routes.clear(); } }
   function restore(data) {
     if (!validateHomeResidents(data)) return false;
-    people = clone(data?.people ?? {}); routes.clear(); return true;
+    people = clone(data?.people ?? {});
+    if (data && legacyLayout(data)) for (const [id, resident] of Object.entries(people)) {
+      if (!inLegacyCity(resident.position) || resident.leg !== 'home') continue;
+      const home = QUEST_HOMES[id];
+      if (['inside', 'entering', 'coming-out'].includes(resident.phase)) resident.position = point(home.door);
+      else if (resident.phase === 'outside') resident.position = point(home.porch);
+      else if (resident.phase === 'walking') resident.position = point(AMBRON_SAFE_ARRIVAL);
+      resident.yaw = resident.phase === 'outside' ? home.yaw + Math.PI : home.yaw;
+    }
+    routes.clear(); return true;
   }
   function knock(id, { available = true } = {}) {
     if (!available || people[id]?.phase !== 'inside') return false;
@@ -107,5 +130,5 @@ export function createHomeResidents({ route, move, onEvent = () => {} } = {}) {
   }
   return Object.freeze({ begin, reset, restore, knock, tick,
     get: id => people[id] ? clone(people[id]) : null,
-    snapshot: () => ({ version: 1, people: clone(people) }) });
+    snapshot: () => ({ version: 1, layoutVersion: AMBRON_LAYOUT_VERSION, people: clone(people) }) });
 }

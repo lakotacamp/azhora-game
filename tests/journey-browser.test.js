@@ -10,6 +10,18 @@ const entries = Object.freeze([
   Object.freeze({ id: 'future', title: 'Spoiler', type: 'main', status: 'unstarted' }),
 ]);
 
+test('skill lessons keep their category while focused and remain skill entries in the completed archive', () => {
+  const browser = createJourneyIndex();
+  const lesson = { id: 'jesse-carriage', title: 'A carriage worth the road', type: 'skill', status: 'active', detail: 'Collect the parts.' };
+  const active = browser.update({ entries: [...entries, lesson], trackedId: lesson.id });
+  assert.equal(active.selectedId, lesson.id); assert.equal(active.selected.type, 'skill'); assert.equal(active.selected.grade, 'skill');
+  browser.update({ entries: [...entries, { ...lesson, status: 'complete', detail: 'You reached the Carpenter\'s Guild.' }], trackedId: 'main' });
+  const archived = browser.open({ id: lesson.id });
+  assert.equal(archived.status, 'complete'); assert.equal(archived.selected.type, 'skill'); assert.equal(archived.selected.grade, 'skill');
+  assert.equal(archived.counts.complete, 2); assert.equal(archived.trackedId, 'main');
+  assert.equal(normalizeJourneyEntries([{ ...lesson, type: undefined, grade: 'skill' }])[0].grade, 'skill');
+});
+
 test('the journal admits begun, completed, and discovered entries but never an unstarted quest', () => {
   const result = normalizeJourneyEntries(entries);
   assert.deepEqual(result.map(entry => entry.id).sort(), ['bridge', 'main', 'old', 'pond']);

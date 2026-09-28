@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { canStand } from './game-state.js';
 import { PLANT_SPECIES } from './botany.js';
+import { timberForSpecies } from './wood-species.js';
 
 const TAU = Math.PI * 2, PHI = 2.39996;
 
@@ -117,7 +118,7 @@ export const SPECIMEN_TREES = Object.freeze([
   ['sycamore', -108, -8], ['sycamore', -528, 160], ['bald-cypress', -545, 187, true], ['loblolly-pine', -398, 20], ['loblolly-pine', -452, 64],
   ['red-cedar', -412, 72], ['red-cedar', -190, 52], ['holly', -94, 38], ['dogwood', -60, 52], ['dogwood', -130, 45],
   ['persimmon', -454, 14], ['black-walnut', -58, 2],
-].map(([species, x, z, water = false], i) => Object.freeze({ id: `${species}-${i + 1}`, species, x, z, water })));
+].map(([species, x, z, water = false], i) => Object.freeze({ ...timberForSpecies(species), id: `${species}-${i + 1}`, species, x, z, water, harvestable: false })));
 
 /** How near the trunk the traveler must stand to look at it properly. */
 export const TREE_REACH = 3.4;
@@ -138,6 +139,7 @@ export function createDrentTrees(scene, world, { avoid = [] } = {}) {
   for (const species of new Set(trees.map(tree => tree.species))) {
     const mine = trees.filter(tree => tree.species === species);
     const mesh = new THREE.InstancedMesh(shapes[species], material, mine.length);
+    mesh.userData.species = species; mesh.userData.woodKind = timberForSpecies(species)?.woodKind;
     mesh.name = `${PLANT_SPECIES[species]?.name ?? species} trees`; mesh.castShadow = true; mesh.receiveShadow = true;
     mine.forEach((tree, i) => {
       dummy.position.set(tree.x, tree.y - .1, tree.z); dummy.rotation.set(0, tree.yaw, 0); dummy.scale.setScalar(tree.scale);
@@ -148,7 +150,7 @@ export function createDrentTrees(scene, world, { avoid = [] } = {}) {
   }
   // Each trunk is a collider, so nobody walks through a tree they are meant to look at.
   const BROAD = new Set(['white-oak', 'sycamore', 'bald-cypress']);
-  const colliders = trees.map(tree => ({ x: tree.x, z: tree.z, r: BROAD.has(tree.species) ? .85 : .5, kind: 'specimen-tree' }));
+  const colliders = trees.map(tree => ({ x: tree.x, z: tree.z, r: BROAD.has(tree.species) ? .85 : .5, kind: 'specimen-tree', id: tree.id, species: tree.species, woodKind: tree.woodKind }));
 
   return {
     colliders,
@@ -159,13 +161,13 @@ export function createDrentTrees(scene, world, { avoid = [] } = {}) {
         const d = Math.hypot(tree.x - position.x, tree.z - position.z);
         if (d <= gap) { gap = d; best = tree; }
       }
-      return best ? { id: best.id, species: best.species, name: best.name, x: best.x, z: best.z } : null;
+      return best ? { id: best.id, species: best.species, woodKind: best.woodKind, name: best.name, x: best.x, z: best.z } : null;
     },
     /** Draw only what is near: a specimen tree past this is part of the wood again. */
     update(position, range = 150) {
       for (const { mesh, trees: mine } of groups.values()) mesh.visible = mine.some(tree => Math.hypot(tree.x - position.x, tree.z - position.z) < range);
     },
-    state() { return { trees: trees.map(({ id, species, x, z }) => ({ id, species, x, z })), kinds: groups.size }; },
+    state() { return { trees: trees.map(({ id, species, woodKind, x, z }) => ({ id, species, woodKind, x, z })), kinds: groups.size }; },
     dispose() {
       if (disposed) return; disposed = true; root.removeFromParent();
       root.traverse(object => { if (object.isInstancedMesh) object.dispose(); });

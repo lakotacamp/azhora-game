@@ -88,7 +88,7 @@ test('restoring an old save without residents starts empty and restored trips do
   assert.equal(loaded.restore(saved),true);assert.deepEqual(events,priorEvents);
   assert.deepEqual(loaded.snapshot(),saved);assert.equal(loaded.begin(id,BEN_HOME.door),false);
   until(loaded,id,'inside');assert.deepEqual(events,['departing','entering','inside']);
-  assert.equal(loaded.restore(undefined),true);assert.deepEqual(loaded.snapshot(),{version:1,people:{}});
+  assert.equal(loaded.restore(undefined),true);assert.deepEqual(loaded.snapshot(),{version:1,layoutVersion:2,people:{}});
 });
 
 test('invalid or stale stationary home saves are rejected without disturbing the prior trip',()=>{
@@ -167,4 +167,35 @@ test('host validates before changing actors and missing old saves never resurrec
     assert.equal(f.host.begin(id),false);f.host.frame(10);assert.equal(f.host.state(id),null);
     f.host.reset(id);assert.equal(npc.hidden,true,'reset cannot unhide a dead resident');
   }
+});
+
+
+test('moving Ambron preserves old indoor residents and sends old city walkers to the new gate without replaying events',()=>{
+  const old = {
+    'ben-sorcerer': { door:{x:-1189,z:242.1},porch:{x:-1189,z:243.5} },
+    cagney: { door:{x:-1190,z:249.9},porch:{x:-1190,z:249} },
+    'bee-keeper': { door:{x:-1337.9,z:264},porch:{x:-1336.5,z:264} },
+  };
+  for (const [id,previous] of Object.entries(old)) for (const phase of ['inside','entering','outside','coming-out','walking']) {
+    const events=[], residents=pure({onEvent:event=>events.push(event)}), home=QUEST_HOMES[id];
+    const at=phase==='outside'?previous.porch:previous.door;
+    const saved=snapshot(id,record(home,phase,at));
+    assert.equal(validateHomeResidents(saved),true,`${id}: ${phase} legacy save remains loadable`);
+    assert.equal(residents.restore(saved),true);assert.deepEqual(events,[]);
+    const restored=residents.get(id);
+    if(phase==='walking') assert.ok(gap(restored.position,home.route[0])<20,'old city walkers join the new entrance lane');
+    else assert.deepEqual(restored.position,phase==='outside'?{x:home.porch.x,z:home.porch.z}:{x:home.door.x,z:home.door.z});
+    assert.equal(restored.phase,phase);assert.equal(validateHomeResidents(residents.snapshot()),true);
+    assert.equal(residents.snapshot().layoutVersion,2);assert.deepEqual(saved.people[id].position,at,'source save is untouched');
+    const current=residents.snapshot();assert.equal(residents.restore(current),true);assert.deepEqual(residents.snapshot(),current,'migration runs only once');
+  }
+});
+
+test('relocating Ambron leaves outdoor journeys and Troy ferry travel at their saved feet',()=>{
+  const residents=pure(),id=BEN_HOME.npcId;
+  const saved=snapshot(id,record(BEN_HOME,'walking',{x:-788,z:280}));
+  residents.restore(saved);assert.deepEqual(residents.get(id),saved.people[id]);
+  const ferry=snapshot(TROY_HOME.npcId,{...record(TROY_HOME,'sailing',FERRY_LANDINGS.peblos.ashore),leg:'quay',clock:12});
+  residents.restore(ferry);assert.deepEqual(residents.get(TROY_HOME.npcId),ferry.people[TROY_HOME.npcId]);
+  assert.equal(validateHomeResidents({...saved,layoutVersion:99}),false);
 });

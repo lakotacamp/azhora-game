@@ -5,6 +5,7 @@
  * Stanley supplies seed; Enna keeps her independent mill errand. Pure model, no DOM or Three.
  */
 import { APPLEGARTH_WORKS } from './rena.js';
+import { REGIONAL_FARM_ROWS } from './regional-farmland.js';
 
 const freeze = Object.freeze;
 
@@ -49,7 +50,9 @@ export const FARM_ROWS = freeze([
   row('commons-row-4', 'The far commons row', -435.4, 72.6),
 ]);
 export const FARM_ROW_IDS = freeze(FARM_ROWS.map(entry => entry.id));
-export const farmRow = id => FARM_ROWS.find(entry => entry.id === id) ?? null;
+export const ALL_FARM_ROWS = freeze([...FARM_ROWS, ...REGIONAL_FARM_ROWS]);
+export const ALL_FARM_ROW_IDS = freeze(ALL_FARM_ROWS.map(entry => entry.id));
+export const farmRow = id => ALL_FARM_ROWS.find(entry => entry.id === id) ?? null;
 
 /** What one apple off a kept tree is worth, and how long the tree takes to bear again. */
 export const ORCHARD_ITEM = 'avrel-apple';
@@ -78,8 +81,8 @@ export function validateFarmingSnapshot(data, { allowMissing = true, playSeconds
   if (typeof data.met !== 'boolean' || !isPlainObject(data.rows) || !isPlainObject(data.trees)) return false;
   if (!Number.isInteger(data.reaped) || data.reaped < 0 || data.reaped > 1e7) return false;
   const rows = Object.entries(data.rows);
-  if (rows.length > FARM_ROWS.length) return false;
-  if (!rows.every(([id, sown]) => FARM_ROW_IDS.includes(id) && isPlainObject(sown)
+  if (rows.length > ALL_FARM_ROWS.length) return false;
+  if (!rows.every(([id, sown]) => ALL_FARM_ROW_IDS.includes(id) && isPlainObject(sown)
     && Object.hasOwn(CROPS, sown.crop) && seconds(sown.sownAt) && sown.sownAt <= playSeconds
     && (sown.watered === undefined || typeof sown.watered === 'boolean'))) return false;
   const trees = Object.entries(data.trees);
@@ -149,7 +152,7 @@ export function createFarming({ skills = null, inventory = null, onEvent = () =>
     const kind = CROPS[cropId];
     if (!kind) return { ok: false, reason: 'There is no such seed.' };
     if (level() < kind.level) return { ok: false, reason: `${kind.name} wants farming level ${kind.level}.` };
-    if (inventory?.remove && !inventory.remove(kind.seed, 1)) return { ok: false, reason: `You need ${kind.name.toLowerCase()} seed. Stanley shares seed packets beside the commons rows.` };
+    if (inventory?.remove && !inventory.remove(kind.seed, 1)) return { ok: false, reason: `You need ${kind.name.toLowerCase()} seed. Take a seed packet from the shared bin beside the beds.` };
     const at = now(playSeconds);
     state.rows.set(id, { crop: kind.id, sownAt: at });
     onEvent({ type: 'row-sown', row: id, crop: kind.id, ripeAt: at + kind.seconds });
@@ -217,7 +220,7 @@ export function createFarming({ skills = null, inventory = null, onEvent = () =>
 
   /** The whole farm at a moment of play, for the journal and for whoever draws the rows. */
   function view(playSeconds) {
-    const rows = FARM_ROW_IDS.map(id => rowState(id, playSeconds));
+    const rows = ALL_FARM_ROW_IDS.map(id => rowState(id, playSeconds));
     const trees = ORCHARD_TREE_IDS.map(id => treeState(id, playSeconds));
     return { met: state.met, level: level(), reaped: state.reaped, rows, trees,
       sown: rows.filter(entry => entry.stage === 'sown').length,
@@ -229,12 +232,12 @@ export function createFarming({ skills = null, inventory = null, onEvent = () =>
   function task(playSeconds) {
     if (!state.met) return { title: 'The commons garden', detail: 'Stanley teaches Farming beside the four rows at the Avrel clearing. He shares seeds and recipes. The garden is optional; you can plant before taking his lesson.' };
     const here = view(playSeconds);
-    if (here.ripe) return { title: `${here.ripe} row${here.ripe === 1 ? '' : 's'} ripe`, detail: 'Take it off at the commons. The row is bare again afterwards and can go straight back in.' };
+    if (here.ripe) return { title: `${here.ripe} row${here.ripe === 1 ? '' : 's'} ripe`, detail: 'Return to your planted beds to harvest. Each row can be replanted immediately.' };
     if (here.sown) {
       const soonest = Math.ceil(Math.min(...here.rows.filter(entry => entry.stage === 'sown').map(entry => entry.left)));
       return { title: 'Sown and growing', detail: `About ${soonest} seconds on the soonest row. It grows whether you are watching it or not; go and do something else.` };
     }
-    return { title: 'Four bare rows', detail: 'Choose carrots or barley; beets unlock at level 2 and Drent leaf at level 5. Water a growing row once for an earlier, larger harvest. Stanley shares replacement seeds.' };
+    return { title: 'Ready to plant', detail: 'Choose carrots or barley; beets unlock at level 2 and Drent leaf at level 5. Water a growing row once for an earlier, larger harvest. Shared bins beside the beds supply replacement seeds.' };
   }
 
   function snapshot() {

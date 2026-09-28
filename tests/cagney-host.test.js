@@ -31,11 +31,11 @@ test('Cagney explains the seer prophecy, and in the fight she fights back and is
 });
 
 test('cagnappers visibly wait in the world and combat borrows the same actors without recreating a corpse',()=>{
-  const f=fixture();f.host.update(0);assert.equal(f.created.length,3);
+  const f=fixture();f.host.update(0);assert.equal(f.created.filter(e=>CAGNAPPERS.some(c=>c.id===e.id)).length,3);
   const first=f.host.actor(CAGNAPPERS[0].id);assert.equal(first,f.created[0].actor);
   assert.equal(first.group.position.x,CAGNAPPERS[0].x);assert.equal(first.group.visible,true);
   f.begin();f.host.release(CAGNAPPERS[0].id);f.host.update(1);f.host.update(2);
-  assert.equal(f.created.length,3,'The active fight owns appearances, including released corpse actors');
+  assert.equal(f.created.filter(e=>CAGNAPPERS.some(c=>c.id===e.id)).length,3,'The active fight owns appearances, including released corpse actors');
   assert.equal(f.host.actor('unrelated-enemy'),null);
 });
 
@@ -84,7 +84,7 @@ test('chased survivors walk back into valid spawn bounds before a real combat re
   assert.equal(f.quest.state.stage,'ambushed');
   assert.deepEqual(f.combat.state.enemies.map(e=>e.hp),[13,37]);
   assert.equal(f.combat.state.allies[0].hp,46);
-  assert.equal(f.created.length,3,'returning the survivors creates no replacement actors');
+  assert.equal(f.created.filter(e=>CAGNAPPERS.some(c=>c.id===e.id)).length,3,'returning the survivors creates no replacement actors');
   assert.equal(f.created[0].actor.group.visible,false,'the defeated cagnapper stays absent');
 });
 
@@ -121,7 +121,7 @@ test('cagnappers killed after Cagney is captured remain dead and the failed ques
   for(const foe of f.combat.state.enemies){foe.hp=0;f.host.release(foe.id);f.host.combatEvent({type:'enemy-defeated',id:foe.id});}
   f.combat.state.phase='victory';f.host.combatEvent({type:'victory'});f.host.update(10);
   assert.deepEqual(f.quest.state.enemies,[0,0,0]);assert.equal(f.quest.state.stage,'captured');assert.equal(f.quest.take(),0);
-  assert.equal(f.created.length,3,'No attacker model is recreated after the failure');
+  assert.equal(f.created.filter(e=>CAGNAPPERS.some(c=>c.id===e.id)).length,3,'No attacker model is recreated after the failure');
   f.npc.hidden=false;f.host.frame(.1,true);assert.equal(f.npc.hidden,true,'Generic injury recovery cannot restore the failed escort');
 });
 
@@ -141,7 +141,7 @@ test('a fresh Luscia ambush starts fully healthy and saves actual injuries as a 
 
 test('waiting cagnappers crouch under cover and the same actors uncover on every combat entry',()=>{
   const f=fixture();f.host.update(0);
-  const actors=f.created.map(entry=>entry.actor);
+  const actors=f.created.filter(e=>CAGNAPPERS.some(c=>c.id===e.id)).map(entry=>entry.actor);
   for(const actor of actors){assert.equal(actor.ambushCover.visible,true);assert.equal(actor.pose.sneaking,true);assert.equal(actor.armed,false);}
   f.begin();f.host.update(1);
   for(const actor of actors){assert.equal(actor.ambushCover.visible,false);assert.equal(actor.armed,true);}
@@ -149,7 +149,7 @@ test('waiting cagnappers crouch under cover and the same actors uncover on every
   for(const actor of actors)assert.equal(actor.ambushCover.visible,true);
   f.host.frame(5,true);f.host.update(3);
   for(const actor of actors)assert.equal(actor.ambushCover.visible,false,'A reused combat renderer still gets an uncovered actor');
-  assert.equal(f.created.length,3);
+  assert.equal(f.created.filter(e=>CAGNAPPERS.some(c=>c.id===e.id)).length,3);
 });
 
 
@@ -232,4 +232,23 @@ test('a cagnapper the traveler strikes turns on him for a while',()=>{
   for(const other of g.combat.state.enemies.slice(1))Object.assign(other,{x:her2.x-6,z:her2.z+(other===g.combat.state.enemies[1]?4:-4)});
   for(let i=0;i<120;i++)g.combat.update(1/60);
   assert.ok(Math.hypot(foe2.x-q.x,foe2.z-q.z)>3,'left alone, he goes for her');
+});
+
+
+test('every relocated roadside gang can start through the real combat validator',()=>{
+  for(const wave of CAGNEY_WAVES){
+    const f=fixture({realCombat:true,region:'Elagos',wave:wave.index});
+    // Reproduce the guide holding nine metres short of the next gang. Road
+    // bends can point either way along the arena axis, including toward +Z.
+    const waiting={x:wave.center.x-wave.forward.dx*9,z:wave.center.z-wave.forward.dz*9};
+    f.npc.actor.group.position.set(waiting.x,1,waiting.z);
+    Object.assign(f.player.group.position,{x:waiting.x+2,z:waiting.z});
+    f.quest.accept();f.quest.rememberWalk({...f.quest.state.walk,...waiting,waypoint:wave.waypoint});
+    f.host.frame(.1,true);
+    assert.equal(f.combat.state.phase,'active',`${wave.id} accepts the road's retreat direction`);
+    assert.equal(f.combat.state.encounterId,wave.id);
+    assert.equal(f.quest.state.stage,'ambushed');
+    assert.equal(f.combat.state.enemies.length,3);
+    assert.ok(f.combat.state.enemies.every(e=>e.hp===e.maxHp),'fresh attackers have full health');
+  }
 });

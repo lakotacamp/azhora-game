@@ -26,7 +26,7 @@ export function farmingConversation(npc, context) {
   } });
   choices.push({ id: 'stanley-rows', label: 'Show me how my garden is doing', action: () => {
     const farm = farming.view(clock());
-    const lines = farm.rows.map((row, index) => `Row ${index + 1}: ${row.stage === 'bare' ? 'bare; ready for seed'
+    const lines = farm.rows.filter(row => FARM_ROWS.some(home => home.id === row.id)).map((row, index) => `Row ${index + 1}: ${row.stage === 'bare' ? 'bare; ready for seed'
       : row.stage === 'ripe' ? `${row.cropName}, ready to harvest (${row.quantity})`
       : `${row.cropName}, ${farmWait(row.left)} until harvest${row.watered ? '; watered' : '; could use water'}`}.`);
     openDialogue(npc, [lines.join('\n'), 'The four dark beds beside me are yours to work. Press F at a bed to choose a crop, water it or harvest. Water once for 4 Farming XP, a quarter less growing time and one extra crop. The watering can stays here for everybody.'], null, 'Back to Stanley', { onComplete: back });
@@ -71,16 +71,16 @@ export function farmRowConversation(id, context) {
   if (!here) return false;
   const rowNumber = FARM_ROWS.findIndex(row => row.id === id) + 1;
   const field = { id, name: `Commons row ${rowNumber}`, role: 'Farming \u00b7 field work', ...here };
-  const act = action => { closeDialogue(); const result = action(); onChange(); if (!result.ok) notify(result.reason, 'THE COMMONS GARDEN'); };
+  const act = action => { closeDialogue(); const result = action(); onChange(); if (!result.ok) notify(result.reason, 'FARMING'); };
   const choices = [];
   let detail;
   if (here.stage === 'bare') {
-    detail = 'Choose a crop. One seed packet plants this bed; every harvest gives seed back for replanting. Stanley shares seed beside the rows. Growing time counts only while you are playing.';
+    detail = 'Choose a crop. One seed packet plants this bed; every harvest gives seed back for replanting. The shared bin beside these beds supplies seeds. Growing time counts only while you are playing.';
     for (const kind of Object.values(CROPS)) {
       const unlocked = farming.view(clock()).level >= kind.level;
       const available = farming.sowable(id).find(item => item.id === kind.id)?.seeds ?? 0;
       choices.push({ id: `farm-sow-${kind.id}`, label: `${kind.name} \u00b7 ${farmWait(kind.seconds)} \u00b7 ${kind.xp} XP${unlocked ? ` \u00b7 ${available} seed` : ` \u00b7 level ${kind.level}`}`,
-        disabled: !unlocked || available < 1, reason: !unlocked ? `Farming level ${kind.level} needed` : available < 1 ? 'Ask Stanley for a free seed packet' : kind.note,
+        disabled: !unlocked || available < 1, reason: !unlocked ? `Farming level ${kind.level} needed` : available < 1 ? 'Take a free seed packet from the shared bin' : kind.note,
         action: () => act(() => farming.sow(id, kind.id, clock())) });
     }
     choices.push({ id: 'farm-shared-seeds', label: 'Take seeds from the shared bin', action: () => {
@@ -91,10 +91,10 @@ export function farmRowConversation(id, context) {
     choices.push({ id: 'farm-harvest', label: `Harvest ${here.cropName.toLowerCase()}`, action: () => act(() => farming.reap(id, clock())) });
   } else {
     detail = `${here.cropName} are growing: ${farmWait(here.left)} until harvest. ${here.watered ? 'The soil is watered. You can leave it to grow.'
-      : 'Water once for a quarter less growing time, one extra crop at harvest, and 4 Farming XP.'} You may work another row or leave the clearing.`;
+      : 'Water once for a quarter less growing time, one extra crop at harvest, and 4 Farming XP.'} You may work another row or leave the farm.`;
     if (!here.watered) choices.push({ id: 'farm-water', label: `Water this row \u00b7 +${WATERING_XP} Farming XP`, action: () => act(() => farming.water(id, clock())) });
   }
-  choices.push({ id: 'farm-back', label: 'Back to the clearing', action: closeDialogue });
-  openDialogue(field, [detail], null, 'Back to the clearing', { noWayfinding: true, choices });
+  choices.push({ id: 'farm-back', label: 'Back to the field', action: closeDialogue });
+  openDialogue(field, [detail], null, 'Back to the field', { noWayfinding: true, choices });
   return true;
 }

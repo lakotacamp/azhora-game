@@ -20,9 +20,9 @@ for (const layout of ['flat', 'built Cobble']) test(`Troy pilot completes the re
   const terrain = layout === 'flat' ? world() : (await sourceModule('../src/world.js')).createWorld(new THREE.Scene());
   const navigation = bodyWorld(terrain), murder = createMurderQuest();
   const people = [{ id: TROY.id, name: 'Troy', x: 0, z: 0 },
-    { id: WITNESS_IDS[0], name: 'Jessi', x: 15, z: 10 },
-    { id: WITNESS_IDS[1], name: 'Ari', x: -8, z: 24 },
-    { id: WITNESS_IDS[2], name: 'Imani', x: -20, z: 3 }];
+    { id: WITNESS_IDS[0], name: 'Brenna Vell', x: 15, z: 10 },
+    { id: WITNESS_IDS[1], name: 'Orren Pell', x: -8, z: 24 },
+    { id: WITNESS_IDS[2], name: 'Sivra Noll', x: -20, z: 3 }];
   if (layout !== 'flat') for (const person of people) Object.assign(person, terrain.npcPositions[person.id]);
   const bodies = layout === 'flat' ? people : Object.entries(terrain.npcPositions)
     .map(([id, stand]) => ({ id, ...stand })).filter(person => gap(person, people[0]) < 70);

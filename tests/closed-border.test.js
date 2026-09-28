@@ -6,13 +6,14 @@ import { canStand, moveCharacter } from '../src/game-state.js';
 import { CLOSED_REGIONS, CLOSED_BORDER_LINES, CLOSED_BORDER_COOLDOWN, closedRegionEntered, createBorderWatch } from '../src/closed-border.js';
 import { REGION_OUTLINES, SUVAL_ROAD, insideRegion, isLandHex } from '../src/region-world.js';
 import { FRONTIER_ROUTE, FRONTIER_GATE, BORDER_CROSSING } from '../src/frontier.js';
-import { SUVAL_RIDGE_EDGES, SUVAL_RIDGE_ROCKS, SUVAL_RIDGE_COLLIDERS, SUVAL_HILL_PASSES, SUVAL_HILL_GUARDS, hillPassPoint } from '../src/frontier-ridges.js';
+import { SUVAL_RIDGE_EDGES, SUVAL_RIDGE_ROCKS, SUVAL_RIDGE_COLLIDERS, SUVAL_HILL_PASSES, SUVAL_HILL_GUARDS, SUVAL_FALSE_PASSES, hillPassPoint } from '../src/frontier-ridges.js';
+import { SMUGGLERS_DOOR, ROUTE_TO_DOOR } from '../src/rival-light.js';
 import { TOWN_LIFE_NPCS } from '../src/town-life.js';
 
 const flat = (inside) => (name, x) => name === 'Closed' && inside(x);
 
 test('a move from outside a closed region to inside it is refused; moves within, out of and around it are not', () => {
-  assert.deepEqual(CLOSED_REGIONS, ['East Suval']);
+  assert.deepEqual(CLOSED_REGIONS, ['East Suval', 'Feradom']);
   const inside = flat(x => x > 0), closed = ['Closed'];
   assert.equal(closedRegionEntered({ x: -1, z: 0 }, { x: 1, z: 0 }, closed, inside), 'Closed');
   assert.equal(closedRegionEntered({ x: 1, z: 0 }, { x: 2, z: 0 }, closed, inside), null, 'a tester already inside moves about freely');
@@ -74,6 +75,9 @@ test('the exposed land boundary has continuous solid limestone and every hill pa
   const world = { bounds: { minX: -1000, maxX: 1000, minZ: 0, maxZ: 1400 }, heightAt: () => 10, colliders };
   assert.equal(colliders.length, SUVAL_RIDGE_COLLIDERS.length);
   assert.ok(SUVAL_RIDGE_EDGES.length > 10 && SUVAL_RIDGE_ROCKS.length > 100);
+  assert.ok(Math.max(...SUVAL_RIDGE_ROCKS.map(r => r.height)) - Math.min(...SUVAL_RIDGE_ROCKS.map(r => r.height)) > 14,
+    'the frontier alternates low shoulders with tall broken crags');
+  assert.equal(new Set(SUVAL_RIDGE_ROCKS.map(r => r.shape)).size, 3);
   for (const edge of SUVAL_RIDGE_EDGES) {
     const mid = { x: (edge.a.x + edge.b.x) / 2, z: (edge.a.z + edge.b.z) / 2 };
     assert.ok(isLandHex(mid.x - edge.inward.x * 3, mid.z - edge.inward.z * 3), 'no wall across the sea');
@@ -102,11 +106,43 @@ test('the exposed land boundary has continuous solid limestone and every hill pa
         'walkers and riders stop at the locked leaves without needing the region-entry rule');
     }
   }
+  for (const pass of SUVAL_FALSE_PASSES) {
+    assert.ok(scene.getObjectByName(`Elodi false passage ${pass.id}`));
+    for (let i = 1; i < pass.route.length; i++) {
+      const a = pass.route[i - 1], b = pass.route[i], length = Math.hypot(b.x - a.x, b.z - a.z);
+      for (let s = 0; s <= length; s += .5) {
+        const x = a.x + (b.x - a.x) * s / length, z = a.z + (b.z - a.z) * s / length;
+        assert.ok(canStand(x, z, world, .65), `${pass.id}: approach and retreat are open at ${x}, ${z}`);
+        assert.ok(!insideRegion('East Suval', x, z), 'the tempting route never crosses the border');
+      }
+    }
+    assert.equal(canStand(pass.end.x, pass.end.z, world), false, 'the visible obstruction has a collider');
+    const walker = { ...pass.route.at(-1) };
+    moveCharacter(walker, pass.inward.x * 25, pass.inward.z * 25, world);
+    assert.ok((walker.x - pass.end.x) * pass.inward.x + (walker.z - pass.end.z) * pass.inward.z < -1,
+      'the false passage stops a walker before the region-entry rule');
+  }
 });
 
 test('developer travel inside East Suval still allows movement without unlocking its physical border', async () => {
   const { createWorld } = await sourceModule('../src/world.js');
   const world = createWorld(new THREE.Scene()), watch = createBorderWatch();
+  for (const pass of SUVAL_FALSE_PASSES) for (let i = 1; i < pass.route.length; i++) {
+    const a = pass.route[i - 1], b = pass.route[i], length = Math.hypot(b.x - a.x, b.z - a.z);
+    for (let s = 0; s <= length; s += .5) {
+      const x = a.x + (b.x - a.x) * s / length, z = a.z + (b.z - a.z) * s / length;
+      assert.ok(canStand(x, z, world, .45), `${pass.id}: drawn approach is not blocked by world scenery at ${x}, ${z}`);
+    }
+  }
+  for (const p of [SMUGGLERS_DOOR.west, SMUGGLERS_DOOR.east]) assert.ok(canStand(p.x, p.z, world), 'the existing smugglers door remains accessible');
+  for (let i = 1; i < ROUTE_TO_DOOR.length; i++) {
+    const a = ROUTE_TO_DOOR[i - 1], b = ROUTE_TO_DOOR[i], length = Math.hypot(b.x - a.x, b.z - a.z);
+    for (let s = 0; s < length; s++) {
+      const x = a.x + (b.x - a.x) * s / length, z = a.z + (b.z - a.z) * s / length;
+      const own = { bounds: world.bounds, heightAt: world.heightAt, waterAt: world.waterAt, colliders: SUVAL_RIDGE_COLLIDERS };
+      assert.ok(canStand(x, z, own), 'new ridges do not block the existing quest approach');
+    }
+  }
   for (const gate of SUVAL_HILL_PASSES) {
     assert.equal(canStand(gate.x, gate.z, world), false);
     for (const guard of SUVAL_HILL_GUARDS.filter(guard => guard.gate === gate.id)) {

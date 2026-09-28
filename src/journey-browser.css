@@ -17,6 +17,7 @@
 .journey-entry-list{flex:1;min-height:0;overflow-y:auto;padding:8px;scrollbar-width:thin;scrollbar-color:#718b75 transparent}
 .journey-entry{--entry-color:var(--journey-gold);display:grid;grid-template-columns:14px minmax(0,1fr);align-items:start;column-gap:9px;width:100%;padding:14px 11px;border:1px solid transparent;border-left:3px solid transparent;border-radius:3px;background:transparent;text-align:left;color:#e3e9d7;margin:0 0 4px}
 .journey-entry[data-grade="plot"]{--entry-color:#e7e3d1}.journey-entry[data-grade="deed"]{--entry-color:#e6a163}
+.journey-entry[data-grade="skill"]{--entry-color:#a9de91}
 .journey-entry:hover{background:#24463a}
 .journey-entry[aria-pressed="true"]{background:#294c3e;border-color:#a8bea436;border-left-color:var(--entry-color)}
 .journey-entry[data-focused="true"]{border-left-color:var(--entry-color)}
@@ -32,6 +33,8 @@
 .journey-tracked-badge,.journey-completed-badge{color:#eed59b;border:1px solid #d5c18e50;border-radius:3px;padding:2px 7px;font-size:12px}
 .journey-reading[data-grade="plot"] .journey-tracked-badge{color:#e7e3d1;border-color:#e7e3d155}
 .journey-reading[data-grade="deed"] .journey-tracked-badge{color:#e6a163;border-color:#e6a16355}
+.journey-reading[data-grade="skill"] :is(.journey-tracked-badge,.journey-completed-badge){color:#a9de91;border-color:#a9de9155}
+.journey-reading[data-grade="skill"] .journey-kind{color:#a9de91}
 .journey-lead-badge{color:#bccfc4;font-size:12px}
 .journey-browser .journey-lead-help{font:14px/1.6 'Segoe UI',sans-serif;color:#bed0bd;margin:0 0 22px;max-width:60ch}
 .journey-browser .journey-rewards{background:#244638;border:1px solid #78988155;padding:14px 17px;margin:0 0 22px;border-radius:4px}
@@ -39,6 +42,7 @@
 .journey-browser .journey-reading-title{font:400 31px/1.2 Adventure,Georgia,serif;color:#fff0ca;margin:0 0 26px;letter-spacing:-.3px}
 .journey-browser h4{font:600 13px/1.5 'Segoe UI',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#d4dfc7;margin:0 0 9px}
 .journey-browser .journey-next-step{border-left:2px solid #d6be80;padding:0 0 0 17px;margin:0 0 22px;background:none;border-radius:0}
+.journey-reading[data-grade="skill"] .journey-next-step{border-left-color:#a9de91}
 .journey-browser .journey-next-step p,.journey-browser .journey-account,.journey-browser .journey-history p{font:16px/1.7 'Segoe UI',sans-serif;color:#e4ead7;margin:0;max-width:66ch;white-space:pre-line}
 .journey-reading-actions{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 25px}
 .journey-reading-actions button{background:#e4c788;color:#213c2e;border:1px solid #e4c788;border-radius:4px;padding:9px 17px;font-size:15px;font-weight:600;min-height:42px}

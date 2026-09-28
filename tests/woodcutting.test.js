@@ -7,6 +7,9 @@ import { SKILLS, RUNESCAPE_TABLE, MAX_XP, createSkills, skillLevel, skillGuide, 
 import { INVENTORY_ITEMS, ICON_KINDS, createInventoryState } from '../src/inventory.js';
 import { createCampcraft } from '../src/campcraft.js';
 import { createWeapons } from '../src/weapons.js';
+import { WOOD_SPECIES, timberForSpecies } from '../src/wood-species.js';
+import { PLANKS, sawOffer } from '../src/construction.js';
+import { TREE_IDS } from '../src/botany.js';
 import { WOODCUTTING_SKILL, TREE_KINDS, TREE_KIND_IDS, LOG_ITEMS, AXES, KINGS_AXE_LEVEL, KOOPWOOD, WOODLOT_TREES, WOODLOT_SIGN, BOWDEN, BOWDEN_STAND,
   inKoopwood, woodlotColliders, chopChance, bestAxe, createWoodcutting, bowdenConversation, validateWoodcuttingSnapshot } from '../src/woodcutting.js';
 
@@ -107,6 +110,50 @@ test('RuneScape’s rules: a level for every tree, an axe you can swing, a log a
   let logs = 0; while (oaks.standing(oak.id) && logs < 20) if (oaks.swing(oak.id, has).log) logs++;
   assert.equal(logs, TREE_KINDS.oak.logs[1], 'the most an oak has, with a high roll');
   for (const item of [...LOG_ITEMS, ...AXES.map(a => a.id)]) assert.ok(INVENTORY_ITEMS[item] && ICON_KINDS.includes(INVENTORY_ITEMS[item].icon), item);
+});
+
+test('each harvest keeps its actual species through the rendered tree, log and sawpit plank', () => {
+  const skills = createSkills(); skills.learn(WOODCUTTING_SKILL); skills.gain(WOODCUTTING_SKILL, MAX_XP);
+  const wood = createWoodcutting({ skills, random: () => 0 });
+  const expected = [['pine', 'loblolly-pine'], ['oak', 'white-oak'], ['willow', 'black-willow'], ['maple', 'red-maple'], ['walnut', 'black-walnut']];
+  for (const [kind, species] of expected) {
+    const tree = WOODLOT_TREES.find(t => t.kind === kind), result = wood.swing(tree.id, id => id === 'bronze-axe');
+    assert.equal(tree.species, species); assert.equal(tree.woodKind, kind); assert.equal(tree.harvestable, true);
+    assert.equal(result.log, `${kind}-logs`); assert.equal(result.kind.species, species);
+    const rendered = world.woodlot.root.getObjectByName(`Koopwood ${kind} ${tree.id}`);
+    assert.equal(rendered.userData.species, species, 'the visual species agrees with the harvested wood');
+    assert.equal(rendered.userData.log, result.log);
+  }
+  const stock = { 'pine-logs': 2, 'oak-logs': 1, 'walnut-logs': 3, 'willow-logs': 5 };
+  const saw = sawOffer(id => stock[id] ?? 0);
+  assert.deepEqual(saw.lots.map(lot => [lot.log, lot.plank, lot.count]), [
+    ['pine-logs', 'pine-plank', 2], ['oak-logs', 'oak-plank', 1], ['walnut-logs', 'walnut-plank', 3],
+  ], 'sawing keeps woods separate and does not substitute willow for pine');
+  for (const lot of saw.lots) assert.equal(PLANKS[lot.plank].log, timberForSpecies(PLANKS[lot.plank].species).log);
+});
+
+test('botanical specimens and every shared forest trunk have explicit timber identity without relabeling their saved IDs', async () => {
+  const { SPECIMEN_TREES } = await sourceModule('../src/drent-trees.js');
+  for (const id of TREE_IDS) assert.ok(WOOD_SPECIES[id], `wood identity for ${id}`);
+  for (const tree of SPECIMEN_TREES) {
+    assert.equal(tree.woodKind, WOOD_SPECIES[tree.species].woodKind);
+    assert.equal(tree.harvestable, false, 'botany specimens remain observation trees');
+  }
+  assert.equal(timberForSpecies('red-cedar').log, null, 'cedar cannot yield pine logs');
+  assert.equal(timberForSpecies('red-oak').log, null, 'red oak cannot silently yield white oak logs');
+  assert.equal(timberForSpecies('unknown-tree'), null, 'unknown species has no generic fallback');
+  assert.ok(world.timberTrees.length > world.broadleafTrees.length);
+  assert.equal(new Set(world.timberTrees.map(tree => tree.id)).size, world.timberTrees.length);
+  for (const tree of world.timberTrees) {
+    assert.ok(WOOD_SPECIES[tree.species], tree.id);
+    assert.equal(tree.harvestable, false);
+    assert.equal(tree.log, WOOD_SPECIES[tree.species].log);
+  }
+  for (const tree of [...world.broadleafTrees, ...world.regionalBroadleafTrees]) {
+    assert.match(tree.id, /^(oak-|country-oak-|avrel-edge-)/);
+    assert.equal(tree.species, 'white-oak', 'existing acorn-bearing oak trees keep their identity');
+    assert.equal(world.timberTrees.find(t => t.id === tree.id).woodKind, 'oak');
+  }
 });
 
 test('a log lights a fire at a fire ring in place of two sticks', () => {

@@ -1,7 +1,8 @@
 /**
  * The people of the built-up places: townsfolk and workers in Drent and Luscia,
  * the army's garrison of its outpost on the Moros (and the Coalition's, if it
- * falls), and Elod's frontier guard.
+ * falls), Elod's frontier guard, and the Duchy of Feradom's garrison of its pass
+ * castles (src/feradom-people.js).
  *
  * Ground people are ordinary NPCs with two or more lines each. People on wall
  * walks and towers are figures: drawn and animated, never spoken to, shown only
@@ -16,6 +17,7 @@ import { MOROS_WAYSIDE } from './wayside.js';
 import { FRONTIER_CIRCUIT, frontierPoint, FRONTIER_GATE } from './frontier.js';
 import { isOut } from './occupation.js';
 import { SUVAL_HILL_GUARDS } from './frontier-ridges.js';
+import { FERADOM_GARRISON, FERADOM_WALL_FIGURES } from './feradom-people.js';
 
 const EMPIRE = Object.freeze({ holds: 'empire', region: 'Moros Plain' });
 const COALITION = Object.freeze({ holds: 'coalition', region: 'Moros Plain' });
@@ -128,6 +130,9 @@ export const TOWN_LIFE_NPCS = Object.freeze([
     'The border is closed. It was closed yesterday. It will be closed tomorrow.',
     'Move along. Slowly.',
   ], { color: ELODI }),
+
+  // --- Feradom's pass castles: the Duchy's own army.
+  ...FERADOM_GARRISON,
 ]);
 
 export const TOWN_LIFE_IDS = Object.freeze(new Set(TOWN_LIFE_NPCS.map(npc => npc.id)));
@@ -163,6 +168,8 @@ export const WALL_FIGURES = Object.freeze([
   figure('wall-elodi-walk-north', 'elodi-guard', onWalk(FRONTIER_CIRCUIT, 5, 12), 0),
   figure('wall-elodi-corner', 'elodi-guard', towerTop(FRONTIER_CIRCUIT, 'frontier-corner-2'), outward(FRONTIER_CIRCUIT, 'frontier-corner-2'), { look: { kit: 'bow' } }),
   figure('wall-elodi-behind', 'elodi-guard', { ...frontierPoint(8, -4), y: 0 }, toFrontier + Math.PI),
+  // Feradom on its towers and walls.
+  ...FERADOM_WALL_FIGURES,
 ]);
 
 /**

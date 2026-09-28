@@ -43,13 +43,14 @@ import { PORT_CALOS_NPC_IDS } from './port-calos-people.js';
 export const TRIMMED = true;
 
 /** Builds that are soldiers. A soldier is kept whatever his name is. */
-export const SOLDIER_ROLES = Object.freeze(['legion-soldier', 'legion-officer', 'suvali-guard', 'elodi-guard']);
+export const SOLDIER_ROLES = Object.freeze(['legion-soldier', 'legion-officer', 'suvali-guard', 'elodi-guard', 'feradom-soldier', 'feradom-officer']);
 
 /**
  * The people the main quest sends you to, from the first morning to the day after the border
  * battle. Taken from the chapters' own `destinationIds` rather than remembered.
  */
 export const QUEST_IDS = Object.freeze([
+  'cobble-jessi', // Jesse's carriage construction lesson and ride to Ambron
   'killian', // Drent's Ambroni Civil War silver quest; an ordinary resident until the papers are read
   'vastos-herder', 'vastos-republican', 'vastos-monarchist', // preserved for the parked Vastos story
   'harbormaster',        // Jojo, the letter
@@ -88,16 +89,17 @@ export const OWN_IDS = Object.freeze([
   'kayla-cub',          // Bodhi, Kayla's cub, teaching Stealth at the Drent river.
   'kayla',              // The kind talking bear on her honey rounds
   'liz-beekeeper',       // Liz, who keeps the Pueth skeps and the game's honeycomb
-  'cobble-jessi', 'cobble-ari', 'cobble-imani', 'cobble-weighmaster',   // Cobble, and the murder
+  'cobble-boatwright', 'cobble-ledgerkeeper', 'cobble-kelp-trader', 'cobble-weighmaster', // Cobble witnesses
   'bee-keeper',          // Troy, who kept the user's bees and now keeps a murder in Cobble
   'brandy-frank',        // Brandy Frank, dyer of impossible colours
   'bird-watcher',        // Lakota
   'boatman',             // Jess of the Stills
-  'cobble-harbourmaster', // Hallie, the user's ferry host and swimming teacher in Peblos
+  'cobble-harbourmaster', // Maddie, the user's ferry host and swimming teacher in Peblos
   'attic-juan', 'attic-nika',    // Juan and Nika at Tharganhom, the Wine Attic
   'solis-secretary',     // Tancredi Vel, who the chameleon's arrangement runs through
   'john-salt',           // John, Sultan of the Salt Trade, and the Sultana he sails
-  'katy',                // Katy at Port Calos; her future quest is not active yet
+  'officer-verradross', // Suvali officer with the alternative vigilante bounty.
+  'katy',                // Catie at Port Calos, who sends the traveler to the vigilante
   'vintner', 'winemaker', 'cellar-hand',   // Rob, KAT and MAT at Paradise Springs
   'light-keeper', 'rival-keeper',// the two lighthouse keepers and their feud
 ]);

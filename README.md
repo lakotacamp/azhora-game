@@ -10,6 +10,8 @@ The Greenway ambushers keep their individual health and positions between attack
 
 The **civil-war campaign** runs to the border battle and the day after it in 3D; the branches beyond are designed and executable but not yet built. See [docs/campaign-design.md](docs/campaign-design.md). Every authored region has a difficulty level (0 tutorial to 5 deadly), a controlling faction and its threats (`src/campaign-world.js`); the main quest runs Drent → Luscia → Moros Plain → West Suval, forks at Solis between the Ambroni Empire and the Republican Coalition, and continues along mirrored branches to the South Oremindi Mountains (`src/campaign.js`). Regional side arcs flip provinces on the political map, faction trust rises and falls, and double-dealing is eventually exposed. The journal’s **The civil war** section shows the current chapter, your standing, and the regions around Drent; the developer atlas tints every region by level.
 
+Suval now has [terrain climbing](docs/climbing-suval.md): Space grips a reachable steep face, WASD climbs or traverses, Space boosts upward, and X releases. Moving and hanging consume stamina; clear ledges restore it. The first grip introduces Climbing, and practice improves efficiency. Checkpoints return a suspended climber to the last foothold with skill progress retained. The sealed East Suval border remains closed.
+
 ## Play
 
 Double-click the **Azhora desktop icon**, **Play Azhora.cmd** in this folder, or run `npm start`. Close an existing game window and reopen it after an update.
@@ -168,7 +170,7 @@ The storage key and file keep their original road-checkpoint names. **Older vers
 
 Press **F8**, use the opening screen's testing button, or choose **Testing tools** from Pause. F8 also works from a defeat screen.
 
-**Quest playtests** comes first: Ben's spider hunt, Liz's rescue of Olive, Troy's investigation, and Cagney's escort. Each card teleports to a fresh run of that quest; the magic quests stop at the reward choice. Any key or click takes control, and **P** resumes. These demos protect the normal saved adventure.
+**Quest playtests** comes first: Ben's spider hunt, Liz's rescue of Olive, Troy's investigation, Cagney's escort, and Catie's search for Batman and flight over Suval. Each card teleports to a fresh run of that quest; the magic quests stop at the reward choice. Any key or click takes control, and **P** resumes. These demos protect the normal saved adventure.
 
 **Main story jumps** offers Iven's satchel assignment, the Republican at the relay, and the Imperial recall decision.
 
@@ -303,7 +305,7 @@ The harness writes results and desktop/compact screenshots to `tests/artifacts/`
 
 Each test launch uses its own temporary Electron profile under `tests/.electron-profiles/`, removed when that test exits. Offscreen checks keep their saves in memory and do not share the normal game's Chromium cache.
 
-The three coastal ferry hosts are Jess in Tidehaven, Maddie in Port Calos, and Hallie in Cobble. Each offers both other ports and a Swimming lesson; they remain residents of their home port. Port Calos is a five-building settlement on its single land hex, with the harbor extending to the water. `npm run test:port-calos` exercises all six crossings, lessons, and reloading at each destination.
+The three coastal ferry hosts are Jess in Tidehaven, Hallie in Port Calos, and Maddie in Cobble. Each offers both other ports and a Swimming lesson; they remain residents of their home port. Port Calos is a five-building settlement on its single land hex, with the harbor extending to the water. `npm run test:port-calos` exercises all six crossings, lessons, and reloading at each destination.
 
 Paradise Springs (Vaervelm Caelazh) occupies the land hex southeast of Port Calos, reached by a lane from town. Its three residents are Rob, KAT and MAT. KAT and MAT introduce the standalone Wine skill, as can Ben, Liz and Troy; Wine requires no Farming experience. Rob's viticulture lessons are a future Farming branch with a provisional level-5 requirement. His muted book-and-padlock marker shows when that prerequisite is unmet; his dialogue displays the player's level and clearly identifies the lessons as not yet available.
 
@@ -313,14 +315,14 @@ Liz now lives beside a small cottage, a working apiary with straw skeps and wood
 
 The desktop icon is an abstract gold sun and winding coastal path over teal water. `scripts/create-icon.ps1` generates its seven ICO sizes; `scripts/create-desktop-shortcut.ps1` updates the shortcut without restarting a live game.
 
-`npm run test:winery` checks the five Wine teachers through their actual dialogue buttons, ROB's Farming-gated viticulture placeholder and marker, the three-winemaker cast, and Katy's quest-free Port Calos greeting. `src/winery-lessons.js` keeps viticulture separate from the Wine skill.
+`npm run test:winery` checks the five Wine teachers through their actual dialogue buttons, Rob's Farming-gated viticulture placeholder and marker, the three-winemaker cast, and Catie's Port Calos greeting. `src/winery-lessons.js` keeps viticulture separate from the Wine skill.
 
 
 ### Kayla and the Cobble character update
 
 `src/kayla.js` owns Kayla's persistent honey rounds and dialogue; `kayla-host.js` joins her ordinary resident health to her physical roaming and self-defense. `kayla-character.js` is her articulated brown-bear model. Her authored circuit visits Drent, Liz's clearing in Pueth, and Luscia; `kayla-world.test.js` walks the full route against real scenery and the initially broken Caloss bridge. `npm run test:kayla` checks her race invitation, peaceful refusal, combat, checkpoints and corpse restoration in an isolated Electron run.
 
-Ari has long black curls and a violet dress. Jessi retains all twelve hair colors and now works in carriage repair, with tools, an apron and slang-heavy dialogue; the Troy investigation retains its existing clue identities.
+Ari, Imani and Jesse now live in Port Calos. Ari retains her long black curls and violet dress; Jesse retains twelve hair colors and workshop clothing. Port residents await characterization. Troy's Cobble investigation now follows Brenna Vell, Orren Pell and Sivra Noll, preserving its clues and saved progress. Jess, Hallie (Port Calos) and Maddie (Cobble) wear nautical clothing and still operate the three-port ferry network.
 
 
 ### Bear family quests
@@ -328,3 +330,11 @@ Ari has long black curls and a violet dress. Jessi retains all twelve hair color
 Kayla waits at Ambron's east gate for **The Honey Race**. Ride her along the Ossen road against Ed the Chameleon on his unicycle. Her unnamed cub offers **A Cub's Share**, a Stealth lesson at the Drent river crossing. Liz retaliates against a detected honey theft with ten bee swarms. The two bears resume their honey rounds only after both quests and their physical reunion.
 
 F8 / Quest playtests includes separate Kayla and Bear cub autoplay cards. `npm run test:bear-quests` runs both real pilots, mounted and carrying checkpoints, reunion, bee damage, escape, and normal defeat recovery in an isolated save. The state machines live in `kayla-race.js`, `cub-honey-quest.js`, and `bear-family.js`; their hosts own movement and dialogue, while `apiary-bees.js` owns the NPC spell.
+
+## Suval vigilante and terrain
+
+Catie in Port Calos offers **A Kindness with Wings**. A hidden highland cave leads to a peaceful two-minute scenic flight through South, West and East Suval, a first Flying lesson, or the opposing bounty from Officer Verradross. Landing reveals all 63 Suval hexes; the route does not visit every hex. The journey resumes from mid-flight checkpoints and finishes in northern West Suval; Batman then returns home. F8 **Hacks ? Developer bat** provides test-only free flight. F8 **Quest playtests > Catie** runs the peaceful search and complete carried tour; `npm run test:catie:autoplay` verifies the live demo.
+
+West and South Suval now have tall ridges and switchbacks. Imlamdris is a ruined stone city with a small wooden rebuilding quarter; the ten Iscare islands have Zecron and settlement ruins plus wildlife. East Suval remains closed behind varied cliffs, walls, gates, and four false passages.
+
+`npm run test:batman` runs focused Node checks; `npm run test:batman:desktop` exercises actual quest choices, flight, save/reload, the bounty, and the developer mount. See [implementation and validation](docs/batman-suval-report.md), [terrain](docs/suval-iscare-terrain.md), [residents and Cobble witnesses](docs/port-calos-residents-and-cobble.md), and the [Riding and Boating design draft](docs/travel-skills-design.md).

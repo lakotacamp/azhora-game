@@ -7,6 +7,16 @@ import { createDrentCivilWar } from '../src/drent-civil-war.js';
 const main = { title: 'Report to Nothom', detail: 'Take the letter to Iven.', kicker: 'Chapter 1' };
 const tracker = source => createQuestTracker().update({ main, ...source });
 
+test('accepted and completed skill lessons retain their green skill grade in the journal', () => {
+  const entries = buildJournalEntries({ tracker: { choices: [
+    { id: 'jesse-carriage', title: 'A carriage worth the road', type: 'skill', stage: 'collecting', detail: 'Collect the parts.' },
+    { id: 'cub-honey', title: 'A Cub\'s Share', grade: 'skill', complete: true, detail: 'Bodhi taught you Stealth.' },
+  ] } });
+  assert.deepEqual(entries.map(entry => [entry.id, entry.type, entry.grade, entry.status]), [
+    ['jesse-carriage', 'skill', 'skill', 'active'], ['cub-honey', 'skill', 'skill', 'complete'],
+  ]);
+});
+
 test('Sela’s unaccepted call stays out of the quest log, accepted work is active, and the burial is archived', () => {
   for (const stage of ['unknown', 'hailed', 'asked']) {
     const state = { stage, done: [], carried: 0 };

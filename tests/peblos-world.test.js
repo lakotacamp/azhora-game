@@ -260,7 +260,7 @@ test('Peblos is level one: fishing people, a bored garrison, and nothing that ca
   const said = Object.values(PEBLOS_AMBIENT).flat().join(' ');
   assert.match(said, /one barrel in five|fifth barrel|barrel in five/i);
   assert.match(PEBLOS_AMBIENT['peblos-decurion'].join(' '), /count|share|barrel/i);
-  assert.match(PEBLOS_AMBIENT['cobble-ari'].join(' '), /Empire/);
+  assert.match(PEBLOS_AMBIENT['cobble-ledgerkeeper'].join(' '), /Empire/);
   // Nothing in the Pebbles fights: no enemy stands, no encounter arena, no armed collider.
   assert.equal(world.colliders.some(collider => collider.kind === 'enemy' && islandAt(collider.x, collider.z)), false);
   let opened = null;

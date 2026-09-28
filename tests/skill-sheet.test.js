@@ -9,16 +9,16 @@ import { hiddenSkillsIn } from '../src/game-mode.js';
 const source = name => readFileSync(fileURLToPath(new URL(`../src/${name}`, import.meta.url)), 'utf8');
 const HEAD = '<svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">';
 
-test('thirty-three skills, thirty-three marks, drawn the way the satchel draws its items', () => {
+test('thirty-five skills, thirty-five marks, drawn the way the satchel draws its items', () => {
   // The registry keeps every skill in the build, so a save that holds any of their experience
   // still validates. What the sheet draws is a mode's business (tests/game-mode.test.js).
-  // Twenty about the world, seven about fighting, and six about sorcery (src/sorcery.js) -
+  // Twenty-two about the world, seven about fighting, and six about sorcery (src/sorcery.js) -
   // of which three can be taught, one teacher each: Ben fire, Troy mind, Liz beast. Time is the
   // sixth, begun for Subtractidaughter and reserved.
-  assert.equal(SKILL_IDS.length, 33, 'twenty of the world, seven of fighting, six of sorcery');
+  assert.equal(SKILL_IDS.length, 35, 'twenty-two of the world, seven of fighting, six of sorcery');
   const shown = SKILL_IDS.filter(id => !hiddenSkillsIn('normal').includes(id));
-  assert.equal(shown.length, 32, 'and normal mode keeps thirty-two: all but the linguist’s');
-  assert.equal(shown.filter(id => SKILLS[id].group === undefined).length, 19, 'nineteen ungrouped skills');
+  assert.equal(shown.length, 34, 'and normal mode keeps thirty-four: all but the linguist’s');
+  assert.equal(shown.filter(id => SKILLS[id].group === undefined).length, 21, 'twenty-one ungrouped skills');
   assert.deepEqual(Object.keys(SKILL_ICONS), [...SKILL_IDS], 'one mark each, in the skills’ own order');
   const seen = new Set();
   for (const id of SKILL_IDS) {

@@ -1,3 +1,4 @@
+import { regionalFarmlandClear } from './regional-farmland.js';
 import { AVREL_POND } from './avrel-pond.js';
 import { SYLVIA_STUDIO } from './visual-arts.js';
 import * as THREE from 'three';
@@ -20,6 +21,11 @@ import { WINERY, WINERY_LAYOUT } from './winery.js';
 import { RENA_CLEARINGS, DRENT_DEEP_PLACES } from './rena.js';
 import { ELAGOS_CLEARINGS } from './elagos-world.js';
 import { createLauvelField } from './lauvel-field-world.js';
+import { suvalHighlandClear } from './suval-highlands.js';
+import { suvalFalsePassClear } from './frontier-ridges.js';
+import { brandyHomeClear } from './brandy-home-world.js';
+import { jesseWorkshopClear } from './jesse-carriage-world.js';
+import { forestTimber } from './wood-species.js';
 
 /** An authored (56 m per hex) anchor in world metres; its own scenery keeps its offsets. */
 const at = (x, z) => { const p = toWorld(x, z); return Object.freeze({ x: p.x, z: p.z }); };
@@ -91,6 +97,10 @@ const near = (x, z, point, radius) => Math.hypot(x - point.x, z - point.z) < rad
 
 /** True where regional scatter must not stand. */
 export function regionClear(x, z, margin = 0) {
+  if (regionalFarmlandClear(x, z, margin)) return true;
+  if (brandyHomeClear(x, z, margin) || jesseWorkshopClear(x, z, margin)) return true;
+  if (suvalFalsePassClear(x, z, margin)) return true;
+  if (suvalHighlandClear(x, z, margin)) return true;
   if (portCalosClear(x,z,margin)) return true;
   if (REGION_CLEARINGS.some(spot => near(x, z, spot, spot.r + margin))) return true;
   for (const site of Object.values(journeySites)) if (near(x, z, site, 4 + margin)) return true;
@@ -124,7 +134,8 @@ export function createRegionScenery(kit) {
     return districts.get(name);
   };
   const metrics = { trees: 0, rocks: 0, grass: 0, batches: 0 };
-  const broadleafTrees = [];
+  const broadleafTrees = [], timberTrees = [];
+  let pineTreeCount = 0;
 
   // -------------------------------------------------------------------------
   // Biome scatter: trees, rocks and ground cover, one instanced batch per block
@@ -189,7 +200,7 @@ export function createRegionScenery(kit) {
         const x = cell.x + range(-27 * WORLD_SCALE, 27 * WORLD_SCALE), z = cell.z + range(-30 * WORLD_SCALE, 30 * WORLD_SCALE);
         if (hexOwnerAt(x, z) !== name || kit.insideVillage(x, z) || kit.roadDistance(x, z) < 2.1) continue;
         // Grass grows on any ground above the tideline, which in the Lake Lands includes the bed of a lake.
-        if (kit.waterClear?.(x, z)) continue;
+        if (kit.waterClear?.(x, z) || regionalFarmlandClear(x,z,.3) || jesseWorkshopClear(x, z, .2)) continue;
         if (groundHeight(x, z) < 1.2) continue;
         tufts.push({ x, z, s: range(.7, 1.7), rot: range(0, 6.28) });
       }
@@ -205,10 +216,12 @@ export function createRegionScenery(kit) {
         dummy.position.set(tree.x, y + height * .41, tree.z);
         dummy.rotation.set(0, tree.rot, 0); dummy.scale.set(tree.s, height * .82, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
-        if (!tree.pine) broadleafTrees.push({ id: `country-oak-${broadleafTrees.length}`, x: tree.x, z: tree.z, y,
+        const timber = { ...forestTimber(tree.pine), harvestable: false, id: tree.pine ? `country-pine-${pineTreeCount++}` : `country-oak-${broadleafTrees.length}`, x: tree.x, z: tree.z, y,
           height, radius: .38 * tree.s, trunkHeight: height * .82, trunkTopRadius: .21 * tree.s,
-          axis: [0, 1, 0], base: { x: tree.x, y, z: tree.z }, region: name });
-        colliders.push({ x: tree.x, z: tree.z, r: .52 * tree.s, kind: 'region-tree' });
+          axis: [0, 1, 0], base: { x: tree.x, y, z: tree.z }, region: name };
+        timberTrees.push(timber);
+        if (!tree.pine) broadleafTrees.push(timber);
+        colliders.push({ x: tree.x, z: tree.z, r: .52 * tree.s, kind: 'region-tree', id: timber.id, species: timber.species, woodKind: timber.woodKind });
         if (tree.pine) for (let c = 0; c < 3; c++) {
           dummy.position.set(tree.x, y + height * (.48 + c * .19), tree.z);
           dummy.rotation.set(0, tree.rot + c * .35, 0);
@@ -790,7 +803,7 @@ export function createRegionScenery(kit) {
   wornPatch(FRONTIER.x, FRONTIER.z, 7, '#aca990');
 
   return {
-    metrics, riverMaterial, riverSamples, districts, broadleafTrees,
+    metrics, riverMaterial, riverSamples, districts, broadleafTrees, timberTrees,
     bridge: { deckY, heading: roadHeading, halfSpan: HALF_SPAN, axis: bridgeAxis, side: bridgeSide, crossing },
     repairedDeck, brokenCord, damagedColliders, millSails, lauvelField,
     bank: { spot: bank, surfaceY: calossSurface(bank.x, bank.z), castPoint: { x: CALOSS_BANK.cast.x, y: calossSurface(CALOSS_BANK.cast.x, CALOSS_BANK.cast.z) + .035, z: CALOSS_BANK.cast.z } },

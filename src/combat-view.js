@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { createCharacter, createGoblin, createWolf, createOgre, setShadowCasting, groundShadow } from './characters.js';
 import { createSpider } from './spider-model.js';
 import { createKaylaBear } from './kayla-character.js';
+import { createBatman } from './batman-model.js';
 // Every kind that has an articulated actor here. A kind without one (the practice
 // dummy) is drawn by the world instead, so the list is checked rather than assumed.
-const ACTOR_KINDS = ['goblin', 'wolf', 'soldier', 'officer', 'ogre', 'spider', 'bear', 'sparring', 'rebel', 'brawler', 'timekeeper'];
+const ACTOR_KINDS = ['goblin', 'wolf', 'soldier', 'officer', 'ogre', 'spider', 'bear', 'sparring', 'rebel', 'brawler', 'timekeeper', 'batman'];
 
 // A handful of pooled effects and three articulated actors; nothing allocates
 // new geometry during a swing. Combat rules remain independent of the renderer.
@@ -54,13 +55,14 @@ export function createCombatView(scene, world, camera, { onCorpse = () => false,
     // A named body on the other side of a fight is drawn as himself, exactly as an ally is: that
     // is how a man you are sparring with looks like the man you are sparring with (src/teachers.js).
     const borrowed=getActor(enemy.id)??(enemy.npcId?getActor(enemy.npcId):null);
-    const actor=borrowed??(enemy.kind==='spider'?createSpider():enemy.kind==='bear'?createKaylaBear():enemy.model?createCharacter({...enemy.model,armed:enemy.armed!==false}):enemy.kind==='wolf'?createWolf({variant:index}):enemy.kind==='ogre'?createOgre():enemy.kind==='officer'?createCharacter({role:'legion-officer',armed:true}):enemy.kind==='soldier'?createCharacter({role:enemy.look==='legion'?'legion-soldier':'suvali-guard',armed:true}):enemy.kind==='rebel'?createCharacter({role:'forest-woodcutter',armed:true}):createGoblin({variant:index}));scene.add(actor.group);
+    const actor=borrowed??(enemy.kind==='spider'?createSpider():enemy.kind==='bear'?createKaylaBear():enemy.kind==='batman'?createBatman():enemy.model?createCharacter({...enemy.model,armed:enemy.armed!==false}):enemy.kind==='wolf'?createWolf({variant:index}):enemy.kind==='ogre'?createOgre():enemy.kind==='officer'?createCharacter({role:'legion-officer',armed:true}):enemy.kind==='soldier'?createCharacter({role:enemy.look==='legion'?'legion-soldier':'suvali-guard',armed:true}):enemy.kind==='rebel'?createCharacter({role:'forest-woodcutter',armed:true}):createGoblin({variant:index}));scene.add(actor.group);
     // A fight is a crowd of articulated figures: each shadow costs as much as the figure.
     setShadowCasting(actor,false);const enemyShade=groundShadow(enemy.kind==='wolf'?.3:.34);
     // The disc is a person's footprint; a creature this size needs its own.
     if(enemy.kind==='ogre')enemyShade.scale.setScalar(4.4);
     if(enemy.kind==='spider')enemyShade.scale.setScalar(4);
     if(enemy.kind==='bear')enemyShade.scale.set(2.8,4,1);
+    if(enemy.kind==='batman')enemyShade.scale.set(2.5,2.5,1);
     if(!borrowed)actor.group.add(enemyShade);
     const tell=new THREE.Group();scene.add(tell);
     // The warning arc is the creature's own: an ogre reaches four and a half metres

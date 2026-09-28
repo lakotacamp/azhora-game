@@ -15,8 +15,9 @@ export const STONE = Object.freeze({
   tower: '#888980', towerDark: '#74756e', roof: '#3d3f40', ditch: '#4b4940', ditchSide: '#66655a', spike: '#5a4a38', slit: '#1f1f22',
 });
 
-export function drawCircuit(circuit, { parent, heightAt, colliders, style = 'timber', name = circuit.id, gateOpen = true, gateLeaves = null, sides = null }) {
-  const S = circuit.standard, C = style === 'stone' ? STONE : TIMBER;
+export function drawCircuit(circuit, { parent, heightAt, colliders, style = 'timber', name = circuit.id, gateOpen = true, gateLeaves = null, sides = null, palette = null }) {
+  // A builder with its own stone (Feradom's pass castles) passes its colours in `palette`, keyed as STONE or TIMBER.
+  const S = circuit.standard, C = { ...(style === 'stone' ? STONE : TIMBER), ...(palette ?? {}) };
   const b = createSceneryBuilder(`${name} walls`);
   const t = S.wallThickness / 2;
   const at = (edge, along, across) => circuit.pointOn(edge, along, across);
@@ -124,7 +125,8 @@ export function drawCircuit(circuit, { parent, heightAt, colliders, style = 'tim
       b.box(C.rail, X(.95), S.walkHeight - .35, 0, .5, .5, gate.halfWidth * 2 + 1.2);
       b.box(style === 'timber' ? C.stake : C.wall, X(.95), S.walkHeight + .1, 0, .34, S.wallHeight - S.walkHeight + .3, gate.halfWidth * 2 + 1);
       for (const side of [-1, 1]) b.block(C.towerDark, X(.95), 0, side * (w + .1), .42, S.walkHeight, .3);
-      const shut = gateLeaves === 'shut' || !gateOpen;
+      // `gateLeaves` may also be a function of the gate: Feradom shuts the gates that face the border and leaves the rest open.
+      const shut = typeof gateLeaves === 'function' ? gateLeaves(gate) === 'shut' : gateLeaves === 'shut' || !gateOpen;
       const leaf = style === 'timber' ? C.stakeDark : '#3f3a33';
       if (shut) {
         for (const side of [-1, 1]) {

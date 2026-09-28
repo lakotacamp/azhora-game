@@ -165,10 +165,10 @@ export const SEA_SHRINE = Object.freeze({ id: 'sea-shrine', name: 'The Sea Shrin
  * (src/murder-quest.js). The ids are new because the people are; the ground is not.
  */
 export const COBBLE_STANDS = Object.freeze({
-  'cobble-jessi': Object.freeze({ ...point(330, 426), yaw: -Math.PI / 2 }),             // outside the net loft, facing the quay
+  'cobble-boatwright': Object.freeze({ ...point(330, 426), yaw: -Math.PI / 2 }),             // outside the net loft, facing the quay
   'cobble-weighmaster': Object.freeze({ ...point(321.5, 432), yaw: -Math.PI / 2 }),     // at the quay root, where the barrels are landed
-  'cobble-imani': Object.freeze({ ...point(337.5, 433.2), yaw: -Math.PI / 2 }),         // by the drying racks, where her kelp is
-  'cobble-ari': Object.freeze({ ...point(332, 415), yaw: -1.1 }),                       // on the turf above the bay, watching the water
+  'cobble-kelp-trader': Object.freeze({ ...point(337.5, 433.2), yaw: -Math.PI / 2 }),         // by the drying racks, where her kelp is
+  'cobble-ledgerkeeper': Object.freeze({ ...point(332, 415), yaw: -1.1 }),                       // on the turf above the bay, watching the water
   'bee-keeper': Object.freeze({ ...point(335, 423.5), yaw: 2.6 }),                      // Troy, on the village ground, watching everybody
   'peblos-decurion': Object.freeze({ ...point(330.5, 434.5), yaw: -Math.PI / 2 }),      // at the tally table outside his shed
   'peblos-legionary-1': Object.freeze({ ...point(321, 426.5), yaw: -Math.PI / 2 }),     // on the quay, where the barrels come ashore

@@ -164,7 +164,7 @@ test('the farm tells the traveler what it is doing, and it is never a thing to s
   const { farming } = fixture({ taught: false });
   assert.match(farming.task(0).detail, /Stanley/);
   farming.learn();
-  assert.match(farming.task(0).title, /bare rows/);
+  assert.match(farming.task(0).title, /Ready to plant/);
   farming.sow('commons-row-1', 'barley', 0);
   assert.match(farming.task(10).detail, /go and do something else/i);
   assert.match(farming.task(300).title, /ripe/);

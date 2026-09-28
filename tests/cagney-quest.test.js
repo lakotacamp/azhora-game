@@ -1,3 +1,4 @@
+import {inAmbronOutline} from '../src/ambron-city-layout.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CAGNEY, CAGNEY_START, CAGNEY_HOME, CAGNEY_ROUTE, CAGNEY_AMBUSH, CAGNAPPERS, CAGNEY_WAVES, ALL_CAGNAPPERS,
@@ -82,10 +83,10 @@ test('Cagney leads west but waits for the traveler rather than following them of
   assert.equal(returnToHer.progress.waiting, false);
 });
 
-test('the three cagnappers wait on the Luscian side before the west road enters Elagos', () => {
+test('the cagnappers wait after the roadside hamlet, outside Ambron', () => {
   assert.equal(CAGNAPPERS.length, 3);
-  for (const enemy of CAGNAPPERS) assert.equal(regionAt(enemy.x, enemy.z)?.name, 'Luscia');
-  assert.equal(regionAt(CAGNEY_AMBUSH.center.x, CAGNEY_AMBUSH.center.z)?.name, 'Luscia');
+  for (const enemy of CAGNAPPERS) assert.equal(regionAt(enemy.x, enemy.z)?.name, 'Elagos');
+  assert.equal(regionAt(CAGNEY_AMBUSH.center.x, CAGNEY_AMBUSH.center.z)?.name, 'Elagos');
   assert.ok(CAGNEY_ROUTE.some(p => p.x < CAGNEY_AMBUSH.center.x && regionAt(p.x, p.z)?.name === 'Elagos'));
   assert.equal(CAGNEY.look.hat, false); assert.equal(CAGNEY.look.glasses, true);
   assert.equal(CAGNEY.look.hairStyle, 'long'); assert.equal(CAGNEY.look.shirtRibbons, true);
@@ -115,15 +116,16 @@ function arcOf(p) {
   return best;
 }
 
-test('three gangs wait on her road: midway to the first gang met, that gang, and midway from it to her door', () => {
+test('three concealed gangs wait in order between the hamlet and the city gates', () => {
   assert.equal(CAGNEY_WAVES.length, 3);
   assert.equal(CAGNEY_WAVES[1], cagneyWave(CAGNEY_AMBUSH.id), 'the first gang anybody met is the middle one');
   assert.equal(CAGNEY_WAVES[1].enemies, CAGNAPPERS);
   const start = arcOf(CAGNEY_START).arc, middle = arcOf(CAGNEY_AMBUSH.center).arc, end = RUNS.at(-1);
   const [first, , last] = CAGNEY_WAVES.map(wave => arcOf(wave.center));
   assert.ok(first.distance < .01 && last.distance < .01, 'on the road itself');
-  assert.ok(Math.abs(first.arc - (start + middle) / 2) < .5, `first gang midway (${first.arc} of ${start}..${middle})`);
-  assert.ok(Math.abs(last.arc - (middle + end) / 2) < .5, `last gang midway (${last.arc} of ${middle}..${end})`);
+  assert.ok(first.arc > start + 20 && first.arc < middle - 20, 'the first attack gives the escort time to leave the hamlet');
+  assert.ok(last.arc > middle + 20 && last.arc < end - 100, 'the last gang is fought before the quiet walk through the city');
+  for(const wave of CAGNEY_WAVES)assert.equal(inAmbronOutline(wave.center.x,wave.center.z),false,'no ambushers appear inside the protected city');
   assert.equal(new Set(ALL_CAGNAPPERS.map(e => e.id)).size, 9, 'nine different men');
   assert.equal(new Set(CAGNEY_WAVES.map(w => w.id)).size, 3);
   for (const wave of CAGNEY_WAVES) {

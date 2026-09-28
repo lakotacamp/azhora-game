@@ -57,7 +57,7 @@ test('rebuilt regions take their outlines and cells from the authored hexes at t
   assert.equal(regionOutline(survey, 'Nowhere').length, 0);
 });
 
-test('points resolve to regions and cells, and the world bounds enclose all four regions', () => {
+test('points resolve to regions and cells, and the world bounds enclose all playable regions', () => {
   const anchors = routeAnchors(survey);
   assert.equal(regionAtWorld(survey, anchors.drentHeart.x, anchors.drentHeart.z), 'Drent');
   assert.equal(regionAtWorld(survey, anchors.lauvelField.x, anchors.lauvelField.z), 'Luscia');
@@ -90,7 +90,11 @@ test('points resolve to regions and cells, and the world bounds enclose all four
    * west again (the Nether Desert's own hexes are at -3050) and each will have to state its
    * own case.
    */
-  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 32 * METRES_PER_HEX, 'the playable regions fit a walkable world');
+  // East Lotharn extends Amod's old northern boundary to -1301 m, so the complete
+  // world is now 35.264 hexes north-to-south. Feradom and the existing Iscare islands
+  // stay inside this box; neither widens Nethereum's 36.2-hex east-west footprint.
+  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 36 * METRES_PER_HEX, 'the playable regions fit their measured atlas footprint');
+  assert.ok(bounds.maxZ - bounds.minZ > 35 * METRES_PER_HEX, 'the mountain range extends the northern boundary');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 36 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');

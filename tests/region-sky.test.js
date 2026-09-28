@@ -43,7 +43,9 @@ test('the default sky is the three numbers src/main.js has always used', () => {
  * the peninsula does not experience" (svaleen.md). So Eer's clearness with the mist's
  * grey-green in it, a little denser than Eer and a little clearer than the default.
  */
-const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval']);
+// Preserve Iscare's existing maritime sky. The integrated mountains and Feradom
+// declare their own cool horizons in region-world.js; all other countries keep the default.
+const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom']);
 
 test('every region but the ones that asked for their own gets the default sky, to the digit', () => {
   for (const region of regions) {

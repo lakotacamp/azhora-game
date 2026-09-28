@@ -30,7 +30,7 @@ test('the case walks: three true things, a fourth name, and Troy will not act on
   const said = [];
   const quest = createMurderQuest({ onEvent: event => said.push(event.type) });
   assert.equal(quest.state.stage, 'unmet');
-  assert.equal(quest.hear('cobble-jessi'), null, 'nobody talks to you before Troy has asked them to');
+  assert.equal(quest.hear('cobble-boatwright'), null, 'nobody talks to you before Troy has asked them to');
   assert.equal(quest.begin(), true);
   assert.equal(quest.begin(), false, 'he sets it out once');
 
@@ -45,15 +45,15 @@ test('the case walks: three true things, a fourth name, and Troy will not act on
   assert.deepEqual(quest.snapshot().accused, [], 'and it is not written down');
 
   // The list cannot be walked: he will not hear another name for a while.
-  assert.equal(quest.accuse('cobble-ari', 10).why, 'resting');
+  assert.equal(quest.accuse('cobble-ledgerkeeper', 10).why, 'resting');
   assert.equal(Math.round(quest.rests(10)), ACCUSE_REST - 10);
   let now = ACCUSE_REST + 1;
-  const wrong = quest.accuse('cobble-ari', now);
+  const wrong = quest.accuse('cobble-ledgerkeeper', now);
   assert.equal(wrong.why, 'wrong');
   assert.ok(CLEARED[wrong.named], 'and he says why it cannot be her');
 
   for (const id of WITNESS_IDS) assert.ok(quest.hear(id), `${id} says nothing`);
-  assert.equal(quest.hear('cobble-jessi'), null, 'the same person twice tells you nothing new');
+  assert.equal(quest.hear('cobble-boatwright'), null, 'the same person twice tells you nothing new');
   assert.equal(quest.state.ready, true);
   now += ACCUSE_REST + 1;
   const named = quest.accuse(MURDERER, now);
@@ -181,17 +181,17 @@ test('he takes the errand, takes names, and refuses the ones that are guesses', 
 test('Cobble says one more thing while the case is open, and one thing more again to a reader', () => {
   const quest = createMurderQuest();
   const scene = stage();
-  const jessi = PEBLOS_NPCS.find(npc => npc.id === 'cobble-jessi');
-  const context = { ...scene, murder: quest, ambient: PEBLOS_AMBIENT['cobble-jessi'],
+  const jessi = PEBLOS_NPCS.find(npc => npc.id === 'cobble-boatwright');
+  const context = { ...scene, murder: quest, ambient: PEBLOS_AMBIENT['cobble-boatwright'],
     act: (name, id) => scene.acts.push([name, id]) };
   assert.equal(cobbleConversation(jessi, context), false, 'nobody is asked about it before Troy asks');
   quest.begin();
   assert.equal(cobbleConversation(jessi, context), true);
-  assert.deepEqual(scene.last().lines, [...PEBLOS_AMBIENT['cobble-jessi']], 'her own lines are still hers');
+  assert.deepEqual(scene.last().lines, [...PEBLOS_AMBIENT['cobble-boatwright']], 'her own lines are still hers');
   assert.equal(pick(scene, 'read-them'), undefined, 'and nobody is read who has not been taught it');
   pick(scene, 'ask-bregga').action();
-  assert.deepEqual(scene.acts.at(-1), ['murder-hear', 'cobble-jessi']);
-  assert.deepEqual(scene.last().lines, [TESTIMONY['cobble-jessi'].says]);
+  assert.deepEqual(scene.acts.at(-1), ['murder-hear', 'cobble-boatwright']);
+  assert.deepEqual(scene.last().lines, [TESTIMONY['cobble-boatwright'].says]);
 
   // Taught the reading, every one of the four has something they decided not to say.
   for (const id of [...WITNESS_IDS, MURDERER]) {
@@ -254,4 +254,42 @@ test('he is still red-bearded and grinning, and half of him is not red any more'
   assert.ok(seen.red > 0, 'his hair and beard are red');
   assert.ok(seen.blonde > 0, 'and half his curls are not');
   for (let t = 0; t < 3; t += 1 / 30) actor.animate(t, 0, true, {});
+});
+
+
+test('version-one witness accusations migrate to the new islanders without losing clues or cooldown', () => {
+  const quest = createMurderQuest();
+  const old = { version: 1, stage: 'asking', heard: ['light-boats', 'weights-not-counts'],
+    accused: ['cobble-jessi', 'cobble-ari', 'cobble-imani'], restUntil: 413 };
+  assert.equal(validateMurderQuestSnapshot(old), true);
+  assert.equal(quest.restore(old), true);
+  assert.deepEqual(quest.state.accused, [...WITNESS_IDS]);
+  assert.deepEqual(quest.state.heard, old.heard);
+  assert.equal(quest.state.restUntil, 413);
+  for (const id of old.accused) {
+    assert.equal(quest.hear(id), null, 'relocated residents no longer give murder testimony');
+    assert.equal(quest.accuse(id, 500).why, 'nobody');
+  }
+  assert.equal(validateMurderQuestSnapshot({ ...old, accused: ['cobble-jessi', WITNESS_IDS[0]] }), false,
+    'aliases cannot duplicate an accusation');
+  quest.hear(WITNESS_IDS[2]);
+  assert.equal(quest.accuse(MURDERER, 500).ok, true);
+  assert.equal(quest.take('lesson').stage, 'taught');
+});
+
+test('Cobble replacements have distinct hatless silhouettes and lore-specific work', async () => {
+  const { createCharacter } = await sourceModule('../src/characters.js');
+  const witnesses = WITNESS_IDS.map(id => PEBLOS_NPCS.find(npc => npc.id === id));
+  assert.deepEqual(witnesses.map(npc => npc.name), ['Brenna Vell', 'Orren Pell', 'Sivra Noll']);
+  assert.equal(new Set(witnesses.map(npc => `${npc.modelRole}:${npc.color}:${npc.look.hairStyle}:${npc.skin}`)).size, 3);
+  for (const npc of witnesses) {
+    assert.equal(npc.look.hat, false);
+    const actor = createCharacter({ role: npc.modelRole, tunic: npc.color, skin: npc.skin, look: npc.look });
+    assert.ok(actor.group.getObjectByName('Head'));
+    assert.ok(PEBLOS_AMBIENT[npc.id].length >= 4);
+    assert.ok(TESTIMONY[npc.id].reading && TESTIMONY[npc.id].says);
+  }
+  assert.match(PEBLOS_AMBIENT[WITNESS_IDS[0]].join(' '), /wreck|pilot/i);
+  assert.match(PEBLOS_AMBIENT[WITNESS_IDS[1]].join(' '), /channel|skerry/i);
+  assert.match(PEBLOS_AMBIENT[WITNESS_IDS[2]].join(' '), /Sorven|Stills/);
 });

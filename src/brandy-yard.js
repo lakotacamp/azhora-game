@@ -45,8 +45,8 @@ export function createBrandyYard(kit) {
   // Two drying lines of cloth, one of it leopard.
   for (const line of YARD_LAYOUT.lines) {
     const [a0, b0] = line.from, [a1, b1] = line.to, length = Math.hypot(a1 - a0, b1 - b0);
-    for (const [lx, lz] of [line.from, line.to]) { const p = at(lx, lz); post(wood, p.x, ground(lx, lz) + 1.1, p.z, .06, 2.2, group); }
     const mid = at((a0 + a1) / 2, (b0 + b1) / 2), top = Math.max(ground(a0, b0), ground(a1, b1)) + 2.1;
+    for (const [lx, lz] of [line.from, line.to]) { const p = at(lx, lz), foot = ground(lx, lz) - .08, height = top + .1 - foot; post(wood, p.x, foot + height / 2, p.z, .06, height, group); }
     const cord = box(rope, mid.x, top, mid.z, length, .02, .02, group); cord.rotation.y = yaw;
     line.cloths.forEach((cloth, i) => {
       const t = (i + .5) / line.cloths.length, lx = a0 + (a1 - a0) * t, lz = b0 + (b1 - b0) * t, p = at(lx, lz);
@@ -61,7 +61,7 @@ export function createBrandyYard(kit) {
   // The bench, with folded bolts in every colour.
   { const b = YARD_LAYOUT.bench, p = at(b.lx, b.lz), y = ground(b.lx, b.lz);
     const top = box(wood, p.x, y + .62, p.z, b.w, .08, b.d, group); top.rotation.y = yaw;
-    for (const side of [-1, 1]) for (const end of [-1, 1]) { const q = at(b.lx + side * (b.w / 2 - .1), b.lz + end * (b.d / 2 - .08)); post(woodDark, q.x, y + .3, q.z, .04, .6, group); }
+    for (const side of [-1, 1]) for (const end of [-1, 1]) { const q = at(b.lx + side * (b.w / 2 - .1), b.lz + end * (b.d / 2 - .08)), foot = heightAt(q.x, q.z) - .06, height = y + .62 - foot; post(woodDark, q.x, foot + height / 2, q.z, .04, height, group); }
     ['#ff3fa4', '#ffe135', '#1ec8d8', '#8e44ec', '#7ed321'].forEach((tint, i) => { const q = at(b.lx - .55 + i * .27, b.lz); const bolt = box(material(tint), q.x, y + .7 + (i % 2) * .08, q.z, .24, .1 + (i % 2) * .08, .4, group); bolt.rotation.y = yaw; }); }
   // The painted boards.
   const houseShape = houseBoard(1.2, 1.44), houseEdge = houseBoard(1.3, 1.56), yellow = material('#ffe135', { side: THREE.DoubleSide });
@@ -75,13 +75,13 @@ export function createBrandyYard(kit) {
         m.rotation.y = turn + (face < 0 ? Math.PI : 0); m.castShadow = true; group.add(m);
       }
       const edge = new THREE.Mesh(houseEdge, yellow); edge.position.set(p.x, y + .66, p.z); edge.rotation.y = turn; group.add(edge);
-      for (const side of [-1, 1]) post(woodDark, p.x + Math.cos(turn) * side * board.posts, y + .37, p.z - Math.sin(turn) * side * board.posts, .05, .74, group);   // up to its sill, not through it
+      for (const side of [-1, 1]) { const x = p.x + Math.cos(turn) * side * board.posts, z = p.z - Math.sin(turn) * side * board.posts, foot = heightAt(x, z) - .08, height = y + .74 - foot; post(woodDark, x, foot + height / 2, z, .05, height, group); }   // up to its sill, not through it
       continue;
     }
     const painting = box(painted(cw, ch, art.draw, 0xff3fa4), p.x, y + 1.35, p.z, 1.36, 1.02, .06, group); painting.rotation.y = turn;
     const frame = box(material('#ffe135'), p.x, y + 1.35, p.z, 1.46, 1.12, .04, group); frame.rotation.y = turn;
     frame.position.x -= Math.sin(turn) * .02; frame.position.z -= Math.cos(turn) * .02;
-    for (const side of [-1, 1]) post(woodDark, p.x + Math.cos(turn) * side * board.posts, y + .9, p.z - Math.sin(turn) * side * board.posts, .05, 1.8, group);
+    for (const side of [-1, 1]) { const x = p.x + Math.cos(turn) * side * board.posts, z = p.z - Math.sin(turn) * side * board.posts, foot = heightAt(x, z) - .08, height = y + 1.8 - foot; post(woodDark, x, foot + height / 2, z, .05, height, group); }
   }
   // Rainbow on the ground where the dye has been tipped for years.
   RAINBOW.forEach((tint, i) => { const p = at(-2.1 + i * .08, 1.25); mesh(cylinder, material(tint), p.x, ground(-2.1, 1.25) + .012 + i * .001, p.z, .9 - i * .12, .01, .5 - i * .06, group); });
