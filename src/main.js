@@ -225,6 +225,7 @@ import { createTerrainFall, shouldStartTerrainFall } from './terrain-fall.js';
 import { createLotharnCaveWalk } from './east-lotharn-cave-walk.js';
 import { nearestPlain as caveNearest } from './east-lotharn-caves.js';
 import { inLotharnBox } from './east-lotharn-world.js';
+import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY as WEST_LONG_VALLEY, NORTH_VALLEY as WEST_NORTH_VALLEY, NOTCH as WEST_LOTHARN_NOTCH, COL as WEST_LOTHARN_COL, pointOn as westLotharnPointOn } from './west-lotharn-world.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -1997,6 +1998,24 @@ function init() {
     if(view==='lotharn-inn')return shot({x:-1068,z:-881},{x:-1086,z:-897},.12,4.5);
     if(view==='lotharn-workings')return shot({x:-1286,z:-852},{x:-1292,z:-890},.1,2.5);
     if(view==='lotharn-north')return shot({x:-1235,z:-1175},{x:-1262,z:-990},.08,24);
+    // The West Lotharn. Every one is worked out from the country's own numbers rather than typed in,
+    // so a view cannot drift off the thing it shows when a summit or a ramp moves.
+    if(view==='west-lotharn-crest'){const top=WEST_LOTHARN_PEAKS[0];
+      return shot({x:top.x+6,z:top.z+126},{x:top.x,z:top.z},.10,3);}
+    // From the crest's own bald, north along the massif to the north summit: the top of the range.
+    if(view==='west-lotharn-bald'){const top=WEST_LOTHARN_PEAKS[0],north=WEST_LOTHARN_PEAKS[1];
+      return shot({x:top.x-6,z:top.z+6},{x:north.x,z:north.z},.06,30);}
+    if(view==='west-lotharn-ramp'){const ramp=WEST_LOTHARN_RAMPS.find(one=>one.id==='the-crest-ramp-3')??WEST_LOTHARN_RAMPS[0];
+      const a=ramp.line.points[Math.round((ramp.line.points.length-1)*.5)],b=ramp.line.points[0];
+      return shot({x:b.x+(b.x-a.x)*1.4,z:b.z+(b.z-a.z)*1.4},{x:a.x,z:a.z},.16,3);}
+    if(view==='west-lotharn-valley'){const p=westLotharnPointOn(WEST_LONG_VALLEY.line,150),q=westLotharnPointOn(WEST_LONG_VALLEY.line,430);
+      return shot({x:p.x,z:p.z},{x:q.x,z:q.z},.05,16);}
+    // From Kemrath's floor on the East Lotharn's side, looking west at the gap and the West's east arm over it.
+    if(view==='west-lotharn-col')return shot({x:WEST_LOTHARN_COL.x+90,z:WEST_LOTHARN_COL.z-10},{x:WEST_LOTHARN_COL.x-16,z:WEST_LOTHARN_COL.z-6},.06,16);
+    if(view==='west-lotharn-notch'){const p=westLotharnPointOn(WEST_LOTHARN_NOTCH.line,40),q=westLotharnPointOn(WEST_LOTHARN_NOTCH.line,130);
+      return shot({x:p.x+9,z:p.z},{x:q.x,z:q.z},.09,6);}
+    if(view==='west-lotharn-north-valley'){const p=westLotharnPointOn(WEST_NORTH_VALLEY.line,24),q=westLotharnPointOn(WEST_NORTH_VALLEY.line,170);
+      return shot({x:p.x,z:p.z},{x:q.x,z:q.z},.06,10);}
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
       const pan=VASTOS_PANS[2];
@@ -2550,7 +2569,9 @@ function init() {
     canClimbMove:(from,to)=>!closedRegionEntered(from,to)};
   climbing=createClimbing({world:climbWorld});
   terrainFall=createTerrainFall();
-  lotharnCave=createLotharnCaveWalk({caves:world.lotharnCaves,ground:world.groundHeight});
+  // One controller walks both halves of the Lotharn. Cave checkpoints retain the safe
+  // entrance, so loading in either range recovers outdoors with underground support cleared.
+  lotharnCave=createLotharnCaveWalk({caves:[...world.lotharnCaves,...world.westLotharnCaves],ground:world.groundHeight});
   const walkingSlope=(x,z,nextX,nextZ)=>canWalkSlope(x,z,nextX,nextZ,climbWorld);
   function canGrabRock(){return mode==='playing'&&!lotharnCave.active&&!suspended()&&!riding.mounted&&!raceHost?.mounted&&!inWater
     &&living?.recall().status!=='passenger'&&combat.state.player.hp>0&&combat.state.player.action==='idle';}

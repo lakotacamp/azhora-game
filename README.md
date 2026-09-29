@@ -358,3 +358,11 @@ Ryan fishes and teaches Fishing at Willowmere beside Barrett, his and Jess's son
 `family-homes.js` assigns the requested households and relationship dialogue; `family-homes-scenery.js` adds distinct decor and named mailboxes to existing cottages. Only Mark's cottage outside Tidehaven is a new building. These home assignments do not add interior routines.
 
 Focused checks: `node scripts/launch.cjs --smoke-test --ari-autoplay-checks` completes the live planting, watering, growth and harvest quest; `--willowmere-family-checks` exercises Ryan's lesson and catch plus Barrett's dialogue, chart, cooldown and checkpoint reload. `--glun-wood-checks` checks the return to post and felling/restoring an ordinary forest tree. All use disposable profiles and isolated saves.
+
+### West Lotharn Mountains
+
+West Lotharn is integrated into the main desktop build. In F8 testing tools, use **Go anywhere > West Lotharn Mountains** to arrive in the Long Valley. The developer dragon and bat can fly above the crest and land on safe summit ground.
+
+The range has seven summits, forested limestone and sandstone ledges, two main valleys, four watercourses, and nine empty caves. Climbing, falling, the discovery map, and persistent wildlife use the same systems as the surrounding world. Its seven woodland species support ordinary woodcutting, visible felling, and saved regrowth. This terrain pass adds no people or settlements.
+
+`npm run test:northern-regions:desktop` covers F8 travel to both Lotharn regions and Feradom, named trees and wildlife, cave entry/checkpoint recovery, and the live climbing controls. Focused geometry and traversal coverage lives in `tests/west-lotharn-*.test.js`. The integration and visual refinements are recorded in `docs/west-lotharn-integration.md`.

@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -387,6 +387,22 @@ export const REGION_TERRAIN = Object.freeze({
   'Oves Desert': Object.freeze({ base: 12, amp: .8, wave: 320, ground: REGION_BIOMES['Oves Desert'].ground, byTerrain: Object.freeze({
     hills: Object.freeze({ base: 22, amp: 1.6, wave: 320, ground: '#a39b7e' }),
   }) }),
+  // The West Lotharn (src/west-lotharn-world.js): the same range as the East and the taller half of
+  // it. **Every number here is the East Lotharn's, to the digit, and that is the point**: the two
+  // halves share seven hex edges, three of which are hills against hills, and a base or a wavelength
+  // that differed across that border would put a step or a chirp in the middle of one massif. The
+  // whole difference between the two is the landform laid on top - the East's highest is 420 m and
+  // this one's crest is 550 - and a landform is nothing at all at the border it fades to.
+  //
+  // The skirts have much further to fall than the East's do: this country's southern hexes meet
+  // Meneth at 26, Vastos at 30.5 and Isareos at 22, where the East had Amod's foothills. That fall
+  // belongs to the hex blend and is measured in tests/west-lotharn-world.test.js rather than being
+  // hidden by a lower base, because a mountain front is what the atlas draws here.
+  'West Lotharn Mountains': Object.freeze({ base: 70, amp: REGION_BIOMES['West Lotharn Mountains'].relief.amplitude, wave: REGION_BIOMES['West Lotharn Mountains'].relief.wavelength,
+    ground: REGION_BIOMES['West Lotharn Mountains'].ground, byTerrain: Object.freeze({
+      hills: Object.freeze({ base: 58, amp: 8, wave: 215, ground: '#5d7246' }),
+      mountain: Object.freeze({ base: 96, amp: 13, wave: 250, ground: '#586848' }),
+    }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1068,6 +1084,14 @@ const REGION_TEXT = {
     description: 'The finger of the peninsula to its end: open Mediterranean grass and scrub, thin and stony, rolling on a low plateau between two seas, with a wild olive standing alone here and there and nothing taller. Cliffs along the whole of the west and round the tip, two sheltered bays on the east with a beach in each, dolphins off the shore, sea-plungers folding into the shoals off the tip, and Selemi across a narrow channel to the south.',
     palette: { ground: '#aba66b', accent: '#e0d6a8', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
     npcIds: [], landmarks: ['ascarth-east-bays', 'ascarth-tip', 'selemi-channel'] },
+  // The West Lotharn (src/west-lotharn-world.js). Its own sky, and a colder, thinner one than the
+  // East's: the East Lotharn's horizon is a wooded range seen through the Cfa haze it stands in, and
+  // this one is five hundred and fifty metres of it. Clearer air (.0027 against the East's .0036),
+  // a bluer sky and a paler haze, which is what distance and altitude do to both.
+  'West Lotharn Mountains': { subtitle: 'The spine of the range', spawn: point(-1817, -651),
+    description: 'The main range, and the highest ground in Azhora: one great massif standing five hundred and fifty metres over its own valleys, with the north summit, the western shoulder, the eastern summit and three lesser masses round it. Old stone worn into uneven courses, with wooded shelves, broken buttresses and grassy crowns; slanting ramps, ledge paths and limestone chimneys offer ways through the cliffs. The long valley runs the whole way through the range, flat-floored and grown over, with a divide a fifth of the way along it and a beck leaving each end; the north valley drains the massif to the Mithala plain, and the col at the eastern end is the saddle the East Lotharn begins from.',
+    palette: { ground: '#5b6e44', accent: '#cfd0c4', fog: '#bcc8bd', sky: 0x9fc2d6, haze: 0xc3cec6, hazeDensity: .0027 },
+    npcIds: [], landmarks: ['the-crest', 'north-summit', 'west-shoulder', 'east-summit', 'long-valley', 'long-valley-divide', 'north-valley', 'lotharn-col', 'south-rampart', 'the-cold-head'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

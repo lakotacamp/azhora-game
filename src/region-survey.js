@@ -214,6 +214,18 @@ export const PLAYABLE_SURVEY = Object.freeze({
         terrain:'grassland'},{q:-6,r:129,terrain:'grassland'},{q:-5,r:129,terrain:'grassland'},{q:-7,r:130,terrain:'grassland'},{q:-6,r:130,
         terrain:'grassland'},{q:-5,r:130,terrain:'grassland'},{q:-7,r:131,terrain:'grassland'},{q:-6,r:131,terrain:'grassland'},{q:-5,r:131,
         terrain:'grassland'},{q:-6,r:132,terrain:'grassland'}]) }),
+    Object.freeze({ id: "West Lotharn Mountains", name: "West Lotharn Mountains",
+      bounds: Object.freeze({"x":1163.939,"y":2280,"width":277.128,"height":200}), centerX: 1315.204, centerY: 2382,
+      cells: Object.freeze([{q:-1,r:95,terrain:'mountain'},{q:0,r:95,terrain:'mountain'},{q:1,r:95,terrain:'hills'},{q:2,r:95,terrain:'hills'},{q:3,r:95,terrain:'hills'},{q:-1,
+        r:96,terrain:'mountain'},{q:0,r:96,terrain:'hills'},{q:1,r:96,terrain:'mountain'},{q:2,r:96,terrain:'mountain'},{q:3,r:96,terrain:'mountain'},{q:-3,
+        r:97,terrain:'hills'},{q:-2,r:97,terrain:'hills'},{q:-1,r:97,terrain:'mountain'},{q:0,r:97,terrain:'mountain'},{q:1,r:97,terrain:'mountain'},{q:2,
+        r:97,terrain:'hills'},{q:-4,r:98,terrain:'hills'},{q:-3,r:98,terrain:'mountain'},{q:-2,r:98,terrain:'mountain'},{q:-1,r:98,terrain:'hills'},{q:0,r:98,
+        terrain:'hills'},{q:1,r:98,terrain:'hills'},{q:2,r:98,terrain:'hills'},{q:-5,r:99,terrain:'mountain'},{q:-4,r:99,terrain:'mountain'},{q:-3,r:99,
+        terrain:'hills'},{q:-2,r:99,terrain:'hills'},{q:-1,r:99,terrain:'mountain'},{q:0,r:99,terrain:'mountain'},{q:1,r:99,terrain:'mountain'},{q:-8,r:100,
+        terrain:'mountain'},{q:-7,r:100,terrain:'mountain'},{q:-6,r:100,terrain:'mountain'},{q:-5,r:100,terrain:'hills'},{q:-4,r:100,terrain:'hills'},{q:-3,
+        r:100,terrain:'hills'},{q:-2,r:100,terrain:'mountain'},{q:-8,r:101,terrain:'hills'},{q:-7,r:101,terrain:'hills'},{q:-6,r:101,terrain:'hills'},{q:-5,
+        r:101,terrain:'hills'},{q:-4,r:101,terrain:'hills'},{q:-3,r:101,terrain:'mountain'},{q:-8,r:102,terrain:'mountain'},{q:-7,r:102,terrain:'mountain'},
+        {q:-6,r:102,terrain:'mountain'},{q:-5,r:102,terrain:'mountain'},{q:-4,r:102,terrain:'hills'}]) }),
   ]),
 });
 

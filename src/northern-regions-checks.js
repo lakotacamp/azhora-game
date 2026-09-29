@@ -1,4 +1,4 @@
-/** Renderer integration checks for the two imported northern regions. Travel uses the public
+/** Renderer integration checks for the imported northern regions. Travel uses the public
  * F8 controls; cave walking and climbing use the ordinary held movement/Space inputs. */
 export async function runNorthernRegionsChecks(h) {
   const checks = [], visits = [], started = performance.now();
@@ -55,6 +55,31 @@ export async function runNorthernRegionsChecks(h) {
     check(lotharnAnimals.length >= 10 && lotharnAnimals.some(a => ['red-deer', 'boar', 'hill-sheep'].includes(a.species)),
       'East Lotharn registers persistent land animals as well as birds');
     await capture('east-lotharn-arrival');
+
+    await travel('West Lotharn Mountains', 27);
+    const westLotharn = h.world.westLotharnMetrics;
+    check(westLotharn?.trees > 100 && westLotharn.water > 0 && h.world.westLotharnCaves.length === 9,
+      'West Lotharn builds mountain woodland, water, and all nine caves');
+    const westAnimals = h.wildlife().filter(a => a.region === 'West Lotharn Mountains');
+    check(westAnimals.length >= 15 && westAnimals.some(a => a.species === 'red-deer') && westAnimals.some(a => a.species === 'upland-hare'),
+      'West Lotharn registers persistent valley and summit wildlife');
+    const westTrees = h.world.colliders.filter(c => c.kind === 'west-lotharn-tree');
+    check(westTrees.length > 100 && westTrees.every(c => c.species && h.world.treeRegistry.get(c.id)?.harvestable),
+      'The West Lotharn forest is species-aware and connected to woodcutting');
+    await capture('west-lotharn-arrival');
+    const westCave = h.world.westLotharnCaves.find(c => c.id === 'col-passage');
+    check(!!westCave, 'The passage between the col and long valley is available');
+    const westMouth = westCave.at(Math.max(0, westCave.openings[0] - .15));
+    h.warp({ ...westMouth, y: h.world.heightAt(westMouth.x, westMouth.z) });
+    for (let s = westCave.openings[0] + 1; s <= westCave.openings[0] + 7; s += 1)
+      await walkTo(westCave.at(s), 'entering the West Lotharn col passage');
+    check(h.cave.cave?.id === westCave.id, 'Ordinary movement enters a West Lotharn cave through the shared controller');
+    await capture('west-lotharn-cave-inside');
+    const westSafe = h.cave.safeEntrance;
+    check(h.save() && await h.reload(), 'A West Lotharn cave checkpoint saves and reloads');
+    await h.frames(3);
+    check(!h.cave.active && gap(h.position(), westSafe) < .1,
+      'Reloading the western cave returns to its safe entrance');
 
     await travel('Feradom', 21);
     const feradom = h.world.feradomMetrics;
@@ -133,7 +158,7 @@ export async function runNorthernRegionsChecks(h) {
     check(h.saved() === savedBefore, 'Regional travel, caves, and climbing preserve the normal saved adventure');
     const errors = h.state().frameErrors;
     check((typeof errors === 'number' ? errors : errors?.count ?? 0) === 0, 'The native region checks produce no renderer frame errors');
-    return { ok: true, checks, visits, wildlife: { eastLotharn: lotharnAnimals.length, feradom: feradomAnimals.length },
-      scenery: { eastLotharn: lotharn, feradom }, elapsedMs: Math.round(performance.now() - started) };
+    return { ok: true, checks, visits, wildlife: { eastLotharn: lotharnAnimals.length, westLotharn: westAnimals.length, feradom: feradomAnimals.length },
+      scenery: { eastLotharn: lotharn, westLotharn, feradom }, elapsedMs: Math.round(performance.now() - started) };
   } finally { for (const code of ['KeyW', 'Space', 'KeyX']) h.release(code); }
 }

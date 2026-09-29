@@ -55,7 +55,7 @@ test('all built ordinary forest trunks carry species and individually removable 
   const {createWorld}=await sourceModule('../src/world.js');
   const world=createWorld(new THREE.Scene());
   const registry=world.treeRegistry, catalog=new Map(registry.trees.map(tree=>[tree.id,tree]));
-  const kinds=new Set(['village-tree','avrel-edge-tree','region-tree','feradom-tree','lotharn-tree','ascarth-tree','gala-tree','oves-tree','meneth-tree','caricas-tree','nesdor-tree','eer-tree','isareos-tree','nethereum-tree','olive-tree','thorn-tree','iscare-tree']);
+  const kinds=new Set(['village-tree','avrel-edge-tree','region-tree','feradom-tree','lotharn-tree','west-lotharn-tree','ascarth-tree','gala-tree','oves-tree','meneth-tree','caricas-tree','nesdor-tree','eer-tree','isareos-tree','nethereum-tree','olive-tree','thorn-tree','iscare-tree']);
   const trunks=world.colliders.filter(collider=>kinds.has(collider.kind));
   assert.ok(trunks.length>3000,'Checks the actual generated country, including ordinary background woods');
   for(const trunk of trunks) {

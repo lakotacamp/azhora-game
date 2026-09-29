@@ -41,6 +41,7 @@ import { riverCourses } from './region-layout.js';
 import { hexOwnerAt, REGION_CELLS, METRES_PER_HEX, landDistance } from './region-world.js';
 import { ELAGOS_REACHES } from './elagos-world.js';
 import { LOTHARN_WATER_LINES, LOTHARN_BOX } from './east-lotharn-world.js';
+import { WEST_LOTHARN_WATER_LINES, WEST_LOTHARN_BOX } from './west-lotharn-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const point = (x, z) => Object.freeze({ x, z });
@@ -322,7 +323,16 @@ export function menethTroughZ(index, x) {
  * `headX` is that high point, measured off the ground each valley actually has.
  */
 const MENETH_VALLEYS = Object.freeze([
-  Object.freeze({ index: 0, headX: -1760, footX: -2070 }),
+  // The first valley's beck used to run on to x = -2070, which was open country at 11.5 m when
+  // these becks were laid. Registering the West Lotharn Mountains put a mountain front across the
+  // west end of this one valley, and **a beck cannot run into a mountain**. Measured along this
+  // trough on the ground the atlas now makes, the floor falls from 28.6 m at the beck's head to
+  // 25.1 m at x = -1840 and then climbs - 30.9, 38.8, 48.9 - so the beck now ends where the ground
+  // stops falling, which is the same rule that set every other foot in this file
+  // ("a stream has to go downhill; where the lore and the ground disagree, the ground wins",
+  // docs/four-regions-brief.md). It spreads and sinks on its own valley floor instead of reaching
+  // the country beyond, and the other three valleys are untouched (docs/west-lotharn-report.md).
+  Object.freeze({ index: 0, headX: -1760, footX: -1848, taper: 38 }),
   Object.freeze({ index: 1, headX: -1720, footX: -2070 }),
   Object.freeze({ index: 2, headX: -1640, footX: -2070 }),
   Object.freeze({ index: 3, headX: -1690, footX: -2060 }),
@@ -333,7 +343,7 @@ export const MENETH_BECKS = Object.freeze(MENETH_VALLEYS.map(valley => {
   for (let x = valley.headX; x >= valley.footX; x -= 30) line.push(point(x, menethTroughZ(valley.index, x)));
   line.push(point(valley.footX, menethTroughZ(valley.index, valley.footX)));
   return river(`meneth-beck-${valley.index}`, `The ${['first', 'second', 'third', 'fourth'][valley.index]} valley beck`,
-    line, { halfWidth: 1.6, cut: 1, bed: .3, taper: 55 });
+    line, { halfWidth: 1.6, cut: 1, bed: .3, taper: valley.taper ?? 55 });
 }));
 
 // ---------------------------------------------------------------------------
@@ -937,6 +947,39 @@ export const OLVETH_BECK = river('olveth-beck', 'The Olveth beck', LOTHARN_WATER
 export const LOTHARN_WATERS = Object.freeze([LOTHARN_BORDER_WATER, KEMRATH_WATER, STONEGATE_WATER, OLVETH_BECK]);
 
 // ---------------------------------------------------------------------------
+// The West Lotharn: four derived courses, one of them somebody else's water
+// ---------------------------------------------------------------------------
+/**
+ * **The atlas draws no water at all on the West Lotharn's forty-eight hexes**, so every one of these
+ * is derived from the landform the way Meneth's four becks are, and the lore is what says there
+ * should be any: "each valley has its own drainage... the rivers of the Lotharn flow in two
+ * directions. The northern face drains toward the Lizeem system and the Mithala plain."
+ *
+ *  - **The Kemrath reach** is not this country's own water. The East Lotharn's Kemrath "drains west,
+ *    out of the range toward the West Lotharn", and now that the West Lotharn is registered its floor
+ *    and its water run out of the East's hexes and stop three metres inside these. A river cannot
+ *    stop in the middle of a country, so the reach picks it up at exactly that point and at exactly
+ *    that level (`headOf`), turns north along the foot of the east arm, and carries it down the notch
+ *    to the Mithala margin. Nothing in src/east-lotharn-world.js was touched to do it - the same
+ *    allowance Nesdor's Ela-South Reach makes for Elagos's water.
+ *  - **The north beck** drains the massif's north face down the north valley to the same margin.
+ *  - **The east beck** and **the west beck** leave the long valley's divide in opposite directions,
+ *    east to the Vastos margin and west to the hills above Yunethre, which is what a valley with a
+ *    divide in the middle of it does.
+ *
+ * All four are mountain becks: narrow, shallow, quick, and waded anywhere.
+ */
+export const KEMRATH_REACH = river('kemrath-reach', 'The Kemrath reach', WEST_LOTHARN_WATER_LINES.kemrathReach,
+  { halfWidth: 2.2, halfWidthEnd: 2.6, cut: .9, bed: .45, headOf: 'kemrath-water', taper: 34 });
+export const WEST_LOTHARN_NORTH_BECK = river('west-lotharn-north-beck', 'The north beck', WEST_LOTHARN_WATER_LINES.north,
+  { halfWidth: 1.1, halfWidthEnd: 1.8, cut: .7, bed: .3, taper: 40 });
+export const LONG_VALLEY_EAST_BECK = river('long-valley-east-beck', 'The east beck', WEST_LOTHARN_WATER_LINES.east,
+  { halfWidth: 1.1, halfWidthEnd: 1.9, cut: .6, bed: .3, taper: 55 });
+export const LONG_VALLEY_WEST_BECK = river('long-valley-west-beck', 'The west beck', WEST_LOTHARN_WATER_LINES.west,
+  { halfWidth: 1.1, halfWidthEnd: 2.2, cut: .6, bed: .3, taper: 60 });
+export const WEST_LOTHARN_WATERS = Object.freeze([KEMRATH_REACH, WEST_LOTHARN_NORTH_BECK, LONG_VALLEY_EAST_BECK, LONG_VALLEY_WEST_BECK]);
+
+// ---------------------------------------------------------------------------
 // Every piece of western water, and the questions the rest of the game asks of it
 // ---------------------------------------------------------------------------
 /**
@@ -947,7 +990,7 @@ export const LOTHARN_WATERS = Object.freeze([LOTHARN_BORDER_WATER, KEMRATH_WATER
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -955,7 +998,7 @@ export const WEST_POOLS = Object.freeze([
 ]);
 
 /** The regions this module shapes, in the order they were built. */
-export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert']);
+export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {
@@ -988,6 +1031,7 @@ export const WEST_GROUND = Object.freeze((() => {
   grow(box, VASTOS_SINTER.x, VASTOS_SINTER.z, VASTOS_SINTER.radius + 24);
   // The East Lotharn's landforms reach further than its hexes: the north face and the plain.
   if (Number.isFinite(LOTHARN_BOX.minX)) { grow(box, LOTHARN_BOX.minX, LOTHARN_BOX.minZ, 0); grow(box, LOTHARN_BOX.maxX, LOTHARN_BOX.maxZ, 0); }
+  if (Number.isFinite(WEST_LOTHARN_BOX.minX)) { grow(box, WEST_LOTHARN_BOX.minX, WEST_LOTHARN_BOX.minZ, 0); grow(box, WEST_LOTHARN_BOX.maxX, WEST_LOTHARN_BOX.maxZ, 0); }
   for (const name of WEST_REGION_NAMES) {
     const region = WEST_REGION_BOXES[name];
     if (!Number.isFinite(region.minX)) continue;

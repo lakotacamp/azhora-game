@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -178,6 +178,16 @@ export const REGION_BIOMES = Object.freeze({
   'Oves Desert': Object.freeze({ id: 'oves-rain-shadow', name: 'The Oves', ground: '#ab9f7c', canopy: '#6b7052', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
     relief: { amplitude: .8, wavelength: 320 }, clearings: ['rim-hills', 'dry-channels'],
     note: 'The far tail of the Pyros rain shadow, and rocky rather than sandy: worn stone through a thin poor soil, gravel pavement on the ridge exposures, perennial scrub spaced wide enough to walk between and a stubble of dead annual seed-heads in the low ground where the wet-year grasses would be. Three low rounded hills on the north-western rim intercept what moisture the westerlies carry, and the dry channels run from their feet east-south-east to the Oveth with no water in any of them.' }),
+  // The West Lotharn (src/west-lotharn-world.js, src/west-lotharn-scenery.js) is the same range as
+  // the East and the taller half of it: twenty-five mountain hexes to the East's fifteen, so this is
+  // the spine and the East reads as its eastern foothills. It scatters its own forest for the same
+  // reason the East does - deciduous woodland on the ledges to a tree line, bare stone above it and
+  // grass on the balds, and one count per hex cannot say which of those a point is on. The relief
+  // numbers are the East's exactly, because the two halves are one massif and the seam between them
+  // must have nothing to hide; the whole difference is the landform laid on top.
+  'West Lotharn Mountains': Object.freeze({ id: 'high-lotharn', name: 'The West Lotharn', ground: '#5b6e44', canopy: '#3c5932', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'forest-floor', ownScatter: true,
+    relief: { amplitude: 10, wavelength: 230 }, clearings: ['the-crest', 'long-valley'],
+    note: 'The spine of the Lotharn, and its taller half: one great massif of five hundred and fifty metres with three lesser masses round it, uneven shoulders and buttresses laid in courses of cliff, with wooded shelves between them and grassy crowns above the tree line. The long valley runs the whole way through the range from the Vastos margin to the western hills, flat-floored and grown over, with a divide a fifth of the way along it and a beck leaving each end; the north valley drains the massif to the Mithala plain. Oak, chestnut, maple, beech, hickory, walnut and tulip poplar on the ledges to about three hundred and forty metres, then stone.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

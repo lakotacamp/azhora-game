@@ -207,3 +207,21 @@ test('walking can leave a steep downhill edge in every climbing region while uph
     assert.equal(canWalkSlope(0, -.05, 0, .05, ledge), false, `ledge ascent in ${id}`);
   }
 });
+
+test('small trail irregularities can be stepped over without making steep faces walkable', () => {
+  const trail = terrain({ heightAt: (_x, z) => 10 + z * .65 + (z >= 0 ? .035 : 0) });
+  assert.equal(canWalkSlope(0, -.01, 0, .01, trail), true, 'a short rough join on a walkable ramp is a footstep');
+  const roughRamp = terrain({ heightAt: (_x, z) => 10 + z * .75 + (z >= 0 ? .04 : 0) });
+  for (const fps of [30, 60, 120]) {
+    const step = 4.2 / fps;
+    for (let z = -.5; z < .5; z += step)
+      assert.equal(canWalkSlope(0, z, 0, z + step, roughRamp), true, `rough ramp at ${fps}fps`);
+  }
+  const ledge = terrain({ heightAt: (_x, z) => 10 + (z >= 0 ? .2 : 0) });
+  assert.equal(canWalkSlope(0, -.01, 0, .01, ledge), false, 'the allowance does not snap up larger ledges');
+  const wall = terrain({ heightAt: (_x, z) => 10 + z * 2 });
+  assert.equal(canWalkSlope(0, 0, 0, .01, wall), false, 'tiny input steps still cannot walk up a cliff');
+  const diagonal = terrain({ heightAt: (x, z) => 10 + .8 * (x + z) });
+  assert.equal(canWalkSlope(0, 0, .01, 0, diagonal), false);
+  assert.equal(canWalkSlope(0, 0, 0, .01, diagonal), false, 'axis sliding cannot evade the face slope');
+});

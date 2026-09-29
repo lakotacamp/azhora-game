@@ -598,6 +598,15 @@ export const REGION_LANGUAGE = freeze({
   // "an older system... most visible in place names". One dialect for the range; its valleys'
   // own differences are for the day there are people in them to speak.
   'East Lotharn Mountains': spoken('mittoli', 'lotharn'),
+  // Twenty-seven, and **the same dialect**: the West Lotharn is the same range and the same valley
+  // people, and the lore's own unit is the range - "the sum total of Lotharn dialect variation is
+  // wider than the variation between any two standard regional Mittoli dialects", which makes the
+  // valleys the divisions and not the halves. If anything the West is the deeper half of the two:
+  // the atlas gives it no pass and no road, where the East has both, and "the deepest valley
+  // communities, those with the least external contact, preserve the most substrate". That is a
+  // note about the same dialect, not a second one, and a second one would need words nobody has
+  // written down.
+  'West Lotharn Mountains': spoken('mittoli', 'lotharn'),
   // Feradom speech, the Drentish of the domain country, which already had its entry above
   // for the company's men who came from there.
   Feradom: spoken('feradom'),

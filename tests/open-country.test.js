@@ -29,10 +29,14 @@ const UNOWNED = [
   // west and east of it, measured, and they still stand outside every outline and beside a neighbour
   // whose name could leak onto them.
   { x: -1500, z: 1900, was: 'Nesdor', note: 'a kilometre south of Nesdor’s outline, west of the peninsula' },
-  // (-2250, 1092) was this list's Caricas probe until the Oves Desert was built (29 September
-  // 2026) and took that ground: it is the desert's own now. Moved north-west, measured, to
-  // ground still outside every outline.
-  { x: -2300, z: -400, was: 'Caricas', note: '325 m north-west of Caricas' },
+  // (-2250, 1092) was this list's Caricas probe until the Oves Desert was built (28 September
+  // 2026) and took that ground: it is the desert's own now. It moved to (-2300, -400), and the
+  // West Lotharn Mountains took that one the next day - it is the range's own (-6,101) hills hex.
+  // Moved again and measured: this point is open country by `regionAt` and by `hexOwnerAt`, stands
+  // outside every outline, and is 413 m north-west of Caricas with Isareos's nearest hex 81 m away
+  // and the West Lotharn's 162 - which is the leak this whole list is watching for.
+  { x: -2530, z: -220, was: 'Caricas', note: '413 m north-west of Caricas, between Isareos and the Lotharn' },
+  // Still open country: the West Lotharn's nearest hex is 127 m east of it.
   { x: -2310, z: -728, was: 'Meneth', note: 'the west edge past Meneth' },
   { x: -300, z: 1950, was: 'West Izol', note: 'the channel west of the island, a kilometre off the mainland' },
 ];
