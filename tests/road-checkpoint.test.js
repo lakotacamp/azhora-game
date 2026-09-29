@@ -744,3 +744,17 @@ test('older checkpoints at the removed capital resume at the relocated gate with
   assert.equal(checkpoint.save({...data,ambronLayoutVersion:2,position:{x:-1240,z:290}}).ok,true);
   assert.deepEqual(checkpoint.read().data.position,{x:-1240,z:290},'a deliberate new visit to the old site stays there');
 });
+
+
+test('checkpoint validation preserves sparse world-tree harvests without needing the rendered forest catalog', () => {
+  const { checkpoint, data } = fixture();
+  const woodcutting = { version: 1, met: false, visits: 0, kingsAxe: false, logs: 2, sold: 0, trees: [
+    { id: 'country-pine-123.000--456.000', logsLeft: 0, stump: 20 },
+    { id: 'country-oak-321.000--654.000', logsLeft: 2, stump: 0 },
+  ] };
+  assert.equal(checkpoint.save({ ...data, woodcutting }).ok, true);
+  assert.deepEqual(checkpoint.read().data.woodcutting, woodcutting);
+  const broken = { ...woodcutting, trees: [{ ...woodcutting.trees[0], stump: Infinity }] };
+  assert.equal(checkpoint.save({ ...data, woodcutting: broken }).ok, false);
+  assert.deepEqual(checkpoint.read().data.woodcutting, woodcutting, 'a bad stump timer does not replace the saved adventure');
+});

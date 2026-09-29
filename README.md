@@ -346,3 +346,15 @@ Ari now lives in Applegarth in western Drent, close to Stanley's Avrel farming a
 `ari-garden.js` owns Ari's established appearance and positions; `sunflower-lesson.js` observes actual farming events. `npm run test:sunflowers:desktop` exercises the real dialogue and F-key garden menus, mid-growth and completed reloads, the green marker, and exactly-once rewards.
 
 Ambron has a dedicated gold capital symbol and label on the journal map, plus its actual interlake city footprint at closer zoom. Ordinary exploration fog still applies.
+
+### Drent homes, trees and new lessons
+
+Every ordinary forest tree is now registered by species and shares Woodcutting's harvest, visible felling, collision removal and saved regrowth. Kept fruit and garden trees and the sentient Old Tree have named species and explicit protection reasons. `tree-registry.js` links the instanced scenery to the sparse Woodcutting checkpoint.
+
+Ari's sunflower quest has its own F8 computer autoplay card. Her Applegarth cottage has lavender trim, sunflower details and an Ari mailbox. Glun walks back to the training dummy after his Woodcutting lesson; Hacks is the first F8 section.
+
+Ryan fishes and teaches Fishing at Willowmere beside Barrett, his and Jess's son. Barrett chooses one unknown region from the complete atlas when asked about geography; the chart gains its name/location and normal Cartography XP. The saved 120-second active-play cooldown prevents repeated or reloaded conversations from granting extra discoveries. Rip is their yellow family dog.
+
+`family-homes.js` assigns the requested households and relationship dialogue; `family-homes-scenery.js` adds distinct decor and named mailboxes to existing cottages. Only Mark's cottage outside Tidehaven is a new building. These home assignments do not add interior routines.
+
+Focused checks: `node scripts/launch.cjs --smoke-test --ari-autoplay-checks` completes the live planting, watering, growth and harvest quest; `--willowmere-family-checks` exercises Ryan's lesson and catch plus Barrett's dialogue, chart, cooldown and checkpoint reload. `--glun-wood-checks` checks the return to post and felling/restoring an ordinary forest tree. All use disposable profiles and isolated saves.

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { landDistance, isLandHex, REGION_CELLS } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import { mergeByColour } from './west-suval-world.js';
@@ -871,14 +872,17 @@ export function createIzolScenery(kit) {
         dummy.rotation.set(pine.lean * .6, pine.rot, pine.lean);
         dummy.scale.set(pine.s, height * .86, pine.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
+        const parts = [{mesh:trunks,index}];
         for (let c = 0; c < 2; c++) {
           dummy.position.set(pine.x + Math.sin(pine.rot) * height * (.1 + pine.lean), y + height * (.74 + c * .16), pine.z + Math.cos(pine.rot) * height * (.1 + pine.lean) * .4);
           dummy.rotation.set(.1, pine.rot + c, pine.lean * 1.3);
           dummy.scale.set(height * (.33 - c * .1), height * .17, height * (.26 - c * .08)); dummy.updateMatrix();
           crowns.setMatrixAt(crownIndex, dummy.matrix);
+          parts.push({mesh:crowns,index:crownIndex});
           crowns.setColorAt(crownIndex++, color.setHSL(range(.3, .37), range(.14, .24), range(.17, .25)));
         }
-        push({ x: pine.x, z: pine.z, r: .4 * pine.s, kind: 'region-tree' });
+        const collider = { x: pine.x, z: pine.z, r: .4 * pine.s, kind: 'region-tree' }; colliders.push(collider);
+        registerWorldTree(colliders,{id:worldTreeId('izol',pine.x,pine.z),x:pine.x,z:pine.z,y,height,species:'stone-pine'},parts,collider);
       });
       crowns.count = crownIndex;
       for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); district.add(batch); metrics.batches++; }

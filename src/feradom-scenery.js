@@ -1,5 +1,6 @@
 import { regionalFarmlandClear } from './regional-farmland.js';
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { groundTint } from './world-terrain.js';
 import { createSceneryBuilder } from './scenery-builder.js';
 import { drawCircuit } from './fortworks.js';
@@ -212,7 +213,7 @@ export function createFeradomScenery(kit) {
         dummy.position.set(tree.x, y + tree.h * (tree.fir ? .3 : .34), tree.z); dummy.rotation.set(0, tree.rot, 0);
         dummy.scale.set(tree.s, tree.h * (tree.fir ? .62 : .7), tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
-        push({ x: tree.x, z: tree.z, r: .45 * tree.s, kind: 'feradom-tree' });
+        tree.parts = [{mesh:trunks,index}]; tree.collider = push({ x: tree.x, z: tree.z, r: .45 * tree.s, kind: 'feradom-tree' });
       });
       const batches = [trunks];
       if (firs.length) {
@@ -226,6 +227,7 @@ export function createFeradomScenery(kit) {
             dummy.position.set(tree.x, y + tree.h * (.34 + tier * .21) + h / 2, tree.z);
             dummy.rotation.set(0, tree.rot + tier, 0); dummy.scale.set(r, h, r); dummy.updateMatrix();
             cones.setMatrixAt(n, dummy.matrix);
+            tree.parts.push({mesh:cones,index:n});
             cones.setColorAt(n++, color.set(tree.tint).offsetHSL(0, range(-.03, .03), range(-.04, .03) + tier * .015));
           }
         }
@@ -242,12 +244,14 @@ export function createFeradomScenery(kit) {
             const r = tree.h * .33 * tree.spread;
             dummy.rotation.set(range(-.15, .15), a, range(-.14, .14)); dummy.scale.set(r, tree.h * .24, r); dummy.updateMatrix();
             lobes.setMatrixAt(n, dummy.matrix);
+            tree.parts.push({mesh:lobes,index:n});
             lobes.setColorAt(n++, color.set(tree.tint).offsetHSL(range(-.012, .012), range(-.05, .05), range(-.05, .05)));
           }
         }
         batches.push(lobes);
       }
       for (const batch of batches) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
+      for(const tree of trees) registerWorldTree(colliders,{id:worldTreeId('feradom',tree.x,tree.z),x:tree.x,z:tree.z,y:gy(tree.x,tree.z),height:tree.h,species:tree.fir?'silver-fir':'white-oak'},tree.parts,tree.collider);
       metrics.trees += trees.length;
     }
     if (stumps.length) {

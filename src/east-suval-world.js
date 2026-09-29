@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { landDistance, hexOwnerAt, insideRegion } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -674,6 +675,7 @@ export function createEastSuvalScenery(kit) {
         dummy.rotation.set(.06, tree.rot, .05);
         dummy.scale.set(tree.s, height * .7, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(i, dummy.matrix);
+        const firstCrown = crown;
         for (let c = 0; c < 2; c++) {
           dummy.position.set(tree.x + (c ? .7 : -.5) * tree.s, y + height * (.78 + c * .1), tree.z + (c ? -.4 : .5) * tree.s);
           dummy.rotation.set(.1, tree.rot + c, .08);
@@ -681,7 +683,9 @@ export function createEastSuvalScenery(kit) {
           crowns.setMatrixAt(crown, dummy.matrix);
           crowns.setColorAt(crown++, color.setHSL(range(.18, .24), range(.12, .2), range(.34, .44)));
         }
-        push({ x: tree.x, z: tree.z, r: .45 * tree.s, kind: 'region-tree' });
+        const collider = push({ x: tree.x, z: tree.z, r: .45 * tree.s, kind: 'region-tree' });
+        registerWorldTree(colliders, { id: worldTreeId('east-suval', tree.x, tree.z), x: tree.x, z: tree.z, y, species: i % 3 === 0 ? 'common-juniper' : 'olive', radius: collider.r },
+          [{ mesh: trunks, index: i }, ...Array.from({ length: crown - firstCrown }, (_, c) => ({ mesh: crowns, index: firstCrown + c }))], collider);
       });
       crowns.count = crown;
       for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }

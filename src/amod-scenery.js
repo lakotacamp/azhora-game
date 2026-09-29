@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { REGION_CELLS, hexOwnerAt, hexAt, SURVEY } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -598,7 +599,7 @@ export function createAmodScenery(kit) {
         dummy.scale.set(tree.s, height * .68, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
         trunks.setColorAt(index, color.setHSL(.09, range(.1, .18), range(.24, .33)));
-        colliders.push({ x: tree.x, z: tree.z, r: .5 * tree.s, kind: 'region-tree' });
+        const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .5 * tree.s, kind: 'region-tree' }; colliders.push(collider);
         for (let c = 0; c < 3; c++) {
           const a = tree.rot + c * 2.1, spread = c === 2 ? 0 : height * .16;
           dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (c === 2 ? .88 : .68), tree.z + Math.cos(a) * spread);
@@ -606,10 +607,12 @@ export function createAmodScenery(kit) {
           const wide = tree.walnut ? .3 : .36;
           dummy.scale.set(height * wide, height * .3, height * wide); dummy.updateMatrix();
           crowns.setMatrixAt(crownIndex, dummy.matrix);
+          parts.push({mesh:crowns,index:crownIndex});
           crowns.setColorAt(crownIndex++, tree.walnut
             ? color.setHSL(range(.24, .28), range(.2, .3), range(.26, .34))
             : color.setHSL(range(.17, .23), range(.24, .36), range(.3, .4)));
         }
+        registerWorldTree(colliders,{id:worldTreeId('amod',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:tree.walnut?'black-walnut':'sweet-chestnut'},parts,collider);
       });
       crowns.count = crownIndex;
       for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
@@ -628,6 +631,7 @@ export function createAmodScenery(kit) {
         dummy.scale.set(height * .44, height * .34, height * .44); dummy.updateMatrix();
         crowns.setMatrixAt(index, dummy.matrix);
         crowns.setColorAt(index, color.setHSL(range(.19, .25), range(.24, .34), range(.34, .44)));
+        registerWorldTree(colliders,{id:worldTreeId('amod-orchard',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:'apple'},[{mesh:trunks,index},{mesh:crowns,index}]);
       });
       for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
       metrics.orchard += orchard.length;

@@ -1,5 +1,6 @@
 import { AMBUSH, AMBUSH_REBELS } from './road-ambush.js';
 import { createSceneryBuilder } from './scenery-builder.js';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 
 /** Permanent undergrowth around the hiding places, independent of the actors' lives. */
 export function createRoadAmbushScenery({ root, groundHeight, roadDistance, colliders,
@@ -36,15 +37,18 @@ export function createRoadAmbushScenery({ root, groundHeight, roadDistance, coll
       const p = at(along, out);
       if (roadDistance(p.x, p.z) < 1.05) continue;
       const y = groundHeight(p.x, p.z);
-      build.cylinder(bark, p.x, y, p.z, .085, height * .84);
+      const sapling = createSceneryBuilder('Young white oak');
+      sapling.cylinder(bark, p.x, y, p.z, .085, height * .84);
       for (let branch = 0; branch < 4; branch++) {
         const a = index * 1.6 + i + branch * 2.4, spread = branch === 3 ? .06 : .48;
         const x = p.x + Math.sin(a) * spread, z = p.z + Math.cos(a) * spread;
         const cy = y + height * (branch === 3 ? .84 : .53 + branch * .07);
-        build.beam(bark, [p.x, y + height * .40, p.z], [x, cy, z], .045);
-        build.rock(leaves[(branch + index + i) % leaves.length], x, cy, z, .66, height * .24, .58, a);
+        sapling.beam(bark, [p.x, y + height * .40, p.z], [x, cy, z], .045);
+        sapling.rock(leaves[(branch + index + i) % leaves.length], x, cy, z, .66, height * .24, .58, a);
       }
-      colliders.push({ ...p, r: .10, height, kind: colliderKind });
+      const collider = { ...p, r: .10, height, kind: colliderKind }; colliders.push(collider);
+      const saplingMesh = sapling.finish(root); saplingMesh.userData.passable = true;
+      registerWorldTree(colliders, { id: worldTreeId(colliderKind, p.x, p.z), ...p, y, species: 'white-oak', radius: .10 }, [{ mesh: saplingMesh }], collider);
     }
   }
   const mesh = build.finish(root);

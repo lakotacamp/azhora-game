@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { createSceneryBuilder } from './scenery-builder.js';
 import { FARMSTEADS, FARM_LANES, inFarmPolygon } from './regional-farmland.js';
 
@@ -121,7 +122,9 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
       props.rock(index % 2 ? '#b28d49' : '#a47650', tree.x + Math.cos(a) * radius, py + h * (.65 + (n % 3) * .065),
         tree.z + Math.sin(a) * radius, .095, .11, .095);
     }
-    addCollider({ x: tree.x, z: tree.z, r: .26, kind: 'farm-orchard-tree', farmTreeId: tree.id });
+    const collider = { x: tree.x, z: tree.z, r: .26, kind: 'farm-orchard-tree', farmTreeId: tree.id }; addCollider(collider);
+    registerWorldTree(colliders, { id: tree.id, x: tree.x, z: tree.z, y: py, species: 'apple', radius: .26, harvestable: false,
+      reason: 'This cultivated apple tree is kept for its orchard fruit.' }, [], collider);
     metrics.orchardTrees++;
   }
   function workyard(farm, props, earth) {

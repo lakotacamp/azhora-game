@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, landDistance } from './region-world.js';
 import { ISCARE_REGION, ISCARE_ISLANDS, ZECRON, ZECRON_BUILDINGS, ISCARE_RUIN_SITES, ISCARE_WILDLIFE_ZONES, iscareClear } from './iscare-world.js';
 
@@ -58,9 +59,10 @@ export function createIscareScenery({ root, material, mesh, box, post, pebble, g
         mesh(round, scrub, x, y + size * .19, z, size * .65, size * .35, size * .6, group); metrics.scrub++;
       }
       if (i % 39 === 0 && landDistance(x, z) > 20) {
-        post(trunk, x, y + 1.4, z, .15, 2.8, group).rotation.z = .2;
-        mesh(round, scrub, x - .3, y + 2.9, z, 1.5, .7, 1.2, group); metrics.trees++;
-        colliders.push({ x, z, r: .2, kind: 'iscare-tree' });
+        const stem = post(trunk, x, y + 1.4, z, .15, 2.8, group); stem.rotation.z = .2;
+        const crown = mesh(round, scrub, x - .3, y + 2.9, z, 1.5, .7, 1.2, group); metrics.trees++;
+        const collider = { x, z, r: .2, kind: 'iscare-tree' }; colliders.push(collider);
+        registerWorldTree(colliders, { id: worldTreeId('iscare-tamarisk', x, z), x, z, y, species: 'tamarisk', radius: .2 }, [{ mesh: stem }, { mesh: crown }], collider);
       }
     }
   }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { canStand } from './game-state.js';
 import { REGION_CELLS } from './region-world.js';
 
@@ -217,7 +218,7 @@ export function createWoodlandLife(scene, world) {
     const branchEnd = branchStart.clone().addScaledVector(radial, 1.15); branchEnd.y += .15;
     // A real branch attached to this exact trunk gives the climbing animal a
     // visible destination just under the canopy.
-    const branch = new THREE.Mesh(branchGeo, branchMaterial);
+    const branch = new THREE.Mesh(branchGeo, branchMaterial); branch.name = `Squirrel branch ${tree.id}`;
     branch.position.copy(branchStart).lerp(branchEnd, .5);
     const branchDirection = branchEnd.clone().sub(branchStart);
     branch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), branchDirection.clone().normalize());
@@ -314,6 +315,9 @@ export function createWoodlandLife(scene, world) {
     dummy.position.set(patch.x, world.heightAt(patch.x, patch.z), patch.z);
     dummy.rotation.set(0, i * 1.63, 0); dummy.scale.setScalar(.97 + (i % 3) * .07); dummy.updateMatrix();
     saplings.setMatrixAt(i, dummy.matrix);
+    const collider = world.colliders.find(c => c.kind === 'pawpaw-sapling' && c.x === patch.x && c.z === patch.z);
+    registerWorldTree(world.colliders, { id: patch.id, x: patch.x, z: patch.z, y: world.heightAt(patch.x, patch.z), species: 'pawpaw', radius: .12, harvestable: false,
+      reason: 'Leave this common pawpaw standing to gather its ripe fruit.' }, [{ mesh: saplings, index: i }], collider);
   }
   saplings.instanceMatrix.needsUpdate = true; saplings.computeBoundingSphere();
   const fruitMeshes = new THREE.InstancedMesh(fruitGeometry, coloredMaterial, fruits.length);
@@ -357,6 +361,7 @@ export function createWoodlandLife(scene, world) {
     const x = points.reduce((sum, p) => sum + p.x, 0) / points.length, z = points.reduce((sum, p) => sum + p.z, 0) / points.length;
     return { x, z, radius: Math.max(...points.map(p => Math.hypot(p.x - x, p.z - z))) };
   }
+  const treeStanding = squirrel => !world.treeRegistry?.get(squirrel.tree.id) || world.treeRegistry.standing(squirrel.tree.id);
   function update(dt, playerPosition, active = true) {
     if (!active) return;
     extent ??= woodlandExtent();
@@ -392,7 +397,16 @@ export function createWoodlandLife(scene, world) {
     fruitGlints.instanceMatrix.needsUpdate = true;
     for (const squirrel of squirrels) {
       const distance = Math.hypot(squirrel.x - playerPosition.x, squirrel.z - playerPosition.z);
-      squirrel.group.visible = squirrel.branch.visible = distance < 75;
+      const standing = treeStanding(squirrel);
+      squirrel.group.visible = squirrel.branch.visible = standing && distance < 75;
+      if (!standing) {
+        // No squirrel perches on a floating branch after its tree comes down.
+        // Its familiar ground pocket is still here when the tree regrows.
+        squirrel.mode = 'idle'; squirrel.timer = 3; squirrel.elevation = .28; squirrel.branchStep = 0;
+        squirrel.x = squirrel.home.x; squirrel.z = squirrel.home.z;
+        squirrel.group.position.set(squirrel.x, world.heightAt(squirrel.x, squirrel.z), squirrel.z);
+        continue;
+      }
       if (distance >= 75) continue;
       squirrel.clock += dt;
       const homeDistance = Math.hypot(squirrel.home.x - playerPosition.x, squirrel.home.z - playerPosition.z);
@@ -462,7 +476,7 @@ export function createWoodlandLife(scene, world) {
     update,
     setObserver(position) {
       if (!Number.isFinite(position?.x) || !Number.isFinite(position?.z)) return;
-      for (const squirrel of squirrels) squirrel.group.visible = squirrel.branch.visible = Math.hypot(squirrel.x-position.x,squirrel.z-position.z)<75;
+      for (const squirrel of squirrels) squirrel.group.visible = squirrel.branch.visible = treeStanding(squirrel)&&Math.hypot(squirrel.x-position.x,squirrel.z-position.z)<75;
     },
     nearestAcorn(position, maxDistance = 2) {
       let nearest = null, distance = maxDistance;

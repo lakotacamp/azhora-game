@@ -54,6 +54,15 @@
     <section id="testing" class="hidden panel" role="dialog" aria-modal="true" aria-labelledby="testing-title">
       <button class="close" data-close aria-label="Close testing tools">&times;</button>
       <h2 id="testing-title">Testing tools</h2>
+      <div id="testing-hacks" class="test-section">
+        <h3>Hacks</h3>
+        <div class="test-hack-actions">
+          <button id="test-dev-dragon" class="secondary">Developer dragon &middot; fly</button>
+          <button id="test-dev-bat" class="secondary">Developer bat &middot; fly</button>
+          <button id="test-dev-horse" class="secondary">Developer horse &middot; fast</button>
+          <button id="test-reveal-chart" class="secondary">Developer map: reveal all</button>
+        </div>
+      </div>
       <div id="testing-quest-playtests" class="test-section">
         <h3 id="test-autoplay-heading">Quest playtests</h3>
         <p class="test-autoplay-note">Fresh computer playtests. Any key or click takes control; <kbd>P</kbd> resumes. Your saved adventure stays unchanged.</p>
@@ -73,6 +82,7 @@
           <button id="test-cub-autoplay" class="test-quest-card"><span class="test-card-title">Bear cub <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Sneak into Liz’s apiary &middot; Stealth lesson</span></button>
           <button id="test-cagney-autoplay" class="test-quest-card"><span class="test-card-title">Cagney <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Face the cagnappers &middot; Escort to Ambron</span></button>
           <button id="test-jesse-autoplay" class="test-quest-card"><span class="test-card-title">Jesse <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Build a carriage &middot; Ride to Ambron</span></button>
+          <button id="test-ari-autoplay" class="test-quest-card"><span class="test-card-title">Ari <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Grow sunflowers &middot; Farming lesson</span></button>
           <button id="test-catie-autoplay" class="test-quest-card"><span class="test-card-title">Catie <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Find Batman &middot; Fly over Suval</span></button>
           <button id="test-addison-autoplay" class="test-quest-card"><span class="test-card-title">Addison <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Through the ridge &middot; Steal her sister&rsquo;s fire</span></button>
         </div>
@@ -89,15 +99,6 @@
         <div class="test-goto"><label for="test-country">Go anywhere</label><select id="test-country" aria-label="Country"></select><select id="test-place" aria-label="Named ground"></select><button id="test-goto">Go</button></div>
         <div class="test-goto"><label for="test-point">Go to a point</label><input id="test-point" type="text" spellcheck="false" autocomplete="off" placeholder="-1050, 982 &middot; or stand-at:-806.1,-521,-1.57"><button id="test-point-go">Go</button></div>
         <p id="test-here" role="status"></p>
-      </div>
-      <div id="testing-hacks" class="test-section">
-        <h3>Hacks</h3>
-        <div class="test-hack-actions">
-          <button id="test-dev-dragon" class="secondary">Developer dragon &middot; fly</button>
-          <button id="test-dev-bat" class="secondary">Developer bat &middot; fly</button>
-          <button id="test-dev-horse" class="secondary">Developer horse &middot; fast</button>
-          <button id="test-reveal-chart" class="secondary">Developer map: reveal all</button>
-        </div>
       </div>
       <button class="secondary test-return" data-close>Return to the game <span>F8 / Esc</span></button>
     </section>

@@ -1,18 +1,18 @@
 /**
- * Tidehaven's dog: a friendly stray that sniffs about the green, comes to see
+ * Tidehaven's dog: a friendly yellow family dog that sniffs about the green, comes to see
  * who has arrived, and will usually eat whatever food it is offered. A pure
  * behaviour so the game loop only has to move the model where this says.
  */
 export const VILLAGE_DOG = Object.freeze({
-  id: 'village-dog', name: 'the village dog', role: 'Sniffing about',
+  id: 'village-dog', name: 'Rip', role: 'Jess, Ryan and Barrett’s family dog',
   haunts: Object.freeze([
     Object.freeze({ x: -16, z: 33 }), Object.freeze({ x: -8, z: 40 }), Object.freeze({ x: -22, z: 38 }),
     Object.freeze({ x: -28, z: 27 }), Object.freeze({ x: -12, z: 24 }), Object.freeze({ x: -34, z: 33 }),
   ]),
   greetings: Object.freeze([
-    'The dog trots over, nose going, and sniffs at your satchel. Its tail has not stopped since it saw you.',
+    'Rip sniffs at your satchel. This yellow dog belongs to Jess, Ryan and Barrett. Its tail has not stopped since it saw you.',
     'The dog sits, then stands, then sits again, watching your hands.',
-    'The dog leans against your leg and looks up. Nobody in Tidehaven admits to owning it.',
+    'The dog leans against your leg and looks up. Barrett calls him Rip; Jess and Ryan call him when he has found their supper.',
   ]),
 });
 

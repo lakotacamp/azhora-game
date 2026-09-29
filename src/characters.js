@@ -3278,6 +3278,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     body.scale.set(0.92, 0.93, 0.92);
     head.scale.set(0.98 / Math.sqrt(0.92), 0.98 / 0.93, 0.98 / Math.sqrt(0.92));
   }
+  if (look?.child) head.scale.multiplyScalar(1.12);
   if (mercBuild) {
     // Build rides on the hips, not on the root, so the combat view's own
     // group scale (it shrinks the fallen) never flattens a man's proportions.

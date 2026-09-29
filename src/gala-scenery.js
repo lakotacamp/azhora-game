@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, landDistance, relief } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import { LIZEEM, LIZEEM_REACH, WEST_BRAIDS, GALA_RIVERS, GALA_CHANNEL, GALA_TELEMONIA_STREAM, GALA_DESERT_STREAM, OVETH_REACH, westBareGround } from './west-regions.js';
@@ -274,14 +275,16 @@ export function createGalaScenery(kit) {
       dummy.position.set(tree.x, y + height * tree.bole * .5, tree.z); dummy.rotation.set(range(-.05, .05), tree.rot, range(-.05, .05));
       dummy.scale.set(tree.s * tree.girth, height * tree.bole, tree.s * tree.girth); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
-      colliders.push({ x: tree.x, z: tree.z, r: .42 * tree.s * tree.girth, kind });
+      const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .42 * tree.s * tree.girth, kind }; colliders.push(collider);
       for (let lobe = 0; lobe < 3; lobe++) {
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * tree.spread;
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? tree.top : tree.top - .16), tree.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
         dummy.scale.set(height * tree.wide, height * tree.deep, height * tree.wide); dummy.updateMatrix();
+        parts.push({mesh:crowns,index:at});
         crowns.setMatrixAt(at, dummy.matrix); crowns.setColorAt(at++, tint(tree));
       }
+      registerWorldTree(colliders,{id:worldTreeId(kind,tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:name.includes('tamarisk')?'tamarisk':tree.fig?'fig':'olive'},parts,collider);
     });
     trunks.name = `${name} trunks`; crowns.name = `${name} crowns`;
     for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }

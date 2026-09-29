@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, landDistance, REGION_CELLS } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -489,6 +490,7 @@ export function createSouthSuvalScenery(kit) {
         dummy.scale.set(tree.s * (tree.fig ? 1.1 : 1), height * .6, tree.s * (tree.fig ? 1.1 : 1)); dummy.updateMatrix();
         trunks.setMatrixAt(i, dummy.matrix);
         // An olive is a loose grey-silver crown in lumps; a fig is one broad dark dome.
+        const firstCrown = crown;
         const lumps = tree.fig ? 1 : 3;
         for (let c = 0; c < lumps; c++) {
           const off = tree.fig ? 0 : (c - 1) * .7;
@@ -499,7 +501,9 @@ export function createSouthSuvalScenery(kit) {
           crowns.setColorAt(crown++, tree.fig ? color.setHSL(range(.24, .3), range(.3, .42), range(.24, .32))
             : color.setHSL(range(.19, .24), range(.08, .16), range(.44, .54)));
         }
-        push({ x: tree.x, z: tree.z, r: .4 * tree.s, kind: 'region-tree' });
+        const collider = push({ x: tree.x, z: tree.z, r: .4 * tree.s, kind: 'region-tree' });
+        registerWorldTree(colliders, { id: worldTreeId('south-suval', tree.x, tree.z), x: tree.x, z: tree.z, y, species: tree.fig ? 'fig' : 'olive', radius: collider.r },
+          [{ mesh: trunks, index: i }, ...Array.from({ length: crown - firstCrown }, (_, c) => ({ mesh: crowns, index: firstCrown + c }))], collider);
       });
       crowns.count = crown;
       for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }

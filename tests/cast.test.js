@@ -10,6 +10,7 @@ import { IMANI } from '../src/vineyard.js';
 import { KATY } from '../src/katy.js';
 import { BATSMASHER } from '../src/batman-quest.js';
 import { LUSCIA_PROPHET } from '../src/luscia-prophet.js';
+import { WILLOWMERE_FAMILY } from '../src/willowmere-family.js';
 import { TRIMMED, KEEP_IDS, QUEST_IDS, OWN_IDS, SMITH_IDS, DROP_IDS, SOLDIER_ROLES, keepsNpc, trimCast } from '../src/cast.js';
 
 /**
@@ -66,7 +67,7 @@ test('every id on the list is somebody the world actually places', async () => {
     assert.ok(VASTOS_POSITIONS[npc.id], `${npc.id} has no camp stand`);
     placed.add(npc.id);
   }
-  const known = new Set([...placed,
+  const known = new Set([...placed, ...WILLOWMERE_FAMILY.map(npc => npc.id),
     // Pushed in by src/main.js from their own modules rather than by the world.
     'cobble-ari', 'cobble-jessi', 'kayla', 'kayla-cub', 'harbormaster', 'instructor', 'garden-keeper', 'lee-anne', 'sylvia', 'cagney', 'alex', LUSCIA_PROPHET.id, FARMER.id, ...FERRY_HOST_IDS, 'brandy-frank', 'bird-watcher', 'attic-juan', 'attic-nika',
     'solis-secretary', 'john-salt', 'katy', BATSMASHER.id, 'vintner', 'winemaker', 'cellar-hand', 'light-keeper',

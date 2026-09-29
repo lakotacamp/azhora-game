@@ -1,3 +1,4 @@
+import { validateBarrettGeography } from './barrett-geography.js';
 import { AMBRON_LAYOUT_VERSION } from './ambron-city-layout.js';
 import { migrateAmbronPlayer, migrateAmbronCagney } from './ambron-checkpoint-migration.js';
 import { createFireMaking, validateFireMakingSnapshot } from './fire-making.js';
@@ -245,6 +246,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (!validateGlunWoodcuttingSnapshot(data.glunWood)) return failed('The saved woodcutting lesson is invalid.');
     if (!validateRoadsideLessons(data.roadLessons)) return failed('The saved road lessons are invalid.');
     if (!validateHusbandrySnapshot(data.husbandry)) return failed('The saved animal care is invalid.');
+    if (!validateBarrettGeography(data.barrettGeography,{playSeconds:data.playSeconds??0})) return failed('The saved conversation with Barrett is invalid.');
     if (!validateSunflowerLesson(data.sunflowerLesson)) return failed('The saved sunflower lesson is invalid.');
     if (!validateSylviaIvy(data.sylviaIvy)) return failed('The saved ivy clearing is invalid.');
     if (!validateFarmingSnapshot(data.farming, { playSeconds: Number.isFinite(data.playSeconds) ? data.playSeconds : Infinity })) return failed('The saved rows at the commons are invalid.');
@@ -439,6 +441,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.glunWood) { const lesson=createGlunWoodcutting();lesson.restore(data.glunWood);result.glunWood=lesson.snapshot(); }
     if (data.roadLessons) { const lessons=createRoadsideLessons();lessons.restore(data.roadLessons);result.roadLessons=lessons.snapshot(); }
     if (data.husbandry) { const care=createAnimalHusbandry();care.restore(data.husbandry);result.husbandry=care.snapshot(); }
+    if (data.barrettGeography) result.barrettGeography={...data.barrettGeography,told:[...data.barrettGeography.told]};
     if (Object.hasOwn(data, 'sunflowerLesson')) { const lesson = createSunflowerLesson(); lesson.restore(data.sunflowerLesson); result.sunflowerLesson = lesson.snapshot(); }
     if (Object.hasOwn(data, 'sylviaIvy')) { const ivy = createSylviaIvy(); ivy.restore(data.sylviaIvy); result.sylviaIvy = ivy.snapshot(); }
     if (Object.hasOwn(data, 'farming')) { const farm = createFarming(); farm.restore(data.farming); result.farming = farm.snapshot(); }

@@ -12,6 +12,8 @@
  * per plank, over and over, and what each level opens is written in the skill's
  * guide. Pure: no DOM, no three.
  */
+import { TREE_KINDS } from './woodcutting.js';
+const timberTier = level => Object.values(TREE_KINDS).filter(tree => tree.level === level).map(tree => `${tree.name} · ${tree.xp} experience a log`).join('; ');
 /** The heading the seven fighting skills sit under in the journal's grid. */
 export const ARMS_HEADING = 'Arms';
 /** The second table, beside Arms: the schools of sorcery (src/sorcery.js). */
@@ -127,9 +129,9 @@ export const SKILLS = Object.freeze({
     teacher: 'Officer Glun at the training post, and Bowden Koop in the Koopwood north-west of Tidehaven',
     thresholds: RUNESCAPE_TABLE,
     // What each level opens (src/woodcutting.js holds the trees and axes themselves; the test keeps the two in step).
-    unlocks: Object.freeze([unlock(1, 'Loblolly pine · 25 experience a log'), unlock(1, 'Bronze hatchet and iron axe'), unlock(6, 'Steel axe'),
-      unlock(15, 'White oak · 38 experience a log'), unlock(30, 'Black willow · 68 experience a log'), unlock(30, 'The King’s axe, from Bowden'),
-      unlock(45, 'Red maple · 100 experience a log'), unlock(60, 'Black walnut · 175 experience a log'), unlock(99, 'Bowden stops calling you “worm”')]),
+    unlocks: Object.freeze([unlock(1, timberTier(1)), unlock(1, 'Bronze hatchet and iron axe'), unlock(6, 'Steel axe'),
+      unlock(15, timberTier(15)), unlock(30, timberTier(30)), unlock(30, 'The King’s axe, from Bowden'),
+      unlock(45, timberTier(45)), unlock(60, timberTier(60)), unlock(99, 'Bowden stops calling you “worm”')]),
   }),
   construction: Object.freeze({
     id: 'construction', name: 'Carpentry', kind: 'working',

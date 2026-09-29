@@ -3,6 +3,7 @@ import { villageToWorld } from './region-world.js';
 export const FISHING_LESSONS_VERSION = 1;
 export const FISHING_DEMO_SECONDS = 4;
 export const FISHING_TEACHERS = Object.freeze({
+  'willowmere-ryan': Object.freeze({ name: 'Ryan', spot: 'willowmere', introduction: 'Jess is down at the boats; Barrett and I have come for a quiet morning here. Watch my float. I can show you a cast, and then you can try with my spare rod.' }),
   instructor: Object.freeze({ name: 'Glun', spot: 'willowmere', introduction: 'A quiet pool teaches patience better than a parade ground. Walk with me to Willowmere; I will show you how to cast, then you can land a fish yourself.' }),
   doomsayer: Object.freeze({ name: 'Mark', spot: 'willowmere', introduction: 'The float going under is one omen I trust completely. Come to Willowmere with me. I will show you the cast, and you can read the next omen yourself.' }),
   'garden-keeper': Object.freeze({ name: 'Jean', spot: 'willowmere', introduction: 'The kingfisher says Willowmere is excellent today. An interested party, of course. Come along: I will show you the rod, then we will see whether it was telling the truth.' }),
@@ -32,6 +33,7 @@ export function fishingLessonRoute(teacher, spot, from) {
   if (!FISHING_TEACHERS[teacher] || !spot?.fishingSpot) return [];
   const bank = spot.fishingSpot;
   const stand = spot.lessonStand ?? { x: bank.x + 3.8, z: bank.z };
+  if (teacher === 'willowmere-ryan') return [stand].map(point);
   if (teacher === 'avrel-farmer') return [...(spot.lessonApproach ?? []), stand].map(point);
   const road = [[0, -16], [0, -24], [0, -36], [0, -54], [0, -74], [8, -74.7], [15, -76.7]].map(([x, z]) => villageToWorld(x, z));
   let start = 0, best = Infinity;

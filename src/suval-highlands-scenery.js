@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { BAT_CAVE, SUVAL_HIGHLAND_TRAILS, SUVAL_PASSAGE_ROCKS, SUVAL_PEAK_CRAGS, SUVAL_TERRAIN_PATCHES, IMLAMDRIS_REBUILD, NANVIR_SCARS, highlandFineDistance } from './suval-highlands.js';
 import { groundTint } from './world-terrain.js';
 import { imlamdrisTerrainSink } from './south-suval-world.js';
@@ -191,7 +192,9 @@ export function createSuvalHighlandScenery({ root, material, mesh, box, post, ro
       const y = groundHeight(x, z), h = 2.3 + i % 3;
       post(char, x, y + h / 2, z, .2, h, group).rotation.z = .12 * (i % 3 - 1);
       const limb = box(char, x + .45, y + h * .7, z, 1.5, .13, .13, group); limb.rotation.z = .4;
-      colliders.push({ x, z, r: .26, kind: 'burned-tree' });
+      const collider = { x, z, r: .26, kind: 'burned-tree' }; colliders.push(collider);
+      registerWorldTree(colliders, { id: worldTreeId('burned-holm-oak', x, z), x, z, y, species: 'holm-oak', radius: .26, harvestable: false,
+        reason: 'This burned holm oak has no sound timber left.' }, [], collider);
     }
     const altar = mesh(round, material('#645049'), scar.x, groundHeight(scar.x, scar.z) + .5, scar.z, 1.8, .75, 1.8, group);
     altar.name = 'Abandoned Nanvir offering stone'; colliders.push({ x: scar.x, z: scar.z, r: 1.5, kind: 'nanvir-ruin' });

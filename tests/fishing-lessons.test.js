@@ -10,6 +10,7 @@ import { canStand } from '../src/game-state.js';
 import { INSTRUCTOR_STAND } from '../src/instructor.js';
 import { JEAN_STAND } from '../src/birding.js';
 import { FARMER } from '../src/farming.js';
+import { RYAN } from '../src/willowmere-family.js';
 import { sourceModule } from './module-loader.js';
 const start = { x: 0, z: 0 }, bank = { x: 6, z: 0 }, route = [bank];
 function fixture() {
@@ -92,10 +93,10 @@ test('dialogue explicitly starts an outing and can cancel it without closing oth
   assert.equal(fishingLessonChoices({ id: 'garden-keeper' }, context)[0].disabled, true);
 });
 
-test('all four teachers can physically walk to their demonstration bank through actual scenery', async t => {
+test('all fishing teachers can physically walk to their demonstration bank through actual scenery', async t => {
   const THREE = await import('../vendor/three.module.js'); const { createWorld } = await sourceModule('../src/world.js');
   const world = createWorld(new THREE.Scene());
-  const starts = { instructor: INSTRUCTOR_STAND, doomsayer: world.npcPositions.doomsayer, 'garden-keeper': JEAN_STAND, 'avrel-farmer': FARMER };
+  const starts = { instructor: INSTRUCTOR_STAND, doomsayer: world.npcPositions.doomsayer, 'garden-keeper': JEAN_STAND, 'avrel-farmer': FARMER, [RYAN.id]: RYAN };
   for (const id of Object.keys(FISHING_TEACHERS)) {
     const position = { x: starts[id].x, z: starts[id].z }, spot = world.fishingSpots.find(s => s.id === FISHING_TEACHERS[id].spot);
     assert.ok(spot, id + ' has a real fishing location');

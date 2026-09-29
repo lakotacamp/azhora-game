@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, SURVEY, hexAt, hexCentre, METRES_PER_HEX, landDistance } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -359,7 +360,7 @@ export function createWestScenery(kit) {
       dummy.position.set(tree.x, y + height * .38, tree.z); dummy.rotation.set(0, tree.rot, 0);
       dummy.scale.set(tree.s, height * .76, tree.s); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
-      colliders.push({ x: tree.x, z: tree.z, r: .48 * tree.s, kind });
+      const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .48 * tree.s, kind }; colliders.push(collider);
       for (let lobe = 0; lobe < 3; lobe++) {
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * (tree.wide ? .17 : .11);
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? .92 : .74), tree.z + Math.cos(a) * spread);
@@ -367,8 +368,16 @@ export function createWestScenery(kit) {
         const spreadWide = tree.wide ? .36 : .25;
         dummy.scale.set(height * spreadWide, height * (tree.wide ? .26 : .30), height * spreadWide); dummy.updateMatrix();
         crowns.setMatrixAt(crownIndex, dummy.matrix);
+        parts.push({mesh:crowns,index:crownIndex});
         crowns.setColorAt(crownIndex++, tint(tree));
       }
+      const species = kind==='meneth-tree' ? (tree.wide?(index%2?'black-walnut':'sweet-chestnut'):'white-oak')
+        :kind==='nesdor-tree'?(tree.oak?'white-oak':'common-hazel')
+        :kind==='eer-tree'?('holm' in tree?(tree.holm?'holm-oak':'olive'):tree.scrubby?'tamarisk':index%2?'black-willow':'black-alder')
+        :kind==='isareos-tree'?(tree.hazel?'common-hazel':index%2?'black-willow':'black-alder')
+        :kind==='nethereum-tree'?(tree.willow?'black-willow':'black-alder')
+        :index%2?'beech':'white-oak';
+      registerWorldTree(colliders,{id:worldTreeId(kind,tree.x,tree.z),x:tree.x,z:tree.z,y,height,species},parts,collider);
     });
     for (const batch of [trunks, crowns]) {
       batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); parent.add(batch);

@@ -1,4 +1,6 @@
 import { createSceneryBuilder } from './scenery-builder.js';
+import { ARI_HOME } from './ari-home.js';
+import { buildAriHome } from './ari-home-scenery.js';
 import {
   RENA_RUINS, OLD_ROAD_YAW, OLD_ROAD_ACROSS,
   APPLEGARTH_BUILDINGS, APPLEGARTH_WORKS, DRENT_DEEP_PLACES, EAST_RENA_STONE, RENA_SIGNS,
@@ -273,7 +275,7 @@ export function buildRenaWorks({ parent, heightAt, colliders, signs, roadDistanc
   // -------------------------------------------------------------------------
   {
     const b = createSceneryBuilder('Applegarth');
-    for (const building of APPLEGARTH_BUILDINGS) cottage(b, { ...building, yaw: streetYaw(building.b) });
+    for (const building of APPLEGARTH_BUILDINGS) cottage(b, building.id === ARI_HOME.buildingId ? ARI_HOME.house : { ...building, yaw: streetYaw(building.b) });
     const W = APPLEGARTH_WORKS;
     well(b, W.well.x, W.well.z, { radius: 1.35, kind: 'applegarth-well' });
     // The drying racks outside the press house: slatted trays of cut apple.
@@ -316,6 +318,7 @@ export function buildRenaWorks({ parent, heightAt, colliders, signs, roadDistanc
       if (Math.hypot(stand.x - basket.x, stand.z - basket.z) > 1.4) circle(basket.x, basket.z, .4, 'applegarth-basket');
     }
     b.finish(parent);
+    buildAriHome({ parent, heightAt, colliders });
     // The bound stone nobody has recut, and the board that says what the village calls itself now.
     boundStone(W.boundStone);
     signs.place({ x: W.placeBoard.x, z: W.placeBoard.z, label: W.placeBoard.label, facing: W.placeBoard.facing, parent });

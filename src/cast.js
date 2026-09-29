@@ -50,6 +50,7 @@ export const SOLDIER_ROLES = Object.freeze(['legion-soldier', 'legion-officer', 
  * battle. Taken from the chapters' own `destinationIds` rather than remembered.
  */
 export const QUEST_IDS = Object.freeze([
+  'willowmere-ryan', 'willowmere-barrett', // Requested Willowmere family and fishing / geography lessons
   'cobble-jessi', // Jesse's carriage construction lesson and ride to Ambron
   'killian', // Drent's Ambroni Civil War silver quest; an ordinary resident until the papers are read
   'vastos-herder', 'vastos-republican', 'vastos-monarchist', // preserved for the parked Vastos story

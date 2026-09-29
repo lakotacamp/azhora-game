@@ -98,6 +98,7 @@ One slot, key `azhora-road-checkpoint-v1`, version 1. Older version-1 saves must
 - Named blank-slate residents without a user-supplied appearance must use an identical featureless neutral-gray placeholder. Do not infer hair, face, skin tone, clothes, accessories, gender, or a distinctive build from their names. Preserve previously specified appearances. See `docs/design-answers.md` (2026-09-27).
 
 - Characters are hatless unless the user explicitly requests a hat. Occupations, roles, and model presets must not add headwear automatically; preserve explicit user-requested exceptions. See `docs/design-answers.md` (2026-09-25).
+- Short hair means no bun, knot, or protruding nape. Use the `short-cropped` preset for short-haired characters such as Martin and Killian; retain their specified hair color and accessories.
 - `.gitattributes` sets `* -text`: files are stored byte for byte. `src/main.js`, `index.html` and `src/campaign.js` are CRLF; most other files are LF. Preserve whatever a file already uses.
 - Large heredocs fail in Git Bash on this machine. Write a script to a file and run it instead.
 - `src/main.js` and several modules use very long, dense lines on purpose. Do not reformat surrounding code when editing.

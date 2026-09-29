@@ -19,7 +19,7 @@
  * Pure: no DOM, no three. The lot is built in src/woodlot-world.js and the man
  * in src/woodcutter-model.js.
  */
-import { timberForKind } from './wood-species.js';
+import { timberForKind, timberForSpecies } from './wood-species.js';
 
 const freeze = Object.freeze;
 
@@ -42,6 +42,34 @@ export const TREE_KINDS = freeze({
   willow: kind('willow', 'Black willow', 'willow', 30, 68, .28, [3, 6], 55, 3, .4),
   maple: kind('maple', 'Red maple', 'maple', 45, 100, .2, [3, 6], 75, 5, .34),
   walnut: kind('walnut', 'Black walnut', 'walnut', 60, 175, .14, [4, 8], 150, 9, .42),
+  // Wild timber uses the same five established skill tiers, while keeping its species.
+  'red-oak': kind('red-oak', 'Northern red oak', 'red oak', 15, 38, .34, [2, 4], 40, 2, .45),
+  'tulip-poplar': kind('tulip-poplar', 'Tulip poplar', 'tulip poplar', 1, 25, .52, [1, 1], 25, 1, .35),
+  hickory: kind('hickory', 'Shagbark hickory', 'hickory', 45, 100, .2, [3, 6], 75, 5, .35),
+  beech: kind('beech', 'American beech', 'beech', 15, 38, .34, [2, 4], 40, 2, .38),
+  sweetgum: kind('sweetgum', 'American sweetgum', 'sweetgum', 15, 38, .34, [2, 4], 40, 2, .34),
+  sycamore: kind('sycamore', 'American sycamore', 'sycamore', 15, 38, .34, [2, 4], 40, 2, .45),
+  'bald-cypress': kind('bald-cypress', 'Bald cypress', 'bald cypress', 30, 68, .28, [3, 6], 55, 3, .42),
+  'red-cedar': kind('red-cedar', 'Eastern red cedar', 'red cedar', 1, 25, .52, [1, 1], 25, 1, .28),
+  holly: kind('holly', 'American holly', 'holly', 1, 25, .52, [1, 1], 25, 1, .23),
+  dogwood: kind('dogwood', 'Flowering dogwood', 'dogwood', 1, 25, .52, [1, 1], 25, 1, .24),
+  persimmon: kind('persimmon', 'American persimmon', 'persimmon', 15, 38, .34, [2, 4], 40, 2, .3),
+  'silver-birch': kind('silver-birch', 'Silver birch', 'silver birch', 1, 25, .52, [1, 1], 25, 1, .3),
+  'silver-fir': kind('silver-fir', 'Silver fir', 'silver fir', 1, 25, .52, [1, 1], 25, 1, .3),
+  'stone-pine': kind('stone-pine', 'Stone pine', 'stone pine', 1, 25, .52, [1, 1], 25, 1, .32),
+  'sweet-orange': kind('sweet-orange', 'Sweet orange', 'sweet orange', 1, 25, .52, [1, 1], 25, 1, .25),
+  pawpaw: kind('pawpaw', 'Common pawpaw', 'pawpaw', 1, 25, .52, [1, 1], 25, 1, .12),
+  'common-juniper': kind('common-juniper', 'Common juniper', 'common juniper', 1, 25, .52, [1, 1], 25, 1, .25),
+  'sweet-chestnut': kind('sweet-chestnut', 'Sweet chestnut', 'sweet chestnut', 15, 38, .34, [2, 4], 40, 2, .38),
+  'olive': kind('olive', 'European olive', 'european olive', 15, 38, .34, [2, 4], 40, 2, .38),
+  'holm-oak': kind('holm-oak', 'Holm oak', 'holm oak', 15, 38, .34, [2, 4], 40, 2, .38),
+  'common-hazel': kind('common-hazel', 'Common hazel', 'common hazel', 1, 25, .52, [1, 1], 25, 1, .3),
+  'black-alder': kind('black-alder', 'Black alder', 'black alder', 15, 38, .34, [2, 4], 40, 2, .38),
+  'white-poplar': kind('white-poplar', 'White poplar', 'white poplar', 1, 25, .52, [1, 1], 25, 1, .3),
+  'tamarisk': kind('tamarisk', 'French tamarisk', 'french tamarisk', 1, 25, .52, [1, 1], 25, 1, .3),
+  'fig': kind('fig', 'Common fig', 'common fig', 1, 25, .52, [1, 1], 25, 1, .3),
+  'apple': kind('apple', 'Domestic apple', 'domestic apple', 1, 25, .52, [1, 1], 25, 1, .3),
+  'hawthorn': kind('hawthorn', 'Common hawthorn', 'common hawthorn', 1, 25, .52, [1, 1], 25, 1, .3),
 });
 export const TREE_KIND_IDS = freeze(Object.keys(TREE_KINDS));
 export const LOG_ITEMS = freeze(TREE_KIND_IDS.map(id => TREE_KINDS[id].log));
@@ -130,78 +158,122 @@ export function validateWoodcuttingSnapshot(data, { allowMissing = true } = {}) 
   if (!data || typeof data !== 'object' || Array.isArray(data) || data.version !== WOODCUTTING_VERSION) return false;
   if (typeof data.met !== 'boolean' || typeof data.kingsAxe !== 'boolean') return false;
   for (const key of ['visits', 'logs', 'sold']) if (!Number.isInteger(data[key]) || data[key] < 0 || data[key] > 1e7) return false;
+  if (data.trees !== undefined) {
+    if (!Array.isArray(data.trees) || data.trees.length > 10000) return false;
+    const ids = new Set();
+    for (const entry of data.trees) {
+      if (!entry || typeof entry.id !== 'string' || !/^[a-zA-Z0-9:_.,-]{1,128}$/.test(entry.id) || ids.has(entry.id)) return false;
+      if (!Number.isInteger(entry.logsLeft) || entry.logsLeft < 0 || entry.logsLeft > 8) return false;
+      if (!Number.isFinite(entry.stump) || entry.stump < 0 || entry.stump > 150) return false;
+      if ((entry.stump > 0) !== (entry.logsLeft === 0)) return false;
+      ids.add(entry.id);
+    }
+  }
   return data.met || (!data.kingsAxe && data.visits === 0 && data.sold === 0);
 }
 
 /**
- * `skills` is the traveler's skills (src/skills.js). `has(item)` says what the
- * satchel holds. Swings are rolled with `random`.
+ * The supplied world catalog joins the teaching woodlot. Species, not the
+ * rendered silhouette or collider kind, determines the recipe. Untouched trees
+ * need no mutable state; only active stumps receive per-frame regrowth work.
  */
-export function createWoodcutting({ skills, random = Math.random } = {}) {
+export function createWoodcutting({ skills, random = Math.random, trees: suppliedTrees = [] } = {}) {
   const state = { met: false, visits: 0, kingsAxe: false, logs: 0, sold: 0 };
-  const trees = new Map(WOODLOT_TREES.map(t => [t.id, { logsLeft: 0, stump: 0 }]));
-  const stock = t => { const [lo, hi] = TREE_KINDS[t.kind].logs; return lo + Math.floor(random() * (hi - lo + 1)); };
-  for (const t of WOODLOT_TREES) trees.get(t.id).logsLeft = stock(t);
-  const byId = new Map(WOODLOT_TREES.map(t => [t.id, t]));
+  const byId = new Map();
+  for (const source of [...suppliedTrees, ...WOODLOT_TREES]) {
+    if (!source || typeof source.id !== 'string' || !Number.isFinite(source.x) || !Number.isFinite(source.z)) continue;
+    const timber = source.species ? timberForSpecies(source.species) : timberForKind(source.woodKind ?? source.kind);
+    if (!timber) continue;
+    const recipe = TREE_KINDS[timber.woodKind];
+    byId.set(source.id, freeze({ ...source, ...timber, kind: timber.woodKind, harvestable: source.harvestable !== false && !!recipe }));
+  }
+  const catalog = freeze([...byId.values()]);
+  const entries = new Map(), touched = new Set(), stumps = new Set();
+  const roll = () => Math.max(0, Math.min(.999999999, Number(random()) || 0));
+  const stock = t => { const [lo, hi] = TREE_KINDS[t.kind].logs; return lo + Math.floor(roll() * (hi - lo + 1)); };
+  // Keep the established woodlot's deterministic stock sequence unchanged.
+  const resetTrees = () => {
+    entries.clear(); touched.clear(); stumps.clear();
+    for (const t of WOODLOT_TREES) entries.set(t.id, { logsLeft: stock(t), stump: 0 });
+  };
+  resetTrees();
+  const entryFor = t => {
+    if (!entries.has(t.id)) entries.set(t.id, { logsLeft: stock(t), stump: 0 });
+    return entries.get(t.id);
+  };
   const level = () => skills?.level?.(WOODCUTTING_SKILL) ?? 0;
 
-  /** Whether the traveler can cut tree `id` now, and with what; `reason` in RuneScape's words when not. */
   function canChop(id, has = () => false) {
     const t = byId.get(id);
     if (!t) return { ok: false, reason: 'There is no tree there.' };
     const k = TREE_KINDS[t.kind];
-    if (trees.get(id).stump > 0) return { ok: false, reason: `Only a stump. The ${k.short} will grow back.`, tree: t, kind: k };
-    // No permission is needed to swing an axe (the user, 21 September 2026) - only an axe,
-    // which is a tool and not a lesson. Bowden still gives the first one away.
+    if (!t.harvestable) return { ok: false, reason: t.reason ?? t.protectedReason ?? `This ${t.woodName.toLowerCase()} is protected.`, tree: t, kind: k };
+    if (entries.get(id)?.stump > 0) return { ok: false, reason: `Only a stump. The ${k.short} will grow back.`, tree: t, kind: k };
     const lv = level();
     if (lv < k.level) return { ok: false, reason: `You need a Woodcutting level of ${k.level} to chop down this ${k.short}.`, tree: t, kind: k };
     const axe = bestAxe(lv, has);
     if (!axe) return { ok: false, reason: AXES.some(a => has(a.id)) ? 'You do not have an axe which you have the Woodcutting level to use.' : 'You need an axe to chop down this tree.', tree: t, kind: k };
     return { ok: true, reason: '', tree: t, kind: k, axe, chance: chopChance(t.kind, lv, axe.id) };
   }
-  /**
-   * One swing at tree `id`. Returns what came of it: `log` (the item) and the
-   * skill's report when a log comes away, and `felled` when that was the last.
-   */
   function swing(id, has = () => false) {
     const can = canChop(id, has);
     if (!can.ok) return { ...can, log: null };
-    if (random() >= can.chance) return { ok: true, tree: can.tree, kind: can.kind, axe: can.axe, log: null };
-    const entry = trees.get(id), k = can.kind;
-    entry.logsLeft--; state.logs++;
+    const entry = entryFor(can.tree);
+    if (roll() >= can.chance) return { ok: true, tree: can.tree, kind: can.kind, axe: can.axe, log: null };
+    const k = can.kind;
+    entry.logsLeft--; state.logs++; touched.add(id);
     const gained = skills.gain(WOODCUTTING_SKILL, k.xp);
     const felled = entry.logsLeft <= 0;
-    if (felled) { entry.stump = k.regrow; entry.logsLeft = 0; }
+    if (felled) { entry.stump = k.regrow; entry.logsLeft = 0; stumps.add(id); }
     return { ok: true, tree: can.tree, kind: k, axe: can.axe, log: k.log, xp: k.xp, felled, level: gained.level, levelled: gained.levelled };
   }
-  /** Time passes: stumps grow back. Returns the trees that stood up again. */
+  /** Advance only felled trees. A completed regrowth removes its saved change. */
   function update(dt) {
-    const grown = [];
-    for (const [id, entry] of trees) if (entry.stump > 0) {
-      entry.stump = Math.max(0, entry.stump - Math.max(0, dt || 0));
-      if (entry.stump === 0) { entry.logsLeft = stock(byId.get(id)); grown.push(id); }
+    const grown = [], elapsed = Number.isFinite(dt) ? Math.max(0, dt) : 0;
+    if (!elapsed) return grown;
+    for (const id of stumps) {
+      const entry = entries.get(id);
+      entry.stump = Math.max(0, entry.stump - elapsed);
+      if (entry.stump === 0) {
+        entry.logsLeft = stock(byId.get(id)); stumps.delete(id); touched.delete(id); grown.push(id);
+      }
     }
     return grown;
   }
-  const standing = id => trees.get(id)?.stump === 0;
+  const standing = id => byId.has(id) && !(entries.get(id)?.stump > 0);
   function meet() { const first = !state.met; state.met = true; return { first }; }
   function visit() { if (state.met) state.visits++; }
-  /** His old axe, once, when the traveler reaches the level for it. */
   function giveKingsAxe() { if (state.kingsAxe || level() < KINGS_AXE_LEVEL) return { ok: false }; state.kingsAxe = true; return { ok: true }; }
-  /** What Bowden pays for the logs in the satchel: `count(item)`. */
   function offer(count) {
     const lots = LOG_ITEMS.map((item, i) => ({ item, count: count(item), price: TREE_KINDS[TREE_KIND_IDS[i]].price })).filter(lot => lot.count > 0);
     return { lots, total: lots.reduce((sum, lot) => sum + lot.count * lot.price, 0), logs: lots.reduce((sum, lot) => sum + lot.count, 0) };
   }
   function sold(logs) { if (Number.isFinite(logs)) state.sold += Math.max(0, Math.floor(logs)); }
-  function snapshot() { return { version: WOODCUTTING_VERSION, met: state.met, visits: state.visits, kingsAxe: state.kingsAxe, logs: state.logs, sold: state.sold }; }
+  function snapshot() {
+    return { version: WOODCUTTING_VERSION, met: state.met, visits: state.visits, kingsAxe: state.kingsAxe, logs: state.logs, sold: state.sold,
+      trees: [...touched].sort().map(id => ({ id, ...entries.get(id) })) };
+  }
   function restore(data) {
-    Object.assign(state, { met: false, visits: 0, kingsAxe: false, logs: 0, sold: 0 });
     if (!validateWoodcuttingSnapshot(data, { allowMissing: false })) return false;
+    const restored = [];
+    for (const saved of data.trees ?? []) {
+      const t = byId.get(saved.id);
+      // A region can be removed between drafts. Ignore its old tree, but never
+      // allow a known tree more logs or regrowth time than its own recipe.
+      if (!t?.harvestable) continue;
+      const k = TREE_KINDS[t.kind];
+      if (saved.logsLeft > k.logs[1] || saved.stump > k.regrow) return false;
+      restored.push(saved);
+    }
+    resetTrees();
     Object.assign(state, { met: data.met, visits: data.visits, kingsAxe: data.kingsAxe, logs: data.logs, sold: data.sold });
+    for (const saved of restored) {
+      entries.set(saved.id, { logsLeft: saved.logsLeft, stump: saved.stump }); touched.add(saved.id);
+      if (saved.stump > 0) stumps.add(saved.id);
+    }
     return true;
   }
-  return { canChop, swing, update, standing, meet, visit, giveKingsAxe, offer, sold, snapshot, restore, level,
+  return { canChop, swing, update, standing, meet, visit, giveKingsAxe, offer, sold, snapshot, restore, level, catalog, tree: id => byId.get(id) ?? null,
     get met() { return state.met; }, get visits() { return state.visits; }, get kingsAxe() { return state.kingsAxe; }, get logs() { return state.logs; } };
 }
 

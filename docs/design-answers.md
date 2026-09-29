@@ -747,3 +747,15 @@ Gala is a sibling job; this entry is the two Ascarths (`docs/ascarth-brief.md`,
 - The lore (`geography/regions/ascarth.md`) was adjusted in place: the interior is three wooded hills
   in the north and open grass elsewhere; the cliffs are the west and the tip; Gala lies north-west of
   the peninsula's base, not south; Aevis's promontory is on the low neck.
+
+
+## 2026-09-29: trees, teaching, and Drent households
+
+- Every live tree has a concrete species. Ordinary forest trees participate in Woodcutting with species-specific logs, visible felling, removable trunk collision, and saved harvest/regrowth state. Fruit crops, the sentient Old Tree, and kept garden trees explain their protection rather than appearing anonymous.
+- Short hair means no bun or protruding nape. Martin and Killian use the short-cropped style, preserving Martin's glasses and black hair and Killian's brown hair. No unrequested hats.
+- Glun returns along his outward walk to the training-dummy post after finishing the Woodcutting lesson.
+- Hacks appears first in the developer tools. Ari's sunflower lesson has a named computer autoplay playtest, using ordinary planting, watering, growth, harvest and reporting.
+- Ari owns the existing cottage on her left in Applegarth: named mailbox, lavender details and sunflower decorations, with the lesson beds kept clear.
+- Ryan is Jess's boyfriend, with short brown hair. He fishes at Willowmere and teaches Fishing there. Their son Barrett has short brown hair and a child's build. His geography conversation names one random region from the entire authored atlas, with no menu of destinations. He stays quiet on immediate repeat requests; the saved cooldown is 120 seconds of active play. Regions already named are excluded while unknown names remain. This reveals a location/name, not every terrain hex.
+- Rip is the existing yellow dog, now Jess, Ryan and Barrett's family dog. Jess retains her Tidehaven ferry role; Jesse remains the separate carriage repairer.
+- Household assignments: Jess/Ryan/Barrett in a messy, colorful house; married Glun/Jojo in a moderately orderly house; married Martin/Lee Anne in a house reflecting their trades; married Jean/Stanley by the farm, while Jean keeps her current daytime place. Mark has a strange pagan-decorated house just beyond the village. Every household has its own labeled mailbox; these assignments do not yet add indoor routines.

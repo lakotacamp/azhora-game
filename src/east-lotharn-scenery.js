@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -392,7 +393,7 @@ uniform float time; varying vec3 p; void main(){${body}
       dummy.position.set(tree.x, y + height * .36, tree.z); dummy.rotation.set(0, tree.rot, 0);
       dummy.scale.set(tree.s, height * .74, tree.s); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
-      push({ x: tree.x, z: tree.z, r: .5 * tree.s, kind: 'lotharn-tree' });
+      const parts = [{mesh:trunks,index}], collider = push({ x: tree.x, z: tree.z, r: .5 * tree.s, kind: 'lotharn-tree' });
       for (let lobe = 0; lobe < 3; lobe++) {
         const a = tree.rot + lobe * 2.1;
         if (kind.tall) {
@@ -408,8 +409,11 @@ uniform float time; varying vec3 p; void main(){${body}
         }
         dummy.rotation.set(range(-.15, .15), a, range(-.14, .14)); dummy.updateMatrix();
         crowns.setMatrixAt(crownIndex, dummy.matrix);
+        parts.push({mesh:crowns,index:crownIndex});
         crowns.setColorAt(crownIndex++, color.set(kind.tint).offsetHSL(range(-.015, .015), range(-.05, .05), range(-.06, .05)));
       }
+      const species = {oak:'white-oak',chestnut:'sweet-chestnut',maple:'red-maple',walnut:'black-walnut'}[kind.id]??kind.id;
+      registerWorldTree(colliders,{id:worldTreeId('lotharn',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species},parts,collider);
     });
     for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
     metrics.trees += trees.length; metrics.batches += 2;

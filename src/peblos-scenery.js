@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { landDistance, hexOwnerAt } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -479,14 +480,17 @@ export function createPeblosScenery(kit) {
         dummy.rotation.set(pine.lean * .7, pine.rot, pine.lean);
         dummy.scale.set(pine.s, height * .86, pine.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
+        const parts = [{mesh:trunks,index}];
         for (let c = 0; c < 2; c++) {
           dummy.position.set(pine.x + Math.sin(pine.rot) * height * (.1 + pine.lean), y + height * (.74 + c * .16), pine.z + Math.cos(pine.rot) * height * (.1 + pine.lean) * .4);
           dummy.rotation.set(.1, pine.rot + c, pine.lean * 1.4);
           dummy.scale.set(height * (.34 - c * .1), height * .17, height * (.26 - c * .08)); dummy.updateMatrix();
           crowns.setMatrixAt(crownIndex, dummy.matrix);
+          parts.push({mesh:crowns,index:crownIndex});
           crowns.setColorAt(crownIndex++, color.setHSL(range(.32, .38), range(.16, .26), range(.19, .27)));
         }
-        colliders.push({ x: pine.x, z: pine.z, r: .4 * pine.s, kind: 'region-tree' });
+        const collider = { x: pine.x, z: pine.z, r: .4 * pine.s, kind: 'region-tree' }; colliders.push(collider);
+        registerWorldTree(colliders,{id:worldTreeId('peblos',pine.x,pine.z),x:pine.x,z:pine.z,y,height,species:'stone-pine'},parts,collider);
       });
       crowns.count = crownIndex;
       for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }

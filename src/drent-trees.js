@@ -5,12 +5,13 @@
  * that tree actually grows: sycamore and bald cypress at the water, loblolly and
  * red cedar in the old fields, oaks and hickory and the tall tulip poplar in the
  * Greenway, holly and dogwood under them, walnut and persimmon at the field edge.
- * A tree is named, not taken; F at the trunk looks at it.
+ * Every specimen retains its botanical identity when inspected or cut.
  */
 import * as THREE from 'three';
 import { canStand } from './game-state.js';
 import { PLANT_SPECIES } from './botany.js';
 import { timberForSpecies } from './wood-species.js';
+import { registerWorldTree, getTreeRegistry } from './tree-registry.js';
 
 const TAU = Math.PI * 2, PHI = 2.39996;
 
@@ -118,7 +119,7 @@ export const SPECIMEN_TREES = Object.freeze([
   ['sycamore', -108, -8], ['sycamore', -528, 160], ['bald-cypress', -545, 187, true], ['loblolly-pine', -398, 20], ['loblolly-pine', -452, 64],
   ['red-cedar', -412, 72], ['red-cedar', -190, 52], ['holly', -94, 38], ['dogwood', -60, 52], ['dogwood', -130, 45],
   ['persimmon', -454, 14], ['black-walnut', -58, 2],
-].map(([species, x, z, water = false], i) => Object.freeze({ ...timberForSpecies(species), id: `${species}-${i + 1}`, species, x, z, water, harvestable: false })));
+].map(([species, x, z, water = false], i) => Object.freeze({ ...timberForSpecies(species), id: `${species}-${i + 1}`, species, x, z, water, harvestable: !water, ...(water ? {reason: 'This bald cypress is rooted in the river; there is no safe footing to cut it.'} : {}) })));
 
 /** How near the trunk the traveler must stand to look at it properly. */
 export const TREE_REACH = 3.4;
@@ -144,6 +145,7 @@ export function createDrentTrees(scene, world, { avoid = [] } = {}) {
     mine.forEach((tree, i) => {
       dummy.position.set(tree.x, tree.y - .1, tree.z); dummy.rotation.set(0, tree.yaw, 0); dummy.scale.setScalar(tree.scale);
       dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix);
+      tree.parts = [{mesh,index:i}];
     });
     mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere();
     root.add(mesh); groups.set(species, { mesh, trees: mine });
@@ -151,6 +153,7 @@ export function createDrentTrees(scene, world, { avoid = [] } = {}) {
   // Each trunk is a collider, so nobody walks through a tree they are meant to look at.
   const BROAD = new Set(['white-oak', 'sycamore', 'bald-cypress']);
   const colliders = trees.map(tree => ({ x: tree.x, z: tree.z, r: BROAD.has(tree.species) ? .85 : .5, kind: 'specimen-tree', id: tree.id, species: tree.species, woodKind: tree.woodKind }));
+  trees.forEach((tree,index)=>registerWorldTree(world.colliders,tree,tree.parts,colliders[index]));
 
   return {
     colliders,
@@ -158,6 +161,7 @@ export function createDrentTrees(scene, world, { avoid = [] } = {}) {
     nearest(position, reach = TREE_REACH) {
       let best = null, gap = reach;
       for (const tree of trees) {
+        if (!getTreeRegistry(world.colliders).standing(tree.id)) continue;
         const d = Math.hypot(tree.x - position.x, tree.z - position.z);
         if (d <= gap) { gap = d; best = tree; }
       }

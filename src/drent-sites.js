@@ -20,7 +20,7 @@ export const DRENT_SITES = Object.freeze({
 
 export const DRENT_NPCS = Object.freeze([
   Object.freeze({ id: 'killian', name: 'Killian', role: 'Tidehaven resident', modelRole: 'villager', color: 0x83725a,
-    skin: 0xcaa17f, look: Object.freeze({ hair: 0x59402a, hairStyle: 'cropped', beard: false, cloak: false, slight: true }) }),
+    skin: 0xcaa17f, look: Object.freeze({ hair: 0x59402a, hairStyle: 'short-cropped', beard: false, cloak: false, slight: true }) }),
   Object.freeze({ id: 'drent-barracks-west', name: 'Guard Rusk', role: 'Barracks guard', modelRole: 'legion-soldier', color: 0x8f3b30, armed: true, yaw: Math.PI }),
   Object.freeze({ id: 'drent-barracks-east', name: 'Guard Venn', role: 'Barracks guard', modelRole: 'legion-soldier', color: 0x8f3b30, armed: true, yaw: Math.PI / 2 }),
 ]);

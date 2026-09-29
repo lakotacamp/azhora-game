@@ -33,7 +33,7 @@ test('working skills climb RuneScape’s own table to 99, with a guide to what e
   assert.equal(skillLevel('birding', 0).top, 99, 'and so do the knowing skills — one table under all of them'); // tests/skills.test.js holds that.
   // The guide agrees with the trees and the axes.
   const guide = SKILLS.woodcutting.unlocks.map(u => `${u.level} ${u.text}`).join(' | ');
-  for (const k of Object.values(TREE_KINDS)) assert.match(guide, new RegExp(`${k.level} ${k.name} · ${k.xp} experience`), k.id);
+  for (const k of Object.values(TREE_KINDS)) assert.ok(SKILLS.woodcutting.unlocks.some(u => u.level === k.level && u.text.includes(`${k.name} · ${k.xp} experience`)), k.id);
   for (const [id, word] of [['bronze-axe', 'Bronze'], ['iron-axe', 'iron'], ['steel-axe', 'Steel'], ['kings-axe', 'King’s axe']]) {
     const axe = AXES.find(a => a.id === id);
     assert.ok(SKILLS.woodcutting.unlocks.some(u => u.level === axe.level && u.text.includes(word)), id);
@@ -61,7 +61,7 @@ test('the Koopwood: a clearing outside Tidehaven, every tree in reach from all s
     for (let a = 0; a < 12; a++) { const r = TREE_KINDS[t.kind].trunk + .9; if (canStand(t.x + Math.sin(a * .52) * r, t.z + Math.cos(a * .52) * r, world, .3)) spots++; }
     assert.ok(spots >= 9, `${t.id} can be cut from most sides (${spots} of 12)`);
   }
-  for (const k of TREE_KIND_IDS) assert.ok(WOODLOT_TREES.some(t => t.kind === k), `a ${k} to cut`);
+  for (const k of ['pine', 'oak', 'willow', 'maple', 'walnut']) assert.ok(WOODLOT_TREES.some(t => t.kind === k), `a teaching ${k} to cut`);
   assert.equal(world.colliders.filter(c => !c.kind && inKoopwood(c.x, c.z)).length, 0, 'the village wood keeps out of the lot');
   for (const kind of ['woodlot-tree', 'woodlot-keep', 'charcoal-kiln', 'chopping-block', 'log-pile', 'woodlot-spring']) assert.ok(world.colliders.some(c => c.kind === kind), kind);
   assert.equal(world.colliders.filter(c => c.kind === 'woodlot-tree').length, WOODLOT_TREES.length);
@@ -137,16 +137,17 @@ test('botanical specimens and every shared forest trunk have explicit timber ide
   for (const id of TREE_IDS) assert.ok(WOOD_SPECIES[id], `wood identity for ${id}`);
   for (const tree of SPECIMEN_TREES) {
     assert.equal(tree.woodKind, WOOD_SPECIES[tree.species].woodKind);
-    assert.equal(tree.harvestable, false, 'botany specimens remain observation trees');
+    assert.equal(tree.harvestable, !tree.water, 'dry-ground specimens can be cut; water-rooted trees keep a safety reason');
   }
-  assert.equal(timberForSpecies('red-cedar').log, null, 'cedar cannot yield pine logs');
-  assert.equal(timberForSpecies('red-oak').log, null, 'red oak cannot silently yield white oak logs');
+  assert.equal(timberForSpecies('red-cedar').log, 'red-cedar-logs', 'cedar yields its own logs');
+  assert.equal(timberForSpecies('red-oak').log, 'red-oak-logs', 'red oak never yields white oak logs');
   assert.equal(timberForSpecies('unknown-tree'), null, 'unknown species has no generic fallback');
   assert.ok(world.timberTrees.length > world.broadleafTrees.length);
   assert.equal(new Set(world.timberTrees.map(tree => tree.id)).size, world.timberTrees.length);
   for (const tree of world.timberTrees) {
     assert.ok(WOOD_SPECIES[tree.species], tree.id);
-    assert.equal(tree.harvestable, false);
+    assert.equal(typeof tree.harvestable, 'boolean');
+    if (!tree.harvestable) assert.ok(tree.reason || tree.protectedReason, `${tree.id} explains its protection`);
     assert.equal(tree.log, WOOD_SPECIES[tree.species].log);
   }
   for (const tree of [...world.broadleafTrees, ...world.regionalBroadleafTrees]) {

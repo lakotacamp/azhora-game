@@ -2,6 +2,7 @@
  * The Old Tree, drawn (`src/talking-tree.js` is what it does).
  */
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { TALKING_TREE } from './talking-tree.js';
 
 /**
@@ -75,6 +76,8 @@ export function buildTalkingTree(scene, world, tree = TALKING_TREE) {
 
   // One collider for the trunk and its buttresses.
   const collider = { x: tree.x, z: tree.z, r: r * 1.6, kind: 'old-tree' };
+  registerWorldTree(world.colliders, { id: tree.id, x: tree.x, z: tree.z, y, species: tree.species, radius: r * 1.6, harvestable: false,
+    reason: 'This ancient white oak is alive and aware. Leave its trunk unharmed.' }, [], collider);
 
   return { root, pose, collider,
     dispose() { root.removeFromParent(); root.traverse(object => { if (object.isMesh) object.geometry.dispose(); }); } };

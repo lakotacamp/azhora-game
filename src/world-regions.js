@@ -26,6 +26,7 @@ import { suvalFalsePassClear } from './frontier-ridges.js';
 import { brandyHomeClear } from './brandy-home-world.js';
 import { jesseWorkshopClear } from './jesse-carriage-world.js';
 import { forestTimber } from './wood-species.js';
+import { registerWorldTree } from './tree-registry.js';
 
 /** An authored (56 m per hex) anchor in world metres; its own scenery keeps its offsets. */
 const at = (x, z) => { const p = toWorld(x, z); return Object.freeze({ x: p.x, z: p.z }); };
@@ -216,17 +217,19 @@ export function createRegionScenery(kit) {
         dummy.position.set(tree.x, y + height * .41, tree.z);
         dummy.rotation.set(0, tree.rot, 0); dummy.scale.set(tree.s, height * .82, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
-        const timber = { ...forestTimber(tree.pine), harvestable: false, id: tree.pine ? `country-pine-${pineTreeCount++}` : `country-oak-${broadleafTrees.length}`, x: tree.x, z: tree.z, y,
+        const parts = [{mesh:trunks,index}];
+        const timber = { ...forestTimber(tree.pine), id: tree.pine ? `country-pine-${pineTreeCount++}` : `country-oak-${broadleafTrees.length}`, x: tree.x, z: tree.z, y,
           height, radius: .38 * tree.s, trunkHeight: height * .82, trunkTopRadius: .21 * tree.s,
           axis: [0, 1, 0], base: { x: tree.x, y, z: tree.z }, region: name };
         timberTrees.push(timber);
         if (!tree.pine) broadleafTrees.push(timber);
-        colliders.push({ x: tree.x, z: tree.z, r: .52 * tree.s, kind: 'region-tree', id: timber.id, species: timber.species, woodKind: timber.woodKind });
+        const collider = { x: tree.x, z: tree.z, r: .52 * tree.s, kind: 'region-tree', id: timber.id, species: timber.species, woodKind: timber.woodKind }; colliders.push(collider);
         if (tree.pine) for (let c = 0; c < 3; c++) {
           dummy.position.set(tree.x, y + height * (.48 + c * .19), tree.z);
           dummy.rotation.set(0, tree.rot + c * .35, 0);
           dummy.scale.set(height * (.29 - c * .051), height * .49, height * (.29 - c * .051)); dummy.updateMatrix();
           cones.setMatrixAt(pineIndex, dummy.matrix);
+          parts.push({mesh:cones,index:pineIndex});
           cones.setColorAt(pineIndex++, color.setHSL(range(.25, .31), range(.28, .40), range(.26, .38)));
         } else for (let c = 0; c < 3; c++) {
           const a = tree.rot + c * 2.1, spread = c === 2 ? 0 : height * .15;
@@ -234,8 +237,10 @@ export function createRegionScenery(kit) {
           dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
           dummy.scale.set(height * (c === 2 ? .29 : .33), height * (c === 2 ? .26 : .31), height * (c === 2 ? .28 : .32)); dummy.updateMatrix();
           canopies.setMatrixAt(broadIndex, dummy.matrix);
+          parts.push({mesh:canopies,index:broadIndex});
           canopies.setColorAt(broadIndex++, color.set(biome.canopy ?? '#5f8a48').offsetHSL(range(-.03, .03), range(-.05, .06), range(-.08, .07)));
         }
+        registerWorldTree(colliders, timber, parts, collider);
       });
       canopies.count = broadIndex; cones.count = pineIndex;
       for (const batch of [trunks, canopies, cones]) {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { SOLIS, solisPoint, SOLIS_ROAD } from './region-world.js';
 import {
   FORT, SOLIS_CIRCUIT, SOLIS_GATES, SOLIS_FACES, SOLIS_TOWERS, SOLIS_STAIRS, SOLIS_BUILDINGS, COURT_OF_OATHS, ORANGE_COURT,
@@ -640,10 +641,11 @@ export function createWestSuvalScenery(kit) {
     }
     for (const [da, db] of court.trees) {
       const p = P(court.a + da, court.b + db), y = gy(p.x, p.z);
-      post(wood, p.x, y + .8, p.z, .12, 1.6, district);
-      pebble(leafDark, p.x, y + 2.2, p.z, 1.15, 1.0, 1.15, district);
-      for (let k = 0; k < 7; k++) pebble(orange, p.x + range(-.9, .9), y + range(1.6, 2.8), p.z + range(-.9, .9), .12, .12, .12, district);
-      push({ x: p.x, z: p.z, r: .35, kind: 'orange-tree' });
+      const parts = [post(wood, p.x, y + .8, p.z, .12, 1.6, district),
+        pebble(leafDark, p.x, y + 2.2, p.z, 1.15, 1.0, 1.15, district)];
+      for (let k = 0; k < 7; k++) parts.push(pebble(orange, p.x + range(-.9, .9), y + range(1.6, 2.8), p.z + range(-.9, .9), .12, .12, .12, district));
+      const collider = { x: p.x, z: p.z, r: .35, kind: 'orange-tree' }; push(collider);
+      registerWorldTree(colliders, { id: worldTreeId('solis-orange', p.x, p.z), ...p, y, species: 'sweet-orange', radius: .35 }, parts.map(mesh => ({ mesh })), collider);
     }
   }
 
@@ -775,14 +777,17 @@ export function createWestSuvalScenery(kit) {
   function oliveTree(x, z, parent = district) {
     const y = gy(x, z), lean = range(-.35, .35);
     const trunk = post(material('#6f6456'), x, y + .9, z, .22, 1.9, parent); trunk.rotation.set(lean, 0, range(-.3, .3));
-    for (let k = 0; k < 3; k++) pebble(olive, x + range(-1.1, 1.1), y + range(2.1, 2.8), z + range(-1.1, 1.1), range(1.1, 1.6), range(.6, .9), range(1.1, 1.6), parent);
-    push({ x, z, r: .4, kind: 'olive-tree' });
+    const parts = [trunk];
+    for (let k = 0; k < 3; k++) parts.push(pebble(olive, x + range(-1.1, 1.1), y + range(2.1, 2.8), z + range(-1.1, 1.1), range(1.1, 1.6), range(.6, .9), range(1.1, 1.6), parent));
+    const collider = { x, z, r: .4, kind: 'olive-tree' }; push(collider);
+    registerWorldTree(colliders, { id: worldTreeId('west-suval-olive', x, z), x, z, y, species: 'olive', radius: .4 }, parts.map(mesh => ({ mesh })), collider);
   }
   function thornTree(x, z, parent = district) {
     const y = gy(x, z);
     const trunk = post(material('#5e5143'), x, y + 1.4, z, .13, 2.8, parent); trunk.rotation.z = range(-.2, .2);
     const crown = pebble(leafDark, x, y + 3.0, z, range(2.0, 2.8), .45, range(1.8, 2.5), parent); crown.rotation.y = range(0, 6);
-    push({ x, z, r: .3, kind: 'thorn-tree' });
+    const collider = { x, z, r: .3, kind: 'thorn-tree' }; push(collider);
+    registerWorldTree(colliders, { id: worldTreeId('west-suval-hawthorn', x, z), x, z, y, species: 'hawthorn', radius: .3 }, [{ mesh: trunk }, { mesh: crown }], collider);
   }
   /** A dry-stone field wall along a world line, broken where the road passes. */
   function fieldWall(x0, z0, x1, z1) {
@@ -914,7 +919,7 @@ export function mergeByColour(source, skip, near, far, isNear) {
   source.updateMatrixWorld(true);
   const inverse = source.matrixWorld.clone().invert(), buckets = new Map(), meshes = [];
   const visit = object => {
-    if (object !== source && skip.has(object)) return;
+    if ((object !== source && skip.has(object)) || object.userData.liveTree) return;
     if (object.isMesh && !object.isInstancedMesh && object.material && !Array.isArray(object.material)) meshes.push(object);
     for (const child of [...object.children]) visit(child);
   };

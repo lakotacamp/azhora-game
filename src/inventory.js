@@ -1,10 +1,18 @@
 /** The small, physical things carried through the first journey out of Drent. */
 import { ATTIC_WINES, ATTIC_WINE_IDS } from './attic-wines.js';
+import { WOOD_SPECIES } from './wood-species.js';
 import { JESSE_ITEMS } from './jesse-carriage-world.js';
 import { SLOT_NAMES, SLOTS, gearId } from './gear.js';
 
 export const INVENTORY_ITEMS = Object.freeze({
   ...JESSE_ITEMS,
+  // Authored entries below preserve old item IDs and descriptions; every other
+  // timber species gets its own stack and can be sold or used as firewood.
+  ...Object.fromEntries(Object.values(WOOD_SPECIES).filter(wood => wood.log).map(wood => [wood.log, Object.freeze({
+    name: `${wood.woodName} logs`, type: 'Gathered material', icon: 'logs', stackable: true,
+    brief: `Logs of ${wood.woodName.toLowerCase()} for firewood or sale.`,
+    description: `Wood from ${wood.woodName.toLowerCase()}. Burn a log at a fire ring in place of two sticks, or sell it to Bowden for his kiln. This wood keeps its natural grain and character.`,
+  })])),
   'jojo-sandwich': Object.freeze({name:'Jojo’s sandwich',type:'Food',icon:'loaf',stackable:true,eatName:'sandwich',brief:'A filling sandwich for the road. Restores up to 35 health.',description:'Jojo wrapped bread and a savoury filling for your journey. Restores up to 35 health. Open the satchel and eat it when you need health.'}),
   'courier-satchel': Object.freeze({name:'The courier’s satchel',type:'Quest item',icon:'letter',stackable:false,
     brief:'The one missing army satchel, carrying the Lauvel muster rolls.',

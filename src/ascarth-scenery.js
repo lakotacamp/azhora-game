@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexAt, hexOwnerAt, landDistance, regions, REGION_CELLS } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -201,6 +202,7 @@ export function createAscarthScenery(kit) {
         const girth = tree.kind === 'pine' ? .9 : tree.kind === 'oak' ? 1.25 : 1;
         dummy.scale.set(tree.s * girth, height * bole, tree.s * girth); dummy.updateMatrix();
         trunks.setMatrixAt(i, dummy.matrix);
+        const parts = [{mesh:trunks,index:i}];
         for (let c = 0; c < lumpsOf(tree); c++) {
           if (tree.kind === 'pine') {
             // The umbrella: a broad flat top, and a smaller lump under one side of it.
@@ -221,9 +223,11 @@ export function createAscarthScenery(kit) {
             dummy.scale.set(height * .3, height * .2, height * .28);
             crowns.setColorAt(crown, color.setHSL(range(.19, .24), range(.08, .16), range(.44, .54)));
           }
+          parts.push({mesh:crowns,index:crown});
           dummy.updateMatrix(); crowns.setMatrixAt(crown++, dummy.matrix);
         }
-        push({ x: tree.x, z: tree.z, r: .42 * tree.s, kind: 'ascarth-tree' });
+        const collider = push({ x: tree.x, z: tree.z, r: .42 * tree.s, kind: 'ascarth-tree' });
+        registerWorldTree(colliders,{id:worldTreeId('ascarth',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:tree.kind==='pine'?'stone-pine':tree.kind==='oak'?'holm-oak':'olive'},parts,collider);
         metrics.trees++;
         if (tree.kind === 'pine') metrics.pines++; else if (tree.kind === 'oak') metrics.oaks++; else metrics.olives++;
       });

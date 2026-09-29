@@ -1,8 +1,9 @@
+import { WOOD_SPECIES } from './wood-species.js';
 const WAIT_SECONDS = 3;
 const BITE_SECONDS = 2.2;
 const FIRE_SECONDS = 120;
-/** A log from the Koopwood lights a fire as well as two sticks (src/woodcutting.js); the plainest wood goes first. */
-const FIRE_LOGS = ['pine-logs', 'oak-logs', 'willow-logs', 'maple-logs', 'walnut-logs'];
+/** Every implemented timber log lights a fire as well as two sticks; the original common logs go first. */
+const FIRE_LOGS = Object.values(WOOD_SPECIES).map(wood => wood.log).filter(Boolean);
 
 /** Fishing and cooking share inventory, but never advance combat or quests. */
 export function createCampcraft({ inventory, weapons, onEvent = () => {}, fireIds = ['village-fire', 'pond-fire'], canLightFire = () => true, canCook = () => true }) {

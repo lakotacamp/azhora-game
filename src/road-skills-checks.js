@@ -1,5 +1,6 @@
 import { FARMER, FARM_ROWS, CROPS, WATERED_GROWTH } from './farming.js';
 import { JEAN_SHEEP } from './animal-husbandry.js';
+import { INSTRUCTOR_STAND } from './instructor.js';
 import { GLUN_WOOD_LESSON } from './glun-woodcutting.js';
 import { ACTING_XP } from './acting.js';
 import { SANDWICH_ITEM } from './roadside-lessons.js';
@@ -236,7 +237,7 @@ export async function runRoadSkillsChecks(h) {
 /** Run separately when the short combined suite leaves too little time for the
  * actual walk from Glun's post to the Koopwood. The hook finishes main training
  * as fixture setup; the optional Woodcutting lesson still uses real controls. */
-export async function runGlunWoodChecks(h, { budgetMs = 57000 } = {}) {
+export async function runGlunWoodChecks(h, { budgetMs = 130000 } = {}) {
   const checks = [], failures = [], started = performance.now();
   const assert = (ok, message) => { if (!ok) throw new Error(message); checks.push(message); };
   const until = async (condition, message, maximum, tick = null) => {
@@ -267,6 +268,25 @@ export async function runGlunWoodChecks(h, { budgetMs = 57000 } = {}) {
     await visit('instructor'); await choose('glun-wood-finish');
     assert(h.glunWood.stage === 'complete' && h.inventory.count(GLUN_WOOD_LESSON.axe) === 1,
       'Reporting the practice cut grants exactly one permanent bronze hatchet');
+    await h.close();
+    await until(() => Math.hypot(glun.actor.group.position.x-INSTRUCTOR_STAND.x,glun.actor.group.position.z-INSTRUCTOR_STAND.z)<.3,
+      'Glun did not return to his training-dummy post after the woodcutting lesson',45000);
+    assert(true,'Glun physically walks back to his post after awarding the hatchet');
+    if(h.onlyGlun){
+      let tree=null;
+      for(const candidate of h.world.timberTrees.filter(t=>t.id.startsWith('pine-')&&t.harvestable).slice(0,80)){
+        await h.warp(candidate.x+(candidate.radius??.5)+1.1,candidate.z);await h.frames(2);
+        if(h.currentChop()?.id===candidate.id){tree=candidate;break;}
+      }
+      assert(!!tree,'An ordinary forest pine is discoverable outside the teaching woodlot');
+      assert(document.getElementById('interaction-label').textContent.includes(tree.woodName),'The forest interaction names the exact species');
+      const beforeLogs=h.inventory.count('pine-logs');h.tap('KeyF');
+      await until(()=>!h.wood.standing(tree.id),'The ordinary forest tree did not fell through the real F chopping input',18000);
+      assert(h.inventory.count('pine-logs')>beforeLogs&&!h.world.treeRegistry.standing(tree.id),'Forest chopping yields its own timber and fells its actual model');
+      assert(!h.world.colliders.some(c=>c.id===tree.id),'The felled trunk no longer blocks walking');
+      const save=h.snapshot();await h.restore(save);await h.frames(2);
+      assert(!h.wood.standing(tree.id)&&!h.world.treeRegistry.standing(tree.id),'Reloading keeps the forest stump and its removed collision');
+    }
     assert(!h.getState().frameErrors?.count, 'Glun guide and chopping produce no renderer errors');
   } catch (error) { failures.push({ name: 'Glun full guided walk', message: error?.message ?? String(error), state:h.getState().glun, mode:h.getState().mode }); }
   await h.close();

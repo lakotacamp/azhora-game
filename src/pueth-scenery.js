@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { REGION_CELLS, hexOwnerAt, landDistance, hexAt } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import {
@@ -535,11 +536,12 @@ export function createPuethScenery(kit) {
         dummy.scale.set(tree.s * slender, height * .82, tree.s * slender); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
         trunks.setColorAt(index, tree.kind === 'birch' ? color.setHSL(.12, range(.05, .1), range(.78, .86)) : color.setHSL(.08, .22, range(.3, .38)));
-        colliders.push({ x: tree.x, z: tree.z, r: .45 * tree.s * slender, kind: 'region-tree' });
+        const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .45 * tree.s * slender, kind: 'region-tree' }; colliders.push(collider);
         if (tree.kind === 'fir') for (let c = 0; c < 3; c++) {
           dummy.position.set(tree.x, y + height * (.42 + c * .2), tree.z); dummy.rotation.set(0, tree.rot + c * .4, 0);
           dummy.scale.set(height * (.25 - c * .06), height * .46, height * (.25 - c * .06)); dummy.updateMatrix();
           cones.setMatrixAt(coneIndex, dummy.matrix);
+          parts.push({mesh:cones,index:coneIndex});
           cones.setColorAt(coneIndex++, color.setHSL(range(.36, .42), range(.18, .28), range(.2, .28)));
         } else for (let c = 0; c < 3; c++) {
           const birch = tree.kind === 'birch', a = tree.rot + c * 2.1, spread = c === 2 ? 0 : height * (birch ? .08 : .14);
@@ -548,8 +550,10 @@ export function createPuethScenery(kit) {
           const wide = birch ? .2 : .31;
           dummy.scale.set(height * wide, height * (birch ? .3 : .27), height * wide); dummy.updateMatrix();
           crowns.setMatrixAt(crownIndex, dummy.matrix);
+          parts.push({mesh:crowns,index:crownIndex});
           crowns.setColorAt(crownIndex++, birch ? color.setHSL(range(.18, .23), range(.3, .42), range(.4, .5)) : color.set('#3f5e3b').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05)));
         }
+        registerWorldTree(colliders,{id:worldTreeId('pueth',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:tree.kind==='birch'?'silver-birch':tree.kind==='fir'?'silver-fir':'white-oak'},parts,collider);
         metrics[tree.kind === 'birch' ? 'birches' : tree.kind === 'fir' ? 'firs' : 'trees'] += tree.kind === 'broad' ? 0 : 1;
       });
       crowns.count = crownIndex; cones.count = coneIndex;

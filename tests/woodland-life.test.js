@@ -213,7 +213,7 @@ test('Menus pause wildlife without advancing its simulation', () => {
 
 
 test('Squirrels persist across Drent on real trees, with distant animals sleeping until approached', () => {
-  const resident = createWoodlandLife(new THREE.Scene(), world), initial = resident.state();
+  const resident = createWoodlandLife(new THREE.Scene(), { ...world, colliders: [...world.colliders] }), initial = resident.state();
   const trees = new Map([...world.broadleafTrees, ...world.regionalBroadleafTrees].map(t => [t.id, t]));
   assert.ok(initial.squirrels.length >= 30, 'The woods beyond the Greenway hold squirrels too');
   assert.ok(initial.squirrels.some(s => s.x < -750), 'The far western forest has residents');
@@ -231,4 +231,17 @@ test('Squirrels persist across Drent on real trees, with distant animals sleepin
   assert.equal(resident.state().squirrels[farIndex].mode, 'flee', 'The same resident responds when you reach its home');
   for (let i = 0; i < 180; i++) resident.update(1 / 60, observer);
   assert.equal(resident.state().squirrels[farIndex].mode, 'perch', 'It reaches the branch on its own tree');
+});
+
+
+test('a felled squirrel tree leaves no floating branch or perched squirrel, and its ground acorns remain', () => {
+  const squirrel = life.state().squirrels[0], id = squirrel.tree.id, position = { x: squirrel.x, z: squirrel.z };
+  const before = life.state().acorns, actor = scene.getObjectByName('Red squirrel 1'), branch = scene.getObjectByName(`Squirrel branch ${id}`);
+  world.treeRegistry.fell(id, position); life.update(.016, position);
+  assert.equal(branch.visible, false); assert.equal(actor.visible, false);
+  life.setObserver(position); assert.equal(branch.visible, false, 'camera observer cannot bring back a missing branch');
+  assert.deepEqual(life.state().acorns, before, 'fallen nuts remain useful even without a standing tree');
+  world.treeRegistry.regrow(id); life.update(.016, position);
+  assert.equal(branch.visible, true); assert.equal(actor.visible, true);
+  assert.ok(actor.position.y - world.heightAt(actor.position.x, actor.position.z) < 1, 'the returning squirrel starts on the ground');
 });

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { createSceneryBuilder } from './scenery-builder.js';
 import { BEN_HOME, TROY_HOME, CAGNEY_RESIDENCE } from './quest-homes.js';
 import { CAGNEY_ROADSIDE_HAMLET, inAmbronOutline } from './ambron-city-layout.js';
@@ -820,6 +821,9 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       town.cylinder(BARK, spot.x, ground, spot.z, .26, 3.0, 0, 7);
       town.rock(LEAF_DARK, spot.x, ground + 4.0, spot.z, 2.0, 1.5, 2.0, 1);
       town.rock(LEAF, spot.x + .6, ground + 3.4, spot.z - .5, 1.4, 1.0, 1.4, 2);
+      const collider = colliders.find(c => c.kind === 'garden-tree' && c.x === spot.x && c.z === spot.z);
+      registerWorldTree(colliders, { id: worldTreeId('physic-garden-oak', spot.x, spot.z), x: spot.x, z: spot.z, y: ground, species: 'white-oak', radius: .4, harvestable: false,
+        reason: 'This white oak is a protected tree in the Physic Garden.' }, [], collider);
     }
     // The specimen wall: every stone the city has built with, squared and in order.
     {

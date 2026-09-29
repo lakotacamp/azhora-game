@@ -36,6 +36,8 @@ import { createJesseCarriageScenery } from './jesse-carriage-scenery.js';
 import { jesseWorkshopClear } from './jesse-carriage-world.js';
 import { createBrandyYard } from './brandy-yard.js';
 import { createBrandyHomeScenery } from './brandy-home-scenery.js';
+import { FAMILY_HOMES, MARK_HOME, MARK_HOME_PATH, familyHomeClear } from './family-homes.js';
+import { createFamilyHomeScenery } from './family-homes-scenery.js';
 import { createLighthouse } from './lighthouse-world.js';
 import { ELOD_LIGHT } from './rival-light.js';
 import { createSmugglersDoorScenery } from './smugglers-door-world.js';
@@ -43,6 +45,7 @@ import { createWoodlot } from './woodlot-world.js';
 import { createHomestead } from './homestead-world.js';
 import { inKoopwood } from './woodcutting.js';
 import { forestTimber } from './wood-species.js';
+import { getTreeRegistry, registerWorldTree } from './tree-registry.js';
 import { createWestSuvalScenery } from './west-suval-world.js';
 import { createWineryScenery } from './winery-world.js';
 import { buildBirdGarden, birdGardenSites, inBirdGarden } from './bird-garden.js';
@@ -121,6 +124,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const trange = (a, b) => a + trandom() * (b - a);
   const clamp = THREE.MathUtils.clamp;
   const colliders = [];
+  const treeRegistry = getTreeRegistry(colliders);
   const training = { x: 3, z: -12 };
   const repairBench = { x: 6, z: -6.4, name: 'Village repair bench' };
   const doomsayer = { x: -9.3, z: 2.2 }, pondFisher = { x: 20.4, z: -82 };
@@ -166,6 +170,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const world = new THREE.Group();
   world.name = 'Drent and the road to the Moros';
   scene.add(world);
+  treeRegistry.configure({root:world});
   // Tidehaven, carried over whole onto Drent's east coast.
   const villageRoot = new THREE.Group();
   villageRoot.name = 'Tidehaven and the Greenway';
@@ -612,7 +617,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   function cottage(x, z, width, depth, height, roofColor, wallColor, angle = 0, parent = villageRoot, { plain = false } = {}) {
     const y = groundFor(parent)(x, z);
     const group = new THREE.Group(); group.position.set(x, y, z); group.rotation.y = angle; parent.add(group);
-    if (isLocal(parent)) houseLocations.push({ x, z, r: Math.max(width, depth) * .72 });
+    if (isLocal(parent)) {
+      houseLocations.push({ x, z, r: Math.max(width, depth) * .72 });
+      const familyHome=FAMILY_HOMES.find(home=>home.house.local?.x===x&&home.house.local?.z===z);
+      if(familyHome){group.name=`${familyHome.name} cottage`;group.userData.homeId=familyHome.id;}
+    }
     pushFor(parent)({ x, z, r: Math.max(width, depth) * .62, kind: 'house', width, depth, angle });
     box(material('#929580'), 0, .2, 0, width + .35, .7, depth + .3, group);
     box(material(wallColor), 0, height / 2 + .38, 0, width, height, depth, group);
@@ -1122,10 +1131,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const treeGroundAt = (x, z) => terrainRoadHeight(x, z, terrainXs, terrainZs, terrainPositions, 0);
   trees.forEach((tree, i) => {
     const { x, z, s, h, rot } = tree, th = h * s;
+    tree.parts = [{mesh:trunkMesh,index:i}];
     let y = localGround(x, z);
     // Hidden trees keep their index, so oak ids, acorns and squirrel homes never shuffle.
     tree.hidden = featureClear(x, z, true) || forestFeatureClear(x, z, true, th * .52)
-      || (spot => landDistance(spot.x, spot.z) < 3 || inKoopwood(spot.x, spot.z, 2.5) || brandyHomeClear(spot.x, spot.z, th * .35))(villageToWorld(x, z));   // and none in Bowden's woodlot but his own
+      || (spot => landDistance(spot.x, spot.z) < 3 || inKoopwood(spot.x, spot.z, 2.5) || brandyHomeClear(spot.x, spot.z, th * .35) || familyHomeClear(spot.x, spot.z, th * .3))(villageToWorld(x, z));   // and none in Bowden's woodlot but his own
     dummy.position.set(x, y + th * .41, z); dummy.rotation.set(range(-.025, .025), rot, range(-.025, .025));
     dummy.scale.set(s, th * .82, s); dummy.updateMatrix();
     // The local height field diverges from the blended, triangulated hillside near
@@ -1136,11 +1146,12 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const axis = new THREE.Vector3(0, 1, 0).applyEuler(dummy.rotation);
     const base = villageToWorld(x - axis.x * th * .41, z - axis.z * th * .41);
     tree.trunk = { axis: [axis.z, axis.y, -axis.x], base: { x: base.x, y: y + th * .41 - axis.y * th * .41, z: base.z } };
-    if (!tree.hidden && x > -95 && x < 95 && z > border.barrierZ) vpush({ x, z, r: .52 * s });
+    if (!tree.hidden && x > -95 && x < 95 && z > border.barrierZ) tree.collider = vpush({ x, z, r: .52 * s, kind: 'village-tree' });
     if (tree.pine) for (let c = 0; c < 3; c++) {
       dummy.position.set(x, y + th * (.48 + c * .19), z); dummy.rotation.set(0, rot + c * .35, 0);
       dummy.scale.set(th * (.29 - c * .051), th * .49, th * (.29 - c * .051)); if (tree.hidden) dummy.scale.setScalar(0);
       dummy.updateMatrix(); pineMesh.setMatrixAt(pineIndex, dummy.matrix);
+      tree.parts.push({mesh:pineMesh,index:pineIndex});
       pineMesh.setColorAt(pineIndex++, color.setHSL(range(.25, .31), range(.28, .40), range(.28, .41) + c * .025));
     } else for (let c = 0; c < 4; c++) {
       const a = rot + c * 2.1, spread = c === 3 ? 0 : th * .15;
@@ -1148,10 +1159,14 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
       dummy.scale.set(th * (c === 3 ? .28 : .32), th * (c === 3 ? .25 : .31), th * (c === 3 ? .27 : .31));
       if (tree.hidden) dummy.scale.setScalar(0); dummy.updateMatrix(); canopyMesh.setMatrixAt(broadIndex, dummy.matrix);
+      tree.parts.push({mesh:canopyMesh,index:broadIndex});
       canopyMesh.setColorAt(broadIndex++, color.setHSL(range(.215, .29), range(.32, .47), range(.37, .52) + (c === 3 ? .025 : 0)));
     }
   });
   [trunkMesh, canopyMesh, pineMesh].forEach(m => { m.castShadow = true; m.receiveShadow = true; villageRoot.add(m); });
+
+  // Build Mark's new cottage only after seeded tree placement, preserving forest IDs.
+  { const h=MARK_HOME.house,p=h.local;cottage(p.x,p.z,h.width,h.depth,h.height,'#5e596c','#c7bba0',p.yaw); }
 
   // Separate from the seeded scatter so saved oak/acorn/squirrel IDs and the later scenery
   // random stream stay stable. These trees use world ground at the village terrain's seam.
@@ -1160,16 +1175,17 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const spot = villageToWorld(x,z), y = groundHeight(spot.x,spot.z), radius = .34;
     const trunk = mesh(trunkMesh.geometry, material('#795e41'), spot.x,y+height*.41,spot.z,.92,height*.82,.92,world);
     trunk.userData.passable = true;
+    const parts = [{mesh:trunk}];
     for (let c=0;c<3;c++) {
       const angle=i*1.9+c*2.1, spread=c===2?0:height*.12;
       const leaf=mesh(canopyMesh.geometry,material(['#749151','#849f60','#69874e'][i%3]),
         spot.x+Math.sin(angle)*spread,y+height*(c===2?.94:.74),spot.z+Math.cos(angle)*spread,
         height*.28,height*.29,height*.28,world);
-      leaf.userData.passable=true;
+      leaf.userData.passable=true; parts.push({mesh:leaf});
     }
-    colliders.push({...spot,r:radius,kind:'avrel-edge-tree'});
-    return {...forestTimber(false),harvestable:false,id:`avrel-edge-${i}`,...spot,y,height,radius,trunkHeight:height*.82,trunkTopRadius:.19,
-      axis:[0,1,0],base:{...spot,y}};
+    const collider = {...spot,r:radius,kind:'avrel-edge-tree'}; colliders.push(collider);
+    return registerWorldTree(colliders, {...forestTimber(false),id:`avrel-edge-${i}`,...spot,y,height,radius,trunkHeight:height*.82,trunkTopRadius:.19,
+      axis:[0,1,0],base:{...spot,y}}, parts, collider);
   });
 
   const grassPositions = [], grassNormals = [];
@@ -1262,6 +1278,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   measurePath(PASS_ROAD_LINE, 4.2);   // Imlamdris's road through the hill pass (src/south-suval-world.js)
   for (const path of REGIONAL_PATHS) measurePath(path, 1.85);
   measurePath(SYLVIA_PATH.points, SYLVIA_PATH.width);
+  measurePath(MARK_HOME_PATH, 1.1);
   createVisualArtsScenery({root:world,cottage,groundHeight,colliders});
   const regionScenery = createRegionScenery({
     root: world, material, mesh, box, post, pebble, rope, cottage, fence, leanTo, barrel, crate,
@@ -1362,6 +1379,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const jesseCarriage=createJesseCarriageScenery({parent:world,heightAt,colliders,movingGroups});
   createBrandyYard({ parent: world, material, mesh, box, post, round, cylinder, heightAt, colliders, signs });
   const brandyHome = createBrandyHomeScenery({ parent: world, cottage, material, mesh, box, post, round, cylinder, heightAt: groundHeight, colliders });
+  const familyHomes=createFamilyHomeScenery({parent:world,heightAt:groundHeight,colliders,movingGroups});
   // The two lights of this coast (src/lighthouse-world.js): Addison's on the West Suval head
   // south of the winery lane, and her sister's across the water on the head below Elod, which
   // is taller, blacker, and has a derrick over the cliff for bringing up what the sea leaves.
@@ -1433,6 +1451,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   for (const path of pondPaths) addLocalPath(path, 1.15);
   for (const path of forestPlacePaths) addLocalPath(path, 1.15);
   for (const path of DRENT_LOCAL_PATHS) addLocalPath(path, 1.1);
+  addPath(MARK_HOME_PATH, 1.1, world, 'trail');
   for (const path of REGIONAL_PATHS) addPath(path, 1.85);
   addPath(FOREST_HIDEOUT.trail.map(p => hideoutToWorld(p.x, p.z)), 1.85);
   addPath(PUETH_ROAD, 4.2);
@@ -1681,9 +1700,17 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   }
   localPatch(pond.fishingSpot.x, pond.fishingSpot.z, 1.1, '#b7aa7b', .8);
   const fishingBucket = { x: pondFisher.x - 1.0, z: pondFisher.z - 1.3 };
-  post(woodLight, fishingBucket.x, localGround(fishingBucket.x, fishingBucket.z) + .23, fishingBucket.z, .28, .43);
-  post(darkWood, fishingBucket.x, localGround(fishingBucket.x, fishingBucket.z) + .455, fishingBucket.z, .23, .012);
-  mesh(new THREE.TorusGeometry(.24, .024, 4, 12, Math.PI), darkWood, fishingBucket.x, localGround(fishingBucket.x, fishingBucket.z) + .42, fishingBucket.z);
+  // The bank slopes: seat the whole bucket on its displayed ground plane, not above its downhill edge.
+  const bucketGround = (x, z) => { const p = villageToWorld(x, z); return treeGroundAt(p.x, p.z); };
+  const bucketGroup = new THREE.Group(); bucketGroup.name = 'Willowmere fishing bucket'; villageRoot.add(bucketGroup);
+  bucketGroup.position.set(fishingBucket.x, bucketGround(fishingBucket.x, fishingBucket.z) - .006, fishingBucket.z);
+  const bucketNormal = new THREE.Vector3(
+    bucketGround(fishingBucket.x - .2, fishingBucket.z) - bucketGround(fishingBucket.x + .2, fishingBucket.z), .4,
+    bucketGround(fishingBucket.x, fishingBucket.z - .2) - bucketGround(fishingBucket.x, fishingBucket.z + .2)).normalize();
+  bucketGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bucketNormal);
+  post(woodLight, 0, .215, 0, .28, .43, bucketGroup);
+  post(darkWood, 0, .44, 0, .23, .012, bucketGroup);
+  mesh(new THREE.TorusGeometry(.24, .024, 4, 12, Math.PI), darkWood, 0, .405, 0, 1, 1, 1, bucketGroup);
 
   // ---------------------------------------------------------------------------
   // Fires and fishing
@@ -1784,7 +1811,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   world.updateMatrixWorld(true);
   const solidProp = standingProps(paths, heightAt, colliders);
   world.traverse(object => {
-    if (!object.isMesh || object.isInstancedMesh || object.material.isShaderMaterial || object.material.transparent || object.geometry.attributes.color) return;
+    if (!object.isMesh || object.isInstancedMesh || object.userData.liveTree || object.material.isShaderMaterial || object.material.transparent || object.geometry.attributes.color) return;
     for (let parent = object; parent && parent !== world; parent = parent.parent) if (movingGroups.has(parent)) return;
     solidProp(object);
     if (!object.geometry.attributes.normal) return;
@@ -1885,10 +1912,12 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const villageTimber = (list, prefix) => list.flatMap((tree, i) => {
     if (tree.hidden) return [];
     const spot = villageToWorld(tree.x, tree.z);
-    return [{ ...forestTimber(tree.pine), harvestable: false, id: `${prefix}-${i}`, x: spot.x, z: spot.z, y: tree.groundY, height: tree.h * tree.s,
-      radius: .38 * tree.s, trunkHeight: tree.h * tree.s * .82, trunkTopRadius: .21 * tree.s, ...tree.trunk }];
+    return [registerWorldTree(colliders, { ...forestTimber(tree.pine), id: `${prefix}-${i}`, x: spot.x, z: spot.z, y: tree.groundY, height: tree.h * tree.s,
+      radius: .38 * tree.s, trunkHeight: tree.h * tree.s * .82, trunkTopRadius: .21 * tree.s, ...tree.trunk }, tree.parts, tree.collider)];
   });
   const villageBroadleafTrees = villageTimber(broadTrees, 'oak').concat(avrelEdgeTrees);
+  villageTimber(pineTrees, 'pine');
+  treeRegistry.configure({reindex:()=>{colliderIndex=null;}});
   const api = {
     heightAt, groundHeight, lotharnCaves,
     roadSurfaceMetrics,
@@ -1896,11 +1925,12 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     mapBridges: bridgeDecks,
     colliders,
     /** Bowden's woodlot, whose trees fall and grow back (src/woodlot-world.js). */
-    woodlot,
+    woodlot, treeRegistry,
     /** The traveler's house and the birdhouse posts, built as Construction goes (src/homestead-world.js). */
     homestead,
     jesseCarriage,
     brandyHome,
+    familyHomes,
     /** The burial ground at the Lauvel, whose open grave is filled in if Sela's son is found (src/lauvel-burying.js). */
     lauvelField: regionScenery.lauvelField,
     /** The colliders that could reach within `reach` of a point; see src/collider-grid.js. */
@@ -2058,7 +2088,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     // existing flora, acorn and mushroom site IDs do not shift.
     regionalBroadleafTrees: regionScenery.broadleafTrees,
     broadleafTrees: villageBroadleafTrees,
-    timberTrees: [...villageBroadleafTrees, ...villageTimber(pineTrees, 'pine'), ...regionScenery.timberTrees],
+    timberTrees: treeRegistry.trees,
     ringBell(time = worldTime) { bellStarted = time; },
     /**
      * The arrival boat, for the opening sequence (src/opening-sequence.js): world metres and a world
