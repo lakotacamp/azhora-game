@@ -17,7 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
-  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth'];
+  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
+  'West Lotharn Mountains'];
 /**
  * **Lake hexes that belong to the region all round them.** The World Builder map paints these
  * `lake`; the dev atlas this script reads leaves them unclaimed, because a lake is nobody's

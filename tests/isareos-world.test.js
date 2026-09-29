@@ -116,12 +116,18 @@ test('low hills, not quite highlands, blurring into the two countries either sid
     `Isareos at ${hill.base} is not between Caricas at ${REGION_TERRAIN.Caricas.base} and Meneth at ${REGION_TERRAIN.Meneth.base}`);
   // And the hills are real on the ground, not only in the table: a shoulder and a floor
   // differ by several metres over a hundred, which is a climb and is not mountaineering.
+  // The ring is read on **Isareos's own ground only**. Isareos's northern grassland hexes lie
+  // directly against four `mountain` hexes of the West Lotharn (7 shared edges), and a sixty-metre
+  // ring round (-7,103) reaches forty metres into that range's southern front: with the range's
+  // ground in it the spread is 50.5 m, which measures the Lotharn and not these hills. Without it,
+  // 20.5 m, which is the number this test was written about.
   let worstRise = 0;
   for (const cell of hills) {
     const heights = [];
     for (let i = 0; i < 12; i++) {
-      const a = i / 12 * Math.PI * 2;
-      heights.push(westGroundAt(cell.x + Math.sin(a) * 60, cell.z + Math.cos(a) * 60));
+      const a = i / 12 * Math.PI * 2, x = cell.x + Math.sin(a) * 60, z = cell.z + Math.cos(a) * 60;
+      if (hexOwnerAt(x, z) === 'West Lotharn Mountains') continue;
+      heights.push(westGroundAt(x, z));
     }
     worstRise = Math.max(worstRise, Math.max(...heights) - Math.min(...heights));
   }

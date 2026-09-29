@@ -311,8 +311,10 @@ test('Eer is the first country with a sky of its own, and it takes it the way th
   // Every region that has not asked for one is still on the three numbers the game has always
   // used. Nethereum is the second to ask (`tests/nethereum-world.test.js`), and it asks for the
   // opposite of this one: a grey overcast and a closer horizon where Eer has a clear far one.
-  // South Suval (25 Sep), the East Lotharn and Feradom (27 Sep) and Gala (28 Sep) asked for theirs since.
-  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert']);
+  // South Suval (25 Sep), the East Lotharn and Feradom (27 Sep), Gala and the Ascarths (28 Sep),
+  // Ovesos and the Oves Desert (28 Sep) and the West Lotharn (29 Sep) asked for theirs since; the
+  // last of those is the first to ask on account of height rather than weather.
+  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains']);
   for (const region of regions) if (!OWN_SKY.has(region.name))
     assert.deepEqual({ ...regionSky(region) }, { ...DEFAULT_SKY }, `${region.name} lost the default sky`);
   assert.ok(regionSky(regions.find(region => region.name === 'Nethereum')).density > sky.density,

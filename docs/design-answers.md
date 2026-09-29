@@ -747,3 +747,82 @@ Gala is a sibling job; this entry is the two Ascarths (`docs/ascarth-brief.md`,
 - The lore (`geography/regions/ascarth.md`) was adjusted in place: the interior is three wooded hills
   in the north and open grass elsewhere; the cliffs are the west and the tip; Gala lies north-west of
   the peninsula's base, not south; Aevis's promontory is on the low neck.
+
+### 2026-09-29 — The West Lotharn Mountains: the taller half, and everything carried over
+
+The user, asked directly, settled two things before the build and they are not to be re-opened:
+
+1. **The West Lotharn is the taller half of the range, a crest of about five hundred and fifty
+   metres.** The atlas gives it twenty-five `mountain` hexes to the East Lotharn's fifteen, over
+   forty-eight hexes to thirty-eight, so the West is the main range and the East reads as its
+   eastern foothills.
+2. **Everything carries over from the East Lotharn**: cliffs in courses, cut ramps and ledge paths
+   as the only ways up, and caves.
+
+Built to `docs/west-lotharn-brief.md` on branch `west-lotharn`; the report is
+`docs/west-lotharn-report.md`. Terrain, climate, water, scenery, caves and wildlife only — **the
+East Lotharn's pass road, its inn and its iron workings were built to an earlier brief and are not
+copied**, and nothing here belongs to anybody.
+
+- **Region id 27**, after `'Oves Desert': 26`, in every ordered list. It was not in the survey, so
+  `PLAYABLE` in `scripts/build-region-survey.mjs` gained it and `src/region-survey.js` was
+  regenerated (twelve lines; `LAND_HEXES` unchanged).
+- **The world box did not grow**, which is a first for a region this size: forty-eight hexes and not
+  one new number in `tests/region-layout.test.js`, `tests/isareos-world.test.js`,
+  `tests/nethereum-world.test.js` or `tests/izol-world.test.js`.
+- **Seven summits**, measured on the built ground: the crest **550.8 m** (the highest ground in
+  Azhora), the north summit 448, the west shoulder 404, the east summit 321, the spur 263, the cold
+  head 256, the south rampart 217. The three lesser masses are lower **because the atlas gives them
+  less room**: the rampart is four `mountain` hexes in a single row against Isareos.
+- **The courses are forty metres and a half** (`BANDS` period 46) against the East's thirty-six, and
+  **the tree line is 345 m** against the East's 280 — two hundred metres below the crest, which is the
+  lore's "within a few hundred meters of their highest summits", leaving five courses of bare stone.
+- **Every relief number is the East Lotharn's to the digit** (hills 58/8/215, mountain 96/13/250),
+  because the two halves share seven hex edges and are one massif: a base or a wavelength that
+  differed across that border would put a step or a chirp in the middle of one range. The whole
+  difference between them is the landform, and a landform is nothing at the border it fades to
+  (measured: **0.00 m** of this country's lift anywhere inside the East Lotharn's hexes).
+- **The col is where the East Lotharn's Kemrath runs out.** Registering this country made Kemrath's
+  floor and its water end three metres inside these hexes, at 43.8 m. A river cannot stop in the
+  middle of a country, so **the Kemrath reach** takes the water on at exactly that level
+  (`headOf: 'kemrath-water'`; the hand-over is 44.271 m on both sides), turns north because west of
+  the col the ground climbs at once, and carries it down **the notch** to the Mithala margin.
+  Nothing in `src/east-lotharn-world.js` was touched.
+- **The long valley** is the atlas's own: eleven `hills` hexes in an unbroken chain across the whole
+  country, 953 m, flat-floored, with a divide a fifth of the way along it and a beck leaving each
+  end. **The north valley** drains the massif to the Mithala plain. No pass and no road: the atlas
+  gives this half neither, and the crossing is a valley nobody has made anything of.
+- **The climate is `Cfa` × 47 and `Dfa` × 1**, read per hex off the World Builder map. One hex
+  cannot carry a band and none is drawn; the continental hex is (−8,100), a `mountain` hex and the
+  westernmost in the country, and what it got is **a name and a note** — the three-hex block it
+  stands on is **the cold head**.
+- **Nobody gets up without the ways.** A flood fill from the two valleys, the notch and the col
+  reaches all seven summits with the ramps and ledges open and **none of them** with them shut, and
+  the highest ground reached without them anywhere in the country is **98.3 m**
+  (`tests/west-lotharn-peaks.test.js`).
+- **Nine caves**: five chimneys, three chambers and one way right through, from the col to the long
+  valley under the east arm. Nothing lives in them. Each mouth runs a few metres along its ledge's
+  own contour before the line ends, because a straight tail across a ten-metre ledge walks off the
+  edge of it — an eight-metre drop the moment a traveler steps out of the rock. `world.lotharnCaves`
+  stays the East's alone; these are `world.westLotharnCaves`, and `src/main.js` walks both through
+  one controller.
+- **The same dialect as the East** (`lotharn`), because the lore's own unit is the range and its
+  divisions are the valleys. **Nothing coined**: Lotharn place names are substrate in the lore and
+  cannot be built from the `mittoli` roots, so every name here is plain English.
+- **One course outside the country moved, and only one.** Meneth's first valley beck ran west into
+  what is now this range's southern front; measured along its own trough, the floor stops falling at
+  x = −1840, so the beck now ends at −1848 and spreads and sinks there. The other three are untouched.
+- **One of this build's own tests caught it in the wildlife**: the boar's range on the long valley
+  floor was three metres wider than the hundred and thirty a fleeing animal is run from, and is now
+  180 × 120. The other two `west-life` failures name Feradom's and Ovesos's animals; they were
+  measured against this base with these nine ranges taken out and failed identically, so they are
+  pre-existing.
+- **Five stale lists were found**, three of them beyond the ones the brief names: `open-country` (the
+  Caricas probe, moved to (−2530,−220)), `isareos-world` (its sixty-metre relief ring now read on
+  Isareos's own ground), `region-sky` and **`eer-world`** (two copies of the same own-sky allow-list),
+  and **`oves-world`** (`indexOf('Oves Desert') === length - 1`, now "nothing was inserted").
+- The lore (`geography/regions/lotharn.md`) was adjusted in place on four claims: the courses run to
+  five hundred metres and the western half is the main one; which lowland the southern face drains
+  into depends on where along the range you stand (Amod for the eastern half, the ridge country and
+  the lake country's western margin for this one); "the southern face descends into Amod" is the
+  eastern half's; and not every Lotharn pass carries a road.

@@ -68,7 +68,11 @@ test('Ovesos is 25 and the Oves Desert 26, appended in that order, with the atla
   const order = PLAYABLE_REGIONS;
   assert.ok(order.indexOf('Ovesos') > order.indexOf('Southern Ascarth'));
   assert.equal(order.indexOf('Oves Desert'), order.indexOf('Ovesos') + 1);
-  assert.equal(order.indexOf('Oves Desert'), order.length - 1);
+  // The Oves Desert was the last name in this list until the West Lotharn Mountains were appended
+  // after it (27, 29 September 2026). What the line is about is that nothing was *inserted*:
+  // everything that follows these two carries a higher id than either of them.
+  assert.ok(order.slice(order.indexOf('Oves Desert') + 1).every(name => REGION_IDS[name] > 26),
+    'a region was inserted before the Oves Desert rather than appended after it');
   const tally = name => { const out = {}; for (const cell of CELLS[name]) out[cell.terrain] = (out[cell.terrain] ?? 0) + 1; return out; };
   assert.deepEqual(tally('Ovesos'), { grassland: 8, plains: 11 });
   assert.deepEqual(tally('Oves Desert'), { plains: 20, hills: 3 });

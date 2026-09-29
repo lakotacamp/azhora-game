@@ -61,6 +61,7 @@ import { EAST_SUVAL_PLACES, ELOD_STANDS, EAST_SUVAL_STANDS, ELOD_QUAY, ELOD_LAND
 import { createEastSuvalScenery } from './east-suval-world.js';
 import { createSouthSuvalScenery } from './south-suval-scenery.js';
 import { createEastLotharnScenery } from './east-lotharn-scenery.js';
+import { createWestLotharnScenery } from './west-lotharn-scenery.js';
 import { createFeradomScenery } from './feradom-scenery.js';
 import { feradomTerrainSink } from './feradom-world.js';
 import { FERADOM_LANDMARKS } from './feradom-forts.js';
@@ -68,6 +69,8 @@ import { createAscarthScenery } from './ascarth-scenery.js';
 import { ASCARTH_LANDMARKS } from './ascarth-world.js';
 import { PASS_ROAD_LINE as LOTHARN_ROAD_LINE, WORKINGS_TRACK, EAST_LOTHARN_LANDMARKS, lotharnTerrainSink } from './east-lotharn-world.js';
 import { createCaves } from './east-lotharn-caves.js';
+import { WEST_LOTHARN_LANDMARKS, westLotharnTerrainSink } from './west-lotharn-world.js';
+import { createWestLotharnCaves } from './west-lotharn-caves.js';
 import { createSuvalHighlandScenery } from './suval-highlands-scenery.js';
 import { BAT_CAVE, IMLAMDRIS_REBUILD, suvalHighlandTerrainSink } from './suval-highlands.js';
 import { createIscareScenery } from './iscare-scenery.js';
@@ -465,7 +468,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
     // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
     // src/south-suval-scenery.js); the coarse grid is sunk out of sight beneath them.
-    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - feradomTerrainSink(x, z), z], index * 3);
+    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z), z], index * 3);
     groundTint(color, x, z, THREE);
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight > 0) {
@@ -1318,10 +1321,19 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const suvalHighlands = createSuvalHighlandScenery({ root: world, material, mesh, box, post, round, groundHeight, colliders, roofGeometry, wornPatch });
   const iscare = createIscareScenery({ root: world, material, mesh, box, post, pebble, groundHeight, colliders, round, wornPatch });
   const lotharnCaves = createCaves(groundHeight);
+  // The West Lotharn's are kept in their own array so `world.lotharnCaves` stays the East's alone
+  // (tests/east-lotharn-peaks.test.js counts it); main.js walks both through one cave controller.
+  const westLotharnCaves = createWestLotharnCaves(groundHeight);
   const feradom = createFeradomScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   const eastLotharn = createEastLotharnScenery({
     root: world, material, mesh, box, post, pebble, wornPatch,
     groundHeight, colliders, dummy, color, cylinder, round, roofGeometry, caves: lotharnCaves,
+  });
+  // The West Lotharn (src/west-lotharn-scenery.js): the massifs' own close-drawn ground, the courses
+  // of cliff and the balds, the caves' rock, the four becks and the old forest to the tree line.
+  const westLotharn = createWestLotharnScenery({
+    root: world, material, mesh, box, post, pebble, wornPatch,
+    groundHeight, colliders, dummy, color, cylinder, round, roofGeometry, caves: westLotharnCaves,
   });
   // The Ascarth Peninsula (src/ascarth-scenery.js): grass, scrub and stone on the finger, the wood on
   // its interior hills, the green stone, and the rock fallen at the foot of its cliffs. Nobody's.
@@ -1890,7 +1902,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   });
   const villageBroadleafTrees = villageTimber(broadTrees, 'oak').concat(avrelEdgeTrees);
   const api = {
-    heightAt, groundHeight, lotharnCaves,
+    heightAt, groundHeight, lotharnCaves, westLotharnCaves,
     roadSurfaceMetrics,
     mapWaters,
     mapBridges: bridgeDecks,
@@ -1963,6 +1975,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     elagosMetrics: elagos.metrics,
     southSuvalMetrics: southSuval.metrics,
     eastLotharnMetrics: eastLotharn.metrics,
+    westLotharnMetrics: westLotharn.metrics,
     feradomMetrics: feradom.metrics,
     farmlandMetrics: regionalFarmland.metrics, farmsteads: FARMSTEADS,
     suvalHighlandMetrics: suvalHighlands.metrics,
@@ -2114,6 +2127,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...ELAGOS_LANDMARKS,
       ...SOUTH_SUVAL_LANDMARKS,
       ...EAST_LOTHARN_LANDMARKS,
+      ...WEST_LOTHARN_LANDMARKS,
       ...FERADOM_LANDMARKS,
       { id: 'hollow-ridge-refuge', name: 'The Hollow Ridge', ...BAT_CAVE.entrance, radius: 15, description: 'A narrow worn ledge disappears behind a limestone spur. The wind sounds like wings inside the hollow.' },
       { id: 'imlamdris-rebuilding', name: 'Imlamdris rebuilding', ...IMLAMDRIS_REBUILD.centre, radius: 30, description: 'Four timber roofs and a fifth frame stand beside the old city, built from salvaged stone and new-cut boards.' },
@@ -2137,6 +2151,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       elagos.waterMaterial.uniforms.time.value = time;
       westScenery.update(time);
       eastLotharn.update(time);
+      westLotharn.update(time);
       galaScenery.update(time);
       ovesScenery.update(time);
       regionScenery.millSails.rotation.z = time * .115;
