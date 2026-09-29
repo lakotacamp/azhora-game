@@ -612,6 +612,69 @@ chose: a climbing rule with cliffs; peaks of about 400 m; caves empty, to explor
 - The lore (geography/regions/lotharn.md) was rewritten in place to fit: old stone worn into
   courses of cliff and ledge, ramps, chimneys and limestone caves.
 
+### 2026-09-28 — Ovesos and the Oves Desert: terrain, climate, water, scenery and wildlife
+
+Built together on one branch (`oves`) to `docs/oves-brief.md`; the report is `docs/oves-report.md`.
+One job and one module family, because the two countries share thirteen hex edges, one river basin
+and a boundary that is a lawsuit in the lore rather than a line on the ground.
+
+- **Region ids 25 and 26**, in that order after Southern Ascarth (24), in every ordered list. Both
+  were already in `PLAYABLE` and in `src/region-survey.js`; the survey was **not** regenerated.
+- **Nothing that belongs to anybody**: no Water Council and no water right, no Branch Court, no King
+  Melos, no Middle Reach dispute, no market town, no mill, no irrigated grain and no channel dug to
+  water it, no Sorten grazing, no herding community and none of its stock, no Telemon route, no well
+  and no watering point.
+- **The atlas says both countries are one climate.** Read per hex off the World Builder map, Ovesos
+  is `BSh` on all nineteen of its hexes and the Oves Desert `BSh` on all twenty-three of its — hot
+  semi-arid steppe, every row of both, forty-two hexes and one code. **So neither has a gradient to
+  draw**, unlike Gala's three bands, and the whole difference between them is **terrain and water**.
+  The code says so wherever it could be read as claiming otherwise, and the test asserts that the set
+  of codes over both countries has exactly one member.
+- **Ovesos is a tilt to one river**: grassland rows at **16 m**, plains rows at **10** (the
+  six-regions brief's own numbers), and the Oveth along the whole south-western border with the
+  **Sorten** on the Ovesian bank — a bench 155 m wide and 0.95 m below the plain, with a levee at the
+  water's edge, over the river's middle reach only. A gallery of poplar, willow and tamarisk on the
+  water and **no other tree in the country**.
+- **The Oves Desert is a wedge with no permanent water in it.** Plains at 12 m with a 9 m basin tilt
+  falling from the rim to its eastern point (22 m under the rim, 12.5 m at the point); the atlas's
+  three `hills` hexes are exactly the lore's north-western rim, built as three worn crests standing
+  18–22 m over their own feet; a short broken stone relief on two turned bearings, because worn rock
+  is not a sine wave; **four cut channels with nothing in any of them**, each stopping clear of the
+  river; and one damp reach where the gravel holds water below the surface, which is the lore's own
+  exception and the only green in the country. **Rocky, not sandy: no dune and no sand.**
+- **Built as the dry year**, which is what the classification means. The wet-year flush is drawn as
+  the seed-bank stubble it leaves behind, and is the first thing this country should gain when the
+  game has seasons.
+- **Every profile in both countries is on Gala's wavelength, 320**, and the desert's roughness is a
+  landform instead of a shorter wave. That is the cure for the "outland ribs" Gala reported at
+  x ≈ −1900, and it works **wherever two built countries meet** (steepest 1 in 1.54 over 4,421 points
+  of all-built ground there) and nowhere else: at every border either country still shares with
+  unbuilt ground the chirp is `outland`'s own, 1 in 0.46, and the open country beyond is 1 in 0.41.
+- **The Oveth's hand-over to Gala.** Gala left "at or above 5.38 m at (−1800, 953)". Registering the
+  two countries raised the ground at that corner, so both sides rose: Gala's reach now begins at
+  **7.70 m** and the upper Oveth ends at **8.01 m**, a 0.31 m drop into the rocky lower section.
+  **The deep water stops short of the corner** so that Gala's own ford is not walled by this one.
+- **Deep in the middle and forded at both ends**, which no other river in the west does and which the
+  lore asks for twice: "navigable for light boats" by the Sorten, and "below the Sorten it narrows,
+  drops through a rocky lower section" — the reach Gala built waded over rock.
+- **Wildlife**: otters, ducks, herons and the *vel-caric* on the Oveth, hares and a harrier on the
+  upland grass, a vulture over the dry plain; hares, the dry-plateau hawk and a vulture in the
+  desert, and nothing else at all, which is the honest population of a range unusable several years
+  in each decade. **No domestic stock** and **no new rig**: the spine lizard, the bone-bird, the road
+  fox and the sand-cat all want models the game has not got, and the cat wants a night as well.
+- **Two skies**, the first `BSh` skies in the game: Ovesos takes Gala's own steppe air, because
+  Gala's northern rows are this same country with another name on them, and the desert takes the
+  clearest air in the game, because the one thing a rain shadow has is distance to look at.
+- **Nothing coined.** There is no Ovesi or Oves naming profile in `azhoran_language_profiles.py`, so
+  every name is the lore's own word (the Oveth, the Sorten, the Oves) or plain English. The dialect
+  is `ovesos`, "Inner-branch Mittoli", which is what the lore calls it; **the Oves Desert has no
+  speech of its own**, which is the lore's position and not a gap, so it takes Ovesos's.
+- The lore (`geography/regions/ovesos.md`, `oves_desert.md`) was adjusted in place on seven more
+  claims, all of them about which way things lie: the Oveth is Ovesos's south-western **boundary**,
+  not a line through the middle of it; the desert is on the basin's **south-western** margin, not its
+  eastern one; its wedge opens **westward from its own eastern point**; its rim hills step west as
+  they run south; and **nothing inside the Oves carries water the year round**.
+
 ### 2026-09-28 - Gala: terrain, climate, water and wildlife, nothing that belongs to anybody
 
 The user: "start building the wildlife and terrain of Galan [Gala], North Ascarth, and South

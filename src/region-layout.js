@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -165,6 +165,19 @@ export const REGION_BIOMES = Object.freeze({
   'Southern Ascarth': Object.freeze({ id: 'peninsula-tip', name: 'The Ascarth tip', ground: '#aba66b', canopy: '#4f5f3a', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
     relief: { amplitude: 2.2, wavelength: 150 }, clearings: [],
     note: 'The finger of the peninsula to its tip: open Mediterranean grass and scrub rolling to the sea, thin and stony, a wild olive here and there and nothing taller, cliffs along the whole west and round the tip, two sheltered bays on the east, and Selemi across the channel to the south.' }),
+  // Ovesos and the Oves Desert (src/oves-world.js, src/oves-scenery.js) scatter their own country.
+  // **Both read `BSh` on every hex of both** — hot semi-arid steppe, nineteen hexes and twenty-three,
+  // and the atlas draws no climatic line between them at all. So there is no gradient here of the kind
+  // Gala has: what separates the two countries is **terrain and water**. Ovesos has the Oveth on its
+  // south-western border and the grassland rows above it; the desert has the rim hills, the dry
+  // channels and no permanent water in it anywhere. Every count-per-hex the generic scatter could use
+  // would say the same thing on both sides of that border, which is why neither uses it.
+  Ovesos: Object.freeze({ id: 'oveth-valley', name: 'The Oveth valley', ground: '#a8a06a', canopy: '#61784a', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'bunch-grass', ownScatter: true,
+    relief: { amplitude: .7, wavelength: 320 }, clearings: ['the-sorten', 'oveth-gully'],
+    note: 'Hot steppe falling south-east to one river: bunch grass in tussocks on the northern rises with the bare ground showing between them, thinner open plain below, grey wormwood and saltbush where the grass gives out, and along the Oveth on the south-western border — and only there — a narrow dark gallery of poplar, willow and tamarisk. The Sorten is the wide bench of bottomland the river lies in. The Neth runs the northern border and the Lizeem the eastern, both of them somebody else’s bank.' }),
+  'Oves Desert': Object.freeze({ id: 'oves-rain-shadow', name: 'The Oves', ground: '#ab9f7c', canopy: '#6b7052', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .8, wavelength: 320 }, clearings: ['rim-hills', 'dry-channels'],
+    note: 'The far tail of the Pyros rain shadow, and rocky rather than sandy: worn stone through a thin poor soil, gravel pavement on the ridge exposures, perennial scrub spaced wide enough to walk between and a stubble of dead annual seed-heads in the low ground where the wet-year grasses would be. Three low rounded hills on the north-western rim intercept what moisture the westerlies carry, and the dry channels run from their feet east-south-east to the Oveth with no water in any of them.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

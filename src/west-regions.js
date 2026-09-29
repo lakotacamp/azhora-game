@@ -846,6 +846,68 @@ export const WEST_BRAIDS = Object.freeze([
   Object.freeze({ id: 'gala-mouths', course: GALA_CHANNEL, from: .64, to: .97, offset: 10, half: 1.5, cut: .6, lift: .1 }),
 ]);
 
+
+// ---------------------------------------------------------------------------
+// Ovesos and the Oves Desert: the Oveth's upper course and the desert's southern border stream
+// ---------------------------------------------------------------------------
+/**
+ * The water of the two dry countries, and there is very little of it (docs/oves-brief.md).
+ *
+ * The atlas draws two courses that have Ovesos or the Oves Desert on both banks, and none at all
+ * inside either country. The Neth along Ovesos's north-western border and the Lizeem along its
+ * north-eastern and eastern ones are already built (`NETH`, `LIZEEM`) and are not touched here; the
+ * Oveth's last reach below the three-country corner is Gala's (`OVETH_REACH`) and is not touched
+ * either. What is built here is the two above them:
+ *
+ *  - **the Oveth's upper course**, seven `Oves Desert`|`Ovesos` edges from (-2050, 751) down to the
+ *    corner at (-1800, 953) where Ovesos, the Oves Desert and Gala meet;
+ *  - **the desert's southern border stream**, the `Oves Desert`|`Telemonia` reach of the chain whose
+ *    last two edges Gala built as `GALA_DESERT_STREAM`.
+ *
+ * Everything else either country has is terrain: four cut channels with no water in any of them and
+ * one reach of one of them that holds water below the gravel (`OVES_CHANNELS`, `OVES_DAMP` in
+ * src/oves-world.js). **The Oves Desert has no permanent water inside it**, which is the point of it.
+ */
+/**
+ * **The Oveth**, its upper course. The atlas is precise about its size: the two edges at its head are
+ * `small` and the five below them are `medium`, so it starts as something a man steps over and is a
+ * river by the time it reaches the Sorten.
+ *
+ * **Waded for its upper third and deep below**, which is the Carica's rule for a medium river, the
+ * Neth's after it, and here the lore's own words twice over: by the Sorten the Oveth is "navigable
+ * for light boats and substantial enough for irrigation", and "below the Sorten it narrows, drops
+ * through a rocky lower section" — which is Gala's reach, and Gala built exactly that, waded over
+ * rock for its first two-fifths. So the deep water is the middle of the river and the fords are its
+ * two ends, which is the opposite of every other course in the west and is what the lore says.
+ *
+ * A third of this course is about 135 m, which keeps the ford on the two `small` edges and puts the
+ * deep water on the `medium` ones; `tests/oves-world.test.js` holds that arithmetic. The six dry
+ * Ovesos|Oves Desert edges above the river's head are how the two countries meet on foot.
+ */
+export const OVETH_UPPER = river('oveth-upper', 'The Oveth', atlasCourse('Oves Desert,Ovesos'),
+  { halfWidth: 1.8, halfWidthEnd: 4.2, cut: 1.15, cutEnd: 1.55, bed: .8, fordUntil: .33 });
+
+/**
+ * **The desert's southern border stream.** The atlas carries the chain Gala's `GALA_DESERT_STREAM`
+ * is the last two edges of on west, `small`, along five `Oves Desert`|`Telemonia` edges; Gala left it
+ * unbuilt because neither of those countries was. One of them is now.
+ *
+ * It is the one piece of permanent water either country has that is not the Oveth, and it is on the
+ * desert's **border** and not in it — fed off the Telemon highland edge to the south, which is
+ * unbuilt outland, and the reason the lore's "channel sections that retain subsurface flow" matter
+ * more than they sound. Waded anywhere, and shallow: a step across over gravel, which is what a
+ * stream off a rain-shadow margin is in any month but the wet ones.
+ *
+ * Its `cutEnd` is measured rather than chosen. It hands the last of itself to Gala's reach at
+ * (-1850, 1039), and Gala's reach works its own level out from the ground; a course that ended below
+ * the one it runs into would be water flowing uphill, so this one ends a few centimetres above it and
+ * the test says by how much.
+ */
+export const OVES_BORDER_STREAM = river('oves-border-stream', 'The southern border stream',
+  atlasCourse('Gala,Oves Desert,Telemonia').slice(0, 6), { halfWidth: 1.2, halfWidthEnd: 2, cut: .85, cutEnd: .95, bed: .35 });
+
+export const OVES_RIVERS = Object.freeze([OVES_BORDER_STREAM, OVETH_UPPER]);
+
 // ---------------------------------------------------------------------------
 // The East Lotharn: the border water and the three valleys' own
 // ---------------------------------------------------------------------------
@@ -885,7 +947,7 @@ export const LOTHARN_WATERS = Object.freeze([LOTHARN_BORDER_WATER, KEMRATH_WATER
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...GALA_RIVERS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -893,7 +955,7 @@ export const WEST_POOLS = Object.freeze([
 ]);
 
 /** The regions this module shapes, in the order they were built. */
-export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala']);
+export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

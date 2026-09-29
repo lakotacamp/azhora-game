@@ -146,6 +146,33 @@ lore file in place (left uncommitted in `world-builder`, as the rule is), not on
 Nothing else in the file was touched: the city, the harbour, the Guild of Assessors, the guest-right,
 the Avite cycle, Nylon and the language section all stand.
 
+## `ovesos.md` and `oves_desert.md` — second pass, **applied in place** (the Oves build, 2026-09-28)
+
+The first passes above had been applied to both files by the time the two countries were built.
+Building them against the atlas turned up seven more claims the map does not bear — all of them about
+which way things lie — and these were written into the two lore files in place (left uncommitted in
+`world-builder`, as the rule is), not only proposed here. The climate is not among them: the first
+pass had already settled `BSh`, and the build confirmed it on all forty-two hexes.
+
+### `ovesos.md`
+
+| was | now | the atlas fact |
+|---|---|---|
+| "Where the Oveth crosses its widest valley — a stretch of bottomland … the Sorten" | **Kept, and placed.** The river is the kingdom's **south-western boundary** rather than a line through the middle of it: the Sorten is the bottomland on the Ovesian bank, and the bank opposite is the Oves Desert's own margin, two or three metres higher and carrying nothing but stone and scrub | every one of the 7 wet Ovesos\|Oves Desert edges and all 3 Ovesos\|Gala edges is the Oveth; the atlas draws **no** river inside Ovesos at all |
+| "It rises in the upland between Telemonia's northern ridgelines and the more open interior plateau" | **Kept**, with where it arrives: it comes down onto Ovesian ground at the **western corner** the kingdom shares with the Oves Desert and the Nether Desert margin | the authored course begins at (-2050, 751), the corner of (-11,114), (-10,114) and (-11,115) |
+| "No mountain wall marks Ovesos's borders to the north, west, or south. The terrain simply rises — into the plateau country … to the north, into the Telemon highland edge to the south, into the forested upland to the west" | No mountain wall in **any** direction. The terrain rises six metres from the river bottom to the upland grass of the northern rows, and again across the Oveth to the **south-west** into the desert's margin and the hills of its rim. The other two borders are water and not ground: the **Neth** along the north-west, waded only in its upper reach, and the **Lizeem** along the whole north-east and east, which nobody crosses | Ovesos's neighbours are Oves Desert 13 (SW), Caricas 7 and Nesdor 7 (both the Lizeem, NE and E), Nethereum 5 (the Neth, NW), Gala 3 (the Oveth, SE), Nether Desert 1 (W). Telemonia is not a neighbour of Ovesos at all |
+| the Sorten's grain, the mills, the Water Council, *osk-milis*, the Middle Reach, King Melos, the five branch countries | **All kept.** None of them is built, and the atlas denies none of them | — |
+
+### `oves_desert.md`
+
+| was | now | the atlas fact |
+|---|---|---|
+| "occupies a small arid territory on the **eastern** margin of the Oveth river basin … behind the hills of the desert's own north-western rim" | on the **south-western** margin of the basin, behind the hills of its own **western** rim | the desert is at x -2500…-1850 with Ovesos to its north-east on 13 edges; it is upstream and west of the Oveth's bottomland, not east of it |
+| "The hills along the desert's own north-western rim run roughly north to south" | **Kept, and leaned.** They run roughly north to south, **stepping a little further west with every mile they run south** — three broad worn summits on a line from the north-east to the south-west | the 3 `hills` hexes are (-14,114), (-15,115) and (-16,116): one hex west for every hex south, from (-2400, 722) to (-2500, 895) |
+| "It occupies a wedge of the Oveth basin's **eastern** section … running **south** from the hill junction" | a wedge of the basin's **south-western** section, **opening westward from its own eastern point** — the corner where the Oveth comes down off the Ovesian border and the Telemon border stream comes in to meet it — and running **east-south-east** off the hill junction | the country narrows to one hex, (-10,117), at (-1850, 982), where its two authored courses meet at (-1800, 953); it is six hexes wide under the rim |
+| "The surface drainage is intermittent; the seasonal water channels … are active only during and immediately after rainfall events" | **Kept, and completed**: nothing inside the Oves carries water the year round. Its two permanent courses are both on its edges — the Oveth along the north-east and the small stream along the Telemon border to the south — and the ground between them is dry beds, some of which hold water below their gravel where the rock will not let it away | the atlas draws no river inside the Oves Desert: 7 edges with Ovesos, 5 with Telemonia and 2 with Gala, every one of them a border |
+| "not large, not particularly severe … in wet years … the word 'desert' seem[s] like an overstatement"; the drought cycle, the perennial tail, the seed banks, the Branch Compact, the Telemon bands, the wells | **All kept**, and the drought cycle is what the ground was built from: the dry-year face, with the stubble where the wet-year flush would be | `BSh` × 23, in a vocabulary that has `BWh` and does not use it here |
+
 ## `eer.md` — no hills, and the coast is the grassy half
 
 The lightest of the six.

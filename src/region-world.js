@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -339,6 +339,53 @@ export const REGION_TERRAIN = Object.freeze({
   Gala: Object.freeze({ base: 4.0, amp: .6, wave: 320, ground: REGION_BIOMES.Gala.ground, byTerrain: Object.freeze({
     // The two hexes on the sea: the same numbers, a greener ground. `Csa`, and the grass holds.
     grassland: Object.freeze({ base: 4.0, amp: .6, wave: 320, ground: '#979b62' }),
+  }) }),
+  // Ovesos (src/oves-world.js): the middle Oveth, and a tilt. The atlas gives it eight `grassland`
+  // hexes — exactly its northern two rows — and eleven `plains` over the southern three, with the
+  // Oveth running the whole south-western border, so the country falls from the upland grass to the
+  // river's own bottomland and the two profiles are that fall: **16 m on the grass, 10 m on the
+  // plain**, the numbers docs/six-regions-brief.md worked out from the lore's "the terrain simply
+  // rises" and the Sorten's twelve miles of valley floor.
+  //
+  // Both numbers are chosen against what they meet, which in this country is four built neighbours
+  // and three of them across water:
+  //  - Nethereum's 21 across the Neth, on the north-west (5 edges, every one of them the river);
+  //  - Caricas's 17 and Nesdor's plains at 7.2 across the Lizeem, on the north-east and east
+  //    (7 edges each, again every one the river, and the Lizeem is a wall);
+  //  - **Gala's 4.0 plus its 4.2 m steppe rise ≈ 8.2, across the Oveth on the south-east (3 edges)**,
+  //    which the plains' 10 meets within two metres. That matters more than the others: the Oveth
+  //    hands its water to Gala's reach at the corner where the three countries meet, and a river
+  //    cannot step down three metres in the middle of itself.
+  // 10 is also within a metre and a half of the `outland` 11.5 that stood here before, so registering
+  // this country moves Gala's own ground, the Lizeem's level and the Neth's by centimetres and not
+  // by metres (measured in tests/oves-world.test.js).
+  //
+  // **The wavelength is Gala's 320 on both profiles, and that is the fix for the ribs.** Gala
+  // reported short steep "ribs" along x ≈ -1900 where its 320 m relief blended into outland's 150:
+  // `relief()` takes its phase from x/wave, the blend mixes the wavelengths, and a margin where the
+  // wavelength changes chirps. Northern Ascarth met the same thing at a hill hex and put its hills on
+  // the grass's wave for the same reason. Every profile in these two countries is on 320, so the
+  // Ovesos|Gala, Ovesos|Oves Desert and Oves Desert|Gala margins have nothing to hide — and what
+  // makes the desert's ground broken instead of sinusoidal is a landform (`ovesStone`), not a wave.
+  Ovesos: Object.freeze({ base: 10, amp: .7, wave: 320, ground: REGION_BIOMES.Ovesos.ground, byTerrain: Object.freeze({
+    // The northern two rows: the upland grass, six metres up and rolling twice as loudly, because
+    // "livestock on the upland ridges" is the lore's own word for what this ground is.
+    grassland: Object.freeze({ base: 16, amp: 1.6, wave: 320, ground: '#9ba566' }),
+  }) }),
+  // The Oves Desert (src/oves-world.js): twenty `plains` hexes and three `hills`, and the hills are
+  // exactly the north-western rim the lore builds the whole rain shadow on. The country is a wedge of
+  // the Oveth basin whose apex is its eastern tip, where the Oveth and the southern border stream come
+  // together, so its floor falls the length of it from the rim to that corner; the fall is a landform
+  // (`ovesBasin`) and not a level, the way Caricas's shelf is, because a base can only say one number.
+  //
+  // 12 on the plains is the country's mean and is chosen against two things: it is half a metre
+  // above the `outland` 11.5 it replaces, so registering the desert moves Gala's own hexes, the
+  // Lizeem's level and Gala's border stream by centimetres; and it stands two metres above Ovesos's
+  // plain across the Oveth, which is what the side of a basin does over the river's bottomland. The
+  // hills' 22 is the rim's shoulder, not the rim: the three summits are `ovesRim`, laid on top of
+  // this, the way Ascarth's two hills are laid on top of its 7.
+  'Oves Desert': Object.freeze({ base: 12, amp: .8, wave: 320, ground: REGION_BIOMES['Oves Desert'].ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 22, amp: 1.6, wave: 320, ground: '#a39b7e' }),
   }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
@@ -997,6 +1044,26 @@ const REGION_TEXT = {
     description: 'The peninsula where it leaves the mainland: low grass at the neck between the Lizeem’s mouth and the western sea, and then the ground rising to a plateau of tawny grass and aromatic scrub, rugged and stony, and to the interior hills - two rounded rocky hills and the shoulder of a third, wooded in evergreen oak with pine on the tops, and green stain on the stone where the copper is. Cliffs along the western shore with seabirds on them; on the east the ground falls to sheltered bays between low headlands.',
     palette: { ground: '#aba66b', accent: '#e0d6a8', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
     npcIds: [], landmarks: ['ascarth-neck', 'interior-hills', 'green-stone', 'ascarth-west-cliffs', 'ascarth-north-bay'] },
+  // **Ovesos and the Oves Desert are terrain, climate, water, scenery and wildlife, and nothing that
+  // belongs to anybody** (docs/oves-brief.md). The Water Council and every water right it allocates,
+  // the five branch countries and the Branch Court between them, King Melos and the house Oveth-Hold,
+  // the Middle Reach dispute, the market towns, the mills on the upper river, the irrigated bottomland
+  // grain, the Sorten's grazing rights, the Telemon bands' desert routes and the wells and watering
+  // points along them: every one of those is somebody's and none of them is built.
+  //
+  // **One climate over both of them.** `BSh` on all forty-two hexes, read per hex off the World
+  // Builder map, so neither country has a gradient to draw and the whole difference between them is
+  // terrain and water (src/oves-world.js). Ovesos gets a sky that is Gala's own steppe air, because
+  // Gala's northern rows are this same country with another name on them; the desert's is the clearest
+  // in the game, because the one thing a rain shadow has is distance to look at.
+  Ovesos: { subtitle: 'The Sorten and the upland grass', spawn: point(-1905, 706),
+    description: 'The middle Oveth, and a steppe rather than a garden: hot semi-arid grass over the whole of it, buff for eleven months of the year and green for a few weeks in spring. The northern rows are upland bunch grass in tussocks with the bare earth showing between them, six metres above the river; the southern rows are thinner and flatter, with grey wormwood and blue-grey saltbush wherever the grass gives out and stones on the rises. Along the south-western border runs the Oveth \u2014 waded over gravel at its head, deep through the Sorten, the wide seat of bottomland a metre below the plain where the river slows and spreads \u2014 with a narrow dark gallery of poplar, willow and tamarisk on it and nothing else in the country tall enough to cast a shadow. The Neth is the northern border and the Lizeem the eastern, and nothing on any bank of any of them is built by anybody.',
+    palette: { ground: '#a8a06a', accent: '#e2d6a6', fog: '#cdc9ae', sky: 0xc6dad8, haze: 0xdad5bc, hazeDensity: .0044 },
+    npcIds: [], landmarks: ['the-sorten', 'upper-oveth', 'oves-upland-grass', 'oveth-gully', 'oves-open-plain'] },
+  'Oves Desert': { subtitle: 'The rain shadow and its dry channels', spawn: point(-2205, 902),
+    description: 'The far tail of the Pyros rain shadow: a wedge of the Oveth basin falling from the rim hills in the north-west to the point in the east where the Oveth and the southern border stream come together. Rocky rather than sandy \u2014 worn stone through a thin poor soil, gravel pavement wherever the rock is up, perennial scrub spaced wide enough to walk between, and a stubble of dead seed-heads in the pockets where a wet year\u2019s grasses would be. Three low rounded hills on the rim intercept what moisture the westerlies carry, and the cut channels run east-south-east off their feet with no water in any of them. There is no permanent water in the country at all: one reach of one channel holds it below the gravel, and that is the only green in the Oves.',
+    palette: { ground: '#ab9f7c', accent: '#e6dcb4', fog: '#d4cdb4', sky: 0xcedcd2, haze: 0xe3dabd, hazeDensity: .0034 },
+    npcIds: [], landmarks: ['rim-hills', 'dry-channels', 'oves-damp-reach', 'oves-dry-wedge', 'oves-apex'] },
   'Southern Ascarth': { subtitle: 'The tip of the finger', spawn: point(-850, 2021),
     description: 'The finger of the peninsula to its end: open Mediterranean grass and scrub, thin and stony, rolling on a low plateau between two seas, with a wild olive standing alone here and there and nothing taller. Cliffs along the whole of the west and round the tip, two sheltered bays on the east with a beach in each, dolphins off the shore, sea-plungers folding into the shoals off the tip, and Selemi across a narrow channel to the south.',
     palette: { ground: '#aba66b', accent: '#e0d6a8', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },

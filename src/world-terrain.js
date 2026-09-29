@@ -17,6 +17,7 @@ import { ascarthGround, ascarthCliffTint } from './ascarth-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
+import { ovesTint } from './oves-world.js';
 import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
@@ -275,10 +276,15 @@ export function groundTint(color, x, z, THREE) {
   // Gala's plains are the one ground the atlas's terrain field cannot colour: it calls the steppe and the
   // Mediterranean plain both `plains`, and its climate field draws the line between them. So there the
   // colour is the climate's (`galaGroundColour`, src/gala-world.js); everywhere else, nothing changes.
+  // Ovesos and the Oves Desert have the same trouble in their own `plains`, for their own reasons:
+  // in Ovesos the field calls the open steppe and the Sorten's bottomland the same word, and in the
+  // desert it calls the soil pockets and the bare rock exposures the same word (`ovesTint`,
+  // src/oves-world.js). Both answer null everywhere else, and everywhere else nothing changes.
   const gala = inGalaBox(x, z) ? REGION_TERRAIN.Gala.ground : null;
   for (const [ground, weight] of Object.entries(mix.grounds ?? {})) {
     if (!weight) continue;
-    if (ground === gala) swatch.set(galaGroundColour(x, z)); else swatch.set(ground);
+    const oves = ovesTint(x, z, ground);
+    if (ground === gala) swatch.set(galaGroundColour(x, z)); else if (oves !== null) swatch.set(oves); else swatch.set(ground);
     target.r += swatch.r * weight; target.g += swatch.g * weight; target.b += swatch.b * weight; total += weight;
   }
   if (total) { target.r /= total; target.g /= total; target.b /= total; }

@@ -189,13 +189,14 @@ test('the Neth is why the far four need a ford, and Nethereum built one', () => 
   }
   assert.equal(shared, 5, 'five hex edges between Nethereum and Ovesos');
   assert.equal(dry, 0, 'and every one of them is the Neth');
-  // Nethereum is built now and the ford is on it. Ovesos is not, so the far side of the ford
-  // is still open country — which is ground, and which is the whole point of the ford being
-  // there. `tests/nethereum-world.test.js` holds the crossing itself.
+  // Nethereum is built and so is Ovesos (region 25, docs/oves-report.md), so the ford is now a
+  // crossing between two built countries rather than a way onto open country — which is what it was
+  // built for and is the whole reason it is there. `tests/nethereum-world.test.js` holds the crossing
+  // itself and `tests/oves-world.test.js` the far bank of it.
   const neth = WEST_RIVERS.find(course => course.id === 'neth');
   assert.ok(neth, 'the Neth is built');
   assert.ok(neth.fordUntil > .2 && neth.fordUntil < .5, 'waded in its upper third, like the Carica and the Isa');
-  assert.ok(PLAYABLE_REGIONS.includes('Nethereum') && !PLAYABLE_REGIONS.includes('Ovesos'));
+  assert.ok(PLAYABLE_REGIONS.includes('Nethereum') && PLAYABLE_REGIONS.includes('Ovesos'));
 });
 
 test('two channels cross the plain to the sea, braiding where the gradient dies', () => {
@@ -311,7 +312,7 @@ test('Eer is the first country with a sky of its own, and it takes it the way th
   // used. Nethereum is the second to ask (`tests/nethereum-world.test.js`), and it asks for the
   // opposite of this one: a grey overcast and a closer horizon where Eer has a clear far one.
   // South Suval (25 Sep), the East Lotharn and Feradom (27 Sep) and Gala (28 Sep) asked for theirs since.
-  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth']);
+  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert']);
   for (const region of regions) if (!OWN_SKY.has(region.name))
     assert.deepEqual({ ...regionSky(region) }, { ...DEFAULT_SKY }, `${region.name} lost the default sky`);
   assert.ok(regionSky(regions.find(region => region.name === 'Nethereum')).density > sky.density,

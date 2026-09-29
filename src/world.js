@@ -89,6 +89,8 @@ import { WEST_REGION_LANDMARKS, westBareGround, westRiverDistance } from './west
 import { createWestScenery } from './west-regions-scenery.js';
 import { createGalaScenery } from './gala-scenery.js';
 import { GALA_LANDMARKS } from './gala-world.js';
+import { createOvesScenery } from './oves-scenery.js';
+import { OVES_LANDMARKS } from './oves-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
@@ -1345,6 +1347,10 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // Gala (src/gala-scenery.js): its water, its dry wash, and what grows on the steppe, the maquis and
   // the coast. Its own seeded stream, after the west's, so nothing already built moves for it.
   const galaScenery = createGalaScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
+  // Ovesos and the Oves Desert (src/oves-scenery.js): the Oveth's gallery and its reed, four dry
+  // channels of gravel, the steppe's grass and scrub, and the desert's stone. Its own seeded stream,
+  // after Gala's, so nothing already built moves for it. Nobody's.
+  const ovesScenery = createOvesScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   const stakedProps = [];
   buildMorosWorks({ parent: world, heightAt: groundHeight, colliders, signs, movingGroups, stakedProps, roadDistance });
@@ -1962,6 +1968,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     suvalHighlandMetrics: suvalHighlands.metrics,
     iscareMetrics: iscare.metrics,
     galaMetrics: galaScenery.metrics,
+    ovesMetrics: ovesScenery.metrics,
     ascarthMetrics: ascarth.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
@@ -2114,6 +2121,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...ASCARTH_LANDMARKS,
       ...WEST_REGION_LANDMARKS,
       ...GALA_LANDMARKS,
+      ...OVES_LANDMARKS,
     ],
     paths,
     update(time, dt) {
@@ -2130,6 +2138,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       westScenery.update(time);
       eastLotharn.update(time);
       galaScenery.update(time);
+      ovesScenery.update(time);
       regionScenery.millSails.rotation.z = time * .115;
       for (const [i, camp] of [...campfires.values()].entries()) if (camp.fire.lit) {
         camp.flames.scale.set(1 + Math.sin(time * 8 + i) * .04, .94 + Math.sin(time * 11 + i) * .10, 1);

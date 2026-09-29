@@ -9,6 +9,7 @@ import { EAST_LOTHARN_WILDLIFE_ZONES } from './east-lotharn-wildlife.js';
 import { FERADOM_WILDLIFE_ZONES } from './feradom-wildlife.js';
 import { GALA_WILDLIFE_ZONES } from './gala-wildlife.js';
 import { ASCARTH_WILDLIFE_ZONES } from './ascarth-wildlife.js';
+import { OVES_WILDLIFE_ZONES } from './oves-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -913,6 +914,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...FERADOM_WILDLIFE_ZONES,
   ...GALA_WILDLIFE_ZONES,
   ...ASCARTH_WILDLIFE_ZONES,
+  ...OVES_WILDLIFE_ZONES,
 ]);
 
 /**

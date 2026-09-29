@@ -58,6 +58,11 @@ const galaAnchor = point(1399.496, 2848, -9, 118);
 const northernAscarthAnchor = point(1468.778, 2968, -9, 123);
 // A grassland hex in the middle of Southern Ascarth's finger, (-6, 129).
 const southernAscarthAnchor = point(1635.055, 3112, -6, 129);
+// An Ovesos plains hex in the middle of the country, on the southern rows above the Sorten: for
+// (-9, 114) the atlas's formula gives this point and no other.
+const ovesosAnchor = point(1344.070, 2752, -9, 114);
+// An Oves Desert plains hex in the middle of the wedge, clear of the rim and of the Oveth: (-13, 116).
+const ovesDesertAnchor = point(1260.932, 2800, -13, 116);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -92,6 +97,8 @@ const LOCALS = [
   [22, 'Gala', 'gala', 'Gala', galaAnchor],
   [23, 'Northern Ascarth', 'northern-ascarth', 'Northern Ascarth', northernAscarthAnchor],
   [24, 'Southern Ascarth', 'southern-ascarth', 'Southern Ascarth', southernAscarthAnchor],
+  [25, 'Ovesos', 'ovesos', 'Ovesos', ovesosAnchor],
+  [26, 'Oves Desert', 'oves-desert', 'Oves Desert', ovesDesertAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

@@ -45,7 +45,7 @@ test('the default sky is the three numbers src/main.js has always used', () => {
  */
 // Preserve Iscare's existing maritime sky. The integrated mountains and Feradom
 // declare their own cool horizons in region-world.js; all other countries keep the default.
-const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth']);
+const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert']);
 
 test('every region but the ones that asked for their own gets the default sky, to the digit', () => {
   for (const region of regions) {

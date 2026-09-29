@@ -173,7 +173,7 @@ export const LANGUAGES = freeze({
     from: 'the world-builder profile `mittoli`',
     note: 'The great western family and the tongue of commerce, governance and scholarship. The traveler meets three of its dialects: Luscian, thick with Elagosi and plains loanwords; the Plain’s eastern Mittoli, with an older layer under its place names that nobody has traced; and Amodian, a foothill dialect carrying a terrace-country substrate and a set of water-measure words Standard Mittoli lacks.',
     borrows: ['ambroni', 'pyrosi'],
-    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn'],
+    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn', 'ovesos'],
     onsets: ['al', 'ar', 'azh', 'bel', 'cael', 'dael', 'dor', 'el', 'gal', 'hom', 'kael', 'mel', 'mir', 'nil', 'sor', 'tal', 'thal', 'trel', 'vel', 'zael'],
     middles: ['a', 'ae', 'e', 'i', 'o', 'oe', 'u'],
     suffixes: ['a', 'ael', 'an', 'ath', 'el', 'eth', 'in', 'ith', 'oe', 'ol', 'om', 'on', 'or', 'os', 'oss', 'um'],
@@ -515,6 +515,22 @@ export const DIALECTS = freeze({
   lotharn: dialect('lotharn', 'Lotharn valley Mittoli', 'mittoli',
     'Mittoli-derived valley speech, recognisably the family and a little different in every valley, over an older substrate that is most of the place names - Kemrath, Olveth - and some of the craft terms of the mines, and that resists every Mittoli root. The pass inns speak a mix of it with the Plains languages and the Iberos trade vocabulary.',
     word => word.replace(/v/, 'w').replace(/([aeiou])th$/, '$1rth')),
+  // Ovesos, and with it the Oves Desert. ovesos.md's Language section names it outright —
+  // "Inner-branch Mittoli. A variant of Standard Mittoli fully intelligible to any downstream speaker,
+  // differing in vocabulary for valley terrain, water administration, and the specific practices of
+  // the branch-country environment" — so it is Mittoli and no new tongue is invented. What is
+  // distinctive is all water: *oves*, the lower valley; *thris-kael*, the inner tributary;
+  // *vel-sorten*, the bottomland allocation; *osk-milis*, water-right seniority, which the lore says
+  // has no clear etymology in Standard Mittoli and may predate it. The accent is the *-os* collective
+  // the country's own name ends in, and the *thr-* cluster its legal vocabulary is full of.
+  //
+  // **The Oves Desert has no speech of its own**, and that is the lore's position rather than a gap:
+  // oves_desert.md gives the country no language section at all, and everybody who is ever in it is
+  // from somewhere else — the Ovesos pastoral communities in wet years and the Telemon bands on the
+  // southern routes. So it is carried as Ovesos's, which is whose water-right claim it is.
+  ovesos: dialect('ovesos', 'Inner-branch Mittoli', 'mittoli',
+    'A variant of Standard Mittoli plain to any downstream speaker, whose whole distinctive vocabulary is water and who may use it: *oves*, the lower valley where hill country opens into farming ground and the root the country\u2019s own name is built on; *thris-kael*, "the returning inside water", the inner tributary, used in writing to Minora and never between neighbours; *vel-sorten*, the division of flood-renewed bottomland among farming claims; and *osk-milis*, water-right seniority, old enough to appear in the oldest land records and with no clear etymology in Standard Mittoli at all. Its legal speech runs to the genealogical where Minora\u2019s runs to the measured, and its submissions to the Branch Court are twice as long as anybody else\u2019s.',
+    word => word.replace(/oss$/, 'os').replace(/th/, 'thr')),
   highland: dialect('highland', 'the highland Izoli', 'izoli',
     'Conservative where the coastal towns have moved on, and carrying shrine-keeping vocabulary the towns do not have and the tribes do not translate.',
     word => word.replace(/([bcdfgklmnprstvz])$/, '$1$1')),
@@ -593,6 +609,12 @@ export const REGION_LANGUAGE = freeze({
   // the south's archaic form is the lore's and has no words to give it, so none is invented.
   'Northern Ascarth': spoken('mittoli', 'avite'),
   'Southern Ascarth': spoken('mittoli', 'avite'),
+  // Twenty-five and twenty-six. ovesos.md: "Inner-branch Mittoli. A variant of Standard Mittoli fully
+  // intelligible to any downstream speaker." Mittoli again, and no new tongue. The Oves Desert has no
+  // speech section in its own lore file and nobody in it who is from it, so it takes Ovesos's — whose
+  // Water Council claims the desert margin — and nothing is coined for it.
+  Ovesos: spoken('mittoli', 'ovesos'),
+  'Oves Desert': spoken('mittoli', 'ovesos'),
 });
 
 /**
