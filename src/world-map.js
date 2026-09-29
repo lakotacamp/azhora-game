@@ -1,5 +1,5 @@
 // A read-only parchment chart exported from World Builder's authored Azhora hex map.
-// The player's chart has no shortcut to Cape Thalmagar; the cape stays uncharted until the story reveals it.
+// Every authored region can be revealed through chart knowledge or the developer map override.
 // The chart is covered by fog: only the hexes the traveler has charted (src/map-fog.js) show through,
 // unless the developer's override lifts the fog and tints each region by how far it is built.
 import { hexAtlasCorners } from './region-world.js';

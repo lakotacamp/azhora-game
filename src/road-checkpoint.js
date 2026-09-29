@@ -90,6 +90,7 @@ import { createLinguist, validateLinguistSnapshot } from './linguist.js';
 import { createLongRoad, validateLongRoadSnapshot } from './long-road.js';
 import { createFarming, validateFarmingSnapshot } from './farming.js';
 import { createSunflowerLesson, validateSunflowerLesson } from './sunflower-lesson.js';
+import { createSylviaIvy, validateSylviaIvy } from './sylvia-ivy.js';
 import { createLusciaChapter } from './luscia-chapter.js';
 import {validateLivingStorySnapshot} from './living-story.js';
 import {createLusciaCivilWar,validateLusciaCivilWarSnapshot} from './luscia-civil-war.js';
@@ -245,6 +246,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (!validateRoadsideLessons(data.roadLessons)) return failed('The saved road lessons are invalid.');
     if (!validateHusbandrySnapshot(data.husbandry)) return failed('The saved animal care is invalid.');
     if (!validateSunflowerLesson(data.sunflowerLesson)) return failed('The saved sunflower lesson is invalid.');
+    if (!validateSylviaIvy(data.sylviaIvy)) return failed('The saved ivy clearing is invalid.');
     if (!validateFarmingSnapshot(data.farming, { playSeconds: Number.isFinite(data.playSeconds) ? data.playSeconds : Infinity })) return failed('The saved rows at the commons are invalid.');
     if (Object.hasOwn(data, 'playSeconds') && (!Number.isFinite(data.playSeconds) || data.playSeconds < 0 || data.playSeconds > 1e8)) return failed('The saved play time is invalid.');
     if (Object.hasOwn(data, 'mercenaryWeapons')) {
@@ -438,6 +440,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.roadLessons) { const lessons=createRoadsideLessons();lessons.restore(data.roadLessons);result.roadLessons=lessons.snapshot(); }
     if (data.husbandry) { const care=createAnimalHusbandry();care.restore(data.husbandry);result.husbandry=care.snapshot(); }
     if (Object.hasOwn(data, 'sunflowerLesson')) { const lesson = createSunflowerLesson(); lesson.restore(data.sunflowerLesson); result.sunflowerLesson = lesson.snapshot(); }
+    if (Object.hasOwn(data, 'sylviaIvy')) { const ivy = createSylviaIvy(); ivy.restore(data.sylviaIvy); result.sylviaIvy = ivy.snapshot(); }
     if (Object.hasOwn(data, 'farming')) { const farm = createFarming(); farm.restore(data.farming); result.farming = farm.snapshot(); }
     if (Object.hasOwn(data, 'oldTree')) { const tree = createTalkingTree(); tree.restore(data.oldTree); result.oldTree = tree.snapshot(); }
     if (Object.hasOwn(data, 'ferry')) { const boat = createFerry(); boat.restore(data.ferry); result.ferry = boat.snapshot(); }

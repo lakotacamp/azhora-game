@@ -9,7 +9,7 @@ export async function runVisualArtsChecks(h){
     h.visualArts.cancel();
     await h.visit(SYLVIA.id);
     check('Sylvia is visible at her cottage',h.npcById.get(SYLVIA.id).actor.group.visible);
-    check('Sylvia offers a green introduction marker',h.marker(SYLVIA.id).kind==='skill');
+    check('Sylvia offers her ivy favor and keeps the art introduction available',h.marker(SYLVIA.id).kind==='deed'&&!!document.querySelector('[data-choice="sylvia-visual-arts"]'));
     await h.choose('sylvia-visual-arts');await h.finish();
     check('Introduction teaches Visual Arts without free practice XP',h.visualArts.taught()&&h.skills.xp('visualarts')===0);
     h.close();h.warp(SYLVIA_STUDIO.stand.x,SYLVIA_STUDIO.stand.z);await h.frames(4);h.tap('KeyF');await h.frames(2);

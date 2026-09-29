@@ -131,6 +131,7 @@ export function createDeveloperAtlasData(metadata, svgText, surveyData = null) {
     || !Number.isFinite(metadata.height) || metadata.height <= 0 || !Array.isArray(metadata.regions))
     throw new Error('Developer atlas metadata is missing.');
   if (surveyData && (surveyData.version !== 1 || surveyData.sha256 !== metadata.sha256
+    || JSON.stringify(surveyData.gameAdjustments ?? []) !== JSON.stringify(metadata.gameAdjustments ?? [])
     || surveyData.width !== metadata.width || surveyData.height !== metadata.height || !Array.isArray(surveyData.regions)))
     throw new Error('Developer survey data does not match the authored atlas. Refresh both map exports.');
   const regionGroup = String(svgText).match(/<g\b[^>]*\bid="region-tints"[^>]*>([\s\S]*?)<\/g>/)?.[1];

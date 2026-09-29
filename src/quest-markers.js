@@ -119,6 +119,7 @@ export function markerFor(id, view = {}) {
   // An unfinished escort beyond the shore can be found independently of the main road.
   // Its host stops supplying a destination once it is completed or failed.
   if (!busy && holds(view.escortDestinations, id)) kinds.push('plot');
+  if (!busy && holds(view.deedDestinations, id)) kinds.push('deed');
   // And nothing else until the tutorial is behind the traveler.
   if (!ashore && stage < 2) return mark(strongestMarker(kinds));
   // A first lesson is a live opportunity even when optional quest chains are parked.

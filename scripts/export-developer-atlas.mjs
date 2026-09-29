@@ -3,12 +3,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { applyGameAtlasAdjustments, GAME_ATLAS_ADJUSTMENTS } from '../src/game-atlas-adjustments.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const builder = path.resolve(root, '../world-builder');
 const sourcePath = path.join(builder, 'map/resources/examples/azhora.wwmap');
 const bytes = await readFile(sourcePath);
-const source = JSON.parse(bytes.toString('utf8').replace(/^\uFEFF/, ''));
+const source = applyGameAtlasAdjustments(JSON.parse(bytes.toString('utf8').replace(/^\uFEFF/, '')));
 const terrainSource = await readFile(path.join(builder, 'map/src/renderer/src/lib/terrain.ts'), 'utf8');
 const paletteBlock = terrainSource.match(/TERRAIN_COLORS[^=]*=\s*\{([\s\S]*?)\}/)?.[1];
 if (!paletteBlock) throw new Error('World Builder terrain colors were not found.');
@@ -45,6 +46,7 @@ const regions = [...buckets.entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1
 const data = { version: 1, source: '../../world-builder/map/resources/examples/azhora.wwmap',
   sha256: createHash('sha256').update(bytes).digest('hex'),
   purpose: 'Authored terrain categories and exact region locations for developer surveys. These are not completed game regions.',
+  gameAdjustments: GAME_ATLAS_ADJUSTMENTS,
   width, height, hexSize: size, projection: 'pointy-top axial', origin: { x: number(minX), y: number(minY) },
   palette, regions };
 await writeFile(path.join(root, 'assets/azhora-dev-regions.json'), `${JSON.stringify(data)}\n`);

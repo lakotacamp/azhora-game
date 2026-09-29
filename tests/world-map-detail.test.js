@@ -8,6 +8,8 @@ import { regions, regionAt, WORLD_BOUNDS } from '../src/regions.js';
 import { createMapFog } from '../src/map-fog.js';
 import { createCartography, chartShapes, EXPLORED_HEXES } from '../src/cartography.js';
 import { AMBRON_CENTRE, AMBRON_OUTLINE, inAmbronOutline } from '../src/ambron-city-layout.js';
+import { applyGameAtlasAdjustments, GAME_ATLAS_ADJUSTMENTS } from '../src/game-atlas-adjustments.js';
+import { TESSEN } from '../src/pueth-world.js';
 
 test('the capital marker and city footprint agree with the relocated city between the four lakes', () => {
   const detail = atlasCityDetail(), center = TRANSFORM.atlasToWorld(detail.marker.x, detail.marker.y);
@@ -123,4 +125,75 @@ test('hearing and entering a province leave every hex beyond local exploration u
   assert.deepEqual([...later.visited], [...scope.visited]);
   assert.deepEqual([...later.nearby], [...scope.nearby], 'even the explored rank grants no remote hexes');
   assert.equal(later.visited.has(`${distant.q},${distant.r}`) || later.nearby.has(`${distant.q},${distant.r}`), false);
+});
+
+
+test('Cape Thalmagar has authored lettering that normal discovery and developer reveal can both show', () => {
+  const source = readFileSync(new URL('../assets/azhora-world-map.svg', import.meta.url), 'utf8');
+  const metadata = JSON.parse(readFileSync(new URL('../assets/azhora-world-map.json', import.meta.url), 'utf8'));
+  const { terrain, labels } = splitAtlasRegionLabels(source), name = 'Cape Thalmagar';
+  assert.equal((labels.match(/<text data-region="Cape Thalmagar"/g) ?? []).length, 1, 'the exported map includes the cape exactly once');
+  assert.doesNotMatch(terrain, /<text data-region="Cape Thalmagar"/, 'its label still belongs to the fog-controlled layer');
+  assert.ok(!metadata.uncharted.includes(name), 'no permanent export exclusion overrides discovery');
+  const names = [...labels.matchAll(/<text data-region="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(names.length, metadata.regions.length, 'every authored region can be named');
+  const chart = createCartography(); chart.learn();
+  const known = () => chartShapes(chart.view().entries, metadata.regions).labels;
+  assert.equal(atlasRegionLabelKnown(name, known()), false, 'the cape does not start revealed');
+  assert.equal(atlasRegionLabelKnown(name, known(), true), true, 'developer map reveal names the cape');
+  chart.hear(name);
+  assert.equal(atlasRegionLabelKnown(name, known()), true, 'normal knowledge also reveals its original lettering');
+});
+
+
+test('Tidehaven northeast bank belongs to Drent in the developer atlas, baked world and journal polygons', () => {
+  const survey = JSON.parse(readFileSync(new URL('../assets/azhora-dev-regions.json', import.meta.url), 'utf8'));
+  const metadata = JSON.parse(readFileSync(new URL('../assets/azhora-world-map.json', import.meta.url), 'utf8'));
+  const source = readFileSync(new URL('../assets/azhora-world-map.svg', import.meta.url), 'utf8');
+  const owners = survey.regions.filter(region => region.cells.some(cell => cell.q === 15 && cell.r === 105));
+  assert.deepEqual(owners.map(region => region.id), ['Drent']);
+  assert.equal(regionAt(...Object.values(hexCentre(15, 105))).name, 'Drent');
+  assert.equal(regionAt(...Object.values(hexCentre(15, 104))).name, 'Pueth', 'the neighboring north bank remains Pueth');
+  assert.deepEqual(metadata.gameAdjustments, GAME_ATLAS_ADJUSTMENTS);
+  const drent = metadata.regions.find(region => region.id === 'Drent');
+  assert.equal(drent.hexCount, owners[0].cells.length);
+  const polygons = [...source.matchAll(/<path data-region="Drent"[^>]*d="([^"]+)"/g)];
+  assert.equal(polygons.length, 1);
+  assert.equal((polygons[0][1].match(/M/g) ?? []).length, drent.hexCount, 'the journal paints every Drent hex');
+});
+
+test('the journal Tessen and real river share the corrected mouth without a second obsolete reach', () => {
+  const source = readFileSync(new URL('../assets/azhora-world-map.svg', import.meta.url), 'utf8');
+  const riverLayer = source.match(/<g id="rivers"[^>]*>([\s\S]*?)<\/g>/)?.[1];
+  assert.ok(riverLayer);
+  const paths = [...riverLayer.matchAll(/d="([^"]+)"/g)].flatMap(match => match[1].split('M').filter(Boolean))
+    .map(line => line.split('L').map(pair => { const [x, y] = pair.split(',').map(Number); return { x, y }; }));
+  const built = TESSEN.points.map(p => TRANSFORM.worldToAtlas(p.x, p.z));
+  const near = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < .001;
+  const corresponding = paths.filter(points => points.length === built.length &&
+    (near(points[0], built[0]) || near(points.at(-1), built[0])));
+  assert.equal(corresponding.length, 1, 'only one Tessen course is drawn');
+  const points = near(corresponding[0][0], built[0]) ? corresponding[0] : [...corresponding[0]].reverse();
+  for (let i = 0; i < points.length; i++) assert.ok(near(points[i], built[i]), `charted and built Tessen point ${i} agree`);
+  assert.deepEqual(TESSEN.points, TESSEN.mapLine);
+});
+
+test('the local bank correction preserves upstream data and is safe to apply twice', () => {
+  const source = { hexes: { '15,105': { q: 15, r: 105, region: 'Pueth', terrain: 'plains' },
+    '15,104': { q: 15, r: 104, region: 'Pueth', terrain: 'grassland' } },
+    rivers: { '14,104|14,105': 'small', '14,105|15,105': 'small', '14,106|15,105': 'small', '1,2|1,3': 'large' } };
+  const before = structuredClone(source), adjusted = applyGameAtlasAdjustments(source);
+  assert.deepEqual(source, before, 'imports never mutate the upstream map');
+  assert.equal(adjusted.hexes['15,105'].region, 'Drent');
+  assert.equal(adjusted.hexes['15,105'].terrain, 'plains');
+  assert.deepEqual(adjusted.hexes['15,104'], source.hexes['15,104']);
+  assert.equal(adjusted.rivers['14,104|14,105'], undefined);
+  assert.equal(adjusted.rivers['14,105|15,105'], undefined);
+  assert.equal(adjusted.rivers['14,106|15,105'], undefined);
+  assert.equal(adjusted.rivers['15,104|15,105'], 'small');
+  assert.equal(adjusted.rivers['15,105|16,104'], 'small');
+  assert.equal(adjusted.rivers['16,104|16,105'], 'small');
+  assert.equal(adjusted.rivers['1,2|1,3'], 'large');
+  assert.deepEqual(applyGameAtlasAdjustments(adjusted), adjusted);
+  assert.throws(() => applyGameAtlasAdjustments({ hexes: {}, rivers: {} }), /no longer matches/);
 });

@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { applyGameAtlasAdjustments } from '../src/game-atlas-adjustments.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MAP_PATH = path.resolve(root, '../world-builder/map/resources/examples/azhora.wwmap');
@@ -45,6 +46,7 @@ export function readMap(file = MAP_PATH) {
 }
 
 export function buildSource({ bytes, map }) {
+  map = applyGameAtlasAdjustments(map);
   const regionOf = (q, r) => map.hexes[`${q},${r}`]?.region ?? null;
   const edges = [];
   for (const [edgeKey, size] of Object.entries(map.rivers).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {

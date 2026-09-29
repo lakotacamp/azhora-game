@@ -1073,7 +1073,8 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
     // Down on the ground, standing still: on both knees (`posture: 'kneel'`), or sat with the knees drawn up
     // (`posture: 'sit-ground'`); the head bowed and the hands in the lap or round the knees. The seat, not the soles, takes the weight.
     let seatY = null;
-    const lowPosture = !goblin && movementBlend < .2 && action === 'idle' && (pose.posture === 'kneel' || pose.posture === 'sit-ground') ? pose.posture : null;
+    const weeding = !goblin && grounded && movementBlend < .2 && action === 'idle' && !climbing && !pose.riding && !pose.swimming && pose.weeding;
+    const lowPosture = weeding ? 'kneel' : !goblin && movementBlend < .2 && action === 'idle' && (pose.posture === 'kneel' || pose.posture === 'sit-ground') ? pose.posture : null;
     if (lowPosture) {
       const sway = Math.sin(seconds * .6 + offset) * .025, kneel = lowPosture === 'kneel';
       for (let i = 0; i < 2; i++) {
@@ -1084,6 +1085,15 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       stance = kneel ? .1 : .22; chestX = (kneel ? .2 : .32) + sway; chestY = 0; chestZ = 0; bodyX = 0; bodyZ = 0;
       headX = .38 + sway; headY *= .25; bounce = 0;
       seatY = kneel ? upperLength * Math.cos(hip[0]) - legs[0].position.y + .05 : .13 - legs[0].position.y;
+    }
+    if (weeding) {
+      // A low, two-handed reach and pull. Only the rig lowers: the grounded
+      // player/camera origin never bobs with the gardener's shoulders.
+      const pull = (1 - Math.cos(Math.PI * 4 * THREE.MathUtils.clamp(Number(weeding.progress) || 0, 0, 1))) / 2;
+      chestX = .42 - pull * .12; headX = .42; headY = 0; chestY = 0;
+      for (let i = 0; i < 2; i++) {
+        arm[i] = -.42 - pull * .10; elbow[i] = -.10 - pull * .68; armOut[i] = (i ? 1 : -1) * .08;
+      }
     }
     if(pose.painting && action === 'idle' && movementBlend < .2){
       const stroke=Math.sin(seconds*2.5+offset);

@@ -10,24 +10,22 @@
  * pin it to the village. If the world scale changes again, Pueth's places need
  * clusters of their own in the new frame.
  *
- * What comes from the atlas: the region's 27 hexes (through the survey), and its
+ * What comes from the atlas: the region's 26 hexes (through the survey), and its
  * two rivers, read from the World Builder map's river edges
  * (`src/region-rivers.js`) and chained and softened the way the journal chart
  * draws them. Nothing else here is water.
  *
- *  - **The Tessen** runs the eastern half of the Drent–Pueth border, from a
- *    source among the woods north of the Avrel country down to the Stills. Its
- *    authored last reach runs south through the carried-over ground north of
- *    Tidehaven, which is rigid and must come out unchanged, so the built river
- *    leaves the map's line at the edge of that ground and meets the sea by the
- *    shortest way east (see `TESSEN_MOUTH_REACH`).
+ *  - **The Tessen** runs the eastern half of the Drent-Pueth border, from a
+ *    source north of the Avrel country to the Stills. The game atlas correction
+ *    gives Tidehaven its northeast bank and follows that bank to the sea;
+ *    the journal and built channel now use those same edges throughout.
  *  - **The Ordel** runs the Pueth–Feradom border in the north-east hills, down
  *    to the coast. No road crosses it.
  */
 import { PLAYABLE_SURVEY } from './region-survey.js';
 import { RIVER_EDGES } from './region-rivers.js';
 import { riverCourses } from './region-layout.js';
-import { landDistance, worldToVillage, MAIN_ROAD, hexAt } from './region-world.js';
+import { landDistance, MAIN_ROAD, hexAt } from './region-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const point = (x, z) => Object.freeze({ x, z });
@@ -41,11 +39,6 @@ const point = (x, z) => Object.freeze({ x, z });
  * may not cut into it; tests/pueth-world.test.js checks the two agree.
  */
 export const TIDEHAVEN_GROUND_REACH = 124;
-const insideTidehavenGround = (x, z, margin = 0) => {
-  const local = worldToVillage(x, z);
-  return Math.abs(local.x) < TIDEHAVEN_GROUND_REACH + margin && local.z > -196 - margin;
-};
-
 /** The raw chains, before softening, oriented from source to mouth. */
 function chains() {
   const raw = riverCourses(PLAYABLE_SURVEY, RIVER_EDGES, undefined, { soften: 0 });
@@ -90,21 +83,6 @@ const RAW = chains();
 const DRENT_BORDER = RAW.find(course => course.regions.includes('Drent'));
 const FERADOM_BORDER = RAW.find(course => course.regions.includes('Feradom'));
 
-/**
- * Where the Tessen leaves the map's line: the first authored corner inside
- * Tidehaven's ground is replaced by a reach east along its edge to the Stills.
- */
-export const TESSEN_MOUTH_REACH = Object.freeze([point(60, -92), point(135, -96)]);
-
-function builtTessen() {
-  const kept = [];
-  for (const p of DRENT_BORDER.points) {
-    if (insideTidehavenGround(p.x, p.z, -30)) break;
-    kept.push(p);
-  }
-  return [...kept, ...TESSEN_MOUTH_REACH];
-}
-
 function river(id, name, course, authored, halfWidth) {
   const points = Object.freeze(soften(course).map(p => point(p.x, p.z)));
   const samples = resample(points, 4).map(sample => Object.freeze(sample));
@@ -115,7 +93,7 @@ function river(id, name, course, authored, halfWidth) {
     points, samples: Object.freeze(samples), bounds: Object.freeze({ minX, maxX, minZ, maxZ }) });
 }
 
-export const TESSEN = river('tessen', 'The Tessen', builtTessen(), DRENT_BORDER, 4.2);
+export const TESSEN = river('tessen', 'The Tessen', DRENT_BORDER.points, DRENT_BORDER, 4.2);
 export const ORDEL = river('ordel', 'The Ordel', FERADOM_BORDER.points, FERADOM_BORDER, 3.6);
 export const PUETH_RIVERS = Object.freeze([TESSEN, ORDEL]);
 

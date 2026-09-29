@@ -11,6 +11,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { applyGameAtlasAdjustments, GAME_ATLAS_ADJUSTMENTS } from '../src/game-atlas-adjustments.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const builder = path.resolve(root, '../world-builder');
@@ -18,7 +19,7 @@ const sourcePath = path.join(builder, 'map/resources/examples/azhora.wwmap');
 const palettePath = path.join(builder, 'map/src/renderer/src/lib/terrain.ts');
 const assetDirectory = path.join(root, 'assets');
 const bytes = await readFile(sourcePath);
-const map = JSON.parse(bytes.toString('utf8').replace(/^﻿/, ''));
+const map = applyGameAtlasAdjustments(JSON.parse(bytes.toString('utf8').replace(/^﻿/, '')));
 const paletteSource = await readFile(palettePath, 'utf8');
 const paletteBlock = paletteSource.match(/TERRAIN_COLORS[^=]*=\s*\{([\s\S]*?)\}/)?.[1];
 if (!paletteBlock) throw new Error('World Builder terrain palette was not found.');
@@ -31,8 +32,7 @@ for (const hex of hexes) {
   if (hex.region && !map.regions[hex.region]) throw new Error(`Undefined region: ${hex.region}`);
 }
 
-/** Names the traveler's own chart leaves blank. The dark lord's cape is rumor, not geography a hired sword carries. */
-const UNCHARTED_LABELS = new Set(['Cape Thalmagar']);
+// Export every authored name; the journal applies discovery fog at runtime.
 const WATER = new Set(['ocean', 'coast', 'lake']);
 const isLand = hex => !WATER.has(hex.terrain);
 
@@ -298,7 +298,7 @@ function labelPose(cells) {
 // axis, then settled so that neighbouring names never print over each other:
 // the smaller province's name shrinks first, and whatever still collides is
 // nudged apart along the shorter overlap without leaving its own province.
-const labelBoxes = regionMetadata.filter(region => !UNCHARTED_LABELS.has(region.name)).map(region => {
+const labelBoxes = regionMetadata.map(region => {
   const cells = regionHexes.get(region.id), pose = labelPose(cells);
   const lines = splitLabel(region.name);
   const uppercase = /Mountains|Desert|Plain|Highlands|Plateau|Hills|Wetlands|Stones|Archipeligo/i.test(region.name);
@@ -378,7 +378,7 @@ const svg = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   `<svg xmlns="http://www.w3.org/2000/svg" width="${number(width)}" height="${number(height)}" viewBox="0 0 ${number(width)} ${number(height)}" role="img" aria-labelledby="map-title map-description">`,
   '<title id="map-title">Azhora — a traveler’s chart drawn from the developed World Builder map</title>',
-  `<desc id="map-description">Authored terrain, region boundaries, names, and rivers exported from azhora.wwmap and drawn as an inked parchment chart. ${hexes.length} hexes, ${Object.keys(map.regions).length} regions, ${Object.keys(map.rivers).length} river edges. The photographic sketch underlay is excluded. Uncharted: ${[...UNCHARTED_LABELS].join(', ')}.</desc>`,
+  `<desc id="map-description">Authored terrain, region boundaries, names, and rivers exported from azhora.wwmap and drawn as an inked parchment chart. ${hexes.length} hexes, ${Object.keys(map.regions).length} regions, ${Object.keys(map.rivers).length} river edges. The photographic sketch underlay is excluded. The journal reveals region names as the traveler discovers them.</desc>`,
   `<metadata>Source SHA-256: ${sha256}</metadata>`,
   '<defs>',
   '<filter id="parchment" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.0032" numOctaves="3" seed="7" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.27  0 0 0 0 0.14  0 0 0 0.22 0"/></filter>',
@@ -457,7 +457,8 @@ const metadata = {
   grid: { width: map.width, height: map.height, hexSize: size, projection: 'pointy-top axial' },
   bounds: { x: 0, y: 0, width: number(width), height: number(height) },
   focus: { name: home.name, x: home.x, y: home.y, width: home.width, height: home.height },
-  style: 'inked parchment chart', uncharted: [...UNCHARTED_LABELS],
+  style: 'inked parchment chart', uncharted: [],
+  gameAdjustments: GAME_ATLAS_ADJUSTMENTS,
   terrainCounts,
   regions: regionMetadata,
 };

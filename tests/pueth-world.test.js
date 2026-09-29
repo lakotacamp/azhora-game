@@ -12,7 +12,7 @@ import { REGION_CELLS, REGION_OUTLINES, WORLD_BOUNDS, MAIN_ROAD, regionAt, insid
 import { villageWeight } from '../src/world-terrain.js';
 import { toWorld, toAuthored } from '../src/world-scale.js';
 import {
-  TESSEN, ORDEL, PUETH_RIVERS, TESSEN_BRIDGE, TESSEN_MOUTH_REACH, TIDEHAVEN_GROUND_REACH, PUETH_ROAD, PUETH_JUNCTION,
+  TESSEN, ORDEL, PUETH_RIVERS, TESSEN_BRIDGE, TIDEHAVEN_GROUND_REACH, PUETH_ROAD, PUETH_JUNCTION,
   TESSEN_POST, GARRISON_STANDS, RIMEHOLT, RIMEHOLT_STANDS, PUETH_NPC_POSITIONS, PUETH_LANDMARKS, HIDEOUT_APPROACH_TRAIL,
   FERADOM_BARRIER, riverLineDistance,
 } from '../src/pueth-world.js';
@@ -65,12 +65,12 @@ const nearestOnRoad = point => {
   return best;
 };
 
-test('Pueth is a playable region true to the atlas: 27 hexes north of Drent, with its own outline, id and colder biome', () => {
+test('Pueth is a playable region true to the atlas: 26 hexes north of Drent, with its own outline, id and colder biome', () => {
   assert.ok(PLAYABLE_REGIONS.includes('Pueth'));
   const cells = REGION_CELLS.Pueth, counts = {};
   for (const cell of cells) counts[cell.terrain] = (counts[cell.terrain] ?? 0) + 1;
-  assert.equal(cells.length, 27);
-  assert.deepEqual(counts, { grassland: 15, hills: 7, plains: 5 });
+  assert.equal(cells.length, 26);
+  assert.deepEqual(counts, { grassland: 15, hills: 7, plains: 4 });
   const region = world.regions.find(entry => entry.name === 'Pueth');
   assert.ok(region && Number.isInteger(region.id) && !world.regions.some(entry => entry !== region && entry.id === region.id));
   for (const cell of cells) {
@@ -109,21 +109,14 @@ test('the rivers are the map’s: every authored river edge on Pueth is built as
     assert.ok(river, 'each authored course is one built river');
     for (let i = 1; i < course.points.length; i++) {
       const mid = { x: (course.points[i - 1].x + course.points[i].x) / 2, z: (course.points[i - 1].z + course.points[i].z) / 2 };
-      const local = worldToVillage(mid.x, mid.z);
-      const inTidehaven = Math.abs(local.x) < TIDEHAVEN_GROUND_REACH;
-      if (river === TESSEN && inTidehaven) {
-        // The one reach the map runs through Tidehaven's carried-over ground: the built river turns to the sea at its edge instead.
-        assert.ok(riverLineDistance(river, mid.x, mid.z) > 20, 'the Tessen does not cut through Tidehaven');
-        continue;
-      }
       assert.ok(riverLineDistance(river, mid.x, mid.z) < 16, `${river.name} follows the authored edge at ${mid.x.toFixed(0)},${mid.z.toFixed(0)}`);
     }
   }
-  // Where the built Tessen leaves the map's line, it runs only its short reach to the Stills, clear of Tidehaven's ground.
+  // No special mouth detour: the chart and built Tessen agree, clear of Tidehaven's ground.
   for (const sample of TESSEN.samples) {
     const local = worldToVillage(sample.x, sample.z);
     assert.ok(villageWeight(local.x, local.z) < .15, `the Tessen stays out of Tidehaven’s ground at ${sample.x.toFixed(0)},${sample.z.toFixed(0)}`);
-    if (segmentDistance(sample, TESSEN.mapLine) > 16) assert.ok(segmentDistance(sample, [TESSEN.points.find(p => segmentDistance(p, TESSEN.mapLine) <= 16 && p.x > -10) ?? TESSEN_MOUTH_REACH[0], ...TESSEN_MOUTH_REACH]) < 16);
+    assert.ok(segmentDistance(sample, TESSEN.mapLine) < 1e-7, 'every built sample remains on the charted watercourse');
   }
   assert.ok(landDistance(TESSEN.points.at(-1).x, TESSEN.points.at(-1).z) < 0, 'the Tessen reaches the sea');
   assert.equal(villageWeight(TIDEHAVEN_GROUND_REACH, 0), 0, 'the reach constant agrees with Tidehaven’s height field');
@@ -303,7 +296,7 @@ test('old saves keep the camp as they left it: scouted, accepted or cleared in L
   assert.deepEqual(toAuthored(oldCampWorld.x, oldCampWorld.z), oldCamp, 'the old camp ground still converts both ways');
 });
 
-test('src/region-rivers.js is the World Builder map\u2019s river edges, regenerated and never edited by hand', async t => {
+test('src/region-rivers.js is the World Builder map\u2019s river edges plus documented game corrections, regenerated and never edited by hand', async t => {
   const { readFileSync } = await import('node:fs');
   const { readMap, buildSource } = await import('../scripts/build-region-rivers.mjs');
   const source = readMap();

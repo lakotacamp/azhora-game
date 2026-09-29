@@ -7,6 +7,7 @@ import { createDeveloperAtlasData, DEV_WORLD_DESTINATIONS, DEV_ATLAS_PROVENANCE,
   hitAtlasRegion, developerRegionSelection, developerAtlasMarkup, developerLocalRouteMarkup } from '../src/developer-atlas.js';
 import { PLAYABLE_REGIONS } from '../src/region-layout.js';
 import { REGION_IDS } from '../src/region-world.js';
+import { applyGameAtlasAdjustments, GAME_ATLAS_ADJUSTMENTS } from '../src/game-atlas-adjustments.js';
 
 const read = relative => readFile(new URL(relative, import.meta.url), 'utf8');
 const metadata = JSON.parse(await read('../assets/azhora-world-map.json'));
@@ -46,7 +47,7 @@ const AUTHORED_MAP = (() => {
   return null;
 })();
 
-test('developer export is derived from unchanged World Builder source using the same axial projection', async t => {
+test('developer export is derived from read-only World Builder source with documented game corrections using the same axial projection', async t => {
   if (!AUTHORED_MAP) return t.skip('the World Builder repo is not beside this checkout');
   const sourceBytes = await readFile(AUTHORED_MAP);
   const hash = createHash('sha256').update(sourceBytes).digest('hex');
@@ -54,12 +55,17 @@ test('developer export is derived from unchanged World Builder source using the 
   assert.equal(hash, survey.sha256);
   assert.equal(hash, DEV_ATLAS_PROVENANCE.sha256);
   const source = JSON.parse(sourceBytes.toString('utf8').replace(/^\uFEFF/, ''));
+  const adjusted = applyGameAtlasAdjustments(source);
+  assert.equal(source.hexes['15,105'].region, 'Pueth', 'the upstream map is unchanged');
+  assert.equal(adjusted.hexes['15,105'].region, 'Drent');
+  assert.deepEqual(metadata.gameAdjustments, GAME_ATLAS_ADJUSTMENTS);
+  assert.deepEqual(survey.gameAdjustments, GAME_ATLAS_ADJUSTMENTS);
   const size = source.hexSize, halfWidth = Math.sqrt(3) * size / 2;
   const raw = Object.values(source.hexes).map(cell => [size * Math.sqrt(3) * (cell.q + cell.r / 2), size * 1.5 * cell.r]);
   const minX = Math.min(...raw.map(point => point[0])) - halfWidth;
   const minY = Math.min(...raw.map(point => point[1])) - size;
   for (const region of survey.regions) for (const cell of region.cells) {
-    const authored = source.hexes[`${cell.q},${cell.r}`];
+    const authored = adjusted.hexes[`${cell.q},${cell.r}`];
     assert.equal(authored.region, region.id);
     assert.equal(authored.terrain, cell.terrain);
     assert.ok(Math.abs(cell.x - (size * Math.sqrt(3) * (cell.q + cell.r / 2) - minX)) <= .00051);
@@ -151,6 +157,7 @@ test('map markup provides all exact region targets, labels and keyboard access w
 test('mismatched source exports, damaged polygons and missing terrain reject instead of relocating regions', () => {
   assert.throws(() => createDeveloperAtlasData(metadata, svg, { ...survey, sha256: 'wrong' }), /does not match/);
   assert.throws(() => createDeveloperAtlasData(metadata, svg, { ...survey, width: 2 }), /does not match/);
+  assert.throws(() => createDeveloperAtlasData(metadata, svg, { ...survey, gameAdjustments: [] }), /does not match/, 'refreshing only one atlas cannot silently undo the game correction');
   assert.throws(() => createDeveloperAtlasData(metadata, '<svg/>', survey), /polygons were not found/);
   const badPaths = svg.replace(/(<path data-region="[^"]+"[^>]*\bd=")[^"]+/, '$1M0,0Q1,1Z');
   assert.throws(() => createDeveloperAtlasData(metadata, badPaths, survey), /Unsupported/);

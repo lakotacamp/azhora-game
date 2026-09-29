@@ -53,10 +53,10 @@ export function createVisualArts({skills,onEvent=()=>{}}){
     view:()=>({taught:taught(),level:level(),xp:skills.xp(VISUAL_ARTS_SKILL),active:pose(),studies:list()})};
 }
 
-export function sylviaConversation(npc,{arts,openDialogue,closeDialogue,onChange=()=>{}}){
+export function sylviaConversation(npc,{arts,openDialogue,closeDialogue,onChange=()=>{},extraChoices=()=>[]}){
   if(npc?.id!==SYLVIA.id)return false;
-  const back=()=>sylviaConversation(npc,{arts,openDialogue,closeDialogue,onChange});
-  const choices=[];
+  const back=()=>sylviaConversation(npc,{arts,openDialogue,closeDialogue,onChange,extraChoices});
+  const choices=extraChoices().filter(Boolean);
   if(!arts.taught())choices.push({id:'sylvia-visual-arts',label:'Introduce me to Visual Arts',action:()=>openDialogue(npc,[
     'Of course, dear. Start by looking, not by worrying whether you are any good. That oak is not a green cloud: follow its trunk, find its heavy branches, and leave room for the light.',
     'Drawing, painting and calligraphy all belong to Visual Arts. Use the spare easel beside mine: press F and choose Draw the old oak. Take six quiet seconds to finish your study. Practice opens painting at level 2 and calligraphy at level 3.',

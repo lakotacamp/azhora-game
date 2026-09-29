@@ -191,10 +191,10 @@ test('an independent escort uses the shared silver marker, hides during combat a
   assert.equal(markerGrade(markerFor('cagney', { ...offer, arcDestinations: ['cagney'] })), 'main');
 });
 
-test('src/main.js asks the table rather than keeping its own pile of rules', () => {
+test('src/main.js uses the shared table and marker renderer alongside authored quest overrides', () => {
   const main = source('main.js');
-  assert.match(main, /const mark=markerFor\(npc\.id,markerView\),grade=markerGrade\(mark\);/, 'one call decides');
-  assert.match(main, /npc\.marker\.visible=!!grade;/);
+  assert.match(main, /markerFor\(npc\.id,markerView\),grade=markerGrade\(mark\);/, 'shared table supplies ordinary marker rules');
+  assert.match(main, /npc\.marker\.visible=!!grade(?:&&[^;]+)?;/);
   assert.doesNotMatch(main, /npc\.marker\.visible=\(npc\.id===HARBOURMASTER/, 'the old pile of rules is back');
   assert.doesNotMatch(main, /o\.material\.color\.set\(0xa9dcb1\)/, 'the cook’s hand-painted green marker is back');
   assert.match(main, /makeQuestMarker\('skill'\);feederMarker/, 'the feeder errand is a skill errand');
@@ -320,4 +320,12 @@ test('a locked teacher is visibly gated and cannot be unlocked by an old wine re
   assert.equal(marker.userData.markerLocked, true);
   assert.ok(marker.getObjectByName('Lesson padlock'), 'The gate has a padlock silhouette as well as a muted colour');
   assert.notEqual(marker.children[0].material.color.getHex(), makeQuestMarker('skill').children[0].material.color.getHex());
+});
+
+test('a local ivy favor has a copper marker, yields to a main objective and disappears during combat',()=>{
+  const offer=view({questStage:TUTORIAL_DONE,deedDestinations:['sylvia'],skillTeachers:['sylvia']});
+  assert.equal(markerFor('sylvia',offer).kind,'deed');
+  assert.equal(markerFor('sylvia',{...offer,busy:true}),null);
+  assert.equal(markerFor('sylvia',{...offer,arcDestinations:['sylvia']}).kind,'main');
+  assert.equal(markerFor('sylvia',{...offer,deedDestinations:[]}).kind,'skill');
 });

@@ -23,12 +23,13 @@
     "name": "Drent",
     "x": 1621.2,
     "y": 2472,
-    "width": 263.272,
+    "width": 277.128,
     "height": 152
   },
   "style": "inked parchment chart",
-  "uncharted": [
-    "Cape Thalmagar"
+  "uncharted": [],
+  "gameAdjustments": [
+    "tidehaven-northeast-bank-v1"
   ],
   "terrainCounts": {
     "ocean": 13622,
@@ -249,11 +250,11 @@
       "name": "Drent",
       "x": 1621.2,
       "y": 2472,
-      "width": 263.272,
+      "width": 277.128,
       "height": 152,
-      "centerX": 1766.514,
-      "centerY": 2549.538,
-      "hexCount": 39
+      "centerX": 1769.463,
+      "centerY": 2549.2,
+      "hexCount": 40
     },
     {
       "id": "East Acordwood",
@@ -965,10 +966,10 @@
       "x": 1676.625,
       "y": 2400,
       "width": 235.559,
-      "height": 152,
-      "centerX": 1803.386,
-      "centerY": 2456,
-      "hexCount": 27
+      "height": 128,
+      "centerX": 1800.267,
+      "centerY": 2452.923,
+      "hexCount": 26
     },
     {
       "id": "Qadmar",
