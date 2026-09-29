@@ -54,8 +54,10 @@ test('West Izol is a playable region true to the atlas: twenty-one hexes of rock
   // Far to the south of the mainland, and the only playable ground on the island.
   assert.ok(region.bounds.minZ > 1600 && region.bounds.maxZ < 2170);
   assert.ok(regionAt(IZOLVETH.centre.x, IZOLVETH.centre.z).name === 'West Izol');
-  // The world grew south to reach it, and east by the width of one hex.
-  assert.ok(WORLD_BOUNDS.maxZ > 2200 && WORLD_BOUNDS.maxZ < 2240, `world maxZ ${WORLD_BOUNDS.maxZ}`);
+  // The world grew south to reach it, and east by the width of one hex. Southern Ascarth's tip took
+  // the southern edge further still, from 2225.2 to 2398.4 (docs/ascarth-report.md); West Izol is no
+  // longer the southernmost playable ground, so this guard holds the edge at or beyond the island.
+  assert.ok(WORLD_BOUNDS.maxZ > 2200 && WORLD_BOUNDS.maxZ < 2420, `world maxZ ${WORLD_BOUNDS.maxZ}`);
   assert.ok(WORLD_BOUNDS.maxX > 600 && WORLD_BOUNDS.maxX < 620);
   assert.equal(REGION_BIOMES['West Izol'].id, 'izoli-rock');
   assert.equal(REGION_BIOMES['West Izol'].ownScatter, true, 'West Izol scatters its own ground');

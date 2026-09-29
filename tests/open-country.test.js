@@ -24,10 +24,14 @@ const built = async () => (world ??= (async () => {
 
 /** The worst of the unowned west, measured in docs/known-issues.md. */
 const UNOWNED = [
-  { x: -1150, z: 1960, was: 'Nesdor', note: 'a kilometre south of Nesdor’s outline' },
+  // Both of the old probes here, (-1150, 1960) and (-1146, 1964), are Southern Ascarth's own ground
+  // since the peninsula was built (28 September 2026): x -1200..-650, z 1761..2281. They were moved
+  // west and east of it, measured, and they still stand outside every outline and beside a neighbour
+  // whose name could leak onto them.
+  { x: -1500, z: 1900, was: 'Nesdor', note: 'a kilometre south of Nesdor’s outline, west of the peninsula' },
   { x: -2250, z: 1092, was: 'Caricas', note: '606 m west of Caricas' },
   { x: -2310, z: -728, was: 'Meneth', note: 'the west edge past Meneth' },
-  { x: -1146, z: 1964, was: 'West Izol', note: 'an island’s name on the mainland, a kilometre off' },
+  { x: -300, z: 1950, was: 'West Izol', note: 'the channel west of the island, a kilometre off the mainland' },
 ];
 
 test('ground outside every outline is open country, not the nearest neighbour’s name', () => {
