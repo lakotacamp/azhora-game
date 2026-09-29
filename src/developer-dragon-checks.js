@@ -1,0 +1,51 @@
+import * as THREE from 'three';
+
+/** Native renderer exercise of the public mount buttons and shared flight lifecycle. */
+export async function runDeveloperDragonChecks(h) {
+  const checks = [];
+  const check = (ok, message) => { if (!ok) throw new Error(message); checks.push(message); };
+  const click = id => { h.open(); const button = document.getElementById(id); check(button && !button.disabled && button.getClientRects().length, `${id} is available`); button.click(); };
+  h.prepare();
+  const saved = h.saved();
+  check(!!saved, 'Normal adventure checkpoint exists');
+  const ground = { x: 24, z: 29 };
+  h.warp(ground);
+  click('test-dev-dragon');
+  h.freeze(true);
+  check(h.state().testingEnabled && h.developerBat.active && h.developerMounts.dragon.group.visible && !h.developerMounts.bat.group.visible, 'Dragon mounts in the isolated testing session');
+  h.step(1, { lift: 1 });
+  const first = h.developerBat.view();
+  check(first.position.y > h.world.heightAt(ground.x, ground.z) + 20, 'Dragon climbs above terrain');
+  h.step(.5, { dx: 1 });
+  const cruise = h.developerBat.view();
+  h.step(.5, { dx: 1, turbo: true });
+  const turbo = h.developerBat.view();
+  check(turbo.position.x - cruise.position.x > (cruise.position.x - first.position.x) * 5, 'Tab turbo is substantially faster than cruise');
+  const seated = h.developerMounts.dragon.passengerAnchor.getWorldPosition(new THREE.Vector3());
+  check(seated.distanceTo(h.player.group.position) < .001, 'Actual player is seated at the animated dragon saddle');
+  const pauseAt = h.developerBat.view().position;
+  h.freeze(false); h.pause(true); await h.frames(8);
+  check(JSON.stringify(h.developerBat.view().position) === JSON.stringify(pauseAt), 'Paused flight stays still');
+  h.freeze(true);
+  click('test-dev-bat');
+  check(!h.developerMounts.dragon.group.visible && h.developerMounts.bat.group.visible && h.developerBat.view().position.y === pauseAt.y, 'Switching to the bat preserves altitude without duplicate mounts');
+  click('test-dev-dragon');
+  check(h.developerMounts.dragon.group.visible && !h.developerMounts.bat.group.visible, 'Switching back selects the green dragon');
+  h.warp({ x: -1110, y: 500, z: -800 }); click('test-dev-dragon');
+  h.step(.3, { lift: 1 });
+  check(h.developerBat.view().position.y > 500, 'Dragon can clear the highest East Lotharn peaks');
+  h.warp(ground); click('test-dev-dragon');
+  check(h.developerBat.requestLanding().ok, 'Open dry ground accepts a landing');
+  h.step(3);
+  check(!h.developerBat.active && !h.developerMounts.dragon.group.visible && Math.abs(h.player.group.position.y - h.world.heightAt(ground.x, ground.z)) < .01, 'Landing returns the player to ground and hides the dragon');
+  click('test-dev-dragon'); h.open();
+  document.getElementById('test-point').value = '24, 29';
+  document.getElementById('test-point-go').click();
+  check(!h.developerBat.active && !h.developerMounts.dragon.group.visible && !h.developerMounts.bat.group.visible, 'F8 travel clears the flying mount');
+  check(h.saved() === saved, 'Dragon tests leave the normal adventure checkpoint unchanged');
+  click('test-dev-dragon');
+  check(h.reload() && !h.developerBat.active && !h.developerMounts.dragon.group.visible && !h.developerMounts.bat.group.visible, 'Restoring the adventure clears all developer flight state');
+  await h.frames(3);
+  check(h.frameErrors().count === 0, 'Renderer has no frame errors');
+  return { ok: true, checks, developerDragonChecks: checks.length };
+}

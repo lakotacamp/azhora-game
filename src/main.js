@@ -207,6 +207,7 @@ import { BATMAN_COMBAT, BATSMASHER, BATMAN_QUEST } from './batman-quest.js';
 import { BAT_CAVE } from './suval-highlands.js';
 import { createBatmanQuestHost, BATSMASHER_STAND, BATMAN_FIGHT } from './batman-quest-host.js';
 import { createDeveloperBat } from './developer-bat.js';
+import { createDeveloperDragon } from './developer-dragon-model.js';
 import { createClimbing, canWalkSlope, CLIMBING } from './climbing.js';
 import { createTerrainFall, shouldStartTerrainFall } from './terrain-fall.js';
 import { createLotharnCaveWalk } from './east-lotharn-cave-walk.js';
@@ -1455,7 +1456,10 @@ function init() {
   placeBatman();
   const developerBat=createDeveloperBat({heightAt:world.heightAt,bounds:world.bounds,
     canLand:(x,z)=>!insideRegion('East Suval',x,z)&&canStand(x,z,world,BODY.traveler)&&world.heightAt(x,z)>=waterAt(x,z,world)});
-  const developerBatView=createBatman();scene.add(developerBatView.group);developerBatView.group.visible=false;
+  const developerMounts={bat:createBatman(),dragon:createDeveloperDragon()};
+  for(const mount of Object.values(developerMounts)){scene.add(mount.group);mount.group.visible=false;}
+  let developerMountKind='bat',developerBatView=developerMounts.bat,developerBank=0;
+  const developerMountTitle=()=>developerMountKind==='dragon'?'Developer dragon':'Developer bat';
   const airMounted=()=>!!batmanHost?.mounted||developerBat.active;
   const suspended=()=>airMounted()||!!climbing?.active||!!jesseHost?.mounted;
   const climbingUI=createClimbingUI(document);let climbRecovery=null,climbBurst=false,climbXpCarry=0,lastFoothold=null,lastFootVelocity={x:0,z:0};
@@ -1464,9 +1468,11 @@ function init() {
     flightCaption.replaceChildren();const title=document.createElement('strong'),text=document.createElement('p');title.textContent=event.title;text.textContent=event.text;flightCaption.append(title,text);}
   function seatOnBat(actor){player.setWeapon(null);player.setShield(false);player.animate(walkTime,0,true,{armed:false,riding:{pace:0}});actor.group.updateMatrixWorld(true);actor.passengerAnchor.getWorldPosition(player.group.position);player.group.rotation.y=actor.group.rotation.y;combat.state.player.yaw=actor.group.rotation.y;grounded=true;verticalSpeed=0;inWater=false;}
   function landFromBat(at){player.group.position.set(at.x,world.heightAt(at.x,at.z),at.z);grounded=true;verticalSpeed=0;inWater=false;stopInput();}
-  function tickDeveloperBat(dt,input){const was=developerBat.active,s=developerBat.tick(dt,input);developerBatView.group.visible=s.active;
+  function tickDeveloperBat(dt,input){const was=developerBat.active,before=developerBat.view().yaw,s=developerBat.tick(dt,input);
+    const turn=Math.atan2(Math.sin(s.yaw-before),Math.cos(s.yaw-before));
+    developerBank=THREE.MathUtils.lerp(developerBank,dt>0?THREE.MathUtils.clamp(-turn/dt*.12,-.28,.28):0,1-Math.exp(-5*dt));developerBatView.group.visible=s.active;
     if(was&&!s.active){landFromBat(s.position);flightNarration(null);return;}
-    if(s.active){developerBatView.group.position.set(s.position.x,s.position.y,s.position.z);developerBatView.group.rotation.y=s.yaw;developerBatView.update(elapsed,{flying:true,speed:s.speed});seatOnBat(developerBatView);}}
+    if(s.active){developerBatView.group.position.set(s.position.x,s.position.y,s.position.z);developerBatView.group.rotation.y=s.yaw;developerBatView.update(elapsed,{flying:true,speed:s.speed,bank:developerBank});seatOnBat(developerBatView);}}
   // Everywhere a person stands, and the one place on the road that is read rather than talked
   // to: a bramble inside the boundary stone's own two metres ate the F that should have
   // read it, so the end of the tutorial pointed nowhere (found by the story smoke, 2026-09-22).
@@ -2600,7 +2606,7 @@ function init() {
     if(jesseHost?.mounted){toast('Jesse will let you down at the guild in Ambron.','CARRIAGE JOURNEY');return;}
     if(climbing?.active){toast('Find a foothold before mounting.','CLIMBING');return;}
     if(batmanHost?.mounted){toast('Hold on until Batman lands you safely.','FLYING');return;}
-    if(developerBat.active){const r=developerBat.requestLanding();if(!r.ok)toast(r.reason,'DEVELOPER BAT');return;}
+    if(developerBat.active){const r=developerBat.requestLanding();if(!r.ok)toast(r.reason,developerMountTitle().toUpperCase());return;}
     if(raceHost?.mounted){race.abandon('You climbed down before the finish.');raceHost.sync();return;}
     if(mode!=='playing'||!riding.owned||living.recall().status==='passenger')return;
     if(riding.mounted){stepDown();return;}
@@ -4267,7 +4273,7 @@ function init() {
   function continueRoad(fromRecovery=false){
     const restoringSession=fromRecovery===true;
     const result=(restoringSession?sessionCheckpoint:checkpoint).read();if(!result.ok||!result.data){toast(result.reason||'No road checkpoint has been saved yet.','CHECKPOINT');return false;}
-    const saved=result.data;cancelClimbing();restoringRoad=true;try{
+    const saved=result.data;cancelClimbing();developerBat.cancel();for(const mount of Object.values(developerMounts))mount.group.visible=false;developerBank=0;flightNarration(null);restoringRoad=true;try{
     // **Nothing borrowed survives a reload.** A bout cannot be saved in the first place -
     // `saveRoad` refuses while a fight is on - so no checkpoint carries a loan; this is here so
     // that loading one *during* a bout cannot leave a man holding somebody else's pike.
@@ -5817,9 +5823,23 @@ function init() {
     toast(`${DEVELOPER_HORSE_NAME}. ${DEVELOPER_HORSE_SPEED} times the army's pace, and in nobody's records. G mounts · Shift canters · H whistles him up.`,
       'TESTING · DEVELOPER HORSE');};
   $('test-dev-horse').onclick=testHorse;
-  $('test-dev-bat').onclick=()=>{if(jesseHost?.mounted){toast('Finish the carriage journey before switching mounts.','CARRIAGE JOURNEY');return;}leaveRaceForTesting();if(!testingEnabled)prepareTesting();testingEnabled=true;if(riding.mounted)stepDown(true);stopAutopilot();combat.revive();magic.stop();
-    developerBat.start(player.group.position,player.group.rotation.y);closeModal();tickDeveloperBat(0,{playing:true});settleCamera();
-    flightNarration({title:'Developer bat',text:'WASD steer · Space climbs · Ctrl descends · Shift flies faster · Hold Tab for turbo · G lands on safe, open ground. F8 travel ends the flight.'});};
+  function startDeveloperFlight(kind='bat'){
+    if(jesseHost?.mounted){toast('Finish the carriage journey before switching mounts.','CARRIAGE JOURNEY');return;}
+    // Switching flying mounts keeps altitude and the original safe return point.
+    const switching=developerBat.active;
+    if(!switching)leaveRaceForTesting();
+    if(!testingEnabled)prepareTesting();
+    testingEnabled=true;show('testing-badge',true);
+    if(riding.mounted)stepDown(true);
+    stopAutopilot();combat.revive();magic.stop();
+    developerBatView.group.visible=false;developerBank=0;developerMountKind=kind;developerBatView=developerMounts[kind];
+    if(!switching)developerBat.start(player.group.position,player.group.rotation.y);
+    if(kind==='dragon')targetDistance=Math.max(targetDistance,15);
+    closeModal();tickDeveloperBat(0,{playing:true});settleCamera();
+    flightNarration({title:developerMountTitle(),text:'WASD steer · Space climbs · Ctrl descends · Shift flies faster · Hold Tab for turbo · G lands on safe, open ground. F8 travel ends the flight.'});
+  }
+  $('test-dev-bat').onclick=()=>startDeveloperFlight('bat');
+  $('test-dev-dragon').onclick=()=>startDeveloperFlight('dragon');
   /**
    * **Go anywhere the world is built.** Travel lists every country and named ground, taken
    * from the world itself (src/testing-travel.js), so the next one built is here the day it is
@@ -6907,7 +6927,7 @@ function init() {
       // somewhere - a review view, a travel button - which is what the position is for
       // (src/region-sky.js). No region declares a sky yet, so today this changes nothing.
       {const s=sky.step(world.regionAt(player.group.position.x,player.group.position.z),dt,player.group.position);
-        scene.background.setHex(s.background);scene.fog.color.setHex(s.fog);scene.fog.density=reviewVista&&reviewTarget&&distance>100?.0012:s.density;}
+        scene.background.setHex(s.background);scene.fog.color.setHex(s.fog);scene.fog.density=reviewVista&&reviewTarget&&(distance>100||developerBat.active&&developerMountKind==='dragon')?.0012:s.density;}
       caveDark=THREE.MathUtils.lerp(caveDark,lotharnCave.active?1:0,1-Math.exp(-4*dt));
       scene.background.lerp(caveShade,caveDark);scene.fog.color.lerp(caveShade,caveDark);
       hemisphere.intensity=2*(1-.9*caveDark);sun.intensity=3.1*(1-caveDark);
@@ -7402,7 +7422,7 @@ function init() {
   setTimeout(()=>{$('loading').style.opacity='0';setTimeout(()=>show('loading',false),850);},250);
 
   if(new URLSearchParams(location.search).has('test')) {
-    const state=()=>({lotharnCave:lotharnCave.snapshot(),...batmanHost.snapshot(),flight:batmanHost.flight.state(),developerBat:developerBat.view(),climbing:climbing.view(),terrainFall:terrainFall.view(),grounded,inWater,lastFoothold:lastFoothold?{...lastFoothold}:null,kaylaRace:race.state(),cubHoney:cubHost.state(),bearFamily:bearFamily.snapshot(),apiaryBees:apiaryBees.state(),kayla:kaylaHost.state(),homes:homeResidents.snapshot(),brandyHome:brandyHome.snapshot(),jesseCarriage:jesseHost?.snapshot(),cagney:cagneyQuest.snapshot(),livingStory:living?.snapshot(),lusciaCivilWar:republic?.snapshot?.(),frameErrors:frameErrors.view(),mode,testingEnabled,heardDoom,mapTutorial:mapTutorial.step,chartLesson:chartLesson.stage,trackedQuestId:questTracker.selectedId,drent:drent.state(),stealth:drent.awareness,playSeconds,mercenaries:company.summary(playSeconds),journey:journey.state,journeyView:journey.view(),campaign:campaign.view(),luscia:luscia.view(),burying:burying.snapshot(),moros:moros.view(),border:border.view(),autoplay:autopilot.active,mounted:riding.mounted,retries:retriesTaken,meadowCleared,region:world.regionAt(player.group.position.x,player.group.position.z).id,campcraft:campcraft.state,questStage,practiceHits,practiceDodges,inventory:inventory.items(),weapons:weapons.snapshot(),sticks:inventory.count('forest-stick'),pawpaws:inventory.count('pawpaw'),acorns:inventory.count('acorn'),sideQuest:acornQuest.status,chapter:chapterProgress(storyState()).number,ardryLetters:renaLetters.snapshot(),ardryFriendship:renaLetters.friendship('rena-lorn'),birding:birding.snapshot(),lakota:lakota.snapshot(),swimming:swimming.view(),fishing:fishing.snapshot(),mycology:mycology.snapshot(),mushroomSites:mushrooms.state().sites.length,botany:botany.snapshot(),pipe:pipe.snapshot(),jimson:jimson.snapshot(),katy:katy.snapshot(),troy:troy.snapshot(),vineyard:vineyard.snapshot(),hunt:hunt.snapshot(),light:light.snapshot(),bosco:bosco.snapshot(),heist:heist.snapshot(),plantSites:flora.state().sites.length,geology:geology.snapshot(),archaeology:archaeology.snapshot(),wine:wine.snapshot(),cooking:cooking.snapshot(),wineAttic:wineAttic.snapshot(),puck:puck.snapshot(),chameleon:chameleon.snapshot(),troupe:troupe.snapshot(),brandy:brandy.snapshot(),salt:salt.snapshot(),woodcutting:wood.snapshot(),construction:building.snapshot(),woodlot:WOODLOT_TREES.filter(t=>!wood.standing(t.id)).map(t=>t.id),stoneSites:stones.state().sites.length,oldTree:oldTree.view(),specimenTrees:specimenTrees.state().trees.length,refugees:refugees.snapshot(),fallen:fallen.snapshot(),refugeesArrived:refugees.arrived,skills:skills.view(),birds:drentBirds.state(),birdWatch,birdPointer:birdPointer.visible,chart:mapFog.snapshot(),cartography:cartography.snapshot(),chartRevealed,lysaFriendship:acornQuest.friendship,selectedItem:inventory.selectedId(),phase:combat.state.phase,hp:combat.state.player.hp,playerAction:combat.state.player.action,enemies:combat.state.enemies.map(e=>({id:e.id,hp:e.hp,action:e.action,progress:e.progress,x:e.x,z:e.z})),position:player.group.position.toArray(),discoveries:[...discoveries],frames:frameCount,averageFrameMs:Math.round(1000*frameDeltas.reduce((a,b)=>a+b,0)/frameDeltas.length),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+    const state=()=>({lotharnCave:lotharnCave.snapshot(),...batmanHost.snapshot(),flight:batmanHost.flight.state(),developerBat:developerBat.view(),developerMount:{kind:developerMountKind,visible:developerBatView.group.visible},climbing:climbing.view(),terrainFall:terrainFall.view(),grounded,inWater,lastFoothold:lastFoothold?{...lastFoothold}:null,kaylaRace:race.state(),cubHoney:cubHost.state(),bearFamily:bearFamily.snapshot(),apiaryBees:apiaryBees.state(),kayla:kaylaHost.state(),homes:homeResidents.snapshot(),brandyHome:brandyHome.snapshot(),jesseCarriage:jesseHost?.snapshot(),cagney:cagneyQuest.snapshot(),livingStory:living?.snapshot(),lusciaCivilWar:republic?.snapshot?.(),frameErrors:frameErrors.view(),mode,testingEnabled,heardDoom,mapTutorial:mapTutorial.step,chartLesson:chartLesson.stage,trackedQuestId:questTracker.selectedId,drent:drent.state(),stealth:drent.awareness,playSeconds,mercenaries:company.summary(playSeconds),journey:journey.state,journeyView:journey.view(),campaign:campaign.view(),luscia:luscia.view(),burying:burying.snapshot(),moros:moros.view(),border:border.view(),autoplay:autopilot.active,mounted:riding.mounted,retries:retriesTaken,meadowCleared,region:world.regionAt(player.group.position.x,player.group.position.z).id,campcraft:campcraft.state,questStage,practiceHits,practiceDodges,inventory:inventory.items(),weapons:weapons.snapshot(),sticks:inventory.count('forest-stick'),pawpaws:inventory.count('pawpaw'),acorns:inventory.count('acorn'),sideQuest:acornQuest.status,chapter:chapterProgress(storyState()).number,ardryLetters:renaLetters.snapshot(),ardryFriendship:renaLetters.friendship('rena-lorn'),birding:birding.snapshot(),lakota:lakota.snapshot(),swimming:swimming.view(),fishing:fishing.snapshot(),mycology:mycology.snapshot(),mushroomSites:mushrooms.state().sites.length,botany:botany.snapshot(),pipe:pipe.snapshot(),jimson:jimson.snapshot(),katy:katy.snapshot(),troy:troy.snapshot(),vineyard:vineyard.snapshot(),hunt:hunt.snapshot(),light:light.snapshot(),bosco:bosco.snapshot(),heist:heist.snapshot(),plantSites:flora.state().sites.length,geology:geology.snapshot(),archaeology:archaeology.snapshot(),wine:wine.snapshot(),cooking:cooking.snapshot(),wineAttic:wineAttic.snapshot(),puck:puck.snapshot(),chameleon:chameleon.snapshot(),troupe:troupe.snapshot(),brandy:brandy.snapshot(),salt:salt.snapshot(),woodcutting:wood.snapshot(),construction:building.snapshot(),woodlot:WOODLOT_TREES.filter(t=>!wood.standing(t.id)).map(t=>t.id),stoneSites:stones.state().sites.length,oldTree:oldTree.view(),specimenTrees:specimenTrees.state().trees.length,refugees:refugees.snapshot(),fallen:fallen.snapshot(),refugeesArrived:refugees.arrived,skills:skills.view(),birds:drentBirds.state(),birdWatch,birdPointer:birdPointer.visible,chart:mapFog.snapshot(),cartography:cartography.snapshot(),chartRevealed,lysaFriendship:acornQuest.friendship,selectedItem:inventory.selectedId(),phase:combat.state.phase,hp:combat.state.player.hp,playerAction:combat.state.player.action,enemies:combat.state.enemies.map(e=>({id:e.id,hp:e.hp,action:e.action,progress:e.progress,x:e.x,z:e.z})),position:player.group.position.toArray(),discoveries:[...discoveries],frames:frameCount,averageFrameMs:Math.round(1000*frameDeltas.reduce((a,b)=>a+b,0)/frameDeltas.length),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
     const focusedRoadHooks=()=>({world,player,journey,inventory,weapons,campcraft,combat,checkpoint,journeyAct,saveRoad,continueRoad,
       frames:async(count=1)=>{for(let i=0;i<count;i++)await new Promise(resolve=>requestAnimationFrame(resolve));},
       // The opening sequence, for a harness that would rather not sit through forty-four seconds.
@@ -7758,6 +7778,18 @@ function init() {
           isTesting:()=>testingEnabled,tracked:()=>questTracker.selectedId,frameErrors:()=>frameErrors.view(),resume:startAutopilot,stop:stopAutopilot,
           save:()=>{recoveryInfo={testing:testingEnabled,encounterId:null};return writeRoadCheckpoint(sessionCheckpoint,false);},
           reload:()=>{stopAutopilot();const ok=continueRoad(true);reviewFrozen=false;reviewTarget=null;return ok;},
+        });
+      },
+      async runDeveloperDragonChecks(){
+        const {runDeveloperDragonChecks}=await import('./developer-dragon-checks.js');
+        return runDeveloperDragonChecks({state,world,player,developerBat,developerMounts,
+          prepare:()=>{window.__AZHORA__.review('walk');prepareTesting();testingEnabled=false;if(!saveRoad(false))throw new Error('Could not prepare normal checkpoint');},
+          open:()=>modal('testing'),saved:()=>JSON.stringify(checkpoint.read().data),
+          step:(seconds,input={})=>{for(let t=0;t<seconds;t+=.05)tickDeveloperBat(Math.min(.05,seconds-t),{playing:true,...input});},
+          pause:value=>{stopInput();mode=value?'pause':'playing';},
+          frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);},
+          warp:p=>{leaveRaceForTesting();player.group.position.set(p.x,p.y??world.heightAt(p.x,p.z),p.z);},
+          freeze:value=>{reviewFrozen=!!value;},frameErrors:()=>frameErrors.view(),reload:()=>continueRoad(),
         });
       },
       async runCountrysideChecks(){
@@ -8817,6 +8849,18 @@ function init() {
         reviewFrozen=false;reviewTarget=null;reviewCat=null;player.group.visible=true;
         clearTimeout(toastTimer);$('toast').classList.remove('visible');
         leaveOpening();document.body.classList.add('playing');show('opening',false);show('loading',false);show('modal-backdrop',false);show('dialogue',false);mode='playing';
+        if(view==='developer-dragon-lotharn'||view==='developer-dragon-lotharn-wide'){
+          prepareTesting();stopAutopilot();combat.finishPractice();questStage=QUEST_DONE;
+          const wide=view.endsWith('-wide');
+          player.group.position.set(-1110,235,-800);
+          player.group.rotation.y=wide?1.4:.9;
+          startDeveloperFlight('dragon');reviewFrozen=true;reviewVista=true;
+          developerBatView.update(.18,{flying:true,speed:24,bank:-.08});
+          for(let i=0;i<60;i++){walkTime+=1/60;seatOnBat(developerBatView);}
+          reviewTarget=developerBatView.group.position.clone().add(new THREE.Vector3(0,1.8,0));
+          yaw=wide?.6:1.95;pitch=wide?.3:.32;distance=targetDistance=wide?10:9;
+          settleCamera();return;
+        }
         if(view==='testing-tools'||view==='testing-tools-advanced'){
           stopAutopilot();prepareTesting();testingMenu();return;
         }

@@ -578,3 +578,7 @@ Move Brandy and her boards to the coastward Saltwind Lookout clearing shown by t
 ### 2026-09-27 - Ambron between the four lakes and Jesse's carriage
 
 Expand and relocate Ambron onto dry land between Ela, Thelas, Brul, and Ossen, preserving the water geography. Use an irregular capital layout with distinct districts, existing characters and named homes. Cagney starts at a roadside hamlet farther along the Ambron road so her escort does not grow excessively; Kayla's race may be longer. Jesse leaves Port Calos for the opposite shoulder farther west from Cagney's former crossroads. Chip recommends Jesse. Jesse teaches assembling collected carriage parts with species-specific timber, awards Construction XP, then drives the player to Ambron's Carpenter's Guild with road conversation. Jesse goes inside and answers a knock; clearly mark the future Carpenter Guild arc as not yet fleshed out.
+
+### 2026-09-28 - Developer dragon and Azhora thumbnail
+
+Add a testing-only green dragon alongside the developer bat under F8 > Hacks. It carries the actual player on a saddle and uses the same steering, altitude, Shift speed, Tab turbo, safe-landing and testing-save isolation rules. Keep the developer bat available. Capture the player riding the dragon through East Lotharn in the actual game renderer for the Cromblog thumbnail and social preview. No illustrated replacement for the gameplay screenshot.
