@@ -29,7 +29,10 @@ const UNOWNED = [
   // west and east of it, measured, and they still stand outside every outline and beside a neighbour
   // whose name could leak onto them.
   { x: -1500, z: 1900, was: 'Nesdor', note: 'a kilometre south of Nesdor’s outline, west of the peninsula' },
-  { x: -2250, z: 1092, was: 'Caricas', note: '606 m west of Caricas' },
+  // (-2250, 1092) was this list's Caricas probe until the Oves Desert was built (29 September
+  // 2026) and took that ground: it is the desert's own now. Moved north-west, measured, to
+  // ground still outside every outline.
+  { x: -2300, z: -400, was: 'Caricas', note: '325 m north-west of Caricas' },
   { x: -2310, z: -728, was: 'Meneth', note: 'the west edge past Meneth' },
   { x: -300, z: 1950, was: 'West Izol', note: 'the channel west of the island, a kilometre off the mainland' },
 ];
