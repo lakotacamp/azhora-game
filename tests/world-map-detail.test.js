@@ -1,12 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { atlasCellKey, atlasLocalDetail, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from '../src/world-map-detail.js';
+import { atlasCellKey, atlasLocalDetail, atlasCityDetail, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from '../src/world-map-detail.js';
 import { readFileSync } from 'node:fs';
 import { TRANSFORM, hexAt, hexCentre } from '../src/region-world.js';
 import { buildLocalMapModel } from '../src/local-map-data.js';
 import { regions, regionAt, WORLD_BOUNDS } from '../src/regions.js';
 import { createMapFog } from '../src/map-fog.js';
 import { createCartography, chartShapes, EXPLORED_HEXES } from '../src/cartography.js';
+import { AMBRON_CENTRE, AMBRON_OUTLINE, inAmbronOutline } from '../src/ambron-city-layout.js';
+
+test('the capital marker and city footprint agree with the relocated city between the four lakes', () => {
+  const detail = atlasCityDetail(), center = TRANSFORM.atlasToWorld(detail.marker.x, detail.marker.y);
+  assert.ok(Math.hypot(center.x - AMBRON_CENTRE.x, center.z - AMBRON_CENTRE.z) < 1e-8);
+  assert.equal(inAmbronOutline(center.x, center.z), true);
+  assert.equal(detail.marker.name, 'Ambron'); assert.equal(detail.marker.kind, 'capital');
+  assert.deepEqual(detail.boundary, AMBRON_OUTLINE.map(p => TRANSFORM.worldToAtlas(p.x, p.z)));
+  assert.equal(atlasMarkKnown(detail.marker, new Set()), false, 'unvisited capital remains unnamed');
+  assert.equal(atlasMarkKnown(detail.marker, new Set([atlasCellKey(detail.marker)])), true);
+  assert.equal(atlasMarkKnown(detail.marker, new Set(), true), true, 'developer reveal shows the capital');
+  const next = atlasCityDetail(); detail.boundary[0].x = 0;
+  assert.notEqual(next.boundary[0].x, 0, 'drawing data cannot mutate the city definition');
+});
+
+test('the capital replaces duplicate ordinary Ambron labels while preserving quests and tracked destinations', () => {
+  const ordinary = { id: 'ambron', name: 'Ambron', kind: 'place', x: 12, y: 30 };
+  assert.deepEqual(atlasPlaceMarks([ordinary], [{ ...ordinary, kind: 'local' }]), [atlasCityDetail().marker]);
+  for (const kind of ['quest', 'tracked']) {
+    const objective = { ...ordinary, kind }, marks = atlasPlaceMarks([], [objective]);
+    assert.deepEqual(marks.find(mark => mark.id === 'ambron'), objective);
+    assert.deepEqual(marks.find(mark => mark.id === 'ambron-capital'), atlasCityDetail().marker);
+  }
+});
 
 test('the atlas close view uses the same world transform for roads, houses and quest destinations', () => {
   const house = { x: -600, z: 130, width: 6, depth: 8, angle: Math.PI / 2 };

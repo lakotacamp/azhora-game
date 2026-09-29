@@ -766,7 +766,7 @@ const REGION_TEXT = {
   Drent: { subtitle: 'The forest coast and Tidehaven', spawn: at(-15, 29),
     description: 'All of Drent is broadleaf forest: ferns, sorrel and deer, with Tidehaven on the eastern shore, one farm clearing inland, and the ruins of Rena at its centre, where the region’s principal town stood until eighty years ago.',
     palette: { ground: '#4d7a3e', accent: '#c9d3a0', fog: '#b6c6ad' },
-    npcIds: ['meadow-courier', 'commons-miller', 'rena-lorn', 'rena-hesta', 'apple-reeve'],
+    npcIds: ['meadow-courier', 'commons-miller', 'rena-lorn', 'rena-hesta', 'apple-reeve', 'cobble-ari'],
     landmarks: ['sunmeadow', 'old-mill', 'mill-commons', 'rena-ruins', 'applegarth', 'east-rena-stone'] },
   Luscia: { subtitle: 'Across the Caloss', spawn: at(-362, 110),
     description: 'Rolling grass and thinning copses beyond the border river: the shrines of the valley, Nothom on the road, and the field at the Lauvel.',

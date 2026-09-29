@@ -6,6 +6,7 @@ Four reusable beds use the existing commons row IDs and positions. A field-work 
 
 | Crop | Farming level | Active play time | Harvest XP | Base yield | Food use |
 | --- | --- | --- | --- | --- | --- |
+| Sunflowers | 1 | 120 seconds | 26 | 2 | Cut flowers; each harvest also returns seed |
 | Carrots | 1 | 90 seconds | 22 | 2 | 15 health each; carrot + barley makes farm pot |
 | Barley | 1 | 4 minutes | 24 | 2 | Cooking ingredient |
 | Beets | 2 | 150 seconds | 32 | 2 | 20 health raw; 35 roasted |
@@ -20,3 +21,13 @@ The four beds have dark soil, low corner stakes, visible stems and leaves that g
 Stanley's Cooking lesson is independent of Farming, but requires Fire Making first. Lee Anne at Tidehaven's empty village fire ring supplies the first tinderbox and teaches the player to light a fire. Stanley directs an untaught traveler to her; farming and eating raw crops remain available. Once Fire Making is learned, Stanley teaches farm pot (one carrot + one barley, 45 health) and roasted beet (one beet, 35 health), including for players who already learned Cooking from Jojo. He supplies two branches for the first farm recipe lesson and replaces a missing tinderbox. The prepared ring beside the rows uses ordinary lighting, fuel and recipe interactions. Later fires require gathered fuel. Every successfully cooked meal spends ingredients and earns Cooking XP; failed cooking restores spent ingredients and awards none.
 
 Validation: `node --test --test-isolation=none tests/farming.test.js tests/cooking.test.js tests/foods.test.js tests/regional-life.test.js tests/larder-sources.test.js`. This covers the complete seed-to-food loop, optional lessons, repeatable recipes, planting unlocks, old saves, paused growth, teacher and plot access in the built world, and Enna's unchanged mill errand. Native review should inspect Stanley, all growth stages, crop choices and the nearby fire.
+
+## Ari's Applegarth sunflower lesson
+
+Ari now stands in Applegarth, the small western Drent town near Stanley's commons. Her existing `cobble-ari` identity, long black curly hair and violet dress are preserved. She has two reusable garden beds, a seed crate and a watering can between the north-side cottages, with clear approaches around the existing houses. She remains explicitly in the live cast after leaving Port Calos.
+
+Her optional green-book training quest gives two sunflower seed packets, then follows actual planting in one of her beds, watering, growth, harvesting and a report to Ari. The flowers grow tall stems, broad leaves and yellow petals around dark seed heads. Watering reduces the wait to 90 seconds and yields three flowers. The first complete lesson earns 4 Farming XP for watering, 26 for harvesting and 24 once for reporting; subsequent growing remains ordinary repeatable farming. Stanley's separate introduction stays available.
+
+The saved `sunflowerLesson` state records the exact lesson bed and tending steps. Inventory flowers, old plantings and unrelated crops cannot substitute for completing the lesson. Save/reload preserves growth and progress, and reporting cannot repeat the reward. Saves from before this lesson are accepted as an unstarted lesson. A dry harvest can be replanted and watered to retry.
+
+Validation: `tests/sunflower-lesson.test.js`, `tests/farming.test.js` and the desktop `src/sunflower-checks.js` driver cover the physical crop loop, ordinary dialogue and bed menus, active-play timing, marker, save/reload, reward uniqueness and actual placement clearances.

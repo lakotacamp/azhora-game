@@ -56,7 +56,16 @@
       <h2 id="testing-title">Testing tools</h2>
       <div id="testing-quest-playtests" class="test-section">
         <h3 id="test-autoplay-heading">Quest playtests</h3>
-        <div class="test-quest-grid" aria-labelledby="test-autoplay-heading">
+        <p class="test-autoplay-note">Fresh computer playtests. Any key or click takes control; <kbd>P</kbd> resumes. Your saved adventure stays unchanged.</p>
+        <h4 id="test-main-heading" class="test-group-heading test-gold-heading">Gold &middot; Main quests</h4>
+        <div id="test-main-quests" class="test-quest-grid" aria-labelledby="test-main-heading"></div>
+        <h4 id="test-silver-heading" class="test-group-heading test-silver-heading">Silver &middot; Side stories</h4>
+        <div class="test-quest-grid" aria-labelledby="test-silver-heading">
+          <button id="test-silver-drent-autoplay" class="test-quest-card test-silver-card"><span class="test-card-title">Civil War in Drent <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Glun's investigation &middot; Monarchist route</span></button>
+          <button id="test-silver-luscia-autoplay" class="test-quest-card test-silver-card"><span class="test-card-title">Civil War in Luscia <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Republican introduction &middot; Stops after the briefing</span></button>
+        </div>
+        <h4 id="test-named-heading" class="test-group-heading">Named quest-givers</h4>
+        <div class="test-quest-grid" aria-labelledby="test-named-heading">
           <button id="test-ben-autoplay" class="test-quest-card test-magic-card"><span class="test-card-title">Ben <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Spider hunt &middot; Fireball</span></button>
           <button id="test-liz-autoplay" class="test-quest-card test-magic-card"><span class="test-card-title">Liz <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Bring Olive home &middot; Summon Bees</span></button>
           <button id="test-troy-autoplay" class="test-quest-card test-magic-card"><span class="test-card-title">Troy <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Question the witnesses &middot; Mind Read</span></button>
@@ -67,7 +76,6 @@
           <button id="test-catie-autoplay" class="test-quest-card"><span class="test-card-title">Catie <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Find Batman &middot; Fly over Suval</span></button>
           <button id="test-addison-autoplay" class="test-quest-card"><span class="test-card-title">Addison <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Through the ridge &middot; Steal her sister&rsquo;s fire</span></button>
         </div>
-        <p class="test-autoplay-note">Computer autoplay starts a fresh quest. Any key or click takes control; <kbd>P</kbd> resumes. Your saved adventure stays unchanged.</p>
       </div>
       <div id="testing-story-jumps" class="test-section">
         <h3>Main story jumps</h3>

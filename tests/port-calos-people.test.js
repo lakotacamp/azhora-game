@@ -10,7 +10,7 @@ import { sourceModule } from './module-loader.js';
 
 const requested = ['Kendall', 'Jay', 'Robert', 'Vic', 'Madi', 'Madison', 'Sierra', 'Franz', 'Marissa', 'Sean',
   'Flor', 'Melissa', 'Richard', 'Laurie', 'Zach', 'Courtney', 'Kathy', 'Karen', 'Kirk', 'Zkayla', 'Pswtr',
-  'Christina', 'Ari', 'Imani', 'Hallie'];
+  'Christina', 'Imani', 'Hallie'];
 
 test('Port Calos contains precisely the requested named residents and the moved people retain their looks', () => {
   assert.equal(new Set(PORT_CALOS_NPC_IDS).size, PORT_CALOS_NPCS.length);
@@ -18,8 +18,7 @@ test('Port Calos contains precisely the requested named residents and the moved 
   assert.deepEqual(Object.keys(PORT_CALOS_NPC_POSITIONS).sort(), [...PORT_CALOS_NPC_IDS].sort());
   const person = name => PORT_CALOS_NPCS.find(npc => npc.name === name);
   assert.equal(person('Christina').look.discoHead, true);
-  assert.equal(person('Ari').look.hairStyle, 'long-curly');
-  assert.equal(person('Ari').look.dress, true);
+  assert.equal(person('Ari'), undefined, 'Ari has moved to Applegarth');
   assert.equal(person('Imani').modelRole, 'vine-keeper');
   assert.equal(KATY.name, 'Catie');
   assert.equal(KATY.id, 'katy', 'rename does not break an existing save identity');

@@ -39,7 +39,6 @@ export const PORT_CALOS_NPC_POSITIONS = freeze({
   'port-calos-harbourmaster': point(-416,282.5,{yaw:Math.PI/2}),
   // Christina, in the street between the market house and the custom house, facing the quay.
   christina: point(-461,293,{yaw:Math.PI/2}),
-  'cobble-ari': point(-485,290,{yaw:Math.PI/2}),
   'cobble-imani': point(-456,319,{yaw:Math.PI/2}),
   'port-calos-kendall': point(-489,273,{yaw:Math.PI/2}),
   'port-calos-jay': point(-489,280,{yaw:Math.PI/2}),

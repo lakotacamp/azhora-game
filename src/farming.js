@@ -6,6 +6,7 @@
  */
 import { APPLEGARTH_WORKS } from './rena.js';
 import { REGIONAL_FARM_ROWS } from './regional-farmland.js';
+import { SUNFLOWER_ROWS } from './ari-garden.js';
 
 const freeze = Object.freeze;
 
@@ -25,6 +26,8 @@ export const WATERED_GROWTH = 0.75;
  * §5). `xp` is what reaping one row pays.
  */
 export const CROPS = freeze({
+  sunflower: freeze({ id: 'sunflower', name: 'Sunflowers', seconds: 120, xp: 26, level: 1, item: 'sunflower', yield: 2, seed: 'sunflower-seed',
+    note: 'Golden flowers on tall green stems. Ari teaches this crop in Applegarth. Water once for a fuller harvest in ninety seconds of active play.' }),
   carrot: freeze({ id: 'carrot', name: 'Carrots', seconds: 90, xp: 22, level: 1, item: 'carrot', yield: 2, seed: 'carrot-seed',
     note: 'A quick first crop. Eat a carrot for 15 health, or simmer one with barley for a much heartier meal.' }),
   beet: freeze({ id: 'beet', name: 'Beets', seconds: 150, xp: 32, level: 2, item: 'beet', yield: 2, seed: 'beet-seed',
@@ -50,7 +53,7 @@ export const FARM_ROWS = freeze([
   row('commons-row-4', 'The far commons row', -435.4, 72.6),
 ]);
 export const FARM_ROW_IDS = freeze(FARM_ROWS.map(entry => entry.id));
-export const ALL_FARM_ROWS = freeze([...FARM_ROWS, ...REGIONAL_FARM_ROWS]);
+export const ALL_FARM_ROWS = freeze([...FARM_ROWS, ...SUNFLOWER_ROWS, ...REGIONAL_FARM_ROWS]);
 export const ALL_FARM_ROW_IDS = freeze(ALL_FARM_ROWS.map(entry => entry.id));
 export const farmRow = id => ALL_FARM_ROWS.find(entry => entry.id === id) ?? null;
 
@@ -237,7 +240,7 @@ export function createFarming({ skills = null, inventory = null, onEvent = () =>
       const soonest = Math.ceil(Math.min(...here.rows.filter(entry => entry.stage === 'sown').map(entry => entry.left)));
       return { title: 'Sown and growing', detail: `About ${soonest} seconds on the soonest row. It grows whether you are watching it or not; go and do something else.` };
     }
-    return { title: 'Ready to plant', detail: 'Choose carrots or barley; beets unlock at level 2 and Drent leaf at level 5. Water a growing row once for an earlier, larger harvest. Shared bins beside the beds supply replacement seeds.' };
+    return { title: 'Ready to plant', detail: 'Choose sunflowers, carrots or barley; beets unlock at level 2 and Drent leaf at level 5. Water a growing row once for an earlier, larger harvest. Shared bins beside the beds supply replacement seeds.' };
   }
 
   function snapshot() {

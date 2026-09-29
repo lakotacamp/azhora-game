@@ -65,3 +65,12 @@
 
 #atlas-traveler span{top:-45px;left:13px;font-size:13px;line-height:19px;padding:2px 6px;max-width:192px;overflow:hidden;text-overflow:ellipsis}
 .atlas-place span{max-width:260px;overflow:hidden;text-overflow:ellipsis}
+
+/* The capital keeps a stronger cartographic symbol at the actual four-lake site. */
+#world-map #atlas-cities{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+.atlas-capital-ground{fill:#b99057;fill-opacity:.32}
+.atlas-capital-wall{fill:none;stroke:#694c31;stroke-width:2;stroke-linejoin:round;stroke-dasharray:5 2}
+.atlas-place.capital i{left:-10px;top:-10px;width:20px;height:20px;border:2px solid #3a2c20;background:#eacb86;box-shadow:0 0 0 2px #fff0c5cc}
+.atlas-place.capital i::before{content:'';position:absolute;inset:3px 2px 2px;background:#493626;clip-path:polygon(0 0,25% 0,25% 25%,40% 25%,40% 0,65% 0,65% 25%,80% 25%,80% 0,100% 0,100% 100%,62% 100%,62% 62%,38% 62%,38% 100%,0 100%)}
+.atlas-place.capital span{font:600 15px Adventure,Georgia,serif;letter-spacing:.04em;color:#342619;background:#f4e2b8f2;border:1px solid #8b6b39;border-radius:3px;padding:3px 8px;text-shadow:none;line-height:18px}
+.atlas-place.capital small{display:block;font:9px 'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6a512e;line-height:12px}

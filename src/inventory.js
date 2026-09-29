@@ -426,6 +426,12 @@ export const INVENTORY_ITEMS = Object.freeze({
     brief: 'Thin, dry oat rounds baked on a griddle stone. Restores up to 20 health.',
     description: 'Restores up to 20 health. Rough oat rounds from the farm kitchens around the Avrel clearing, baked hard so they keep. Better with cheese or honey, but fine on their own.',
   }),
+  'sunflower-seed': Object.freeze({ name: 'Sunflower seeds', type: 'Seed', icon: 'seeds', stackable: true,
+    brief: 'One packet plants a bed of sunflowers. Ari shares them in Applegarth.',
+    description: 'Plant in a garden bed, then water while the stems are young. Sunflowers mature after two minutes of active play, or ninety seconds if watered. Every harvest saves another packet for the next planting.' }),
+  sunflower: Object.freeze({ name: 'Sunflowers', type: 'Harvest', icon: 'flower', stackable: true,
+    brief: 'Golden flowers with dark seedheads, grown in a tended garden bed.',
+    description: 'A bright harvest from your own planting. Ari teaches sunflower growing in Applegarth, in western Drent. Planting, tending and harvesting use the Farming skill.' }),
   'carrot-seed': Object.freeze({ name: 'Carrot seeds', type: 'Material', icon: 'seeds', stackable: true,
     brief: 'One packet plants one row. Stanley shares more at the Avrel clearing.',
     description: 'Plant in a bare commons row. Carrots ripen after 90 seconds of active play; watering makes the harvest earlier and larger. Every harvest returns a packet for replanting.' }),
@@ -628,6 +634,7 @@ export function createInventoryState() {
 }
 
 const iconPaths = {
+  flower: '<circle cx="18" cy="12" r="4"/><path d="M18 8c-4-8 4-8 0 0M22 12c8-4 8 4 0 0M18 16c4 8-4 8 0 0M14 12c-8 4-8-4 0 0M15 9c-8-3-3-8 0 0m6 0c3-8 8-3 0 0m0 6c8 3 3 8 0 0m-6 0c-3 8-8 3 0 0M18 18v16m0-9c-6 0-8-3-8-5 5 0 8 2 8 5m0 5c6 0 8-3 8-5-5 0-8 2-8 5"/>',
   seeds: '<path d="M9 10h18l3 21H6ZM9 10l3-5h12l3 5M10 14h16"/><ellipse cx="15" cy="22" rx="2" ry="3" transform="rotate(-30 15 22)"/><ellipse cx="23" cy="24" rx="2" ry="3" transform="rotate(25 23 24)"/>',
   carrot: '<path d="M11 13c4-4 11-3 13 1 2 5-5 13-17 18 0-8 1-15 4-19ZM12 17l5 2m-8 4 4 2M20 11l1-8m1 9 7-6m-11 4-4-6"/>',
   beet: '<path d="M11 13c4-3 12-3 15 2 5 8-2 13-8 14-6-1-11-8-7-16ZM18 29l-2 5M17 12l-3-8m5 7 4-8m-3 9 9-5M13 17c-2 4 0 7 3 9"/>',

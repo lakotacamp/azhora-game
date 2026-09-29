@@ -4,6 +4,6 @@ export const PORT_CALOS_PLACEHOLDER_NAMES = Object.freeze([
   'Flor', 'Melissa', 'Richard', 'Laurie', 'Zach', 'Courtney', 'Kathy', 'Karen', 'Kirk', 'Zkayla', 'Pswtr',
 ]);
 export const PORT_CALOS_REGION_IDS = Object.freeze([
-  'port-calos-harbourmaster', 'katy', 'christina', 'cobble-ari', 'cobble-imani', 'cobble-jessi',
+  'port-calos-harbourmaster', 'katy', 'christina', 'cobble-imani', 'cobble-jessi',
   ...PORT_CALOS_PLACEHOLDER_NAMES.map(name => `port-calos-${name.toLowerCase()}`),
 ]);

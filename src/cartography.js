@@ -95,7 +95,7 @@ export const CARTOGRAPHY_DIRECTIONS = Object.freeze({
   Pueth: 'North from the Avrel road, up the Tessen road. Wooded in the south, bare hills at the top.',
   Peblos: 'Off Drent’s coast, east. Islands. You want a boat, or a very good opinion of your own swimming.',
   Feradom: 'North again past Pueth, along the coast. A duchy, and one that talks about not being one.',
-  Elagos: 'Inland, south-east of the Caloss: the heartland, and Ambron in the middle of its lake.',
+  Elagos: 'Inland, south-east of the Caloss: the heartland, and Ambron on the dry ground between Ela, Thelas, Brul and Ossen.',
   Amod: 'East of Pueth and over the shoulder of the Lotharn. Terraces, and an ogre on the road in.',
   Vastos: 'South-east beyond Elagos. Cold tableland; the goblins there are the bramble kind.',
   Meneth: 'South of Vastos along the ridges. Same goblins, worse footing.',

@@ -170,7 +170,7 @@ The storage key and file keep their original road-checkpoint names. **Older vers
 
 Press **F8**, use the opening screen's testing button, or choose **Testing tools** from Pause. F8 also works from a defeat screen.
 
-**Quest playtests** comes first: Ben's spider hunt, Liz's rescue of Olive, Troy's investigation, Cagney's escort, and Catie's search for Batman and flight over Suval. Each card teleports to a fresh run of that quest; the magic quests stop at the reward choice. Any key or click takes control, and **P** resumes. These demos protect the normal saved adventure.
+**Quest playtests** comes first, grouped as Gold (main quests), Silver (side stories), then named quest-givers. The six gold cards cover arrival/training, the road to Nothom, the lost courier, the Moros muster, and both Solis branches; each stops after its selected stage. Silver cards run Glun's Drent investigation and the Republican introduction in Luscia (stopping after the briefing because the next local job is unfinished). The named character demos remain below. Each card starts a fresh isolated run; magic quests stop at the reward choice. Any key or click takes control, and **P** resumes the selected quest. Normal saved adventures remain unchanged.
 
 **Main story jumps** offers Iven's satchel assignment, the Republican at the relay, and the Imperial recall decision.
 
@@ -178,7 +178,7 @@ Press **F8**, use the opening screen's testing button, or choose **Testing tools
 
 **Hacks** contains just the fast developer horse and whole-map reveal. Older character jumps, individual location buttons, supplies, ordinary horses, and ghost view are removed from the panel.
 
-`npm run test:testing-tools` clicks the four playtests, three story jumps, travel controls, and hacks while verifying that the normal checkpoint is unchanged. Review the panel with `--smoke-test --review-views=testing-tools`.
+`npm run test:testing-tools` checks the gold, silver and named playtests, repeatable resets, story jumps, travel controls, and hacks while verifying that the normal checkpoint is unchanged. `npm run test:silver-autoplay` plays both silver demos through ordinary movement, dialogue and combat. Review the panel with `--smoke-test --review-views=testing-tools`.
 
 The **TESTING SESSION** badge identifies the override. Testing supplies and travel **never overwrite the normal road checkpoint**. Reopen the game and choose Continue to recover the normal saved road, or begin from the boat for a fresh playthrough.
 
@@ -338,3 +338,11 @@ Catie in Port Calos offers **A Kindness with Wings**. A hidden highland cave lea
 West and South Suval now have tall ridges and switchbacks. Imlamdris is a ruined stone city with a small wooden rebuilding quarter; the ten Iscare islands have Zecron and settlement ruins plus wildlife. East Suval remains closed behind varied cliffs, walls, gates, and four false passages.
 
 `npm run test:batman` runs focused Node checks; `npm run test:batman:desktop` exercises actual quest choices, flight, save/reload, the bounty, and the developer mount. See [implementation and validation](docs/batman-suval-report.md), [terrain](docs/suval-iscare-terrain.md), [residents and Cobble witnesses](docs/port-calos-residents-and-cobble.md), and the [Riding and Boating design draft](docs/travel-skills-design.md).
+
+### Ari's sunflower garden
+
+Ari now lives in Applegarth in western Drent, close to Stanley's Avrel farming area. Her green-book lesson teaches Farming: accept two sunflower seed packets, sow either garden bed, water it, wait ninety seconds of active play, harvest, then report to Ari. Plants grow visibly; watering and harvesting pay ordinary Farming XP and the report pays a single 24 XP bonus. The flowers and saved seeds are yours, and the beds stay usable. This does not consume Stanley's independent introduction. Lesson and bed state survive checkpoints, including older saves that predate the lesson.
+
+`ari-garden.js` owns Ari's established appearance and positions; `sunflower-lesson.js` observes actual farming events. `npm run test:sunflowers:desktop` exercises the real dialogue and F-key garden menus, mid-growth and completed reloads, the green marker, and exactly-once rewards.
+
+Ambron has a dedicated gold capital symbol and label on the journal map, plus its actual interlake city footprint at closer zoom. Ordinary exploration fog still applies.

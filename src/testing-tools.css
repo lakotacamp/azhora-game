@@ -29,6 +29,11 @@
   box-shadow: inset 3px 0 #c7b985;
   color: #fff5dc;
 }
+#testing .test-group-heading { margin: 18px 0 8px; font: 600 12px 'Segoe UI', sans-serif; letter-spacing: .07em; text-transform: uppercase; color: #e8e5d7; }
+#testing .test-gold-heading { color: #f1d18b; }
+#testing .test-silver-heading { color: #d5e1e5; }
+#testing .test-gold-card { background: #454936; border-color: #c8a85c; box-shadow: inset 3px 0 #eac776; }
+#testing .test-silver-card { background: #324b4b; border-color: #a4bcc3; box-shadow: inset 3px 0 #c6d8de; }
 #testing .test-magic-card { background: #3b3e51; border-color: #aca0d3; box-shadow: inset 3px 0 #b9a7ec; }
 #testing .test-card-title { display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 17px; font-weight: 600; }
 #testing .test-card-title > span { font-size: 17px; font-weight: 400; opacity: .75; }

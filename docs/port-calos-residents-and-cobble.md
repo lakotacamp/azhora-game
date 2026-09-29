@@ -2,6 +2,8 @@
 
 Implemented design, 27 September 2026.
 
+Update, 28 September 2026: Ari has moved to Applegarth in western Drent, near Stanley, to teach the sunflower Farming lesson. Jesse had already moved to the Luscian road for the carriage quest. The original relocation design below records their earlier Port Calos placement; they are no longer placed in that town.
+
 Port Calos retains its five buildings on the existing land hex and its harbor. It has Catie, Hallie the harbor master, Christina, Ari, Imani, Jesse, Kendall, Jay, Robert, Vic, Madi, Madison, Sierra, Franz, Marissa, Sean, Flor, Melissa, Richard, Laurie, Zach, Courtney, Kathy, Karen, Kirk, Zkayla and Pswtr. Madi and Madison are separate people; Hallie serves the harbor so their names cannot be mistaken for its keeper.
 
 Catie's display name replaces Katy while her `katy` actor and drawing IDs stay stable. The new Suval vigilante quest owns her authored conversation. Hallie retains ferry and swimming services. Every other Port Calos resident says only: **This person could use more characterization.** There are no invented topics, backgrounds, rewards or services for these placeholders. The 21 newly named residents are identical featureless neutral-gray blank figures until the user supplies their physical descriptions; no provisional personal appearances are invented. Existing requested looks remain: Christina's turning disco-ball head; Ari's long black curls and violet dress; Imani's bob, glasses and work clothes; Jesse's twelve-colored hair, glasses and carriage tools. Jesse retains the `cobble-jessi` save ID despite the rename and move.

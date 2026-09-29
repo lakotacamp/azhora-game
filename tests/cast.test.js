@@ -68,7 +68,7 @@ test('every id on the list is somebody the world actually places', async () => {
   }
   const known = new Set([...placed,
     // Pushed in by src/main.js from their own modules rather than by the world.
-    'kayla', 'kayla-cub', 'harbormaster', 'instructor', 'garden-keeper', 'lee-anne', 'sylvia', 'cagney', 'alex', LUSCIA_PROPHET.id, FARMER.id, ...FERRY_HOST_IDS, 'brandy-frank', 'bird-watcher', 'attic-juan', 'attic-nika',
+    'cobble-ari', 'cobble-jessi', 'kayla', 'kayla-cub', 'harbormaster', 'instructor', 'garden-keeper', 'lee-anne', 'sylvia', 'cagney', 'alex', LUSCIA_PROPHET.id, FARMER.id, ...FERRY_HOST_IDS, 'brandy-frank', 'bird-watcher', 'attic-juan', 'attic-nika',
     'solis-secretary', 'john-salt', 'katy', BATSMASHER.id, 'vintner', 'winemaker', 'cellar-hand', 'light-keeper',
     'rival-keeper', 'tidehaven-smith', 'moros-armourer', 'ambron-armourer', 'lumber-ostler',
     'aftermath-tribune', 'aftermath-captain', 'aftermath-envoy', 'post-camp-legate',

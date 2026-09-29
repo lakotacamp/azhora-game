@@ -83,7 +83,7 @@ test('the introduction is offered once, and no row holds two crops', () => {
   const leaf = farming.sow('commons-row-2', 'drent-leaf', 0);
   assert.equal(leaf.ok, false);
   assert.match(leaf.reason, /level 5/);
-  assert.deepEqual(farming.sowable('commons-row-2').map(entry => entry.id), ['carrot', 'barley'], 'quick food and a cooking grain from level 1');
+  assert.deepEqual(farming.sowable('commons-row-2').map(entry => entry.id), ['sunflower', 'carrot', 'barley'], 'sunflowers, quick food and a cooking grain from level 1');
 });
 
 test('reaping pays experience, and the level is read off the same table as everything else', () => {

@@ -186,9 +186,10 @@ export const SKILLS = Object.freeze({
   farming: Object.freeze({
     id: 'farming', name: 'Farming', kind: 'working',
     blurb: 'Choose a crop, tend the soil, and bring in food for the road. Plants keep growing while you explore; menus, pause and closing the game stop the clock. Every harvest earns experience.',
-    teacher: 'Stanley, beside the Mill Commons rows at the Avrel clearing',
+    teacher: 'Stanley at the Mill Commons rows in the Avrel clearing; Ari in Applegarth teaches sunflower growing',
     thresholds: RUNESCAPE_TABLE,
-    unlocks: Object.freeze([unlock(1, 'Carrots: 90 seconds, 22 experience per harvest'),
+    unlocks: Object.freeze([unlock(1, 'Sunflowers: two minutes, 26 experience per harvest; Ari teaches a practical lesson'),
+      unlock(1, 'Carrots: 90 seconds, 22 experience per harvest'),
       unlock(1, 'Barley: four minutes, 24 experience per harvest'),
       unlock(1, 'Water each planting once: 4 experience, earlier growth and one extra crop'),
       unlock(1, 'Four reusable commons rows; Stanley shares seeds and farm recipes'),

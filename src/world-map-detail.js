@@ -1,10 +1,27 @@
 import { TRANSFORM, hexAt } from './region-world.js';
 import { MARKER_STYLE } from './quest-markers.js';
+import { AMBRON_CENTRE, AMBRON_OUTLINE } from './ambron-city-layout.js';
 
 export const questMapColour = kind => `#${(Object.hasOwn(MARKER_STYLE, kind) ? MARKER_STYLE[kind] : MARKER_STYLE.main).colour.toString(16).padStart(6, '0')}`;
 
 const finite = point => point && Number.isFinite(point.x) && Number.isFinite(point.z);
 const point = p => TRANSFORM.worldToAtlas(p.x, p.z);
+
+/** The capital uses the same dry interlake footprint as its real streets and
+ * walls. This is drawing data only: the ordinary fog still covers every
+ * unvisited part, and the capital mark requires its own visited hex. */
+export function atlasCityDetail() {
+  return { marker: { id: 'ambron-capital', name: 'Ambron', kind: 'capital', subtitle: 'Imperial capital', ...point(AMBRON_CENTRE) },
+    boundary: AMBRON_OUTLINE.map(point) };
+}
+
+/** An ordinary local Ambron label yields to the capital. A tracked destination
+ * or quest keeps its own marker so the city never erases the player's goal. */
+export function atlasPlaceMarks(places = [], local = []) {
+  const capital = atlasCityDetail().marker;
+  const entries = [...places, ...local].filter(p => p && !(p.id === 'ambron' && !['quest', 'tracked'].includes(p.kind)));
+  return [...new Map([...entries, capital].map(mark => [mark.id, { ...mark }])).values()];
+}
 
 /** The atlas and the playable ground use one transform, even at street scale. */
 export function atlasCellKey(p) {
