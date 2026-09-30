@@ -222,6 +222,8 @@ import { createLotharnCaveWalk } from './east-lotharn-cave-walk.js';
 import { nearestPlain as caveNearest } from './east-lotharn-caves.js';
 import { inLotharnBox } from './east-lotharn-world.js';
 import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY as WEST_LONG_VALLEY, NORTH_VALLEY as WEST_NORTH_VALLEY, NOTCH as WEST_LOTHARN_NOTCH, COL as WEST_LOTHARN_COL, pointOn as westLotharnPointOn } from './west-lotharn-world.js';
+import { MITHALA_SUMMER_CHANNELS as MITHALA_SUMMER, MITHALA_LANDMARKS as MITHALA_MARKS } from './mithala-world.js';
+import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BRAID, MITHALA_WEST_ARM as MITHALA_ARM } from './west-regions.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -1986,6 +1988,44 @@ function init() {
       return shot({x:p.x+9,z:p.z},{x:q.x,z:q.z},.09,6);}
     if(view==='west-lotharn-north-valley'){const p=westLotharnPointOn(WEST_NORTH_VALLEY.line,24),q=westLotharnPointOn(WEST_NORTH_VALLEY.line,170);
       return shot({x:p.x,z:p.z},{x:q.x,z:q.z},.06,10);}
+    // The Mithala plain. Worked out from the country's own numbers - the channels' own sample lines
+    // and the landmark points - so a view cannot drift off the thing it shows when a course moves.
+    // `along` is a point on a course's centre line and `beside` steps off it by its own normal.
+    if(view.startsWith('mithala-')){
+      const along=(course,t)=>{const s=course.samples,i=Math.max(0,Math.min(s.length-1,Math.round((s.length-1)*t)));return s[i];};
+      const beside=(sample,out)=>({x:sample.x+sample.nx*out,z:sample.z+sample.nz*out});
+      const mark=id=>MITHALA_MARKS.find(one=>one.id===id);
+      // Standing on the levee of the main channel's braided reach, looking down it: the country.
+      // Across the braided reach, from above the levee: two threads, a bar between them and the far
+      // bank's gallery. This one took three tries and the two failures are both facts about the
+      // country. Looking *along* the channel put the camera on the water and filled the frame with
+      // it; and standing on the levee at eye height showed no river at all, because a levee stands a
+      // pace and a half over a channel cut a metre into a plain with no relief in it - which is why
+      // the lore's villages are on the banks and why the gallery is how a traveler finds the water.
+      if(view==='mithala-main-channel'){const a=along(MITHALA_MAIN_CHANNEL,.52);
+        return shot(beside(a,44),beside(a,-14),.30,1);}
+      // The gallery from out on the grass: the dark line with nothing behind it that finds the river.
+      if(view==='mithala-gallery'){const a=along(MITHALA_MAIN_CHANNEL,.62);
+        return shot(beside(a,-165),{x:a.x,z:a.z},.05,10);}
+      // The meeting of the arms, from the dry ground inside the fork.
+      if(view==='mithala-meeting'){const m=mark('mithala-meeting');
+        return shot({x:m.x+110,z:m.z+70},{x:m.x,z:m.z},.05,2);}
+      // The round horizon: the middle of the upper grass, looking west at nothing at all.
+      if(view==='mithala-horizon'){const m=mark('round-horizon');
+        return shot({x:m.x,z:m.z},{x:m.x-400,z:m.z-40},.02,4);}
+      // The apron, the only rise on the plain, seen from the flood plain below it.
+      if(view==='mithala-apron'){const m=mark('south-mithala-apron');
+        return shot({x:m.x+40,z:m.z+190},{x:m.x,z:m.z},.05,6);}
+      // A summer channel: a cut bed with nothing in it, walked down the middle.
+      if(view==='mithala-summer-channel'){const c=MITHALA_SUMMER[0],a=c.points[1],b=c.points[3];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.06,1.4);}
+      // The fen margin going north into the Acor Wetlands, with no line anywhere to mark it.
+      if(view==='mithala-fen'){const m=mark('north-mithala-fen');
+        return shot({x:m.x+30,z:m.z+190},{x:m.x,z:m.z-90},.03,5);}
+      // The north braid coming down off the shelf, from its own bank.
+      if(view==='mithala-braid'){const a=along(MITHALA_BRAID,.58),b=along(MITHALA_BRAID,.80);
+        return shot(beside(a,26),{x:b.x,z:b.z},.05,3);}
+    }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
       const pan=VASTOS_PANS[2];
@@ -10044,7 +10084,7 @@ function init() {
         // are worked out by the same function. The spots come from the regions' own numbers
         // rather than typed in, so a view cannot drift off the thing it is meant to show
         // when the ground under it is adjusted.
-        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')){
+        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')){
           questStage=QUEST_DONE;combat.finishPractice();player.setArmed(true);
           const spot=westReviewSpot(view);
           if(spot){

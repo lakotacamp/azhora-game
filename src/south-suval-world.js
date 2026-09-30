@@ -11,7 +11,7 @@
  * **What comes from the atlas** (the atlas wins over the lore, and here they agree):
  *  - fifteen land hexes - seven of hills, four of mountain and four of grassland - and the lake
  *    hex at (6,120) that no region claims but that South Suval rings on all six sides, taken as
- *    the region's own `lake` cell (`ENCLOSED_LAKES`, scripts/build-region-survey.mjs);
+ *    the region's own `lake` cell (`ENCLOSED_HEXES`, scripts/build-region-survey.mjs);
  *  - three climates: `Csa` over ten hexes, `Csc` on the three mountain hexes of the ridge, and
  *    `Cfb` on the two northern hills and on the lake itself;
  *  - no river edge at all, which is the lore's point about the lake.

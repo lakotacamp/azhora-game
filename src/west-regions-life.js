@@ -11,6 +11,7 @@ import { GALA_WILDLIFE_ZONES } from './gala-wildlife.js';
 import { ASCARTH_WILDLIFE_ZONES } from './ascarth-wildlife.js';
 import { OVES_WILDLIFE_ZONES } from './oves-wildlife.js';
 import { WEST_LOTHARN_WILDLIFE_ZONES } from './west-lotharn-wildlife.js';
+import { MITHALA_WILDLIFE_ZONES } from './mithala-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -178,6 +179,65 @@ function models() {
         ...both(side => C(0xe8e0c8, [side * .275, .40, .52], [.042, .12, .042], [-.55, 0, side * .55])),
       ]),
       leg: geometry([Y(0x6b6154, [0, -.16, 0], [.105, .32, .107]), B(0x3c352d, [0, -.32, .03], [.16, .10, .20])]),
+    },
+
+    /**
+     * **The frostback buffalo**, and the one new rig the Mithala plain asked for. The fauna overview
+     * names it and places it here and nowhere else: "a heavy wild bovid of the Mithsla and Celder
+     * plains whose northern summer circuit sometimes reaches Henborth... They are shorter,
+     * deeper-chested, and more compact than tallhorns, with blunt forward-curving horns, dense
+     * shoulder muscle, and a pale ridge of cold-season hair along the spine."
+     *
+     * **It is wild and it is nobody's**, which is the lore's own emphasis and the reason a country
+     * built with no domestic stock in it can have a bovid at all: "Frostbacks are not domestic
+     * tallhorns gone wild and are not considered available breeding stock by Plains herders, though
+     * outside livestock speculators have repeatedly tried to make them into both."
+     *
+     * **And it is how this country carries its climate.** The game has no seasons, so `Dfa` cannot be
+     * drawn as weather; what can be drawn is an animal whose whole shape is a hard winter - a mass of
+     * shoulder to push snow with, a head carried low off it, and a ridge of pale cold-season hair
+     * along the spine that the lore names the animal after. Its distribution is a season too: "their
+     * herds follow grass quality rather than political boundaries: west through the mineral-rich
+     * Celder river terraces in some years, east and south across Mithsla in others, and north into
+     * Henborth only when the thaw and summer moisture make the upland pasture worth the risk."
+     *
+     * Built from the longhorn's parts and nothing like its silhouette. The longhorn is height and
+     * horns; this is a wedge - everything in front of the forelegs and very little behind them, on
+     * legs a fifth shorter, with horns that go forward and stop. **The head carries its own neck**,
+     * which is the Nethrani beast's lesson: a head that swings down to graze off a body this deep
+     * would otherwise float in front of its own chest, so `GRAZER_RIG`'s `neck` and `high` are the
+     * shoulder joint at the top of the hump and the swing turns the whole of it.
+     */
+    frostback: {
+      body: geometry([
+        // The hump: dense shoulder muscle under long hair, and the highest point of the animal.
+        S(0x4a382b, [0, 1.18, .30], [.40, .40, .44]),
+        S(0x5a4534, [0, 1.06, .50], [.35, .33, .26]),
+        // The barrel behind it, dropping away: a frostback has almost no rump.
+        S(0x3d2e24, [0, .92, -.30], [.36, .35, .60]),
+        S(0x33261e, [0, .80, -.02], [.33, .26, .58]),
+        // The pale ridge of cold-season hair the animal is named for, from the hump to the loin.
+        S(0xc3b199, [0, 1.42, .14], [.13, .05, .52]),
+        Y(0x2d221b, [0, .88, -.86], [.040, .40, .040], [1.05, 0, 0]),
+        S(0x241b16, [0, .70, -.98], [.05, .11, .055]),
+      ]),
+      head: geometry([
+        // The neck, short and thick, off the top of the hump and forward and down.
+        S(0x5a4534, [0, -.02, .14], [.20, .19, .20]),
+        S(0x4a382b, [0, -.14, .34], [.19, .18, .20]),
+        // A big blunt head carried low, with the winter hair of the forehead standing over the eyes.
+        S(0x3d2e24, [0, -.26, .54], [.19, .19, .24]),
+        S(0x33261e, [0, -.34, .74], [.13, .12, .14]),
+        S(0x241b16, [0, -.38, .86], [.085, .07, .07]),
+        S(0x6b5745, [0, -.10, .52], [.20, .11, .17]),
+        ...both(side => S(0x33261e, [side * .20, -.20, .44], [.11, .07, .09])),
+        ...both(side => S(dark, [side * .155, -.24, .70], [.026, .030, .027])),
+        // Blunt horns: out a little, then forward, and stopping. No sweep and no upward hook - which
+        // is the whole of how a frostback is told from a tallhorn at any distance.
+        ...both(side => Y(0x5e5344, [side * .20, -.06, .50], [.050, .13, .050], [-.10, 0, side * 1.18])),
+        ...both(side => C(0x796d5a, [side * .30, -.10, .60], [.046, .13, .046], [-.90, 0, side * .55])),
+      ]),
+      leg: geometry([Y(0x2d221b, [0, -.17, 0], [.098, .34, .100]), B(0x1f1814, [0, -.34, .03], [.15, .10, .19])]),
     },
 
     /**
@@ -917,6 +977,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...ASCARTH_WILDLIFE_ZONES,
   ...OVES_WILDLIFE_ZONES,
   ...WEST_LOTHARN_WILDLIFE_ZONES,
+  ...MITHALA_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -1011,6 +1072,11 @@ const GRAZER_RIG = Object.freeze({
   // not less angle. `neck` and `high` are the **shoulder joint** and not the base of a head,
   // as the red deer's are, because this one's head geometry carries its own neck.
   'nethrani-cattle': { neck: .40, high: .92, low: .66, shoulder: .55, hip: .26, fore: .50, stride: .34 },
+  // The frostback: `neck` and `high` are the shoulder joint at the top of the hump, as the Nethrani
+  // beast's are, because this one's head geometry carries its own neck. `low` is deep, because a
+  // grazing bison puts its nose on the ground and its shoulders with it; the stride is short because
+  // a short leg swings through less ground rather than less angle.
+  frostback: { neck: .32, high: 1.20, low: .82, shoulder: .70, hip: .28, fore: .50, stride: .36 },
 });
 
 const BIRD_RIG = Object.freeze({
@@ -1199,9 +1265,9 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * keeps them from being chased to the horizon. The fox still never flees.
    */
   const FLEE_AT = { longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
-    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14 };
+    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14, frostback: 9.5 };
   const WALK = { longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
-    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5 };
+    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5, frostback: .40 };
   const RUN = { 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
     egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6 };
   /**
@@ -1210,7 +1276,11 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * word `longhorn`, which was true of exactly one animal until the Nethrani beast landed —
    * and a Nethrani cow that fled would have been the only cow in the world that did.
    */
-  const CATTLE = new Set(['longhorn', 'nethrani-cattle']);
+  // The frostback is in it and is not cattle at all: what the set really means is "too big to bolt",
+  // and a wild bovid of five hundred kilos answers a traveler exactly as a longhorn does - head up,
+  // turn, and give ground at a shade over a walk. The lore's word for how it is regarded is "a
+  // permanent hazard that one has learned to navigate rather than eliminate", which is this.
+  const CATTLE = new Set(['longhorn', 'nethrani-cattle', 'frostback']);
   /**
    * Everything that answers a traveler by getting off the ground. A bird cannot be
    * run down, which is the whole of why they are all here and the hare is not.
@@ -1222,7 +1292,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   const FOX = Object.freeze({ floor: 1, cap: 6.6, lead: 1.06, arm: 2.8, notice: 10 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
   const RETURN = { longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
-    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4 };
+    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4, frostback: 1.4 };
   const HOME = 16, SETTLED = 6;
   const BACK = [0, .35, -.35, .7, -.7], ALONG = [1.05, -1.05, 1.4, -1.4, 1.75, -1.75, 2.1, -2.1];
 

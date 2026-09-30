@@ -173,7 +173,7 @@ export const LANGUAGES = freeze({
     from: 'the world-builder profile `mittoli`',
     note: 'The great western family and the tongue of commerce, governance and scholarship. The traveler meets three of its dialects: Luscian, thick with Elagosi and plains loanwords; the Plain’s eastern Mittoli, with an older layer under its place names that nobody has traced; and Amodian, a foothill dialect carrying a terrace-country substrate and a set of water-measure words Standard Mittoli lacks.',
     borrows: ['ambroni', 'pyrosi'],
-    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn', 'ovesos'],
+    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn', 'ovesos', 'mithali'],
     onsets: ['al', 'ar', 'azh', 'bel', 'cael', 'dael', 'dor', 'el', 'gal', 'hom', 'kael', 'mel', 'mir', 'nil', 'sor', 'tal', 'thal', 'trel', 'vel', 'zael'],
     middles: ['a', 'ae', 'e', 'i', 'o', 'oe', 'u'],
     suffixes: ['a', 'ael', 'an', 'ath', 'el', 'eth', 'in', 'ith', 'oe', 'ol', 'om', 'on', 'or', 'os', 'oss', 'um'],
@@ -531,6 +531,34 @@ export const DIALECTS = freeze({
   ovesos: dialect('ovesos', 'Inner-branch Mittoli', 'mittoli',
     'A variant of Standard Mittoli plain to any downstream speaker, whose whole distinctive vocabulary is water and who may use it: *oves*, the lower valley where hill country opens into farming ground and the root the country\u2019s own name is built on; *thris-kael*, "the returning inside water", the inner tributary, used in writing to Minora and never between neighbours; *vel-sorten*, the division of flood-renewed bottomland among farming claims; and *osk-milis*, water-right seniority, old enough to appear in the oldest land records and with no clear etymology in Standard Mittoli at all. Its legal speech runs to the genealogical where Minora\u2019s runs to the measured, and its submissions to the Branch Court are twice as long as anybody else\u2019s.',
     word => word.replace(/oss$/, 'os').replace(/th/, 'thr')),
+  // **The Mithala plain, all four countries, one dialect** (src/mithala-world.js). mithala.md's
+  // Language section names it: "The Mithali dialects are Mittoli in family - the grammar, the core
+  // vocabulary, the fundamental structure are recognizable to a speaker of Standard Mittoli - but
+  // old enough in their divergence to cause significant comprehension problems in rapid speech. A
+  // Caeras valley merchant and a Mithala channel farmer can communicate slowly and carefully; in
+  // casual speech at ordinary speed they often cannot." So it is Mittoli and no new tongue is
+  // invented - but it is the most divergent Mittoli in the game, and the only one that is hard to
+  // follow at speed rather than merely marked.
+  //
+  // **One dialect for the four countries, and dividing it by country would be inventing a division
+  // the lore denies.** "Mithala people do not generally call themselves Mithala people; they call
+  // themselves people of the Olveth Arm or the Minoran plain or whichever river-section describes
+  // their actual location... your identity is your channel, because your channel is your flood
+  // timing, your water rights, your grain calendar, your neighbors." The divisions here are
+  // channels, which run across all four borders and none of which is a country; a per-country
+  // dialect would cut the plain the one way its own people never cut it. It is the same argument the
+  // West Lotharn made for sharing the East's: the lore's unit is not the map's.
+  //
+  // What is distinctive is **the sky and the flood**, and both are the lore's own: "The astronomical
+  // and meteorological vocabulary in the Mithala dialects is extensive and specific. There are terms
+  // for sky conditions that Standard Mittoli must describe in phrases - kinds of cloud at specific
+  // heights, kinds of evening color that indicate specific weather patterns, the appearance of
+  // certain stars in specific positions at specific seasons." The two words written down anywhere
+  // are *moravel*, "the grain-attention", for a period of outside interest in the harvest, and the
+  // proverb *Vet mithalan, vel noreth* - "the flood returns, the grain does not ask".
+  mithali: dialect('mithali', 'Mithali', 'mittoli',
+    'The most divergent Mittoli anybody still calls Mittoli: the grammar and the core vocabulary are Standard, and at ordinary speed a Caeras merchant and a channel farmer cannot follow one another. Its weight is in two places. **The sky**, because on a plain with nothing to interrupt it the western horizon tells you about the next three days, and there are single terms here for cloud at a stated height, for kinds of evening colour and for a star in a stated place in a stated season that Standard Mittoli needs a phrase for; the continent’s oldest astronomy came out of them and cannot be read without them. **And the flood**, whose calendar is kept in parallel with the astronomical one and causes steady friction with anybody administering by the other: *moravel*, "the grain-attention", said of a period of outside interest in the harvest with resigned familiarity rather than alarm, and the proverb every variant of which says the same thing - *Vet mithalan, vel noreth*, "the flood returns, the grain does not ask". The name *Mithala* itself is older than Mittoli and does not decompose in it.',
+    word => word.replace(/ae/, 'a').replace(/([aeiou])l$/, '$1ln').replace(/^th/, 't')),
   highland: dialect('highland', 'the highland Izoli', 'izoli',
     'Conservative where the coastal towns have moved on, and carrying shrine-keeping vocabulary the towns do not have and the tribes do not translate.',
     word => word.replace(/([bcdfgklmnprstvz])$/, '$1$1')),
@@ -607,6 +635,13 @@ export const REGION_LANGUAGE = freeze({
   // note about the same dialect, not a second one, and a second one would need words nobody has
   // written down.
   'West Lotharn Mountains': spoken('mittoli', 'lotharn'),
+  // Twenty-eight to thirty-one: the four Mithala countries, and **one dialect across all four**, for
+  // the reason given at `mithali` above - the lore's own divisions on this plain are channels and
+  // not countries, and the channels cross every one of the four borders.
+  'South Mithala': spoken('mittoli', 'mithali'),
+  'West Mithala': spoken('mittoli', 'mithali'),
+  'East Mithala': spoken('mittoli', 'mithali'),
+  'North Mithala': spoken('mittoli', 'mithali'),
   // Feradom speech, the Drentish of the domain country, which already had its entry above
   // for the company's men who came from there.
   Feradom: spoken('feradom'),

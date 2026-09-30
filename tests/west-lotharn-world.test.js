@@ -98,15 +98,24 @@ test('the atlas: forty-eight hexes, twenty-five of mountain, forty-seven Cfa and
   assert.equal(PLAYABLE_SURVEY.regions.find(region => region.name === WEST_LOTHARN).cells.length, 48);
 });
 
-test('the world box does not grow, which is a first for a region this size', () => {
+test('this country does not grow the world box, and the four north of it do', () => {
   // Its world extent is about x -2550…-1550, z -981…-260, well inside bounds that West Izol, Amod
-  // and the Ascarth Peninsula already set, and rows 95-102 are inside the survey WINDOW. So
-  // tests/region-layout.test.js, tests/isareos-world.test.js and tests/nethereum-world.test.js
-  // needed no new numbers.
+  // and the Ascarth Peninsula already set, and rows 95-102 are inside the survey WINDOW. So when
+  // this country was built, tests/region-layout.test.js, tests/isareos-world.test.js and
+  // tests/nethereum-world.test.js needed no new numbers.
+  //
+  // **The four Mithala countries built next did grow it, north.** North Mithala reaches atlas row
+  // 82 against this range's 95, so the world's northern edge went from -1301.17 to -2167.196 and
+  // the world from 37.00 hexes tall to 45.66. Nothing this country stands on moved with it: the
+  // three edges it does not set are still the numbers they were, and the one it does - the western
+  // x, which Nethereum set - is untouched. So what this test now holds is the two facts together.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -3010.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
-  assert.ok(Math.abs(WORLD_BOUNDS.minZ - -1301.1705922171766) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
+  assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
+  // This range's own hexes are a long way inside the northern edge the Mithala set, and that edge
+  // is the Mithala's: 866 m of new world north of where this country's own build left it.
+  assert.ok(WORLD_BOUNDS.minZ < -2100 && Math.min(...cells.map(cell => cell.z)) - WORLD_BOUNDS.minZ > 1100);
   const xs = cells.map(cell => cell.x), zs = cells.map(cell => cell.z);
   assert.ok(Math.min(...xs) > WORLD_BOUNDS.minX + 100 && Math.max(...xs) < WORLD_BOUNDS.maxX - 100);
   assert.ok(Math.min(...zs) > WORLD_BOUNDS.minZ + 100 && Math.max(...zs) < WORLD_BOUNDS.maxZ - 100);
@@ -178,10 +187,26 @@ test('the north valley drains the massif to the Mithala plain, open all the way 
     assert.ok(westGroundAt(sample.x, sample.z) <= sample.surface + .01, `the north beck floats at ${sample.x.toFixed(0)}`);
   }
   // It is a valley, not a gorge: the floor is walked, and the walls are above it on both sides.
-  for (const along of [30, 90, 150]) {
+  //
+  // **Not at 150 m, which is where it arrives.** The probe was [30, 90, 150] and 150 is eleven
+  // metres from the end of a hundred-and-fifty-one-metre line - the mouth. While the Mithala plain
+  // was unbuilt, the ground a hex north of the mouth was `outland` blended with this range, six
+  // metres of relief on a lifted base, and the mouth appeared to have a wall on its northern side
+  // because the empty country did. With South Mithala registered that ground is a river plain at
+  // 28 m, six metres *below* the valley floor at 150 m, and the wall is gone because the valley has
+  // got where it was going. The code is right and the probe was measuring the outland: it reads at
+  // 130 m now, the last station that is still inside the range, and the mouth is asserted open
+  // below instead.
+  for (const along of [30, 90, 130]) {
     const p = pointOn(NORTH_VALLEY.line, along), mid = g(p.x, p.z);
     for (const side of [-1, 1]) assert.ok(g(p.x + p.nx * 60 * side, p.z + p.nz * 60 * side) > mid + 2, `no wall at ${along} m`);
   }
+  // And the mouth is open to the north, onto the plain the lore says it drains to: sixty metres out
+  // on the Mithala's side the ground is below the valley's own floor, and it is South Mithala's.
+  const mouth = pointOn(NORTH_VALLEY.line, NORTH_VALLEY.line.length);
+  const onto = { x: mouth.x - mouth.nx * 60, z: mouth.z - mouth.nz * 60 };
+  assert.equal(hexOwnerAt(onto.x, onto.z), 'South Mithala', 'the north valley comes out on the Mithala plain');
+  assert.ok(g(onto.x, onto.z) < g(mouth.x, mouth.z), 'and the plain is below its floor: nothing shuts the mouth');
   // Nothing rises out of the floor: the summits' lift is nothing on either valley.
   for (const valley of [LONG_VALLEY, NORTH_VALLEY]) for (let along = 0; along <= valley.line.length; along += 20) {
     const p = pointOn(valley.line, along);
@@ -307,7 +332,14 @@ test('the wildlife reads the height, and none of it is anybody’s', () => {
 test('nobody lives here yet: no people, no road, no made place, and the chart says what is built', () => {
   const region = regions.find(one => one.name === WEST_LOTHARN);
   assert.equal(REGION_IDS[WEST_LOTHARN], 27);
-  assert.equal(PLAYABLE_REGIONS.at(-1), WEST_LOTHARN, 'twenty-seven, after the Oves Desert');
+  // Appended, never inserted, which is what the id and the order are really about: the biome scatter
+  // in world-regions.js walks PLAYABLE_REGIONS with one seeded stream, so a name put anywhere but
+  // the end re-rolls every region after it. This used to assert that this country was *last*; it is
+  // not last any more, because the four Mithala countries went on the end after it, so what it says
+  // now is what it always meant.
+  assert.ok(PLAYABLE_REGIONS.indexOf(WEST_LOTHARN) >= 0, 'registered');
+  for (const name of PLAYABLE_REGIONS.slice(PLAYABLE_REGIONS.indexOf(WEST_LOTHARN) + 1))
+    assert.ok(REGION_IDS[name] > 27, `${name} was added after the West Lotharn and carries a higher id`);
   assert.deepEqual(region.npcIds, []);
   assert.equal(regionLevel(WEST_LOTHARN), 4);
   assert.equal(WEST_REGION_NAMES.includes(WEST_LOTHARN), true);

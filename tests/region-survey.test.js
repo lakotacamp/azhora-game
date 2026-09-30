@@ -1,22 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildSource, PLAYABLE, WINDOW, ENCLOSED_LAKES } from '../scripts/build-region-survey.mjs';
+import { buildSource, PLAYABLE, WINDOW, ENCLOSED_HEXES } from '../scripts/build-region-survey.mjs';
 import { PLAYABLE_SURVEY, LAND_HEXES, SURVEY_ORIGIN } from '../src/region-survey.js';
 import { regionCells, regionOutline, worldBoundsFor, routeAnchors } from '../src/region-layout.js';
 
 const atlasPath = new URL('../assets/azhora-dev-regions.json', import.meta.url);
 const atlas = JSON.parse(readFileSync(atlasPath, 'utf8'));
 /**
- * The atlas as the game holds it: every region exactly as authored, and the one deliberate
- * addition - an enclosed lake taken by the region round it (`ENCLOSED_LAKES`, the survey
- * builder). The lake cell carries the same centre the atlas grid gives every other hex.
+ * The atlas as the game holds it: every region exactly as authored, and the two deliberate
+ * additions - the hexes the atlas leaves unclaimed inside a single region, taken by the region all
+ * round them (`ENCLOSED_HEXES`, the survey builder): South Suval's Stillwater and the `hills` hex in
+ * the middle of South Mithala's apron. Each keeps the terrain the World Builder map gives it and the
+ * same centre the atlas grid gives every other hex.
  */
 const held = { ...atlas, regions: atlas.regions.map(region => {
-  const lakes = ENCLOSED_LAKES[region.name ?? region.id];
-  if (!lakes) return region;
+  const enclosed = ENCLOSED_HEXES[region.name ?? region.id];
+  if (!enclosed) return region;
   const size = atlas.hexSize, width = Math.sqrt(3) * size;
-  return { ...region, cells: [...region.cells, ...lakes.map(([q, r]) => ({ q, r, terrain: 'lake',
+  return { ...region, cells: [...region.cells, ...enclosed.map(([q, r, terrain]) => ({ q, r, terrain,
     x: width * (q + r / 2) - atlas.origin.x, y: size * 1.5 * r - atlas.origin.y }))] };
 }) };
 
@@ -57,10 +59,10 @@ test('the baked survey and the atlas produce identical geometry', () => {
   assert.deepEqual(routeAnchors(PLAYABLE_SURVEY), routeAnchors(atlas));
 });
 
-test('the only ground the game holds that the atlas leaves unclaimed is an enclosed lake', () => {
+test('the only ground the game holds that the atlas leaves unclaimed is a hex enclosed by one region', () => {
   const owner = new Map();
   for (const region of atlas.regions) for (const cell of region.cells) owner.set(`${cell.q},${cell.r}`, region.name ?? region.id);
-  for (const [name, lakes] of Object.entries(ENCLOSED_LAKES)) for (const [q, r] of lakes) {
+  for (const [name, enclosed] of Object.entries(ENCLOSED_HEXES)) for (const [q, r] of enclosed) {
     assert.equal(owner.get(`${q},${r}`), undefined, `${q},${r} is claimed by the atlas already`);
     // Ringed on all six sides by the region that takes it, or it is somebody else's water too.
     for (const [dq, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]])
@@ -70,6 +72,6 @@ test('the only ground the game holds that the atlas leaves unclaimed is an enclo
   for (const name of PLAYABLE) {
     const extra = PLAYABLE_SURVEY.regions.find(region => region.name === name).cells.length
       - atlas.regions.find(region => (region.name ?? region.id) === name).cells.length;
-    assert.equal(extra, (ENCLOSED_LAKES[name] ?? []).length, name);
+    assert.equal(extra, (ENCLOSED_HEXES[name] ?? []).length, name);
   }
 });

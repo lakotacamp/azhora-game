@@ -28,6 +28,7 @@ import { lotharnGround, lotharnCoast } from './east-lotharn-world.js';
 import { westLotharnGround } from './west-lotharn-world.js';
 import { galaRise, galaWash } from './gala-world.js';
 import { ovesGround } from './oves-world.js';
+import { mithalaGround } from './mithala-world.js';
 import {
   WEST_RIVERS, WEST_POOLS, WEST_GROUND, VASTOS_SINTER, VASTOS_BRAID, VASTOS_RIVER,
   MENETH_RIDGES, menethRidgePhase, CARICAS_SHELF, WEST_BRAIDS, WEST_REGION_BOXES, inBox,
@@ -233,9 +234,9 @@ export const nethereumWet = (x, z) => clamp(nethereumHollow(x, z) / NETHEREUM_HO
  * corner is the one piece of the west that comes down to the sea, so the coast's slope is put
  * back there first (`lotharnCoast`).
  */
-const baseBeforeWater = (x, z) => westLotharnGround(x, z, lotharnGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z)))
+const baseBeforeWater = (x, z) => mithalaGround(x, z, westLotharnGround(x, z, lotharnGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z)))
   + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z) + galaRise(x, z) - galaWash(x, z)
-  + ovesGround(x, z);
+  + ovesGround(x, z));
 
 // ---------------------------------------------------------------------------
 // Standing water
@@ -431,9 +432,9 @@ export function westShaping(x, z) {
  */
 export function westGround(x, z, natural) {
   if (!westShaping(x, z)) return natural;
-  return channel(x, z, pooled(x, z, westLotharnGround(x, z, lotharnGround(x, z, natural))
+  return channel(x, z, pooled(x, z, mithalaGround(x, z, westLotharnGround(x, z, lotharnGround(x, z, natural))
     + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z) + galaRise(x, z) - galaWash(x, z)
-    + ovesGround(x, z)));
+    + ovesGround(x, z))));
 }
 
 /** The western ground of a point on its own, for the scenery and the tests. */

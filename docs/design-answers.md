@@ -4,6 +4,66 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-29 — The Mithala plain: four countries built as one landform
+
+Built to `docs/mithala-brief.md`; the full account is `docs/mithala-report.md`. Terrain, climate,
+water, scenery and wildlife only. Seven decisions worth writing down, because the next builder in
+this quarter of the continent will meet all of them.
+
+**1. Four countries, one profile, one sky, one dialect.** South, West, East and North Mithala share
+forty-nine hex edges, one climate code and one river system, so they are quarters of one plain and
+not four countries that happen to touch. Their terrain profiles are identical to the digit and every
+difference of level between them is a landform (`mithalaTilt`), because a base or a wavelength that
+differed across any of those forty-nine edges would put a step in the middle of one plain. The sky is
+one for the same reason — a horizon that changed at an internal border would be a lie about a country
+whose whole point is that the horizon does not change. And the dialect is one because the lore’s own
+divisions here are **channels, not countries**: “they call themselves people of the Olveth Arm or the
+Minoran plain… your identity is your channel”, and a channel crosses every one of the four borders.
+
+**2. `Dfa` is drawn by the species, not the weather.** The plain is hot-summer humid continental on
+all 116 hexes — the first properly continental country in the game — and the game has no seasons. So
+the summer face is built and the winter is carried by what grows and grazes: tall warm-season prairie
+grass and forbs, willow, black poplar and alder on the water and **not one evergreen anywhere**,
+sedge on the fen margin, and a heavy cold-adapted wild bovid whose whole distribution is a seasonal
+circuit. What winter should bring is written out in the report; this block, not the Oves, is where
+seasons will show most, and the ground is already shaped for the flood.
+
+**3. The world grew north, by more than any country has grown it.** −1301.17 m to **−2167.196**,
+36.996 hexes tall to **45.656**, and `WINDOW.minR` 90 to **79** — measured off the coast lattice,
+not guessed. It turned 329 claimed hexes in seventeen countries from sea into land, which is the
+whole northern horizon: the Acor Wetlands, the Acorwood and the Oremindi.
+
+**4. The atlas leaves one hex unclaimed inside South Mithala, and the game now holds it.**
+`ENCLOSED_LAKES` (one lake, the Stillwater) became **`ENCLOSED_HEXES`** and carries terrain: (5,92)
+is `hills` on the World Builder map, ringed by South Mithala on all six sides, and unclaimed. Left
+out it was a hundred-metre hole of sea at 0.6 m in the middle of the flattest country in the game.
+Taking it makes the plain one piece and the Lotharn’s apron the unbroken chain of five `hills` hexes
+the map draws. **If a re-export ever produces a third such hex, nothing warns about it.**
+
+**5. The biggest water in the game after the Lizeem, and it is not called the Lizeem.** The atlas
+draws sixty-one new river edges in thirteen chains with one outlet. The largest is `medium` where the
+Lizeem is `large` elsewhere, and the lore says the river below Minora is a set of channels rather
+than one river — so it is **the main channel**, the great river’s name stays on the great river, and
+the one name taken from the lore is **the north braid**. Nothing is coined: there is no Mithali
+profile in `azhoran_language_profiles.py` and the lore says the name Mithala itself does not
+decompose in Mittoli.
+
+**6. A river on a flood plain runs on a floor it has laid itself.** Six of the eight channels are
+drawn on a border and four of those borders are unbuilt, so up to two thirds of the hex blend along
+them is `outland` at twelve times this plain’s amplitude. Before the **swale** — which levels the
+ground within 45 m of every channel to the plain’s own designed surface — the west arm’s water was
+forced down 6.79 m and arrived 5.3 m below the river it flows into. It is a landform and not a patch,
+and the levees and backswamps go with it: **the ground is highest at the water and lowest halfway to
+the next channel**, which is why the lore puts every village on a bank.
+
+**7. One new rig, the frostback buffalo, and it is wild.** The fauna overview names it and places it
+on this plain by name, and is explicit that it is **not** domestic stock — which is the only reason a
+country built with nothing of anybody’s in it can carry a bovid. The river-horn, which is what the
+Mithala is really about, belongs to households and is not built. The three Plains predators the
+overview names — the hunt-hound pack, the grey grass-lion, the north wolf — are deliberately absent:
+every animal in this system is ambient, and a grass-lion that stands in the open and backs off at a
+walk is a worse lie about the animal than leaving it out.
+
 ## 2026-09-26 — Addison's quest: her sister's fire (the user's premise)
 
 **The quest.** Addison wants the traveler to steal the fire spirit out of her rival

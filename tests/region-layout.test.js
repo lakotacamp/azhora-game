@@ -107,11 +107,29 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * west: the peninsula lies inside the box Nethereum and Drent already made. So the north-south guard
    * goes to 37 and no further, with four-tenths of a metre to spare, and it gets a floor of its own.
    */
-  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 37 * METRES_PER_HEX, 'the playable regions fit a walkable world');
+  /*
+   * **The four Mithala countries spend eight hexes and two thirds of one north to south, which is
+   * more than any country has spent in one direction, and they state their case.** The East Lotharn
+   * set the northern edge at its own northern row, -1301; the plain that range is the southern wall
+   * of runs on north of it to the Acor Wetlands, and North Mithala's northernmost hex is the atlas's
+   * row 82, centred at z = -2049.5 with its top corner at -2107.2, so the edge goes to **-2167.196**
+   * and the height from 36.996 hexes to **45.656** - measured, not estimated. That is four whole
+   * countries and 116 hexes, more than double any previous job, and they take nothing east or west:
+   * the plain lies inside the box Nethereum and Drent already made (x -2400…-950 against -3010…610).
+   * Each one's own case: South Mithala reaches row 89 and would have spent nothing on its own, since
+   * the East Lotharn already stood at 92; West Mithala reaches 87; East Mithala 86; and **North
+   * Mithala alone spends the last four rows**, 85 down to 82. So the north-south guard goes to 46
+   * and no further, with three and a half hexes to spare, and its floor goes with it.
+   *
+   * The survey window moved with the world: `WINDOW.minR` from 90 to 79, measured off the coast
+   * lattice (scripts/build-region-survey.mjs), which turned 329 claimed hexes in seventeen countries
+   * from sea into land along the whole northern horizon.
+   */
+  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 46 * METRES_PER_HEX, 'the playable regions fit a walkable world');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 36 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
-  assert.ok(bounds.maxZ - bounds.minZ > 36.9 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 45.6 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 
 test('route anchors follow the brief: Tidehaven on the coast, the Caloss on the Luscia border, the Moros west, Elod north-east', () => {

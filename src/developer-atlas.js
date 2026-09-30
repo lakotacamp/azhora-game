@@ -66,6 +66,15 @@ const ovesDesertAnchor = point(1260.932, 2800, -13, 116);
 // A West Lotharn hills hex on the long valley's floor, in the middle of the country and clear of
 // every border: (0, 98). For it the atlas's formula gives this point and no other.
 const westLotharnAnchor = point(1371.783, 2368, 0, 98);
+// The four Mithala countries, one middle hex each, clear of every border and of every channel.
+// For each pair the atlas's formula (x = 27.7128 * (q + r/2) + 13.856, y = 24r + 16) gives this
+// point and no other: South Mithala's plains (8, 91) on the flood plain between the apron and the
+// main channel, West Mithala's grassland (2, 89) in the middle of the upper grass, East Mithala's
+// grassland (9, 88) on the gather, and North Mithala's plains (8, 85) on the dry shelf.
+const southMithalaAnchor = point(1496.491, 2200, 8, 91);
+const westMithalaAnchor = point(1302.501, 2152, 2, 89);
+const eastMithalaAnchor = point(1482.634, 2128, 9, 88);
+const northMithalaAnchor = point(1413.352, 2056, 8, 85);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -103,6 +112,10 @@ const LOCALS = [
   [25, 'Ovesos', 'ovesos', 'Ovesos', ovesosAnchor],
   [26, 'Oves Desert', 'oves-desert', 'Oves Desert', ovesDesertAnchor],
   [27, 'West Lotharn', 'west-lotharn', 'West Lotharn Mountains', westLotharnAnchor],
+  [28, 'South Mithala', 'south-mithala', 'South Mithala', southMithalaAnchor],
+  [29, 'West Mithala', 'west-mithala', 'West Mithala', westMithalaAnchor],
+  [30, 'East Mithala', 'east-mithala', 'East Mithala', eastMithalaAnchor],
+  [31, 'North Mithala', 'north-mithala', 'North Mithala', northMithalaAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

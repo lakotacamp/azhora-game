@@ -330,9 +330,10 @@ test('every hex of Nethereum is honest ground, and nobody is sealed in', () => {
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   assert.ok(wide > 36 && wide < 37, `the world is ${wide.toFixed(2)} hexes wide`);
-  // North to south: 30.93 hexes then, untouched by Nethereum; 35.26 since the East Lotharn, and
-  // 37.00 (36.996) since the Ascarth Peninsula's tip.
-  assert.ok(Math.abs(tall - 37.00) < .05, `north to south is ${tall.toFixed(2)} hexes`);
+  // North to south: 30.93 hexes then, untouched by Nethereum; 35.26 since the East Lotharn, 37.00
+  // (36.996) since the Ascarth Peninsula's tip, and 45.656 since the four Mithala countries carried
+  // the world north to the Acor Wetlands. Nethereum touched none of it.
+  assert.ok(Math.abs(tall - 45.66) < .05, `north to south is ${tall.toFixed(2)} hexes`);
   assert.ok(Math.abs(Math.min(...cells.map(cell => cell.x)) - -2900) < 1,
     'and the hex that spends it is the one `plains` corner at x = -2900');
 });

@@ -35,7 +35,14 @@ export const MAP_PATH = path.resolve(root, '../world-builder/map/resources/examp
  * silently re-join them, changing rivers that were already built.
  */
 export const RIVER_REGIONS = ['Pueth', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
-  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'East Lotharn Mountains'];
+  'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'East Lotharn Mountains',
+  // The four Mithala countries, added together for the reason the four western ones were: the
+  // atlas braids one river system across all four, and naming them one at a time would chop the
+  // braids into pieces at each border and then silently re-join them. Sixty-one edges come in
+  // with them. Measured before they were added: no existing chain loses its key, changes a
+  // single point, or gains a confluence - the nearest built water is the East Lotharn's border
+  // water, and its two Lotharn-only pieces are 14 and 2 points before and after, to the digit.
+  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'];
 const NEIGHBORS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const SIZES = new Set(['small', 'medium', 'large']);
 

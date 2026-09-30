@@ -92,14 +92,33 @@ function resample(points, spacing) {
  * chains became five, so `joinAtlas` below puts the Lizeem back together. Every
  * point of it is the same point it was; `tests/west-rivers.test.js` holds it.
  */
+const ATLAS_CHAINS = Object.freeze(riverCourses(PLAYABLE_SURVEY, RIVER_EDGES, undefined, { soften: 0 })
+  .map(course => Object.freeze({ points: Object.freeze(course.points.map(p => point(p.x, p.z))), edges: course.edges })));
 const ATLAS_COURSES = (() => {
   const courses = new Map();
-  for (const course of riverCourses(PLAYABLE_SURVEY, RIVER_EDGES, undefined, { soften: 0 })) {
+  for (const course of ATLAS_CHAINS) {
     const key = [...new Set(course.edges.flatMap(edge => edge.regions))].sort().join(',');
-    courses.set(key, Object.freeze({ points: course.points.map(p => point(p.x, p.z)), edges: course.edges }));
+    courses.set(key, course);
   }
   return courses;
 })();
+/**
+ * A chain named by **where it is** rather than by whose border it is on, oriented from the first
+ * point given to the second. The Mithala needs it and nothing before the Mithala did: on a braided
+ * plain several chains share one pair of region names — three of the west arm's run between North
+ * Celder and West Mithala, three of the north braid's have North Mithala on both banks — so the
+ * region key that answers for every other river in the west answers for a set here. Ends match to
+ * the metre, which is a tenth of the shortest chain on the map.
+ */
+function chainBetween(ax, az, bx, bz) {
+  const near = (p, x, z) => Math.abs(p.x - x) < 1 && Math.abs(p.z - z) < 1;
+  for (const chain of ATLAS_CHAINS) {
+    const first = chain.points[0], last = chain.points.at(-1);
+    if (near(first, ax, az) && near(last, bx, bz)) return [...chain.points];
+    if (near(last, ax, az) && near(first, bx, bz)) return [...chain.points].reverse();
+  }
+  throw new Error(`The atlas draws no river chain from (${ax}, ${az}) to (${bx}, ${bz}). Is src/region-rivers.js stale?`);
+}
 
 function atlasChain(key) {
   const chain = ATLAS_COURSES.get(key);
@@ -836,6 +855,110 @@ export const GALA_CHANNEL = river('gala-channel', 'The distributary', shoreward(
 
 export const GALA_RIVERS = Object.freeze([GALA_DESERT_STREAM, OVETH_REACH, GALA_TELEMONIA_STREAM, GALA_CHANNEL]);
 
+// ---------------------------------------------------------------------------
+// The Mithala plain: the channels, which are the country
+// ---------------------------------------------------------------------------
+/**
+ * **The river is the whole of what the Mithala is** — "The Lizeem makes the Mithala. This is not a
+ * metaphor: the soil of the plain is river deposit" — and the atlas draws it, sixty-one new edges
+ * across the four countries, in thirteen chains that make one branching system with a single outlet.
+ * It is by a distance the largest piece of authored water in the game after the Lizeem itself.
+ *
+ * This section stands here, out of build order, because `WEST_BRAIDS` immediately below names two
+ * of these courses and a `const` cannot be read before it is written.
+ *
+ * **The shape, read off the atlas rather than decided:** two arms come in, one from the west along
+ * the Celder margin and one from the north out of the wetland country, they meet at (-1700, -1414)
+ * at South Mithala's north-western corner, and one channel goes on east from there to the sea at
+ * (-1000, -1414), where the hexes beyond are unclaimed water. Every chain either runs to that
+ * meeting or hangs off one that does. That is the lore's own account of the plain read backwards:
+ * "Below Minora, where the river first forks, the branches multiply... The Lizeem's channels
+ * eventually gather again as they approach the sea", and this ground is where they gather.
+ *
+ * **It is not called the Lizeem**, and that is deliberate. The atlas draws these edges `medium`
+ * where it draws the Lizeem `large` through Caricas and Eer, and the lore is plain that the river
+ * below Minora is not one river but a set of channels each of which a farmer "knows by name and
+ * behavior" — so the biggest of them is what the lore itself calls it, **the main channel**, and the
+ * great river's name stays on the great river. The one name taken from the lore is **the north
+ * braid**, which it gives as an example of what a village says it is on ("a village describes itself
+ * as being on the North Braid or the Third Olveth Arm"). Everything else is plain English, because
+ * `world-builder/azhoran_language_profiles.py` has no Mithali profile and the lore says the name
+ * Mithala itself "does not decompose cleanly in any Mittoli root system".
+ *
+ * **Sizes follow the house rule.** The main channel is medium, so it is waded over the gravel of its
+ * first third and deep below, exactly as the Isa and the Carica are (`ISAREOS_RIVER`); everything
+ * else the atlas draws small, and a small river on a plain is waded anywhere. So the four countries
+ * are connected on foot all round the plain, and the one place a traveler is stopped is the lower
+ * two-thirds of the main channel — which is the border between South and East Mithala for sixteen
+ * hex edges, and is why those two are different places.
+ */
+const MITHALA_MEET = Object.freeze({ x: -1700, z: -1414 });
+/** The main channel, from the meeting of the arms east to the sea, cut off where the beach starts. */
+export const MITHALA_MAIN = river('mithala-main-channel', 'The Main Channel',
+  shoreward(chainBetween(MITHALA_MEET.x, MITHALA_MEET.z, -1000, -1414)),
+  { halfWidth: 5, halfWidthEnd: 11, cut: 1.9, cutEnd: 2.5, bed: .9, fordUntil: .30, headOf: 'mithala-west-arm' });
+/**
+ * **The west arm**, four atlas chains end to end: down the Celder margin from the plain's
+ * north-western corner, south-east to the junction at (-1950, -1155) where the Celder water comes
+ * in, then north-east to the meeting. The longest course on the plain.
+ */
+export const MITHALA_WEST_ARM = river('mithala-west-arm', 'The West Arm', [
+  ...chainBetween(-2350, -1386, -2300, -1299),
+  ...chainBetween(-2300, -1299, -2200, -1241).slice(1),
+  ...chainBetween(-2200, -1241, -1950, -1155).slice(1),
+  ...chainBetween(-1950, -1155, MITHALA_MEET.x, MITHALA_MEET.z).slice(1),
+], { halfWidth: 3, halfWidthEnd: 5, cut: 1.4, cutEnd: 1.1, bed: .5 });
+/**
+ * **The Celder water**, off the three-country corner where South Mithala, North Celder and the West
+ * Lotharn meet, north-east to the west arm's junction. It is the only water that comes onto the
+ * plain from the hill country to the south-west, and it stops at the arm's bank rather than in the
+ * middle of it (`shortOf`), as the Oveth stops at the Lizeem's.
+ */
+export const MITHALA_CELDER_WATER = river('mithala-celder-water', 'The Celder Water',
+  shortOf(chainBetween(-2150, -981, -1950, -1155), MITHALA_WEST_ARM, 9),
+  { halfWidth: 2.2, halfWidthEnd: 3, cut: 1.1, cutEnd: .9, bed: .4 });
+/**
+ * **The north braid**, the lore's own name: three chains from a head on the damp northern shelf,
+ * south past the cross braid's junction and then south-east to the meeting.
+ */
+export const MITHALA_NORTH_BRAID = river('mithala-north-braid', 'The North Braid', [
+  ...chainBetween(-2000, -1819, -1950, -1732),
+  ...chainBetween(-1950, -1732, -1950, -1674).slice(1),
+  ...chainBetween(-1950, -1674, MITHALA_MEET.x, MITHALA_MEET.z).slice(1),
+], { halfWidth: 2.6, halfWidthEnd: 4.4, cut: 1.2, cutEnd: 1, bed: .45 });
+/** The braid's second head, a hundred metres east of the first, joining it at its own bank. */
+export const MITHALA_EAST_HEAD = river('mithala-east-head', 'The East Head',
+  shortOf(chainBetween(-1900, -1819, -1950, -1732), MITHALA_NORTH_BRAID, 7),
+  { halfWidth: 1.6, halfWidthEnd: 2.2, cut: .9, cutEnd: .8, bed: .35 });
+/** **The cross braid**, running east along the North Mithala | West Mithala border into the braid. */
+export const MITHALA_CROSS_BRAID = river('mithala-cross-braid', 'The Cross Braid',
+  shortOf(chainBetween(-2150, -1674, -1950, -1674), MITHALA_NORTH_BRAID, 8),
+  { halfWidth: 2, halfWidthEnd: 3, cut: 1, cutEnd: .9, bed: .4 });
+/**
+ * **The fan**: two short channels leaving the west arm on its northern side and giving out on the
+ * grass within a few hundred paces. They are distributaries and not tributaries — the atlas hangs
+ * them off the arm and the ground falls away from it — so each is tapered rather than run to a
+ * mouth, which is what a channel that spreads and sinks does. Between them they are what West
+ * Mithala has instead of braiding: "first two main arms, then distributaries from each".
+ */
+export const MITHALA_FAN = Object.freeze([
+  river('mithala-fan-north', 'The Upper Fan', chainBetween(-2200, -1299, -2200, -1241),
+    { halfWidth: 1.6, halfWidthEnd: 2.4, cut: .9, cutEnd: .7, bed: .35, taper: 26 }),
+  river('mithala-fan-west', 'The Lower Fan', chainBetween(-2300, -1299, -2250, -1386),
+    { halfWidth: 1.6, halfWidthEnd: 2.4, cut: .9, cutEnd: .7, bed: .35, taper: 34 }),
+]);
+/**
+ * Every channel on the plain. **The two arms come before the main channel**, because the main
+ * channel takes its first water level from the west arm's last (`headOf`) and `west-ground.js`
+ * builds the profiles down this list: the arms arrive at the meeting from a thousand metres of
+ * border where two thirds of the hex blend is unbuilt outland, and whatever level they get there is
+ * the level the river below them has to start at, or the plain has water running uphill into its
+ * own main channel. Measured: the west arm arrives at 10.40 m and the main channel now starts there
+ * to the digit, with the north braid coming in a metre above both.
+ */
+export const MITHALA_RIVERS = Object.freeze([MITHALA_WEST_ARM, MITHALA_NORTH_BRAID, MITHALA_MAIN,
+  MITHALA_CELDER_WATER, MITHALA_EAST_HEAD, MITHALA_CROSS_BRAID, ...MITHALA_FAN]);
+
 /**
  * The braided reaches. A braid is what a river does when it has more bed than
  * water, and the Flats give both of theirs more bed than they know what to do
@@ -854,6 +977,14 @@ export const WEST_BRAIDS = Object.freeze([
   Object.freeze({ id: 'eer-south', course: EER_CHANNELS[1], from: .60, to: .95, offset: 13, half: 1.6, cut: .65, lift: .12 }),
   // Gala's mouths: the distributary's last third, on the only ground Gala has at the sea.
   Object.freeze({ id: 'gala-mouths', course: GALA_CHANNEL, from: .64, to: .97, offset: 10, half: 1.5, cut: .6, lift: .1 }),
+  // **The Mithala's two, and they are what the plain is famous for.** "The channels themselves are
+  // many and braided... first two main arms, then distributaries from each, then smaller branches."
+  // The main channel braids over the whole of its middle and lower reach - the widest offset in the
+  // game, because this is the flattest ground in the game and the bars between the threads are what
+  // the lore's villages are built on - and the north braid over its lower half, where it comes off
+  // the damp shelf onto the flat.
+  Object.freeze({ id: 'mithala-main', course: MITHALA_MAIN, from: .30, to: .93, offset: 26, half: 3.2, cut: 1.05, lift: .2 }),
+  Object.freeze({ id: 'mithala-north-braid', course: MITHALA_NORTH_BRAID, from: .48, to: .94, offset: 17, half: 2.1, cut: .8, lift: .15 }),
 ]);
 
 
@@ -990,7 +1121,7 @@ export const WEST_LOTHARN_WATERS = Object.freeze([KEMRATH_REACH, WEST_LOTHARN_NO
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS, ...MITHALA_RIVERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -998,7 +1129,8 @@ export const WEST_POOLS = Object.freeze([
 ]);
 
 /** The regions this module shapes, in the order they were built. */
-export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains']);
+export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains',
+  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

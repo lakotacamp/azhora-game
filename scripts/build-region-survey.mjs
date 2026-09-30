@@ -18,22 +18,35 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
-  'West Lotharn Mountains'];
+  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'];
 /**
- * **Lake hexes that belong to the region all round them.** The World Builder map paints these
- * `lake`; the dev atlas this script reads leaves them unclaimed, because a lake is nobody's
- * ground. Left unclaimed they are not land, and the coast field calls anything that is not
- * land the sea - so an inland lake would be cut to sea level and drawn with the sea's shore.
+ * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
+ * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
+ * this script reads therefore leaves them out. Left out they are not land, and the coast field calls
+ * anything that is not land the sea - so a hex like this is cut to sea level, given a beach, and
+ * becomes a hundred-metre hole of open water in the middle of somebody's country.
  *
- * The rule is narrow on purpose: a lake hex belongs here only when every one of its six
- * neighbours is the same region. Of the atlas's twenty-eight lake hexes exactly one meets it,
- * **the Stillwater** at (6,120), ringed by South Suval on all six sides; the lakes between
- * Elagos, Amod and Drent, and those round Nethereum, touch several regions or open water and
- * stay as they are. The region takes the hex as a `lake` cell, the way Elagos holds its own
- * lakes, and src/south-suval-world.js cuts the basin to the lake's own level.
- * tests/south-suval-world.test.js checks the World Builder map still agrees.
+ * The rule is narrow on purpose: a hex belongs here only when **every one of its six neighbours is
+ * the same region**, and it keeps the terrain the map gives it. Two hexes on the whole atlas meet it:
+ *
+ *  - **the Stillwater** at (6,120), `lake`, ringed by South Suval. Of the atlas's twenty-eight lake
+ *    hexes exactly one meets the rule; the lakes between Elagos, Amod and Drent, and those round
+ *    Nethereum, touch several regions or open water and stay as they are. The region takes the hex as
+ *    a `lake` cell, the way Elagos holds its own lakes, and src/south-suval-world.js cuts the basin
+ *    to the lake's own level. tests/south-suval-world.test.js checks the World Builder map agrees;
+ *  - **(5,92)**, `hills`, ringed by South Mithala on all six sides - found when the Mithala plain was
+ *    built, because the ground there came out at 0.6 m between two hexes at 12 and 13, with a beach
+ *    round it, in the middle of the flattest country in the game. Taking it makes the plain one piece
+ *    (South Mithala's outline goes from two loops to one) and makes the Lotharn's last apron the
+ *    unbroken chain of five `hills` hexes the map actually draws, from (3,93) to (7,91), instead of
+ *    two separate swells with a pond between them.
+ *
+ * This used to be `ENCLOSED_LAKES` and held only the first of the two.
  */
-export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Object.freeze([6, 120])]) });
+export const ENCLOSED_HEXES = Object.freeze({
+  'South Suval': Object.freeze([Object.freeze([6, 120, 'lake'])]),
+  'South Mithala': Object.freeze([Object.freeze([5, 92, 'hills'])]),
+});
 /**
  * Axial window around the playable regions, in atlas hex coordinates. Wide
  * enough that every coast and inland horizon inside the world bounds is honest.
@@ -60,6 +73,26 @@ export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Obje
  * of South Mithala, measured. Row 91 left out would have called the Mithala plain the sea along
  * the whole north face of the range. Two rows, and no slack past the one the lattice reaches.
  *
+ * Then `minR` was 90, and **the four Mithala countries are the first playable ones north of it**.
+ * North Mithala's northernmost hex is (11,82), its centre at z = -2049.5 and its top corner at
+ * -2107.2, so the world's northern edge goes from -1301.2 to **-2167.196** and the world from
+ * 37.00 hexes tall to **45.66**. The coast lattice is laid COAST_MARGIN (96 m) beyond that and
+ * snapped to its own fixed phase, so its first row stands at z = **-2264.35**; a pointy-top hex
+ * reaches a circumradius (57.735 m) past its centre at its top and bottom vertices, and row 79's
+ * centres are at -2309.3, which puts its lower vertices at -2251.6 - north of the lattice's first
+ * row by thirteen metres. Sampling the whole lattice and collecting every hex any sample lands in
+ * gives q -31...34, r **79**...135, measured rather than reasoned. So minR is 79: the last row the
+ * lattice reaches, and no slack. (maxQ is already exactly 34 and gains none, which is not a
+ * coincidence - x = W(q + r/2), so ten rows further north is five columns further east for the
+ * same world x.)
+ *
+ * That widening turns **329 claimed hexes in seventeen countries** from sea into land, which is
+ * what the Mithala's northern horizon is made of: South Acordwood 37, North Oreminidi 29, Narcosh
+ * 28, Henborth 27, West Acorwood 23, the Acor Wetlands 21, East Acordwood 19, Cudon 18, the Lesser
+ * Oremindi 18, Cape Thalmagar 15, North Acorwood 13, the West and East Oremindi 9, and 72 of the
+ * Mithalas' own. Without it the plain would have ended in open water one hex north of North
+ * Mithala's last row, where the atlas draws the Acor Wetlands and the great forest.
+ *
  * `maxR` was 133, which West Izol's southern shore set, and the two Ascarths are the first
  * playable countries to reach past it: Southern Ascarth's tip is row 132, its hex's southern
  * corner stands at z = 2338.4, and the world's southern edge goes from 2225.2 to 2398.4. The coast
@@ -69,25 +102,25 @@ export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Obje
  * channel one hex wide - and with 133 they were all the sea: the tip would have looked out on open
  * water where the atlas draws Selemi's shore. So 135, the last row the lattice reaches, and no slack.
  */
-export const WINDOW = { minQ: -33, maxQ: 34, minR: 90, maxR: 135 };
+export const WINDOW = { minQ: -33, maxQ: 34, minR: 79, maxR: 135 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;
   const regions = PLAYABLE.map(id => {
     const region = survey.regions.find(candidate => name(candidate) === id);
     if (!region) throw new Error(`The atlas has no region called ${id}.`);
-    const lakes = (ENCLOSED_LAKES[id] ?? []).map(([q, r]) => ({ q, r, terrain: 'lake' }));
+    const enclosed = (ENCLOSED_HEXES[id] ?? []).map(([q, r, terrain]) => ({ q, r, terrain }));
     return { id: region.id, name: id, bounds: region.bounds, centerX: region.centerX, centerY: region.centerY,
-      cells: [...region.cells.map(cell => ({ q: cell.q, r: cell.r, terrain: cell.terrain })), ...lakes] };
+      cells: [...region.cells.map(cell => ({ q: cell.q, r: cell.r, terrain: cell.terrain })), ...enclosed] };
   });
   const land = [];
   for (const region of survey.regions) for (const cell of region.cells) {
     if (cell.q < WINDOW.minQ || cell.q > WINDOW.maxQ || cell.r < WINDOW.minR || cell.r > WINDOW.maxR) continue;
     land.push([cell.q, cell.r]);
   }
-  // An enclosed lake is inland water, not the sea: the coast field counts it as land, and the
-  // region that holds it cuts it back to its own level.
-  for (const lakes of Object.values(ENCLOSED_LAKES)) for (const [q, r] of lakes) land.push([q, r]);
+  // An enclosed hex is a hole the atlas left in somebody's country, not the sea: the coast field
+  // counts it as land, and the region that holds it gives it its own ground.
+  for (const held of Object.values(ENCLOSED_HEXES)) for (const [q, r] of held) land.push([q, r]);
   land.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
   const cells = region => region.cells.map(cell => `{q:${cell.q},r:${cell.r},terrain:'${cell.terrain}'}`).join(',');
   const wrap = (text, indent) => {

@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -188,6 +188,26 @@ export const REGION_BIOMES = Object.freeze({
   'West Lotharn Mountains': Object.freeze({ id: 'high-lotharn', name: 'The West Lotharn', ground: '#5b6e44', canopy: '#3c5932', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'forest-floor', ownScatter: true,
     relief: { amplitude: 10, wavelength: 230 }, clearings: ['the-crest', 'long-valley'],
     note: 'The spine of the Lotharn, and the highest ground in Azhora: one great massif of five hundred and fifty metres with three lesser masses round it, every face laid in courses of cliff forty metres high with a ledge of soil and old forest along the top of each, and a bald of grass on every summit. The long valley runs the whole way through the range from the Vastos margin to the western hills, flat-floored and grown over, with a divide a fifth of the way along it and a beck leaving each end; the north valley drains the massif to the Mithala plain. Oak, chestnut, maple, beech, hickory, walnut and tulip poplar on the ledges to about three hundred and forty metres, then stone.' }),
+  // The four quarters of the Mithala plain (src/mithala-world.js, src/mithala-scenery.js). They are
+  // one landform with four names, they share forty-nine hex edges and one climate code, and their
+  // four biomes differ only in what the ground is doing where they stand - which is why every relief
+  // wavelength below is the same 320 and every amplitude within a quarter of a metre of its
+  // neighbour's. The first properly continental country in the game: `Dfa` on all 116 hexes, hot wet
+  // summers and hard winters, and the plants are the ones that answer for a winter the world cannot
+  // yet draw - tall prairie grass and forbs on the open ground, willow, poplar and alder on the
+  // water, and nothing evergreen anywhere.
+  'South Mithala': Object.freeze({ id: 'flood-plain', name: 'The southern Mithala', ground: '#6f8043', canopy: '#526f3c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'tall-grass', ownScatter: true,
+    relief: { amplitude: .5, wavelength: 320 }, clearings: ['mithala-meeting', 'south-mithala-apron'],
+    note: 'The plain’s southern march: flat grain country running up to the Lotharn, with the two ranges standing over it along the whole southern border and four low swells of the foothills’ last apron inside it. The main channel runs east along the northern border to the sea and the two arms of the river meet at its north-west corner; the border water runs east under the mountains.' }),
+  'West Mithala': Object.freeze({ id: 'upper-plain', name: 'The upper Mithala', ground: '#788a49', canopy: '#576f3f', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'tall-grass', ownScatter: true,
+    relief: { amplitude: .75, wavelength: 320 }, clearings: ['west-mithala-grass'],
+    note: 'The western entrance, and the highest and grassiest quarter: twenty-four grassland hexes of tall prairie on deep dark river soil, the plain before the braiding begins in earnest, with the arm from the hill country coming in along the Celder margin and a fan of small channels off it.' }),
+  'East Mithala': Object.freeze({ id: 'lower-plain', name: 'The lower Mithala', ground: '#63783e', canopy: '#4d6b3b', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'rank-grass', ownScatter: true,
+    relief: { amplitude: .5, wavelength: 320 }, clearings: ['east-mithala-mouth'],
+    note: 'The lowest and flattest quarter, where the channels gather again and the river goes to the sea: green rank grass on the wettest ground on the plain, a gallery of willow and poplar two trees deep on the main channel, and the first dark line of the Acorwood on the north-eastern horizon.' }),
+  'North Mithala': Object.freeze({ id: 'fen-margin', name: 'The northern Mithala', ground: '#6b8045', canopy: '#4a6640', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'sedge-grass', ownScatter: true,
+    relief: { amplitude: .55, wavelength: 320 }, clearings: ['north-mithala-fen'],
+    note: 'The plain going north until it stops being plain: tall grass on the dry shelf in the south, sedge and rush on the damp fall toward the Acor Wetlands, the north braid coming down out of that ground on two heads, and the Acorwood thickening along the northern horizon without a wall or a cliff to announce it.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

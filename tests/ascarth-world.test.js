@@ -136,10 +136,16 @@ test('the survey window reaches exactly as far south as the coast lattice does, 
   // Selemi's shore is across the channel from the tip, and is ground, not the sea.
   const selemi = hexCentre(-7, 134);
   assert.ok(landDistance(selemi.x, selemi.z) > 20, 'Selemi reads as land');
-  // The world's southern edge is the tip's, and it spends the last of the north-south budget.
+  // **The world's southern edge is still the tip's**, and it spent the last of the north-south budget
+  // as the budget then stood. The budget has since been raised: the four Mithala countries carried
+  // the world north from -1301.17 to -2167.196 and its height from 36.996 hexes to 45.656, so the
+  // number to hold here is the edge this country set and not the height it set at the time.
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6, `the southern edge is ${WORLD_BOUNDS.maxZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  assert.ok(Math.abs(tall - 36.996) < .002, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 45.656) < .002, `north to south is ${tall.toFixed(3)} hexes`);
   assert.ok(WORLD_BOUNDS.maxZ > hexCentre(-6, 132).z + 57.7 + 59);
+  // And the window still stops where the lattice does at both ends: 79 in the north now, 135 here.
+  assert.equal(WINDOW.minR, 79, 'the Mithala plain carried the window north with the world');
 });
 
 /**

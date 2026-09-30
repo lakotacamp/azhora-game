@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -403,6 +403,47 @@ export const REGION_TERRAIN = Object.freeze({
       hills: Object.freeze({ base: 58, amp: 8, wave: 215, ground: '#5d7246' }),
       mountain: Object.freeze({ base: 96, amp: 13, wave: 250, ground: '#586848' }),
     }) }),
+  // ---------------------------------------------------------------------------------------------
+  // The Mithala plain: four countries, one profile, and the flattest large country in the game
+  // ---------------------------------------------------------------------------------------------
+  // **The four are quarters of one landform, so they share one set of numbers to the digit.** They
+  // have forty-nine hex edges among them; a base or a wavelength that differed across any of those
+  // would put a step or a chirp in the middle of one plain, which is the lesson Gala and the
+  // Ascarths wrote down for their eight shared edges and the two Lotharns for their seven. Every
+  // difference of level between the four quarters is therefore a **landform** and not a profile:
+  // `mithalaTilt` (src/mithala-world.js) carries the whole fall of the plain, west to east and north
+  // to south, continuously across all four names, and the hex blend has nothing at all to carry.
+  //
+  // **One wavelength, 320**, for the same reason the Ascarth hills are on the grassland's: the
+  // blend's relief is a sine of the blended wavelength, so a hex on another wave shifts the phase of
+  // every sine within reach of it, and the ground steps where the blend's set of hexes changes. The
+  // four `hills` hexes in South Mithala are on 320 as well, and their roughness is amplitude alone.
+  //
+  // **The amplitudes are the lowest in the game after the Moros.** The lore is flat about it: "a
+  // plain that has no interest in rising. The horizon here is real. You can see it: a line,
+  // uninterrupted except by weather, circling the full compass." Half a metre over three hundred and
+  // twenty is a swell a traveler feels in the knees and never sees, and it is on purpose: everything
+  // a Mithala traveler can pick out - a levee, a backswamp, a bar, a dry summer channel - is a metre
+  // or two of the river's own work, and relief that competed with it would bury the lot.
+  //
+  // The grassland is a little rougher and a little higher than the plains because that is what the
+  // atlas means by the two words here: `grassland` over the western and northern hexes, which stand
+  // back from the braids on older ground, and `plains` over the channel country, which is what the
+  // flood has levelled. The `hills` are the Lotharn's last apron and are twelve metres over the
+  // grass, which is a swell you can see across and nothing at all beside a range of five hundred.
+  'South Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['South Mithala'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#758748' }),
+    hills: Object.freeze({ base: 24, amp: 2.6, wave: 320, ground: '#6b7c43' }),
+  }) }),
+  'West Mithala': Object.freeze({ base: 12, amp: .75, wave: 320, ground: REGION_BIOMES['West Mithala'].ground, byTerrain: Object.freeze({
+    plains: Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: '#738545' }),
+  }) }),
+  'East Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['East Mithala'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#6a8043' }),
+  }) }),
+  'North Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['North Mithala'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#718647' }),
+  }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1092,6 +1133,47 @@ const REGION_TEXT = {
     description: 'The main range, and the highest ground in Azhora: one great massif standing five hundred and fifty metres over its own valleys, with the north summit, the western shoulder, the eastern summit and three lesser masses round it. Old stone worn into courses, so every face is a stair of cliffs forty metres high with a ledge of soil and old forest along the top of each, and a bald of grass on every summit where the last cliff ends; the tops are reached only by the ramps cut slantwise across the cliffs, by the ledge paths that join them, and by the chimneys the water opened through the rock. The long valley runs the whole way through the range, flat-floored and grown over, with a divide a fifth of the way along it and a beck leaving each end; the north valley drains the massif to the Mithala plain, and the col at the eastern end is the saddle the East Lotharn begins from.',
     palette: { ground: '#5b6e44', accent: '#cfd0c4', fog: '#bcc8bd', sky: 0x9fc2d6, haze: 0xc3cec6, hazeDensity: .0027 },
     npcIds: [], landmarks: ['the-crest', 'north-summit', 'west-shoulder', 'east-summit', 'long-valley', 'long-valley-divide', 'north-valley', 'lotharn-col', 'south-rampart', 'the-cold-head'] },
+  // ---------------------------------------------------------------------------------------------
+  // The Mithala plain (src/mithala-world.js). Four countries, terrain and wildlife only.
+  // ---------------------------------------------------------------------------------------------
+  // Everything the Mithala lore is really about belongs to somebody and none of it is built:
+  // Minora and every channel-confluence market below it, the villages on their levees with their
+  // raised granaries, the flood calendar and the water courts, the floodwheat and the barley and
+  // the rye, the river-horn herds that pull the harrows, the barges and the docks, the sky-reading
+  // and the astronomy that came out of it, Mithalenna's cult, the Temple of the Seven Bowls and the
+  // Bowl-Keepers, the Cref oath and the warlords who broke it. What is built is the plain.
+  //
+  // **One sky over all four, and it is the one thing the lore insists on.** "The Mithala is known
+  // for its sky... the sky is large here because there is nothing to interrupt it, and a sky that is
+  // large behaves differently from a sky in hilly or forested country: weather comes from further
+  // away, the approach of storm is visible long in advance." The case for one sky rather than four
+  // is the same as the case for one terrain profile: this is one plain with four names on it, the
+  // four share forty-nine hex edges, and a horizon that changed at an internal border would be a lie
+  // about a country whose whole point is that the horizon does not change. The case for four would
+  // have been the climate, and the climate is `Dfa` on all 116 hexes - there is nothing to draw with.
+  //
+  // So: `hazeDensity` **.0038**, the clearest air of any green country in the game and second only
+  // to the Oves Desert's .0034 and the West Lotharn's .0027, both of which have a reason of their
+  // own (no water, and half a kilometre of altitude). Here the reason is that there is nothing in
+  // the way. A **bluer** background than anything else at this height - a continental summer dome
+  // rather than the lake country's soft green-grey - and a haze that is warm rather than cool,
+  // because what hangs in the air over this plain in July is the dust of grain land and not sea mist.
+  'South Mithala': { subtitle: 'The plain under the mountains', spawn: point(-1490, -1285),
+    description: 'The plain’s southern march, with both halves of the Lotharn standing along the whole of its southern border and nothing at all standing anywhere else. Flat dark grain country between two waters — the main channel running east along the northern border to the sea, the mountains’ border water running east under the forest — with four low swells of the foothills’ last apron inside it, the highest ground on the plain and still a swell you can walk over without noticing you have. At its north-western corner the two arms of the river come together and go on east as one.',
+    palette: { ground: '#6f8043', accent: '#cfc78e', fog: '#b3bfa0', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['mithala-meeting', 'the-main-channel', 'south-mithala-apron', 'south-mithala-levees', 'mountain-march'] },
+  'West Mithala': { subtitle: 'The upper grass', spawn: point(-2065, -1355),
+    description: 'The western entrance to the plain, and the quarter with the least water in it: twenty-four hexes of tall prairie grass standing to the waist on deep dark river soil, with the arm out of the hill country coming in along the Celder margin and a fan of small channels off it. This is the ground the lore means by saying the character changes before the land does — the country to the west is hills and this is not, and nothing anywhere announces the difference. It is also where the horizon closes into a full circle, and standing in the middle of it is the reason people who live here talk about the sky.',
+    palette: { ground: '#788a49', accent: '#d4ca94', fog: '#b7c2a3', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['round-horizon', 'the-west-arm', 'west-mithala-fan', 'west-mithala-grass'] },
+  'East Mithala': { subtitle: 'Where the channels gather', spawn: point(-1330, -1545),
+    description: 'The lowest and flattest quarter, and the one the water leaves by: the channels gather again here and the main one goes out to the sea across the eastern border, in a gallery of willow and poplar two trees deep that is the only wood on the plain. Rank green grass on the wettest ground in the Mithala, backswamps between the channels that stand under water for weeks in a spring the game cannot yet show, and on the north-eastern horizon the first dark line of the Acorwood.',
+    palette: { ground: '#63783e', accent: '#cac291', fog: '#adbb9f', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['east-mithala-gather', 'the-river-mouth', 'east-mithala-gallery', 'acorwood-horizon'] },
+  'North Mithala': { subtitle: 'The plain going north', spawn: point(-1790, -1815),
+    description: 'The plain going north until it stops being plain. Tall grass on a dry shelf in the south, and then a long imperceptible fall northward into sedge and rush and standing water as the Acor Wetlands begin, with no line anywhere to say where one becomes the other. The north braid comes down out of that ground on two heads and runs south to the meeting. Along the northern and north-eastern horizon the treeline thickens: the Acorwood, which closes off the north of the continent, approached across open country without a wall or a cliff to announce it.',
+    palette: { ground: '#6b8045', accent: '#ccc491', fog: '#b0bca3', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['the-north-braid', 'north-braid-heads', 'north-mithala-shelf', 'north-mithala-fen', 'acorwood-approach'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

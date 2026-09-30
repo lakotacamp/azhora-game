@@ -18,6 +18,7 @@ import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
 import { ovesTint } from './oves-world.js';
+import { mithalaTint } from './mithala-world.js';
 import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
@@ -280,11 +281,19 @@ export function groundTint(color, x, z, THREE) {
   // in Ovesos the field calls the open steppe and the Sorten's bottomland the same word, and in the
   // desert it calls the soil pockets and the bare rock exposures the same word (`ovesTint`,
   // src/oves-world.js). Both answer null everywhere else, and everywhere else nothing changes.
+  // The Mithala's four have it worst of all, and for the oldest reason there is: on a flood plain
+  // what decides the colour of the ground is how far it is from a channel, because that decides how
+  // often it is under water. The levee crest, the open plain and the backswamp between two channels
+  // are three different colours inside two hundred metres, and the northern fen margin a fourth
+  // (`mithalaTint`, src/mithala-world.js).
   const gala = inGalaBox(x, z) ? REGION_TERRAIN.Gala.ground : null;
   for (const [ground, weight] of Object.entries(mix.grounds ?? {})) {
     if (!weight) continue;
-    const oves = ovesTint(x, z, ground);
-    if (ground === gala) swatch.set(galaGroundColour(x, z)); else if (oves !== null) swatch.set(oves); else swatch.set(ground);
+    const oves = ovesTint(x, z, ground), mithala = oves === null ? mithalaTint(x, z, ground) : null;
+    if (ground === gala) swatch.set(galaGroundColour(x, z));
+    else if (oves !== null) swatch.set(oves);
+    else if (mithala !== null) swatch.set(mithala);
+    else swatch.set(ground);
     target.r += swatch.r * weight; target.g += swatch.g * weight; target.b += swatch.b * weight; total += weight;
   }
   if (total) { target.r /= total; target.g /= total; target.b /= total; }
