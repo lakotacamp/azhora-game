@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35, 'North Meroshe Desert': 36, 'West Meroshe Desert': 37, 'Central Meroshe Desert': 38, 'South Meroshe Desert': 39 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -477,6 +477,32 @@ export const REGION_TERRAIN = Object.freeze({
   'Ganesh Plain': Object.freeze({ base: 22, amp: .85, wave: 320, ground: REGION_BIOMES['Ganesh Plain'].ground, byTerrain: Object.freeze({
     grassland: Object.freeze({ base: 14, amp: .8, wave: 320, ground: '#737a4d' }),
   }) }),
+  // ---------------------------------------------------------------------------
+  // The four Meroshe deserts (src/southwest-world.js): ninety-five hexes, one terrain word and one
+  // climate code, and therefore the one job in this project where the profile table cannot say
+  // anything about the difference between four countries. The atlas writes `plains` and `BWh`
+  // ninety-five times over. **What tells them apart is the surface** - erg, reg, hamada, salt pan -
+  // and a surface is a landform and a scatter, not a base and an amplitude.
+  //
+  // So the bases only carry the block's fall and the amplitudes only say how rough the floor is
+  // between the landforms, which is the reverse of Navarth's `hills` and every mountain country
+  // before it. **Every one is on wavelength 320**, job 1's, for job 1's reason: `relief()` takes its
+  // phase from x / wave, and these four share fifty-seven internal hex edges with each other and ten
+  // more with the Ganesh Plain.
+  //
+  // North is the hamada and the highest floor of the four at 21, joining the Ganesh Plain's 22 over
+  // ten hex edges with a metre between them; it is the roughest (1.15), because bare bedrock with
+  // hard beds standing out of it is the one desert surface that is not a sheet. Central is the sand
+  // sea at 16 in its own shallow closed sink and is the *smoothest* thing in the game away from its
+  // dunes (0.55), because an interdune corridor is a gravel floor swept flat by the same wind that
+  // piled the ridge beside it. South is the reg at 14, flatter still than the Ganesh (0.6) because a
+  // stone pavement is what a desert looks like when everything loose has already gone. West is the
+  // fan skirt at 14, falling west to the ocean on `merosheFans`, a little rougher than the reg (0.85)
+  // because a bajada is a dozen overlapping cones of gravel and not a plane.
+  'North Meroshe Desert': Object.freeze({ base: 21, amp: 1.15, wave: 320, ground: REGION_BIOMES['North Meroshe Desert'].ground }),
+  'West Meroshe Desert': Object.freeze({ base: 14, amp: .85, wave: 320, ground: REGION_BIOMES['West Meroshe Desert'].ground }),
+  'Central Meroshe Desert': Object.freeze({ base: 16, amp: .55, wave: 320, ground: REGION_BIOMES['Central Meroshe Desert'].ground }),
+  'South Meroshe Desert': Object.freeze({ base: 14, amp: .6, wave: 320, ground: REGION_BIOMES['South Meroshe Desert'].ground }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1231,6 +1257,42 @@ const REGION_TEXT = {
     description: 'The transition between the desert and the green country to the south-east, and the lore says it behaves from decade to decade as though it cannot decide which it belongs to. Level clay-floored ground crossed by three shallow drainage channels too diffuse to be rivers, with closed depressions strung along them where the water gathers and the grass lasts longest - and in a dry year, which is the face the world can show, those depressions are the only green on it and everything between them is scrub and bare pale clay. A low divide runs down the eastern side, and the channels show it: two of them leave it westward for the Ganesh and the third runs east-south-east to the sea four hundred metres away. The south-eastern corner is the exception - one hex of Mediterranean grass where Marosh’s country begins.',
     palette: { ground: '#70684c', accent: '#b3a988', fog: '#a59e86', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
     npcIds: [], landmarks: ['ganesh-plain-channels', 'ganesh-depressions', 'ganesh-plain-divide', 'ganesh-plain-green-corner'] },
+  // The four Meroshe deserts (src/southwest-world.js). **Ninety-five hexes, one terrain word, one
+  // climate code** - and therefore the one place in this project where the atlas cannot tell four
+  // countries apart and the build has to. What tells them apart is the surface underfoot and the one
+  // thing on each one's horizon, and **the sky is part of that**, because the air over a desert is
+  // not the same air everywhere in it.
+  //
+  // North and Central take job 1's desert sky unchanged - .0024, the clearest air in Azhora, a
+  // bleached sky and a haze that is warm dust rather than water - because they are the interior and
+  // that is what the interior of a hot desert looks like. The other two are argued from the atlas:
+  //
+  //  - **West Meroshe has ten hex edges of open western ocean**, and hama.md says what arrives on it:
+  //    "the western face is open-ocean coast, exposed to the weather patterns that originate in the
+  //    far west and arrive at the peninsula having crossed considerable water". Sea air over a desert
+  //    carries salt and a marine layer, so .0032 and a little bluer: still the second-clearest air in
+  //    the game, and not the interior's.
+  //  - **South Meroshe is under fog**, which is the whole of what makes it different from the rest of
+  //    the Meroshe. trogo.md: "where desert air meets ocean-loaded humidity along the southeastern
+  //    ridge, fog forms and stays, sometimes for days... warm and thick and close". So this is the one
+  //    `BWh` country in Azhora whose air is *thicker* than the average rather than thinner - .0046,
+  //    against the Oves steppe's .0034 - and the only desert in the game a traveler cannot see across.
+  'North Meroshe Desert': { subtitle: 'The rock at the desert’s head', spawn: point(-2950, 2021),
+    description: 'The northern transition of the Meroshe, the largest desert on the continent, and the first thing to know about it is that it is not sand. It is rock: bare bedrock under a skin of gravel, swept clean and ringing underfoot, with the harder beds standing out of the floor in low steps a metre or two high that run north and south for three hundred paces at a time and are the only direction this country offers. The lore calls it "the rocky hammada of the northern transition zone — flat gravel plains and exposed bedrock where scrubby thorn trees still manage to exist", and the thorn is here, rooted in the joints of the stone, the only tree standing anywhere in ninety-five hexes of desert. Two things are on its horizon on the atlas: the Ganesh Plain’s pale clay running out northward with no line to mark where, which is built, and Marosh’s green Mediterranean hills a mile east across the shimmer, which is not — so that side of it is open country for now. The oasis houses, the caravan routes and the dustback herds the lore hangs on this country all belong to somebody and none of them is here.',
+    palette: { ground: '#67634e', accent: '#a9a184', fog: '#9b957e', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['meroshe-hamada', 'meroshe-benches', 'meroshe-thorn', 'meroshe-dust-line', 'meroshe-green-shoulder'] },
+  'West Meroshe Desert': { subtitle: 'The skirt, the salt and the sea', spawn: point(-3550, 2367),
+    description: 'A desert between a highland and an ocean, and it is made of what the highland sends down and what the ocean does not send up. Three broad cones of gravel spread south-west out of the Dinelv escarpment — which is on the atlas and not yet built, so the plateau above them is open country — and have grown together into one skirt falling to the water: cobbles a hand across at the heads where the walking is bad, pebbles four hundred paces out, dust deep enough to print at the toe, which is the whole story of water that comes down twice in a decade. Where the last of that drainage stops there is the Malhat — three hundred paces of salt floor, flat to the centimetre, white and hard and the one place in this desert where water can be seen and not drunk. Ten of this country’s hex edges are the open western sea, and a hundred paces inland of the surf the ground is as arid as it is twenty miles in. The plateau road above it, its cisterns and its garrison are the Route Registry’s and are not built.',
+    palette: { ground: '#655d48', accent: '#a79e84', fog: '#97937f', sky: 0xbfd0cf, haze: 0xc4bda6, hazeDensity: .0032 },
+    npcIds: [], landmarks: ['meroshe-fan-skirt', 'meroshe-salt-pan', 'meroshe-dry-shore', 'meroshe-escarpment-foot'] },
+  'Central Meroshe Desert': { subtitle: 'The sand sea', spawn: point(-2880, 2420),
+    description: 'The erg, and the only one in Azhora: thirty-one hexes of clean sand piled into parallel ridges that run north-west to south-east on the summer wind’s own bearing, seven metres from floor to crest and two hundred and thirty paces apart, with a flat swept gravel corridor between every pair. It is the one country in the game that has no horizon — from the crest of a ridge the next ridge is the skyline, and from the corridor between them there is nothing to see in any direction but two walls of sand. A traveler can walk a corridor fast, north-west or south-east and no other way; crossing the grain means climbing a dozen ridges in turn. The sand is here because there is nowhere else for it to go: the whole country lies in a shallow closed sink with no river edge anywhere on it and no outlet in any direction. The lore is plain about what this ground is — "navigating the sand seas without local knowledge is considered one of the more reliable methods of dying on Azhora" — and the local knowledge belongs to people who are not built.',
+    palette: { ground: '#736a4e', accent: '#b0a684', fog: '#a09980', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['meroshe-sand-sea', 'meroshe-corridors', 'meroshe-sink', 'meroshe-sand-edge'] },
+  'South Meroshe Desert': { subtitle: 'The stone floor under the fog', spawn: point(-2800, 2800),
+    description: 'The bottom of the desert, and the one part of it that gets wet. The ground is reg — a pavement of pebbles packed edge to edge over the whole country, flat enough to see twenty miles over and varnished so dark by iron and manganese that it looks wet from a distance and holds a footprint for a year. Thirteen of its hex edges are Trogo’s tropical rainforest and four are the southern ocean, and what crosses the line between the two is fog: warm, thick, close, standing for days at a time, watering a surface the atlas still calls hot desert. So the southern third of this country carries a crust, lichen in the lee of every pebble, and thorn scrub standing close enough together to walk round — none of which the rest of the Meroshe can manage — and the north-western third, against the sand sea, is as bare as anything in Azhora. On the atlas a rainforest stands half a mile off the eastern edge with cloud sitting in it; Trogo is not built, so what is there today is the fog and not the canopy. The canyon communities the lore puts south of here, and everything they own, are not built.',
+    palette: { ground: '#3d3427', accent: '#847a64', fog: '#7c735e', sky: 0xbec9c3, haze: 0xc0bcab, hazeDensity: .0046 },
+    npcIds: [], landmarks: ['meroshe-stone-floor', 'meroshe-fog-margin', 'meroshe-forest-wall', 'meroshe-south-shore'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

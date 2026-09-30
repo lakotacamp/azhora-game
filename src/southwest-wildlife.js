@@ -3,6 +3,12 @@
  * western wildlife rigs (`src/west-regions-life.js` draws them, instanced and distance-culled, and
  * they are ambient: nobody can attack, catch or speak to them).
  *
+ * **Two jobs, two hundred and two hexes, twenty-four ranges, and five sixths of them in one eighth
+ * of the ground.** Job 1's seventeen are below and job 2's seven are at the end of the list, and the
+ * arithmetic between them is the whole argument of both: seven of job 1's are on the Vaellir or its
+ * green mouth, and the four Meroshe deserts - ninety-five hexes, `BWh` on every one, no permanent
+ * water and no green corner anywhere - carry **seven**, five of them birds in the air.
+ *
  * **One river, one wood, eight hollows, and a great deal of nothing.** Eighty-one of this block's
  * hundred and seven hexes read `BWh` - hot desert - on the World Builder map, which is a full
  * climate step drier than the Oves Desert's `BSh`, and the Oves's own report already argued that
@@ -112,4 +118,55 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
   zone('ganesh-plain-bone-bird', 'bone-bird', 'Ganesh Plain', .3, [-2958, -2798, 1727, 1887], [[-2878, 1807]],
     'One bone-bird over the southern plain, which is the northern edge of its range: the overview puts the bird on the desert margins and this plain is the margin’s margin - "the Ganesh Plain lies on the northern side of the Ganesh Desert’s diffuse boundary". The pastoral communities that use this ground in the good years read the bird the way the caravan guides do.',
     { air: 40 }),
+  // ---------------------------------------------------------------------
+  // The four Meroshe deserts: seven ranges over ninety-five hexes
+  // ---------------------------------------------------------------------
+  /**
+   * **Seven, and five of them are birds in the air.** Job 1's finding governs and this is it applied:
+   * the Ganesh Desert carries three ranges over thirty-one hexes, which is 0.097 a hex, and this half
+   * of the block carries seven over ninety-five, which is **0.074 a hex** - a quarter sparser again,
+   * on ground that is `BWh` on every one of its hexes with no green corner anywhere in it and no
+   * permanent water at all. **Only three of the seven stand on the ground**, and thirty-one of the
+   * ninety-five hexes - the sand sea, which is the largest of the four countries - carry **one range,
+   * fifty-two metres up.**
+   *
+   * The bone-bird is in all four quarters and nothing else is in more than one, which is the honest
+   * reading of the one direct statement the lore makes about animals here: the bone-birds "are the
+   * most visible large animals of the Moroshé from caravan routes". They are what you see. There is
+   * nothing else to see.
+   *
+   * **No new rig was spent, and that is a finding rather than a saving.** Job 1 left one of its two
+   * unspent and every animal the lore names for this desert is still unbuildable for the reason it was:
+   * the **sand-cat** is "almost entirely nocturnal" and there is no night; the **spine lizard** wants a
+   * bask-then-dart gait the game has not got, and the lore puts its largest forms in canyon country the
+   * atlas does not draw on these hexes; the **canyon tortoise** is named *and* described - "a large,
+   * slow-moving grazer of desert seeps and seasonal wash vegetation" - and is the closest call in the
+   * job, but it fails the west's own first law rather than the lore: nothing in the west can be walked
+   * down, and a tortoise is an animal whose whole character is that it can be. The desert vipers are
+   * "known by description" and by no more than that. And the **Meroshé dustback** is held out exactly
+   * where job 1 held it: the lore names it and never describes its body, the only dustback the lore
+   * does describe is a domestic bovid, and inventing a shape for a named animal is the user's decision.
+   *
+   * **Nothing domestic.** The dustback herds are what an oasis house's standing is measured in and the
+   * caravans run on pack animals; every one of those belongs to somebody, and a herd with nobody near
+   * it is still somebody's herd.
+   */
+  zone('hamada-bone-birds', 'bone-bird', 'North Meroshe Desert', .3, [-3060, -2880, 1980, 2140], [[-3020, 2020], [-2920, 2100]],
+    'Two bone-birds over the hamada, which is the northern margin of the Moreshe desert system and therefore the bird’s own ground twice over: "the large scavenger of the desert margins... the most visible large animals of the Moroshé from caravan routes". They are a long way up and a long way apart over a floor of bare rock with nothing else moving on it, and from the ground they are the only thing in the sky.',
+    { air: 42 }),
+  zone('thorn-ground-hares', 'upland-hare', 'North Meroshe Desert', .3, [-3010, -2860, 1990, 2140], [[-2930, 2060], [-2930, 2090], [-2940, 2030]],
+    'Extension, and the case for it is the thorn: "flat gravel plains and exposed bedrock where scrubby thorn trees still manage to exist". The joints along the bench risers are where the last rain goes and stays, so the thorn is there and so is the one thing in the Meroshe that will eat it. It is the only woody cover in ninety-five hexes and the only shade; two hundred paces off the risers there is nothing on the rock at all.'),
+  zone('fan-skirt-bone-bird', 'bone-bird', 'West Meroshe Desert', .3, [-3700, -3540, 2300, 2460], [[-3620, 2380]],
+    'One bone-bird over the fan skirt, working the ground between the Dinelv escarpment and the sea. The overview says of them that "they are often the first indicator of water, since both potential death and potential life concentrate around it", and the joke of this country is that the water this one circles over is the Malhat, which is salt: a traveler who walks to the bird finds a white floor and nothing to drink.',
+    { air: 40 }),
+  zone('dry-shore-gulls', 'gull', 'West Meroshe Desert', .3, [-3790, -3660, 2400, 2520], [[-3740, 2430], [-3730, 2470], [-3710, 2490]],
+    '**The richest life in ninety-five hexes of desert, and it comes out of the sea rather than off the land.** The atlas gives this country ten hex edges of open western ocean, and a cold-current coast against a desert is the most productive water there is - which is why an Atacama has a shore full of birds and an interior with nothing in it. So there are gulls on the last thirty metres of gravel before the surf, and forty paces inland of them the ground is as arid as it is twenty miles in. Extension: the overview catalogues the Iberos colonies on the far side of the continent and says nothing about this coast.'),
+  zone('sand-sea-bone-bird', 'bone-bird', 'Central Meroshe Desert', .3, [-3120, -2960, 2340, 2500], [[-3040, 2420]],
+    '**One range in thirty-one hexes, and it is fifty-two metres up.** The sand sea is the largest of these four countries and the emptiest country in Azhora: nothing lives on an active dune, the corridors between them are swept gravel with no water under them anywhere, and the lore’s verdict on the place is that crossing it without local knowledge is "one of the more reliable methods of dying on Azhora". So there is one bird, higher than any other bone-bird in the game, and under it nothing whatever.',
+    { air: 52 }),
+  zone('reg-bone-bird', 'bone-bird', 'South Meroshe Desert', .3, [-2920, -2760, 2680, 2840], [[-2840, 2760]],
+    'One bone-bird over the stone floor, on the bare north-western side of it rather than in the fog belt, because a soaring bird wants the thermals off dark varnished pavement in clear air and gets neither under cloud. It is the fourth quarter of the Meroshe and the fourth bone-bird: one in each, which is what the overview means by calling them the most visible large animal of the whole desert.',
+    { air: 38 }),
+  zone('fog-margin-hares', 'upland-hare', 'South Meroshe Desert', .3, [-2720, -2600, 2700, 2840], [[-2640, 2760], [-2650, 2790], [-2680, 2780]],
+    'Extension, and the strongest case for one anywhere in the Meroshe: the fog belt is the only ground in ninety-five hexes that is reliably damp. "Where desert air meets ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days", and what it leaves is lichen in the lee of every pebble and thorn standing close enough together to make a traveler walk round it - cover and something green, on a hex the atlas still calls hot desert. Trogo’s rainforest is half a mile east of here and none of its animals are built.'),
 ]);

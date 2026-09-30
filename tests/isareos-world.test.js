@@ -108,7 +108,9 @@ test('Isareos is the country that spent most of the hex budget', () => {
   // to 37.00 (36.996) by reaching south past West Izol to its tip, and the four Mithala countries
   // to 45.66 by reaching north past the East Lotharn to the Acor Wetlands, which is North Mithala's
   // row 82 (region-layout.test.js). Isareos touched none of it; what it spends is the western x.
-  assert.ok(Math.abs(tall - 45.66) < .05, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
+  // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
+  // (docs/southwest-2-report.md), which this country is nowhere near either.
+  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
 });
 
 test('low hills, not quite highlands, blurring into the two countries either side of them', () => {

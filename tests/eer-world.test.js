@@ -314,7 +314,8 @@ test('Eer is the first country with a sky of its own, and it takes it the way th
   // South Suval (25 Sep), the East Lotharn and Feradom (27 Sep), Gala and the Ascarths (28 Sep),
   // Ovesos and the Oves Desert (28 Sep) and the West Lotharn (29 Sep) asked for theirs since; the
   // last of those is the first to ask on account of height rather than weather.
-  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
+  const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert']);
   for (const region of regions) if (!OWN_SKY.has(region.name))
     assert.deepEqual({ ...regionSky(region) }, { ...DEFAULT_SKY }, `${region.name} lost the default sky`);
   assert.ok(regionSky(regions.find(region => region.name === 'Nethereum')).density > sky.density,

@@ -57,7 +57,22 @@ const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const smooth = (a, b, x) => { const v = clamp((x - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
 const lerp = (a, b, t) => a + (b - a) * t;
 
-export const SOUTHWEST_REGIONS = freeze(['Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
+/**
+ * **The block in two halves, because it was built in two jobs and the halves are different
+ * countries.** The northern four are job 1's: a plateau, a steppe with a great river down it, a
+ * desert and a transition plain, with four climate codes across them and a gradient in them. The
+ * southern four are job 2's: ninety-five hexes of `plains` and `BWh` with no gradient in them at
+ * all, told apart by what the ground is made of and by which edge of the desert each one shows.
+ *
+ * `SOUTHWEST_REGIONS` is all eight and is what the box, the weights and the tilt read, because the
+ * two halves share ten hex edges along the Ganesh Plain's southern row and a landform gated on
+ * either half alone would die out in a valley down the middle of that seam. The two lists are
+ * separate because the landforms are: benches, dunes, fans and fog belong to one half and washes,
+ * channels, crests and galleries to the other.
+ */
+export const SOUTHWEST_NORTH_REGIONS = freeze(['Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
+export const MEROSHE_REGIONS = freeze(['North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert']);
+export const SOUTHWEST_REGIONS = freeze([...SOUTHWEST_NORTH_REGIONS, ...MEROSHE_REGIONS]);
 
 // ---------------------------------------------------------------------------
 // The climate, which for once is a gradient
@@ -121,8 +136,62 @@ export const GANESH_PLAIN_CLIMATE = freeze({
   '-28,126': 'BWh', '-27,126': 'BWh', '-26,126': 'BWh', '-25,126': 'BWh', '-24,126': 'BWh', '-23,126': 'Csb', '-22,126': 'Csa',
   '-28,127': 'BWh', '-27,127': 'BWh', '-26,127': 'BWh', '-25,127': 'BWh', '-24,127': 'BWh', '-23,127': 'Csb',
 });
+/**
+ * **The four Meroshe deserts: ninety-five hexes and one code.** Read off the same map field, hex by
+ * hex, and there is nothing in it - `BWh` ninety-five times, which with job 1's eighty-one makes a
+ * hundred and seventy-six of this block's two hundred and two hexes hot desert.
+ *
+ * **This is the finding the whole job turns on.** Job 1's half has a climate gradient and that
+ * gradient is its shape; this half has none, and four quarters the atlas bothered to name cannot be
+ * told apart by their weather, their terrain word, their relief or their water, because the atlas
+ * gives all four the same in every one of those fields. So they are told apart by **the surface** -
+ * hamada, fan skirt and salt, erg, reg - and by **which edge of the desert each one looks out at**:
+ * the Ganesh Plain and Marosh's Mediterranean hills north of the North, the Dinelv escarpment and
+ * the open ocean west of the West, nothing at all from inside the Central, and Trogo's tropical
+ * rainforest and the southern ocean south of the South.
+ *
+ * For context, and it is worth having: **every one of the two hundred and forty-five `BWh` hexes on
+ * the whole claimed atlas is in this one quarter of the continent** - the Dinelv Highlands 35, these
+ * four 95, the Ganesh Desert 31, the Ganesh Plain 23, Navarth 20, Cape Heth 18, Hama 10, West Pyros
+ * 7 and the Aurumlis 6. There is no other desert in Azhora, and these ninety-five hexes are
+ * thirty-nine per cent of the one there is.
+ */
+export const NORTH_MEROSHE_CLIMATE = freeze({
+  '-28,128': 'BWh', '-27,128': 'BWh', '-26,128': 'BWh', '-25,128': 'BWh', '-24,128': 'BWh',
+  '-29,129': 'BWh', '-28,129': 'BWh', '-27,129': 'BWh', '-26,129': 'BWh', '-25,129': 'BWh',
+  '-30,130': 'BWh', '-29,130': 'BWh', '-28,130': 'BWh', '-27,130': 'BWh', '-26,130': 'BWh',
+  '-32,131': 'BWh', '-31,131': 'BWh', '-30,131': 'BWh', '-29,131': 'BWh', '-28,131': 'BWh', '-27,131': 'BWh',
+  '-32,132': 'BWh', '-31,132': 'BWh',
+});
+export const WEST_MEROSHE_CLIMATE = freeze({
+  '-34,132': 'BWh', '-33,132': 'BWh',
+  '-37,133': 'BWh', '-36,133': 'BWh', '-35,133': 'BWh', '-34,133': 'BWh', '-33,133': 'BWh',
+  '-37,134': 'BWh', '-36,134': 'BWh', '-35,134': 'BWh', '-34,134': 'BWh', '-33,134': 'BWh',
+  '-37,135': 'BWh', '-36,135': 'BWh', '-35,135': 'BWh', '-34,135': 'BWh',
+  '-37,136': 'BWh', '-36,136': 'BWh', '-35,136': 'BWh', '-34,136': 'BWh',
+});
+export const CENTRAL_MEROSHE_CLIMATE = freeze({
+  '-30,132': 'BWh', '-29,132': 'BWh', '-28,132': 'BWh', '-27,132': 'BWh',
+  '-32,133': 'BWh', '-31,133': 'BWh', '-30,133': 'BWh', '-29,133': 'BWh', '-28,133': 'BWh', '-27,133': 'BWh',
+  '-32,134': 'BWh', '-31,134': 'BWh', '-30,134': 'BWh', '-29,134': 'BWh', '-28,134': 'BWh', '-27,134': 'BWh',
+  '-33,135': 'BWh', '-32,135': 'BWh', '-31,135': 'BWh', '-30,135': 'BWh', '-29,135': 'BWh', '-28,135': 'BWh', '-27,135': 'BWh',
+  '-33,136': 'BWh', '-32,136': 'BWh', '-31,136': 'BWh', '-30,136': 'BWh', '-29,136': 'BWh',
+  '-33,137': 'BWh', '-32,137': 'BWh', '-31,137': 'BWh',
+});
+export const SOUTH_MEROSHE_CLIMATE = freeze({
+  '-28,136': 'BWh', '-27,136': 'BWh', '-26,136': 'BWh',
+  '-30,137': 'BWh', '-29,137': 'BWh', '-28,137': 'BWh', '-27,137': 'BWh',
+  '-31,138': 'BWh', '-30,138': 'BWh', '-29,138': 'BWh', '-28,138': 'BWh', '-27,138': 'BWh',
+  '-31,139': 'BWh', '-30,139': 'BWh', '-29,139': 'BWh', '-28,139': 'BWh',
+  '-32,140': 'BWh', '-31,140': 'BWh', '-30,140': 'BWh',
+  '-32,141': 'BWh', '-31,141': 'BWh',
+});
+export const MEROSHE_CLIMATE = freeze({
+  ...NORTH_MEROSHE_CLIMATE, ...WEST_MEROSHE_CLIMATE, ...CENTRAL_MEROSHE_CLIMATE, ...SOUTH_MEROSHE_CLIMATE,
+});
 export const SOUTHWEST_CLIMATE = freeze({
   ...NAVARTH_CLIMATE, ...WEST_PYROS_CLIMATE, ...GANESH_DESERT_CLIMATE, ...GANESH_PLAIN_CLIMATE,
+  ...MEROSHE_CLIMATE,
 });
 /**
  * How dry a hex's code is, on one scale: 1 is hot desert, 0 is the Mediterranean corner. The two
@@ -227,15 +296,39 @@ export function regionShare(name, x, z, mix = null) {
   return smooth(.22, .70, (mix ?? terrainMix(x, z)).weights[name] ?? 0);
 }
 
+/**
+ * The four Meroshe deserts together, for the two things that cross their internal seams: the fog off
+ * the southern ocean, which does not stop at a hex edge, and the salt the wind carries off the pan.
+ * Asking one country at a time would put a line down the middle of a seam, which is the reason
+ * `southwestWeight` is the whole block and not one name.
+ */
+export const MEROSHE_BOX = boxOf(MEROSHE_REGIONS);
+export function merosheShare(x, z, mix = null) {
+  if (!inBox(MEROSHE_BOX, x, z)) return 0;
+  const weights = (mix ?? terrainMix(x, z)).weights;
+  let own = 0;
+  for (const name of MEROSHE_REGIONS) own += weights[name] ?? 0;
+  return smooth(.22, .70, own);
+}
+
 // ---------------------------------------------------------------------------
 // The fall: two outlets, and a divide between them
 // ---------------------------------------------------------------------------
 /**
- * **The block tilts toward the Vaellir's mouth**, which is the outlet three of the four countries
- * use: West Pyros down the river itself, the Ganesh Plain's eastern side over a low divide, and
- * Navarth's whole southern face. One plane over all four hundred thousand square metres of it, for
- * the reason the Mithala had one: a plane is continuous across every internal border, so none of
- * the forty-six internal edges has a step or a change of gradient in it.
+ * **The block tilts toward the Vaellir's mouth**, which is the outlet three of job 1's four
+ * countries use: West Pyros down the river itself, the Ganesh Plain's eastern side over a low
+ * divide, and Navarth's whole southern face. One plane over all of it, for the reason the Mithala
+ * had one: a plane is continuous across every internal border, so none of the internal edges has a
+ * step or a change of gradient in it.
+ *
+ * **Job 2 extended the plane rather than laying a second one**, and that is the whole of what the
+ * four Meroshe deserts get for a fall. The plane's northing term takes the ground down 4.0 m at the
+ * Ganesh Plain seam, 5.6 m at the middle of the sand sea and 8.7 m at the South Meroshe's own shore,
+ * which is the fall a desert ninety-five hexes wide needs and no more; a second plane meeting this
+ * one at the seam would put a change of gradient in the ten hex edges that seam is made of. The two
+ * quarters whose outlet is *not* the way the plane falls get one of their own instead, which is
+ * `ganeshBasin`'s rule: the Ganesh Desert to its gulf, and the West Meroshe to the western ocean
+ * (`merosheFans`).
  *
  * It is small on purpose - five metres of easting over fourteen hundred and four of northing over
  * nine hundred and fifty, one in two hundred and eighty and one in two hundred and forty - because
@@ -541,6 +634,309 @@ export function onChannelFloor(x, z, margin = 0) {
 }
 
 // ---------------------------------------------------------------------------
+// The Meroshe: four surfaces, because the atlas gives four countries one word
+// ---------------------------------------------------------------------------
+/**
+ * **Ninety-five hexes, `plains` on every one and `BWh` on every one.** No relief, no variety, no
+ * water, no gradient: the largest single-character expanse the atlas draws anywhere. That is not a
+ * licence to invent mountains, and it is not a reason to draw the Ganesh Desert four more times
+ * either. It is the country's subject, and the answer to it is underfoot.
+ *
+ * **A hot desert is not one surface, it is four, and the game had drawn none of them at scale.**
+ * `moroshe_desert.md` says so itself, in the one paragraph it spends on geography: the Moroshe
+ * "ranges from the rocky hammada of the northern transition zone - flat gravel plains and exposed
+ * bedrock where scrubby thorn trees still manage to exist - through the great sand seas of the
+ * central interior, to the canyon country of the south". Three named surfaces in one sentence, in
+ * the order the atlas names the quarters, and the fourth - the salt pan at the foot of a fan skirt -
+ * is what the atlas adds by putting an ocean on the west.
+ *
+ * So:
+ *
+ *  - **North Meroshe is hamada**, bare rock: a stone floor with the hard beds standing out of it in
+ *    low steps (`MEROSHE_BENCHES`), and the only trees in ninety-five hexes growing in their joints.
+ *    It is the highest of the four and the transition from the Ganesh Plain's clay.
+ *  - **West Meroshe is a fan skirt and a salt pan** (`merosheSkirt`, `MEROSHE_FANS`,
+ *    `MEROSHE_SALT`): three coalesced gravel fans spread off the Dinelv escarpment to an ocean,
+ *    sorting finer as they go, with the salt where the last of the water stops.
+ *  - **Central Meroshe is erg** (`MEROSHE_SINK`, `MEROSHE_DUNES`): the first sand sea in the game,
+ *    linear ridges on the summer wind's bearing with dead-flat corridors between them, in a shallow
+ *    closed sink that is why the sand is there.
+ *  - **South Meroshe is reg** (`merosheFog`, `merosheVarnish`): a pavement of close-packed varnished
+ *    pebbles, under the fog that comes off the southern ocean where Trogo's rainforest begins.
+ *
+ * **Four surfaces, four sight-lines, four edges.** What tells a traveler which quarter they are in
+ * is what the ground is made of, how far they can see across it, and which single thing stands on
+ * its horizon: the Ganesh Plain and Marosh's green hills from the North, the Dinelv escarpment and
+ * the sea from the West, **nothing whatever** from inside the Central, and Trogo's forest wall and
+ * the southern ocean from the South.
+ */
+
+/**
+ * **North Meroshe: the benches.** "Flat gravel plains and exposed bedrock", and what exposed bedrock
+ * does on a desert floor is stand up in steps where a harder bed outcrops - a metre or two of riser,
+ * a long back slope, and then the next one. `dinelv_highlands.md` gives the strike: "a series of
+ * ridge systems crosses it from roughly north to south, aligned with the peninsula's long axis", so
+ * these run **north and south**, which is the one navigational fact this country has. The sand sea
+ * next door runs north-west to south-east on the wind's bearing, so a traveler always knows which of
+ * the two they are standing on by which way the lines go.
+ *
+ * Each bench is a straight line with an asymmetric profile across it: the riser over sixteen metres
+ * on the **west** side, because the beds dip away from the highland, and then the back slope decaying
+ * over a hundred and ten. They are taken as a **maximum and not a sum** (`ovesRim`'s rule), so nine
+ * benches ninety metres apart make a stepped floor and not a staircase nine risers high: the whole
+ * field is between nought and two metres, which is a little more than the Ganesh's wind field and a
+ * great deal less than a landform.
+ */
+const bench = (id, name, x, z, length, rise) => freeze({ id, name, x, z, length, rise, run: 8, fade: 110, cap: 40 });
+export const MEROSHE_BENCHES = freeze([
+  bench('bench-corner', 'The Corner Step', -3290, 2310, 150, 1.4),
+  bench('bench-west', 'The West Step', -3200, 2300, 300, 1.7),
+  bench('bench-mid-west', 'The Long Step', -3110, 2215, 300, 2.0),
+  bench('bench-mid', 'The Middle Step', -3020, 2210, 295, 1.6),
+  bench('bench-short-south', 'The Short Step', -3060, 2130, 120, 1.2),
+  bench('bench-mid-east', 'The Broken Step', -2930, 2210, 290, 1.8),
+  bench('bench-marosh', 'The Marosh Step', -2830, 2210, 290, 1.5),
+  bench('bench-step-north', 'The North Step', -2880, 1990, 90, 1.1),
+  bench('bench-east', 'The East Step', -2740, 2040, 130, 1.3),
+]);
+/** How high the rock stands at a point, and how near a riser it is: the scatter reads both. */
+export function merosheBench(x, z) {
+  let lift = 0, edge = 0;
+  for (const b of MEROSHE_BENCHES) {
+    const along = b.z - z;                                   // the line runs north from (x, z)
+    if (along < -b.cap || along > b.length + b.cap) continue;
+    const ends = smooth(-b.cap, b.cap * .35, along) * (1 - smooth(b.length - b.cap * .35, b.length + b.cap, along));
+    if (ends <= 0) continue;
+    const s = b.x - x;                                       // positive west: the up-dip side
+    if (s < -b.run || s > b.run + b.fade) continue;
+    const face = smooth(-b.run, b.run, s);
+    const here = b.rise * face * (1 - smooth(b.run, b.run + b.fade, s)) * ends;
+    if (here > lift) lift = here;
+    edge = Math.max(edge, ends * (1 - smooth(0, b.run * 2.2, Math.abs(s))));
+  }
+  return { lift, edge };
+}
+export function merosheBenches(x, z, own = 0) {
+  if (own <= 0) return 0;
+  return merosheBench(x, z).lift * own;
+}
+
+/**
+ * **West Meroshe: the skirt.** The atlas puts an ocean on this country's west and the Dinelv
+ * Highlands on its north-east, and `dinelv_highlands.md` says what is between them: the plateau
+ * "extends twenty to forty miles inland before the terrain descends again toward the Meroshe
+ * interior". So the ground falls west-south-west from the highland's foot to the sea, seven metres
+ * over four hundred and thirty, and it is a **one-sided ramp and not a plane** - nought along the
+ * margin against the sand sea, its full drop at the shore - for `ganeshBasin`'s reason: a ramp
+ * leaves no ridge anywhere, and on ground this flat a watershed is something a traveler walks over
+ * without seeing it.
+ *
+ * Without it the shore came out at eleven and a half metres with the coast field having forty metres
+ * to take it to the water, which is a bluff and not a desert shore. It is the same measurement job 1
+ * made at the Ganesh's gulf and the same answer.
+ *
+ * **And it lets go at the shore**, which is the swale's own rule and was found the same way: the
+ * coast field has already blended the last forty metres down to the beach by the time
+ * `southwestGround` sees the ground, so a seven-metre drop laid on top of that put the ground at the
+ * West Meroshe's own westernmost hex centres **four metres under the sea**. So the ramp holds its
+ * full drop to thirty-four metres inland and releases over the last six, which leaves a shore that
+ * runs 0 at the water, 1.7 m six metres in, 2.6 at twenty and 4.5 at forty: a gravel beach on a
+ * desert, which is what the atlas draws.
+ */
+export const MEROSHE_SKIRT = freeze({ from: point(-3380, 2400), to: point(-3810, 2500), drop: 7, shoreFrom: 6, shoreTo: 34 });
+export function merosheSkirt(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const dx = MEROSHE_SKIRT.to.x - MEROSHE_SKIRT.from.x, dz = MEROSHE_SKIRT.to.z - MEROSHE_SKIRT.from.z;
+  const length2 = dx * dx + dz * dz;
+  const along = ((x - MEROSHE_SKIRT.from.x) * dx + (z - MEROSHE_SKIRT.from.z) * dz) / length2;
+  const shore = smooth(MEROSHE_SKIRT.shoreFrom, MEROSHE_SKIRT.shoreTo, landDistance(x, z));
+  return -MEROSHE_SKIRT.drop * smooth(0, 1, along) * shore * own;
+}
+
+/**
+ * **The three fans that make the skirt a bajada and not a plane.** An alluvial fan is what a desert
+ * does with the water that comes down an escarpment twice in a decade: a cone of gravel spreading
+ * out of one mouth, coarsest at the apex and sorting finer the further from it, and where several of
+ * them overlap the result is a bajada. So: three apexes on the Dinelv margin, each spreading
+ * south-west through a sector, and taken as a **maximum and not a sum**, because two fans that
+ * overlap make one longer apron rather than a cone twice as high.
+ *
+ * They are small on purpose - four metres and a bit at the apex against the skirt's seven - because
+ * the atlas says `plains` and a fan five metres high on a slope of one in sixty is the most a
+ * traveler would call a swell. What they are for is the **grain size**, which is the whole of how
+ * this country reads: `merosheFan` comes back 1 at an apex and 0 at the toe, and the scatter puts
+ * cobbles at one end and dust at the other.
+ */
+const fan = (id, name, x, z, bearingX, bearingZ, reach, lift) => freeze({ id, name, x, z, bearingX, bearingZ, reach, lift });
+export const MEROSHE_FANS = freeze([
+  fan('north-fan', 'The North Fan', -3720, 2345, -.38, .92, 290, 4.2),
+  fan('middle-fan', 'The Middle Fan', -3590, 2345, -.71, .71, 330, 5.0),
+  fan('east-fan', 'The East Fan', -3450, 2270, -.64, .77, 340, 4.6),
+]);
+/** 1 at a fan's apex where the gravel is coarsest, 0 at its toe where it is dust. */
+export function merosheFan(x, z) {
+  let best = 0;
+  for (const f of MEROSHE_FANS) {
+    const dx = x - f.x, dz = z - f.z, d = Math.hypot(dx, dz);
+    if (d >= f.reach) continue;
+    const forward = d > 0 ? (dx * f.bearingX + dz * f.bearingZ) / d : 1;
+    if (forward <= .1) continue;                             // behind the apex: not on the fan
+    const sector = smooth(.1, .55, forward);
+    best = Math.max(best, (1 - smooth(0, 1, d / f.reach)) * sector);
+  }
+  return best;
+}
+export function merosheFans(x, z, own = 0) {
+  if (own <= 0) return 0;
+  let best = 0;
+  for (const f of MEROSHE_FANS) {
+    const dx = x - f.x, dz = z - f.z, d = Math.hypot(dx, dz);
+    if (d >= f.reach) continue;
+    const forward = d > 0 ? (dx * f.bearingX + dz * f.bearingZ) / d : 1;
+    if (forward <= .1) continue;
+    best = Math.max(best, f.lift * (1 - smooth(0, 1, d / f.reach)) ** 1.4 * smooth(.1, .55, forward));
+  }
+  return best * own;
+}
+
+/**
+ * **The Malhat: the salt, and the only water in ninety-five hexes that can be seen.** Where a
+ * desert's internal drainage stops near sea level what it leaves is a sabkha - a pan floored with
+ * salt, dead flat because standing water levels everything it lies in, hard enough to ring underfoot
+ * in the dry months and rotten under a crust in the others. It is not a watercourse and there is no
+ * water surface on it; what is drawn is the crust. The name is the tongue's own word for salt
+ * (`maroshi.roots.salt` = *malhat*, `src/languages.js`), taken rather than coined, exactly as job 1
+ * took *vaellir* for the river.
+ *
+ * **It is a levelled floor and not a bowl**, which is why it is applied as a `lerp` toward a plane
+ * in `southwestGround` rather than added as a cut: a playa is flat to the centimetre over hundreds
+ * of metres, and a smooth depression of the same depth would read as a hollow in a field and not as
+ * the thing that makes a traveler stop walking and look at their feet. The floor's own level is
+ * measured rather than typed - the designed surface at the pan's own centre, less the depth.
+ */
+export const MEROSHE_SALT = freeze({ id: 'malhat', name: 'The Malhat', x: -3500, z: 2560, radiusX: 150, radiusZ: 105, depth: 1.1, rim: .28 });
+/** 1 on the pan's own flat floor, 0 off it, feathered over the rim. */
+export function onSaltPan(x, z, margin = 0) {
+  const p = MEROSHE_SALT;
+  const r = Math.hypot((x - p.x) / (p.radiusX + margin), (z - p.z) / (p.radiusZ + margin));
+  return 1 - smooth(1 - p.rim, 1, r);
+}
+let saltLevel = null;
+export function saltPanLevel() {
+  if (saltLevel === null) {
+    const p = MEROSHE_SALT, mix = terrainMix(p.x, p.z);
+    saltLevel = mix.base + southwestSlope(p.x, p.z) + merosheSkirt(p.x, p.z, 1) - p.depth;
+  }
+  return saltLevel;
+}
+
+/**
+ * **Central Meroshe: the sink, and the sand sea that sits in it.** An erg is not sand blown onto a
+ * plain, it is sand that had nowhere left to go: a shallow closed basin with no outlet, which is what
+ * the atlas draws by putting this country's thirty-one hexes between a hamada on the north, a
+ * highland skirt on the west, a stone floor on the south and Marosh's hills on the east, and giving
+ * it no river edge at all. So the sink first - three and a half metres over six hundred, no rim, the
+ * lowest ground in the Meroshe - and the dunes on top of it.
+ */
+export const MEROSHE_SINK = freeze({ x: -2980, z: 2480, radiusX: 340, radiusZ: 255, depth: 3.5 });
+const sinkRadius = (x, z) => Math.hypot((x - MEROSHE_SINK.x) / MEROSHE_SINK.radiusX, (z - MEROSHE_SINK.z) / MEROSHE_SINK.radiusZ);
+export function merosheSink(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const r = sinkRadius(x, z);
+  if (r >= 1) return 0;
+  return -MEROSHE_SINK.depth * (1 - smooth(0, 1, r)) * own;
+}
+
+/**
+ * **The sand sea.** "The central sand seas are genuinely extreme... Navigating the sand seas without
+ * local knowledge is considered one of the more reliable methods of dying on Azhora." What makes
+ * them that is not the height of a dune, it is that **you cannot go straight**: linear dunes run in
+ * parallel ridges for miles, and the only fast ground is the corridor between two of them, which
+ * goes where the ridges go and not where the traveler wants to.
+ *
+ * So: ridges on **the summer wind's own bearing**, which is job 1's - `GANESH_WIND.grainBearing`,
+ * -0.71 radians, from the north-west, because it is the same wind seven hundred metres of desert
+ * apart - a wavelength of **a hundred and forty metres** and **six metres** crest to floor. The
+ * cross-section is deliberately asymmetric and deliberately mostly floor: **forty-eight per cent of
+ * every wavelength is dead-flat corridor**, sixty-seven metres of it, then fifty-nine metres of
+ * gentle windward rise at about six degrees, then a lee face of fourteen metres at twenty-three.
+ *
+ * **The wavelength is a measurement and was wrong once.** Real linear dunes are fifty metres high and
+ * a mile and a half apart, one in thirty; at two hundred and thirty metres, which is what that ratio
+ * first gave, the hillshade came back with **two ridges in the whole country** - correct arithmetic
+ * and not a sand sea. A country six hundred metres across has to fit enough of them to be a field, so
+ * the spacing came down to a hundred and forty (still one in twenty-three, still a real erg's ratio)
+ * and the field now crosses four to five ridges over its long axis and three over its short one.
+ *
+ * **The field has an edge**, because an erg does: it is full inside about four fifths of the sink and
+ * gone a little past its rim, so the outer corners of this country are sheet sand with low ridges in
+ * them - which is where a traveler stands to look at the thing, and the only place in it with a
+ * horizon.
+ */
+export const MEROSHE_DUNES = freeze({ wave: 140, height: 6, bearing: GANESH_WIND.grainBearing,
+  floor: .48, crest: .90, inner: .78, outer: 1.10 });
+/** How much of a point is inside the dune field proper: 1 in the sand sea, 0 on the sheet sand. */
+export function merosheErg(x, z, own = 0) {
+  if (own <= 0) return 0;
+  return own * (1 - smooth(MEROSHE_DUNES.inner, MEROSHE_DUNES.outer, sinkRadius(x, z)));
+}
+/** The dune's own profile at a point, 0 on a corridor floor and 1 on a crest. */
+export function duneProfile(x, z) {
+  const d = MEROSHE_DUNES;
+  const u = turned(x, z, d.bearing) / d.wave;
+  const t = u - Math.floor(u);
+  if (t < d.floor) return 0;
+  if (t < d.crest) return ((t - d.floor) / (d.crest - d.floor)) ** 1.35;
+  return 1 - smooth(d.crest, 1, t);
+}
+export function merosheDunes(x, z, erg = 0) {
+  if (erg <= 0) return 0;
+  return MEROSHE_DUNES.height * duneProfile(x, z) * erg;
+}
+/** 1 on a flat interdune corridor a traveler can walk fast on, 0 on a dune. */
+export function merosheCorridor(x, z) {
+  const own = regionShare('Central Meroshe Desert', x, z);
+  if (own <= 0) return 0;
+  return 1 - duneProfile(x, z) * merosheErg(x, z, own);
+}
+
+/**
+ * **South Meroshe: the fog, which is the one thing in this quarter that is not dry.** `trogo.md` is
+ * explicit and it is the best single sentence in the lore for this job: "Where desert air meets
+ * ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days. This
+ * is not the cold sea-fog of Bouén's coast. It is warm and thick and close, and it waters the middle
+ * elevation forest through the dry months when the rainfall alone would not be enough."
+ *
+ * The atlas says `BWh` on every hex of this country, so it does not rain here; the fog is how the
+ * surface gets wet without it. Two fronts - one off the southern ocean, one off the Trogo margin to
+ * the east - taken as a maximum, so the south-eastern corner is fog and the north-western one, against
+ * Hama and the sand sea, is not. The game has no weather, so what is drawn is what the fog leaves:
+ * a crust on the pavement, a varnish on the stone, and the only thorn scrub in the Meroshe that
+ * stands closer together than a man can walk between. The **sky** reads it too - this is the one
+ * desert country in Azhora with thicker air rather than thinner (`REGION_TEXT`).
+ */
+export const MEROSHE_FOG = freeze({ seaFrom: 2760, seaTo: 3080, landFrom: -2900, landTo: -2560 });
+export function merosheFog(x, z, mix = null) {
+  const own = merosheShare(x, z, mix);
+  if (own <= 0) return 0;
+  const f = MEROSHE_FOG;
+  const sea = smooth(f.seaFrom, f.seaTo, z);
+  const land = smooth(f.landFrom, f.landTo, x);
+  return Math.max(sea, land) * own;
+}
+/**
+ * How dark the pavement is: desert varnish is a film of manganese and iron that takes millennia to
+ * form and only forms where the surface does not move, so a reg is the darkest ground in a desert and
+ * the fog belt is the darkest part of it. 0 is pale gravel, 1 is stone so dark a footprint in it
+ * shows from a hundred paces.
+ */
+export function merosheVarnish(x, z, mix = null) {
+  const own = regionShare('South Meroshe Desert', x, z, mix);
+  if (own <= 0) return 0;
+  return own * (.34 + .66 * merosheFog(x, z, mix));
+}
+
+// ---------------------------------------------------------------------------
 // The swale: a designed floor for two rivers drawn on unbuilt borders
 // ---------------------------------------------------------------------------
 /**
@@ -602,18 +998,31 @@ export function southwestGround(x, z, ground) {
   const desert = regionShare('Ganesh Desert', x, z, mix);
   const plain = regionShare('Ganesh Plain', x, z, mix);
   const pyros = regionShare('West Pyros', x, z, mix);
+  const hamada = regionShare('North Meroshe Desert', x, z, mix);
+  const skirt = regionShare('West Meroshe Desert', x, z, mix);
+  const erg = regionShare('Central Meroshe Desert', x, z, mix);
   const tilt = southwestSlope(x, z) * bank
-    + ganeshBasin(x, z, desert) + ganeshPlainFall(x, z, plain) + pyrosFall(x, z, pyros);
-  let height = ground + tilt + navarthCrests(x, z, navarth) + ganeshStone(x, z, desert);
+    + ganeshBasin(x, z, desert) + ganeshPlainFall(x, z, plain) + pyrosFall(x, z, pyros)
+    + merosheSkirt(x, z, skirt) + merosheSink(x, z, erg);
+  let height = ground + tilt + navarthCrests(x, z, navarth) + ganeshStone(x, z, desert)
+    + merosheBenches(x, z, hamada) + merosheFans(x, z, skirt) + merosheDunes(x, z, merosheErg(x, z, erg));
   const near = nearestSouthwestRiver(x, z);
   const swale = southwestSwaleWeight(x, z, bank, near);
   // The designed surface: the blend's own base, the tilt, and no relief at all.
   if (swale > 0) height = height + (mix.base + tilt - height) * swale;
-  return height + ganeshWashCut(x, z, desert) + ganeshPlainChannelCut(x, z, plain) + ganeshDepressionCut(x, z, plain);
+  height += ganeshWashCut(x, z, desert) + ganeshPlainChannelCut(x, z, plain) + ganeshDepressionCut(x, z, plain);
+  // **The salt pan is levelled, not cut**: a playa is flat to the centimetre over hundreds of metres.
+  const salt = skirt > 0 ? onSaltPan(x, z) * skirt : 0;
+  if (salt > 0) height = lerp(height, saltPanLevel(), salt);
+  return height;
 }
 
-/** Whether the scatter must keep off a point for this block's own reasons: a dry bed's floor. */
-export const southwestClear = (x, z, margin = 0) => onWashFloor(x, z, margin) || onChannelFloor(x, z, margin);
+/**
+ * Whether the scatter must keep off a point for this block's own reasons: a dry bed's floor, or the
+ * salt pan's crust, where nothing roots at all because the ground it would root in is brine.
+ */
+export const southwestClear = (x, z, margin = 0) => onWashFloor(x, z, margin) || onChannelFloor(x, z, margin)
+  || onSaltPan(x, z, margin) > .25;
 
 // ---------------------------------------------------------------------------
 // The colour of the ground
@@ -638,6 +1047,13 @@ export const SOUTHWEST_GROUND = freeze({
   pocket: 0x685f45,    // where the fine sediment has gathered a hand deep, and darker for it
   green: 0x68753f,     // the two wet corners, and the depressions on the plain
   damp: 0x5c6c3f,      // the damp reach in the south wash, the one green thing in the Ganesh
+  // The four Meroshe surfaces. **These are the whole of how four countries with one terrain word and
+  // one climate code are told apart from the air**, and they are the four real colours of a hot
+  // desert: bare rock, sand, varnished pavement, salt.
+  rock: 0x67644f,      // hamada: bedrock under a skin of grit - grey where everything else here is warm
+  sand: 0x7e7250,      // erg: clean quartz sand, the warmest and lightest ground in the block
+  reg: 0x352a1c,       // reg: close-packed pebbles under desert varnish, the darkest dry ground in the game
+  crust: 0x9c9a89,     // sabkha: a salt crust, and the only near-white the block is allowed
 });
 const SWATCHES = freeze(new Set(SOUTHWEST_REGIONS.flatMap(name => {
   const profile = REGION_TERRAIN[name];
@@ -664,6 +1080,25 @@ export function southwestTint(x, z, ground) {
   if (pan > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.05, .8, pan) * .55);
   const damp = ganeshDamp(x, z);
   if (damp > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .7, damp) * .8);
+  if (!inBox(MEROSHE_BOX, x, z)) return colour === base ? null : colour;
+  // The four Meroshe surfaces, in the order a traveler crossing from the Ganesh Plain meets them.
+  // **The rock and the sand are pulled well below the swatch they start from** and the salt crust is
+  // the only pale thing allowed, which is job 1's haze lesson taken at its word: at .0024 with a warm
+  // dust haze, more than half of every pixel past a hundred and fifty metres is haze rather than
+  // ground, so a ground that is honest about a desert on the screen has to be darker than a desert.
+  const mix = terrainMix(x, z);
+  const rock = regionShare('North Meroshe Desert', x, z, mix);
+  if (rock > 0) colour = mixHex(colour, SOUTHWEST_GROUND.rock, rock * (.58 + merosheBench(x, z).edge * .34));
+  const erg = merosheErg(x, z, regionShare('Central Meroshe Desert', x, z, mix));
+  if (erg > 0) colour = mixHex(colour, SOUTHWEST_GROUND.sand, erg * (.50 + duneProfile(x, z) * .42));
+  const varnish = merosheVarnish(x, z, mix);
+  if (varnish > 0) colour = mixHex(colour, SOUTHWEST_GROUND.reg, varnish * .88);
+  const skirt = regionShare('West Meroshe Desert', x, z, mix);
+  if (skirt > 0) {
+    colour = mixHex(colour, SOUTHWEST_GROUND.rock, skirt * merosheFan(x, z) * .52);
+    const salt = onSaltPan(x, z) * skirt;
+    if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.crust, smooth(.05, .75, salt) * .94);
+  }
   return colour === base ? null : colour;
 }
 
@@ -747,4 +1182,42 @@ export const SOUTHWEST_LANDMARKS = freeze([
     description: 'The low rise along the eastern side of the plain, and it is a divide a traveler walks over without noticing. West of it every drop goes to the Ganesh and is gone; east of it the ground falls a few hundred paces to the sea. Two metres of rise decide it, and on ground this flat two metres is what a watershed is.' }),
   freeze({ id: 'ganesh-plain-green-corner', name: 'The Green Corner', x: -2620, z: 1780,
     description: 'The south-eastern corner, where Marosh’s country begins: one hex of Mediterranean grass and three of something between that and desert, all of it a different colour from the plain behind it. The lore calls this whole plain ground that cannot decide which zone it belongs to, and this corner is where the argument is settled in favour of the green.' }),
+  // ----- The North Meroshe Desert: the hamada -----
+  freeze({ id: 'meroshe-hamada', name: 'The Hamada', x: -2950, z: 2110,
+    description: 'The northern transition of the great desert, and it is not sand: it is rock. A floor of bare bedrock under a skin of gravel, swept clean, ringing under a boot, with the hard beds standing out of it in low steps a metre or two high that run north and south for three hundred paces at a time. The lore calls it "the rocky hammada of the northern transition zone — flat gravel plains and exposed bedrock where scrubby thorn trees still manage to exist", and that is exactly what stands here: thorn, and nothing else, and a great deal of stone.' }),
+  freeze({ id: 'meroshe-benches', name: 'The Stone Steps', x: -3110, z: 2100,
+    description: 'Nine low escarpments crossing the hamada from north to south, each of them a metre or two of riser and then a long back slope to the next. They are the outcrops of harder beds dipping east off the Dinelv highland, and they are the only thing in this country that gives a direction: the sand sea one hex south runs north-west to south-east on the wind, and the stone runs north and south on the rock, so a traveler who knows which way the lines go knows which country they are standing in.' }),
+  freeze({ id: 'meroshe-thorn', name: 'The Thorn Ground', x: -2860, z: 2020,
+    description: 'The only trees in ninety-five hexes of desert, and they are growing out of a crack in a rock. Thorn, waist-high to head-high, rooted in the joints of the bedrock where the last rain went and stayed — a dozen paces apart where the joints are close and half a mile apart where they are not. Nothing else in the Meroshe is tall enough to stand in the shade of.' }),
+  freeze({ id: 'meroshe-dust-line', name: 'The Dust Line', x: -2900, z: 1940,
+    description: 'Where the Ganesh Plain stops. Walking south off the plain the pale clay thins over about two hundred paces, the grass tufts give out one by one, and then there is stone underfoot and nothing standing anywhere. There is no ridge, no river and no line on any map: the plain simply runs out of soil. It is the northern door of the whole Meroshe and there is nothing at it.' }),
+  freeze({ id: 'meroshe-green-shoulder', name: 'The Green Shoulder', x: -2730, z: 1950,
+    description: 'The north-eastern corner, and on the atlas the one place in the Meroshe where a traveler could see green. Two hexes east the ground goes up into Marosh’s Mediterranean hills — grass, olive, oak scrub, winter rain — and from the last of the hamada it is a low green shoulder on the horizon with heat shimmer between. The distance is under a mile and the difference is a climate. **Marosh is not built**, so what stands on that horizon today is open country and not the hills; what is real here is the far side of the argument, which is hot desert to the last hex and a dry wind coming off it.' }),
+  // ----- The West Meroshe Desert: the fan skirt and the salt -----
+  freeze({ id: 'meroshe-fan-skirt', name: 'The Fan Skirt', x: -3590, z: 2420,
+    description: 'The apron below the Dinelv escarpment: three broad cones of gravel spread south-west out of the highland’s mouths and grown together into one skirt falling to the sea. What a traveler notices is the size of the stones. At the heads they are cobbles a hand across and the walking is bad; four hundred paces down the fan they are pebbles; at the toe they are dust deep enough to print. Water comes down these twice in a decade and the sorting is all it has left behind.' }),
+  freeze({ id: 'meroshe-salt-pan', name: 'The Malhat', x: -3500, z: 2560,
+    description: 'The one place in ninety-five hexes where water can be seen, and it cannot be drunk. Three hundred paces of floor so flat it has no features at all, floored in a white salt crust that rings under a boot in the dry months and gives way to grey mud under it in the others. This is where the fan skirt’s drainage stops: nothing leaves the Malhat except upward. The Moreshi word for salt is *malhat*, and the pan has no other name.' }),
+  freeze({ id: 'meroshe-dry-shore', name: 'The Dry Shore', x: -3700, z: 2440,
+    description: 'A desert that runs out at an open ocean, which is the second time this block does it and the more extreme of the two: the Ganesh has a sheltered gulf and this has the whole western sea, with the weather of half a world arriving on it and not a drop of it falling here. Gravel, then sand for forty paces, then surf. A hundred paces inland the ground is as arid as it is twenty miles in, and the only things alive on it came out of the water.' }),
+  freeze({ id: 'meroshe-escarpment-foot', name: 'The Escarpment Foot', x: -3660, z: 2350,
+    description: 'The northern edge of the fan skirt, where the Dinelv plateau stands up out of the desert. Looking north from here the ground goes up in stepped bands of rock — the warm-toned stone the Dinelv trade quarries low down, the harder dark stone above it — and the seasonal channels that cut the face are visible as dark lines all the way to the rim. The caravan road to the plateau passes somewhere along this foot. It is not built and neither is the plateau.' }),
+  // ----- The Central Meroshe Desert: the erg -----
+  freeze({ id: 'meroshe-sand-sea', name: 'The Sand Sea', x: -3150, z: 2585,
+    description: 'The erg, and the only one in Azhora. Parallel ridges of clean sand running north-west to south-east on the summer wind’s bearing, seven metres from floor to crest and two hundred and thirty paces apart, with a flat gravel corridor between every pair. From the crest of one the next is the horizon. The lore is plain about what this ground is: "the central sand seas are genuinely extreme… Navigating the sand seas without local knowledge is considered one of the more reliable methods of dying on Azhora."' }),
+  freeze({ id: 'meroshe-corridors', name: 'The Corridors', x: -2960, z: 2460,
+    description: 'The floors between the dunes, and the only fast ground in the sand sea. They are swept flat and hard by the same wind that piled the ridge beside them, and a traveler can walk one at speed for half a mile — north-west or south-east, and no other direction, because that is the way the ridges go. Crossing the erg against the grain means climbing every ridge in turn, and there are a dozen of them.' }),
+  freeze({ id: 'meroshe-sink', name: 'The Sink', x: -2920, z: 2520,
+    description: 'The reason the sand is here. This whole country lies in a shallow closed basin three and a half metres below its own rim, with no river edge anywhere on it and no outlet in any direction — hamada to the north, a highland skirt to the west, a stone floor to the south and Marosh’s hills to the east. Sand that gets into the Meroshe gets into this, and does not leave.' }),
+  freeze({ id: 'meroshe-sand-edge', name: 'The Sand Edge', x: -2780, z: 2610,
+    description: 'Where the sand sea gives out. The ridges get lower over about three hundred paces, then broken, then they are just streaks of sand lying on a gravel floor, and the horizon comes back. It is the only place in this country from which the erg can be seen as a thing rather than walked in, and it is where anybody with sense turns round.' }),
+  // ----- The South Meroshe Desert: the reg and the fog -----
+  freeze({ id: 'meroshe-stone-floor', name: 'The Stone Floor', x: -2800, z: 2800,
+    description: 'The reg: a pavement of pebbles packed edge to edge over the whole country, flat enough to see twenty miles across and dark enough to look wet. The colour is desert varnish, a film of iron and manganese that takes an age to form and only forms where the surface never moves — so the ground here is old in a way that the sand sea two hexes north is not, and a footprint on it will still be there next year.' }),
+  freeze({ id: 'meroshe-fog-margin', name: 'The Fog Margin', x: -2650, z: 2720,
+    description: 'The strangest ground in the Meroshe: desert that gets wet without being rained on. The atlas gives this hex hot desert like all the rest, and the fog off the southern ocean and off Trogo’s ridge comes in over it and stays, sometimes for days — "warm and thick and close", the lore says, not the cold sea-fog of the northern coasts. What it leaves is a crust on the stone, lichen in the lee of every pebble, and thorn standing close enough together to make a traveler walk round it, which nothing else in this desert does.' }),
+  freeze({ id: 'meroshe-forest-wall', name: 'The Forest Wall', x: -2560, z: 2640,
+    description: 'The eastern edge of the stone floor, and the sharpest boundary the atlas draws anywhere: thirteen hex edges of hot desert against tropical rainforest. Trogo begins at the next hex east and goes up in one wall of dark canopy with cloud sitting in it: "the desert’s last water meets the coast’s first moisture and produces a consequence that neither the desert peoples to the northwest nor the Maroshi kingdom to the north has entirely figured out what to do with: tropical rainforest." **Trogo is not built**, so there is no canopy on that horizon yet. What has already crossed the line is the fog, and this is where it stands thickest.' }),
+  freeze({ id: 'meroshe-south-shore', name: 'The Southern Shore', x: -2860, z: 3040,
+    description: 'The bottom of the desert and the bottom of the continent’s southwest: the stone floor runs south until the pebbles turn to shingle and then to the southern ocean, with the whole Meroshe behind it and nothing but water in front. Four hex edges of it, and the fog comes ashore here first.' }),
 ]);

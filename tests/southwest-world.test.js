@@ -15,13 +15,18 @@ import {
 import { WEST_PROFILES, westGroundAt, westWaterSurface } from '../src/west-ground.js';
 import { groundWithRiver } from '../src/world-terrain.js';
 import {
-  SOUTHWEST_REGIONS, SOUTHWEST_CLIMATE, NAVARTH_CLIMATE, WEST_PYROS_CLIMATE,
+  SOUTHWEST_REGIONS, SOUTHWEST_NORTH_REGIONS, MEROSHE_REGIONS,
+  SOUTHWEST_CLIMATE, NAVARTH_CLIMATE, WEST_PYROS_CLIMATE,
   GANESH_DESERT_CLIMATE, GANESH_PLAIN_CLIMATE, ARIDITY, SOUTHWEST_TILT, GANESH_BASIN,
   GANESH_WASHES, GANESH_DAMP, GANESH_PLAIN_CHANNELS, GANESH_DEPRESSIONS, NAVARTH_CRESTS,
   SOUTHWEST_LANDMARKS, SOUTHWEST_BOX, SOUTHWEST_SWALE,
+  MEROSHE_CLIMATE, NORTH_MEROSHE_CLIMATE, WEST_MEROSHE_CLIMATE, CENTRAL_MEROSHE_CLIMATE, SOUTH_MEROSHE_CLIMATE,
+  MEROSHE_BENCHES, MEROSHE_SKIRT, MEROSHE_FANS, MEROSHE_SALT, MEROSHE_SINK, MEROSHE_DUNES, MEROSHE_FOG, MEROSHE_BOX,
   southwestAridity, southwestKoppen, southwestGround, southwestWeight, southwestClear,
   ganeshLie, ganeshDamp, inDepression, ganeshDepressionCut, onWashFloor, onChannelFloor,
-  nearestWash, navarthCrests, regionShare,
+  nearestWash, navarthCrests, regionShare, merosheShare,
+  merosheBench, merosheBenches, merosheSkirt, merosheFan, merosheFans, merosheSink,
+  merosheErg, merosheDunes, merosheCorridor, duneProfile, merosheFog, merosheVarnish, onSaltPan, saltPanLevel,
 } from '../src/southwest-world.js';
 import { SOUTHWEST_WILDLIFE_ZONES } from '../src/southwest-wildlife.js';
 import { DEFAULT_SKY, regionSky } from '../src/region-sky.js';
@@ -32,10 +37,21 @@ import { REGION_LANGUAGE, DIALECTS } from '../src/languages.js';
 import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
 
 /**
- * The southwestern block — Navarth, West Pyros, the Ganesh Desert and the Ganesh Plain — built as
- * terrain, climate, water, scenery and wildlife and nothing that belongs to anybody
+ * The southwestern block, in two halves and two jobs.
+ *
+ * **Job 1** — Navarth, West Pyros, the Ganesh Desert and the Ganesh Plain — built as terrain,
+ * climate, water, scenery and wildlife and nothing that belongs to anybody
  * (docs/southwest-1-brief.md, 30 September 2026). A hundred and seven authored hexes over four
  * countries, and the first `BWh` ground in the game.
+ *
+ * **Job 2** — the North, West, Central and South Meroshe Deserts (docs/southwest-2-brief.md, the
+ * same day). Ninety-five more hexes, `plains` on every one and `BWh` on every one: the largest
+ * single-character expanse the atlas draws anywhere, and the one job in this project where the atlas
+ * cannot tell four countries apart. What tells them apart is the **surface** - hamada, fan skirt and
+ * salt pan, erg, reg under fog - and the tests for it are at the end of this file. Two things moved
+ * that nobody expected: **the world box grew south**, from 45.656 hexes tall to 53.450, and the
+ * survey window with it in *both* axes (`maxR` 135 to 144 and, because x = W(q + r/2), `minQ` -41 to
+ * -45 without any country reaching west at all).
  *
  * The standing rule is the user's: the atlas wins over the lore. So most of what is asserted below
  * is the atlas's own arithmetic — twenty-two hexes and twenty-seven and thirty-one and twenty-seven,
@@ -51,6 +67,8 @@ import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
  */
 
 const FOUR = ['Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain'];
+const MEROSHE = ['North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert'];
+const BLOCK = [...FOUR, ...MEROSHE];
 const AXIAL = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const MAP_PATH = new URL('../../world-builder/map/resources/examples/azhora.wwmap', import.meta.url);
 const H = groundWithRiver;
@@ -65,19 +83,33 @@ const step = (x, z) => {
   for (const [dx, dz] of [[2, 0], [0, 2], [1.41, 1.41], [1.41, -1.41]]) worst = Math.max(worst, Math.abs(H(x + dx, z + dz) - H(x - dx, z - dz)));
   return worst;
 };
-const blockShare = (x, z) => {
+const shareOf = names => (x, z) => {
   const weights = terrainMix(x, z).weights;
-  let own = 0; for (const name of FOUR) own += weights[name] ?? 0;
+  let own = 0; for (const name of names) own += weights[name] ?? 0;
   return own;
 };
+const blockShare = shareOf(FOUR);
+const wholeShare = shareOf(BLOCK);
 
 test('the atlas gives four countries a hundred and seven hexes, in the order the brief fixed', () => {
   assert.deepEqual(FOUR.map(name => REGION_IDS[name]), [32, 33, 34, 35]);
-  assert.deepEqual(SOUTHWEST_REGIONS, FOUR);
+  assert.deepEqual(SOUTHWEST_NORTH_REGIONS, FOUR);
+  assert.deepEqual(SOUTHWEST_REGIONS, BLOCK, 'the module\u2019s own list is both halves');
   // Appended, never inserted: `world-regions.js` walks PLAYABLE_REGIONS with one seeded scatter
   // stream, so a name put anywhere but the end re-rolls every region after it.
+  //
+  // **This assertion used to read `PLAYABLE_REGIONS.slice(at)` and be compared with these four**,
+  // which says "these are the last four in the list" when what it means is "these come after
+  // everything that was there before". It is the fourth file in which that mistake has been found
+  // and rewritten - the West Lotharn builder fixed it in `oves-world`, the Mithala builder in
+  // `west-lotharn-world`, job 1 in `mithala-world` twice - and job 2 broke it here by appending four
+  // more. So it now finds its own index and checks the order rather than the length, and
+  // `tests/region-layout.test.js` carries the **permanent guard** the fourth generation earned: that
+  // PLAYABLE_REGIONS is in strictly increasing `REGION_IDS` order with no gaps, everywhere, for
+  // every country, so nobody needs the "last N" idiom again.
   const at = PLAYABLE_REGIONS.indexOf('Navarth');
-  assert.deepEqual(PLAYABLE_REGIONS.slice(at), FOUR);
+  assert.deepEqual(PLAYABLE_REGIONS.slice(at, at + 4), FOUR);
+  for (const name of PLAYABLE_REGIONS.slice(at)) assert.ok(REGION_IDS[name] >= 32, `${name} comes after the block with a lower id`);
   for (const name of FOUR) assert.ok(PLAYABLE.includes(name), `${name} is in the survey`);
   assert.deepEqual(FOUR.map(name => cellsOf(name).length), [22, 27, 31, 27]);
   assert.equal(FOUR.reduce((sum, name) => sum + cellsOf(name).length, 0), 107);
@@ -95,9 +127,12 @@ test('the atlas gives four countries a hundred and seven hexes, in the order the
 });
 
 test('the climate is a gradient, which is a first: BWh over eighty-one hexes, and two green corners', () => {
-  assert.equal(Object.keys(SOUTHWEST_CLIMATE).length, 107);
+  assert.equal(Object.keys(SOUTHWEST_CLIMATE).length, 202, 'both halves, hex for hex');
   const tally = {};
-  for (const code of Object.values(SOUTHWEST_CLIMATE)) tally[code] = (tally[code] ?? 0) + 1;
+  for (const name of FOUR) for (const cell of cellsOf(name)) {
+    const code = SOUTHWEST_CLIMATE[`${cell.q},${cell.r}`];
+    tally[code] = (tally[code] ?? 0) + 1;
+  }
   assert.deepEqual(tally, { BWh: 81, BSh: 18, Csb: 6, Csa: 2 });
   assert.equal(Object.keys(NAVARTH_CLIMATE).length, 22);
   assert.equal(Object.keys(WEST_PYROS_CLIMATE).length, 27);
@@ -135,83 +170,135 @@ test('the climate is a gradient, which is a first: BWh over eighty-one hexes, an
   assert.ok(worst < .2, `aridity jumps ${worst.toFixed(3)} in twenty metres`);
 });
 
-test('the world box grows west, and the survey window with it', () => {
-  // Nethereum set the western edge at -3010.002; the Ganesh Desert's westernmost hexes are
-  // (-33,123) through (-33,126), whose outer flat stands at x = -3900, so the edge goes to
-  // -3960.002 and the world from 36.20 hexes wide to 45.70. Nothing moves north or south.
+test('the world box grew west for job 1 and south for job 2, and the survey window with it', () => {
+  // **West, for job 1.** Nethereum set the western edge at -3010.002; the Ganesh Desert's
+  // westernmost hexes are (-33,123) through (-33,126), whose outer flat stands at x = -3900, so the
+  // edge went to -3960.002 and the world from 36.20 hexes wide to 45.70.
+  //
+  // **South, for job 2, and nobody expected it.** The brief predicted no movement at all: the
+  // Meroshe's westernmost hex is the West Meroshe's (-37,133) at x = -3750, a hundred and fifty
+  // metres inside the edge job 1 set, so `minX` does not move and is checked here for that. What
+  // moves is `maxZ`: the South Meroshe Desert's southernmost hexes are (-32,141) and (-31,141),
+  // centres at z = 3060.089 and lower vertices a circumradius (57.735 m) past that at 3117.824, so
+  // the southern edge goes from 2398.401 to **3177.824** and the world from 45.656 hexes tall to
+  // **53.450**. It is 45.70 by 53.45 now: taller than it is wide, for the first time since the
+  // Ascarth Peninsula, and no direction is left that a playable country has not spent.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3177.823940164498) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
+  const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   assert.ok(Math.abs(wide - 45.70) < .01, `east to west is ${wide.toFixed(2)} hexes`);
-  // The Ganesh Desert alone spends it: no other of the four reaches past -3600.
-  const westmost = Object.fromEntries(FOUR.map(name => [name, Math.min(...cellsOf(name).map(cell => cell.x))]));
+  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  // The Ganesh Desert alone spends the west: no other of job 1's four reaches past -3600, and no
+  // Meroshe hex reaches past -3750.
+  const westmost = Object.fromEntries(BLOCK.map(name => [name, Math.min(...cellsOf(name).map(cell => cell.x))]));
   assert.ok(Math.abs(westmost['Ganesh Desert'] - -3850) < 1, `the Ganesh Desert's westernmost hex centre is ${westmost['Ganesh Desert'].toFixed(1)}`);
-  for (const name of ['Navarth', 'West Pyros', 'Ganesh Plain'])
+  for (const name of BLOCK.filter(item => item !== 'Ganesh Desert'))
     assert.ok(westmost[name] > westmost['Ganesh Desert'], `${name} does not spend the western edge`);
-  // `WINDOW.minQ` is the last column the coast lattice reaches, measured off the lattice rather
-  // than chosen — the rule maxR 135 and minR 79 were both set by.
-  assert.equal(WINDOW.minQ, -41);
+  // And the South Meroshe alone spends the south.
+  const southmost = Object.fromEntries(BLOCK.map(name => [name, Math.max(...cellsOf(name).map(cell => cell.z))]));
+  assert.ok(Math.abs(southmost['South Meroshe Desert'] - 3060.0889132455354) < 1e-6, `the South Meroshe's southernmost hex centre is ${southmost['South Meroshe Desert']}`);
+  for (const name of BLOCK.filter(item => item !== 'South Meroshe Desert'))
+    assert.ok(southmost[name] < southmost['South Meroshe Desert'], `${name} does not spend the southern edge`);
+  assert.ok(WORLD_BOUNDS.maxZ > southmost['South Meroshe Desert'] + 57.7 + 59, 'the edge clears the hex rim by the 60 m margin');
+  // **Both window axes moved, and only one country reached.** `maxR` 135 -> 144 is the lattice's own
+  // last row. `minQ` -41 -> -45 is a side effect of it and not of anything reaching west: x =
+  // W(q + r/2), so a lattice nine rows further south reaches four columns further west at the same
+  // world x. Both are measured off the lattice rather than chosen, which is the rule minR 79 and
+  // maxR 135 were both set by.
+  assert.equal(WINDOW.minQ, -45);
   assert.equal(WINDOW.maxQ, 34);
   assert.equal(WINDOW.minR, 79);
-  assert.equal(WINDOW.maxR, 135);
+  assert.equal(WINDOW.maxR, 144);
   const CELL = 4, MARGIN = 96, PHASE = { x: -1556.0019279391274, z: -704.3502691896258 };
   const snap = (value, phase) => phase + Math.floor((value - phase) / CELL + 1e-9) * CELL;
   const firstX = snap(WORLD_BOUNDS.minX - MARGIN, PHASE.x), firstZ = snap(WORLD_BOUNDS.minZ - MARGIN, PHASE.z);
-  let reached = 99;
-  for (let z = firstZ; z <= WORLD_BOUNDS.maxZ + MARGIN + CELL; z += CELL)
-    reached = Math.min(reached, hexAt(firstX, z).q, hexAt(firstX + CELL, z).q);
-  assert.equal(WINDOW.minQ, reached, 'the window stops at the last column the lattice reaches: no slack, and nothing left out');
-  // And what the widening pulled in is the block's horizon and not its own ground: all four
-  // countries already lay inside q >= -33, so none of the 71 new land hexes is theirs.
+  const columns = Math.ceil((WORLD_BOUNDS.maxX + MARGIN - firstX) / CELL) + 1;
+  const rows = Math.ceil((WORLD_BOUNDS.maxZ + MARGIN - firstZ) / CELL) + 1;
+  const lastZ = firstZ + (rows - 1) * CELL, lastX = firstX + (columns - 1) * CELL;
+  let west = 99, deep = -99;
+  for (let z = firstZ; z <= lastZ; z += CELL) west = Math.min(west, hexAt(firstX, z).q, hexAt(firstX + CELL, z).q);
+  for (let x = firstX; x <= lastX; x += CELL) deep = Math.max(deep, hexAt(x, lastZ).r, hexAt(x, lastZ - CELL).r);
+  assert.equal(WINDOW.minQ, west, 'the window stops at the last column the lattice reaches: no slack, and nothing left out');
+  assert.equal(WINDOW.maxR, deep, 'and at the last row it reaches');
+  // Job 1's widening bought only horizon: all four of its countries lay inside q >= -33, so none of
+  // the 71 hexes it turned from sea into land was its own. **Job 2's bought its own ground**, and
+  // that is the difference: the South Meroshe's twenty-one hexes, eight of the Central's and four of
+  // the West's all lie south of row 135, so without the widening thirty-three hexes of a playable
+  // country would have been open water. LAND_HEXES 1,935 -> 2,078.
   for (const name of FOUR) for (const cell of cellsOf(name)) assert.ok(cell.q >= -33, `(${cell.q},${cell.r}) was outside the old window`);
+  const beyond = MEROSHE.flatMap(name => cellsOf(name)).filter(cell => cell.r > 135);
+  assert.equal(beyond.length, 33, 'thirty-three of the block\u2019s own hexes were outside the old window');
   const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
-  assert.equal(LAND_HEXES.length, 1935);
-  for (const name of FOUR) for (const cell of cellsOf(name)) assert.ok(land.has(`${cell.q},${cell.r}`), `(${cell.q},${cell.r}) is not land`);
+  assert.equal(LAND_HEXES.length, 2078);
+  for (const name of BLOCK) for (const cell of cellsOf(name)) assert.ok(land.has(`${cell.q},${cell.r}`), `(${cell.q},${cell.r}) is not land`);
 });
 
-test('none of the four touches a built country, and the block is one island of ground', () => {
+test('the block still touches no built country outside itself, and is one island of ground', () => {
   const built = new Set(PLAYABLE_REGIONS);
   const neighbours = {};
-  let internal = 0;
-  for (const name of FOUR) for (const cell of cellsOf(name)) for (const [dq, dr] of AXIAL) {
+  let internal = 0, job1 = 0, job2 = 0, across = 0;
+  for (const name of BLOCK) for (const cell of cellsOf(name)) for (const [dq, dr] of AXIAL) {
     const other = owner.get(`${cell.q + dq},${cell.r + dr}`);
     if (!other || other === name) continue;
-    if (FOUR.includes(other)) { internal++; continue; }
+    if (BLOCK.includes(other)) {
+      internal++;
+      const mine = MEROSHE.includes(name), theirs = MEROSHE.includes(other);
+      if (mine && theirs) job2++; else if (!mine && !theirs) job1++; else across++;
+      continue;
+    }
     neighbours[other] = (neighbours[other] ?? 0) + 1;
   }
-  // **The whole point of this job's shape.** Not one of the four shares an edge with anything that
-  // is built: the built frontier in the west is Nethereum and Isareos, which border the unbuilt
-  // Ibenwoods. So the block is reached by F8 travel and by nothing else until the forest belt lands.
+  // **The whole point of the block's shape, and job 2 does not change it.** Nothing in either half
+  // shares an edge with a built country outside the block: the built frontier in the west is
+  // Nethereum and Isareos, which border the unbuilt Ibenwoods. So the whole southwest is reached by
+  // F8 travel and by nothing else until the forest belt lands, and jobs 3 and 4 inherit that.
   for (const other of Object.keys(neighbours)) assert.ok(!built.has(other), `${other} is built and shares an edge with this block`);
-  assert.equal(internal / 2, 46, 'forty-six internal hex edges');
+  assert.equal(job1 / 2, 46, 'forty-six internal hex edges among job 1\u2019s four');
+  assert.equal(job2 / 2, 30, 'thirty among job 2\u2019s four');
+  assert.equal(across / 2, 10, 'and ten between the halves, all of them Ganesh Plain | North Meroshe');
+  assert.equal(internal / 2, 86);
+  // Those ten are the only seam in the block with a built country on both sides of it, and they are
+  // all one pair.
+  let pair = 0;
+  for (const cell of cellsOf('North Meroshe Desert')) for (const [dq, dr] of AXIAL)
+    if (owner.get(`${cell.q + dq},${cell.r + dr}`) === 'Ganesh Plain') pair++;
+  assert.equal(pair, 10);
 });
 
-test('one wavelength over all four, and the internal seams have nothing in them', () => {
-  for (const name of FOUR) {
+test('one wavelength over all eight, and the internal seams have nothing in them', () => {
+  for (const name of BLOCK) {
     const profile = REGION_TERRAIN[name];
     for (const entry of [profile, ...Object.values(profile.byTerrain ?? {})])
       assert.equal(entry.wave, 320, `${name} is off the block's wavelength`);
   }
   // Measured on all-block ground only: an outland point at the end of a seam is a rib and not a seam.
   const pairs = new Map();
-  for (const name of FOUR) for (const cell of cellsOf(name)) for (const [dq, dr] of AXIAL) {
+  for (const name of BLOCK) for (const cell of cellsOf(name)) for (const [dq, dr] of AXIAL) {
     const other = owner.get(`${cell.q + dq},${cell.r + dr}`);
-    if (!other || other === name || !FOUR.includes(other)) continue;
+    if (!other || other === name || !BLOCK.includes(other)) continue;
     const mate = cellsOf(other).find(o => o.q === cell.q + dq && o.r === cell.r + dr);
     const key = [name, other].sort().join(' | ');
     if (!pairs.has(key)) pairs.set(key, 0);
     for (let i = 0; i < 24; i++) {
       const t = (i + .5) / 24;
       const x = cell.x + (mate.x - cell.x) * t, z = cell.z + (mate.z - cell.z) * t;
-      if (blockShare(x, z) < .999) continue;
+      if (wholeShare(x, z) < .999) continue;
       pairs.set(key, Math.max(pairs.get(key), step(x, z)));
     }
   }
-  assert.equal(pairs.size, 5, 'five internal seams');
+  // Ten seams now: job 1's five, job 2's four, and the one between the halves.
+  assert.equal(pairs.size, 10, 'ten internal seams');
   for (const [key, worst] of pairs)
     assert.ok(worst < 5, `${key} steps ${worst.toFixed(2)} m in two metres`);
+  // **The seam between the two jobs is the flattest of the ten**, which is what it should be: a plain
+  // of clay at base 22 meeting a rock floor at 21 over ten hex edges, on the same wavelength, with the
+  // block's own tilt running through both. Measured, 0.27 m in two metres - a third of the next
+  // flattest and a ninth of the Navarth rim.
+  assert.ok(pairs.get('Ganesh Plain | North Meroshe Desert') < .6,
+    `the halves meet with ${pairs.get('Ganesh Plain | North Meroshe Desert').toFixed(2)} m in two metres`);
 });
 
 test('Navarth is the block’s high ground, the Ganesh its lowest, and the ground falls to its two mouths', () => {
@@ -347,17 +434,20 @@ test('the ribs against the outland are measured and left alone, and the block is
   // and is a world-wide job; what this test holds is that they stay at the margin and that the
   // inside of the block is quiet.
   const inside = [], margin = [];
-  for (const name of FOUR) for (const cell of cellsOf(name)) for (let i = 0; i < 12; i++) {
+  for (const name of BLOCK) for (const cell of cellsOf(name)) for (let i = 0; i < 12; i++) {
     const x = cell.x + ((i % 4) - 1.5) * 34, z = cell.z + (Math.floor(i / 4) - 1) * 40;
     if (landDistance(x, z) < 30) continue;
-    const share = blockShare(x, z);
+    const share = wholeShare(x, z);
     if (share > .95) inside.push(step(x, z)); else if (share > .02) margin.push(step(x, z));
   }
   const p95 = list => [...list].sort((a, b) => a - b)[Math.floor(list.length * .95)];
   assert.ok(p95(inside) < 2.2, `inside the block the 95th percentile step is ${p95(inside).toFixed(2)} m`);
   assert.ok(Math.max(...margin) > Math.max(...inside), 'the margin is where the ribs are, as every country before this found');
   // And the whole block is one walkable piece: a flood fill on an eight-metre lattice from West
-  // Pyros's own spawn reaches all four countries, round the Vaellir rather than over it.
+  // Pyros's own spawn reaches **all eight** countries, round the Vaellir rather than over it, over
+  // the Ganesh Plain's divide, across the hamada's benches, along the sand sea's corridors and out
+  // to the southern ocean. Two kilometres of desert end to end and no barrier anywhere in it: the
+  // steepest thing in the Meroshe is a dune's lee face at about one in three.
   const spawn = regions.find(region => region.name === 'West Pyros').spawn;
   const seen = new Set(), reached = new Set();
   const queue = [[Math.round(spawn.x / 8) * 8, Math.round(spawn.z / 8) * 8]];
@@ -367,7 +457,7 @@ test('the ribs against the outland are measured and left alone, and the block is
     if (x < SOUTHWEST_BOX.minX || x > SOUTHWEST_BOX.maxX || z < SOUTHWEST_BOX.minZ || z > SOUTHWEST_BOX.maxZ) continue;
     const here = H(x, z);
     const name = hexOwnerAt(x, z);
-    if (FOUR.includes(name)) reached.add(name);
+    if (BLOCK.includes(name)) reached.add(name);
     for (const [dx, dz] of [[8, 0], [-8, 0], [0, 8], [0, -8]]) {
       if (seen.has(`${x + dx},${z + dz}`)) continue;
       if (westWaterSurface(x + dx, z + dz) !== null) continue;
@@ -375,7 +465,7 @@ test('the ribs against the outland are measured and left alone, and the block is
       queue.push([x + dx, z + dz]);
     }
   }
-  for (const name of FOUR) assert.ok(reached.has(name), `${name} cannot be walked to from West Pyros`);
+  for (const name of BLOCK) assert.ok(reached.has(name), `${name} cannot be walked to from West Pyros`);
 });
 
 test('nothing of this block is written outside its own hexes, and nobody else’s ground moved', () => {
@@ -393,17 +483,18 @@ test('nothing of this block is written outside its own hexes, and nobody else’
 });
 
 test('every animal stands on this block’s own ground, and the desert is nearly empty on purpose', () => {
-  assert.equal(SOUTHWEST_WILDLIFE_ZONES.length, 17);
+  assert.equal(SOUTHWEST_WILDLIFE_ZONES.length, 24);
   const byRegion = {};
   for (const zone of SOUTHWEST_WILDLIFE_ZONES) byRegion[zone.region] = (byRegion[zone.region] ?? 0) + 1;
-  assert.deepEqual(byRegion, { Navarth: 3, 'West Pyros': 7, 'Ganesh Desert': 3, 'Ganesh Plain': 4 });
+  assert.deepEqual(byRegion, { Navarth: 3, 'West Pyros': 7, 'Ganesh Desert': 3, 'Ganesh Plain': 4,
+    'North Meroshe Desert': 2, 'West Meroshe Desert': 2, 'Central Meroshe Desert': 1, 'South Meroshe Desert': 2 });
   // Thirty-one hexes and three ranges, two of them birds in the air: the honest dry-year reading,
   // and the lore's own — "the Ganesh in a severe dry year presents a surface that appears
   // essentially lifeless."
   const ganesh = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.region === 'Ganesh Desert');
   assert.equal(ganesh.filter(zone => !zone.air).length, 1);
   for (const zone of SOUTHWEST_WILDLIFE_ZONES) {
-    assert.ok(FOUR.includes(zone.region), `${zone.id} claims ${zone.region}`);
+    assert.ok(BLOCK.includes(zone.region), `${zone.id} claims ${zone.region}`);
     assert.ok(zone.note && zone.note.length > 80, `${zone.id} has no note`);
     assert.ok(Math.hypot(zone.maxX - zone.minX, zone.maxZ - zone.minZ) / 2 < 130, `${zone.id}'s range is wider than it is run from`);
     for (const [x, z] of zone.sites) {
@@ -419,9 +510,12 @@ test('every animal stands on this block’s own ground, and the desert is nearly
       assert.ok(step(x, z) < 2, `${zone.id}'s home at (${x}, ${z}) steps ${step(x, z).toFixed(2)} m`);
     }
   }
-  // The one new rig, and it is where the lore puts it: the desert margins.
+  // The one new rig, and it is where the lore puts it: the desert margins. Job 1 spent it on three
+  // zones and job 2 added one in each of the four Meroshe quarters without spending another rig.
   const boneBirds = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.species === 'bone-bird');
-  assert.equal(boneBirds.length, 4 - 1);
+  assert.equal(boneBirds.length, 7);
+  for (const name of MEROSHE)
+    assert.equal(boneBirds.filter(zone => zone.region === name).length, 1, `${name} has no bone-bird`);
   for (const zone of boneBirds) assert.ok(zone.air >= 38, `${zone.id} flies too low for a bird with two and a half metres of wing`);
   // Nothing domestic anywhere: Navarth's grey sheep, the plain's herds and the caravan animals all
   // belong to people, and this block has none of them.
@@ -469,6 +563,352 @@ test('the four are charted, levelled, spoken for and listed, and nothing is buil
   // Every landmark stands on the block's own hexes, which is the check that catches a place named
   // for ground that turned out to be somebody else's.
   for (const place of SOUTHWEST_LANDMARKS)
-    assert.ok(FOUR.includes(hexOwnerAt(place.x, place.z)), `${place.id} stands on ${hexOwnerAt(place.x, place.z)}`);
-  assert.equal(SOUTHWEST_LANDMARKS.length, 19);
+    assert.ok(BLOCK.includes(hexOwnerAt(place.x, place.z)), `${place.id} stands on ${hexOwnerAt(place.x, place.z)}`);
+  assert.equal(SOUTHWEST_LANDMARKS.length, 36);
+});
+
+// ---------------------------------------------------------------------------
+// Job 2: the four Meroshe deserts
+// ---------------------------------------------------------------------------
+
+test('the atlas gives four more countries ninety-five hexes, one terrain word and one climate code', () => {
+  assert.deepEqual(MEROSHE.map(name => REGION_IDS[name]), [36, 37, 38, 39]);
+  assert.deepEqual(MEROSHE_REGIONS, MEROSHE);
+  for (const name of MEROSHE) assert.ok(PLAYABLE.includes(name), `${name} is in the survey`);
+  const at = PLAYABLE_REGIONS.indexOf('North Meroshe Desert');
+  assert.deepEqual(PLAYABLE_REGIONS.slice(at, at + 4), MEROSHE);
+  assert.equal(PLAYABLE_REGIONS.indexOf('Ganesh Plain'), at - 1, 'appended straight after job 1\u2019s last');
+  assert.deepEqual(MEROSHE.map(name => cellsOf(name).length), [23, 20, 31, 21]);
+  assert.equal(MEROSHE.reduce((sum, name) => sum + cellsOf(name).length, 0), 95);
+  // **One terrain word over ninety-five hexes**, which is the largest single-character expanse the
+  // atlas draws: no `hills`, no `grassland`, no `forest`, no `coast`, no odd hex anywhere.
+  for (const name of MEROSHE) assert.deepEqual(terrainCount(name), { plains: cellsOf(name).length }, `${name} is not all plains`);
+  // **And one climate code over the same ninety-five.** With job 1's eighty-one that makes a hundred
+  // and seventy-six of this block's two hundred and two hexes hot desert.
+  assert.equal(Object.keys(MEROSHE_CLIMATE).length, 95);
+  assert.deepEqual([...new Set(Object.values(MEROSHE_CLIMATE))], ['BWh']);
+  assert.equal(Object.keys(NORTH_MEROSHE_CLIMATE).length, 23);
+  assert.equal(Object.keys(WEST_MEROSHE_CLIMATE).length, 20);
+  assert.equal(Object.keys(CENTRAL_MEROSHE_CLIMATE).length, 31);
+  assert.equal(Object.keys(SOUTH_MEROSHE_CLIMATE).length, 21);
+  for (const name of MEROSHE) for (const cell of cellsOf(name))
+    assert.equal(MEROSHE_CLIMATE[`${cell.q},${cell.r}`], 'BWh', `(${cell.q},${cell.r}) has no climate`);
+  if (existsSync(MAP_PATH)) {
+    const map = JSON.parse(readFileSync(MAP_PATH, 'utf8').replace(/^\ufeff/, ''));
+    for (const [key, code] of Object.entries(MEROSHE_CLIMATE))
+      assert.equal(map.hexes[key]?.climate, code, `${key} reads ${map.hexes[key]?.climate} on the map`);
+    // Every `BWh` hex on the whole claimed atlas is in this one quarter of the continent: these
+    // ninety-five are thirty-nine per cent of all the desert there is.
+    let total = 0;
+    for (const name of Object.keys(REGION_CELLS)) for (const cell of REGION_CELLS[name])
+      if (map.hexes[`${cell.q},${cell.r}`]?.climate === 'BWh') total++;
+    assert.ok(total >= 176, `the playable world has ${total} BWh hexes`);
+  }
+  // **So the climate says nothing at all here**, which is the finding the whole job turns on: job 1's
+  // half has a gradient and that gradient is its shape, and this half is flat 1.00 on every hex of
+  // all four countries, with no green corner in it anywhere.
+  // **Measured: ninety-four of the ninety-five read 1.000 and the ninety-fifth reads 0.893.** The one
+  // that does not is the North Meroshe's (-24,128), its north-eastern tip, which stands one hex from
+  // the Ganesh Plain's `Csb` row - so even the single exception is the blend telling the truth about
+  // a neighbour rather than a gradient inside this half. There is no third value anywhere in it.
+  let exceptions = 0;
+  for (const name of MEROSHE) for (const cell of cellsOf(name)) {
+    assert.equal(southwestKoppen(cell.x, cell.z), 'BWh');
+    const dry = southwestAridity(cell.x, cell.z);
+    if (dry > .995) continue;
+    exceptions++;
+    assert.deepEqual([cell.q, cell.r], [-24, 128], `${name} at (${cell.q},${cell.r}) reads ${dry.toFixed(3)}`);
+    assert.ok(dry > .85, `and it reads ${dry.toFixed(3)}`);
+  }
+  assert.equal(exceptions, 1, 'one hex of ninety-five is pulled off 1.00, and it is the corner by the plain');
+});
+
+test('the west and south edges are the sea, and the atlas draws no water in the Meroshe at all', () => {
+  // **No watercourse anywhere.** The atlas draws five hundred and seventy-two river edges and not one
+  // of them touches any of these ninety-five hexes - the nearest are in Marosh, two hexes east of the
+  // North Meroshe, and in Trogo, one hex south-east of the South. A desert ringed by water it does not
+  // get is the honest reading, and it is what the lore says too: "water is found at depth, in
+  // aquifer-fed oases". Nothing wet is built: the Malhat is a salt crust and not a water surface.
+  assert.equal(RIVER_EDGES.filter(edge => edge.regions.some(region => MEROSHE.includes(region))).length, 0);
+  for (const name of MEROSHE) for (const cell of cellsOf(name))
+    assert.equal(westWaterSurface(cell.x, cell.z), null, `${name} has water on (${cell.q},${cell.r})`);
+  assert.equal(westWaterSurface(MEROSHE_SALT.x, MEROSHE_SALT.z), null, 'the salt pan is a crust, not a pool');
+  // **The west and south edges are sea and not merely unclaimed land**, which the brief asked to be
+  // checked. Measured on the World Builder map: every unclaimed hex the West Meroshe and the South
+  // Meroshe share an edge with is `coast`, and beyond that column and that row the map is `ocean`.
+  if (existsSync(MAP_PATH)) {
+    const map = JSON.parse(readFileSync(MAP_PATH, 'utf8').replace(/^\ufeff/, ''));
+    // `owner` here is the survey's, so Dinelv, Hama, Marosh and Trogo count as unclaimed too - they
+    // are claimed on the atlas and simply not built. What separates sea from unbuilt land is the
+    // map's own terrain word, and it is unambiguous: **`coast`, with `ocean` beyond it.**
+    const counts = {};
+    const coastHexes = new Set();
+    for (const name of MEROSHE) {
+      counts[name] = 0;
+      for (const cell of cellsOf(name)) for (const [dq, dr] of AXIAL) {
+        const key = `${cell.q + dq},${cell.r + dr}`;
+        if (owner.has(key)) continue;
+        const terrain = map.hexes[key]?.terrain;
+        if (terrain !== 'coast' && terrain !== 'ocean') continue;
+        counts[name]++; coastHexes.add(key);
+      }
+    }
+    // **The atlas's ten sea edges on the West Meroshe and four on the South are sea**, over six
+    // coast hexes and three; and the North and the Central have none at all, so their unbuilt
+    // neighbours are the Dinelv Highlands' `hills` and Marosh's - land, not water.
+    assert.deepEqual(counts, { 'North Meroshe Desert': 0, 'West Meroshe Desert': 10,
+      'Central Meroshe Desert': 0, 'South Meroshe Desert': 4 });
+    assert.equal(coastHexes.size, 9, 'six hexes west of the West Meroshe and three south of the South');
+    for (const key of coastHexes) assert.equal(map.hexes[key]?.terrain, 'coast', `${key} is not coast`);
+    // And beyond that column and that row the map is open ocean.
+    for (const [q, r] of [[-39, 133], [-39, 134], [-39, 135], [-33, 143], [-32, 143], [-31, 143]])
+      assert.equal(map.hexes[`${q},${r}`]?.terrain, 'ocean', `(${q},${r}) is not open water`);
+  }
+  // And the coast field agrees: both shores are real waterlines a traveler can walk to, and the
+  // ground behind them is desert right up to it - the Ganesh's gulf again, twice over, on an open
+  // ocean instead of a sheltered one.
+  const westShore = [], southShore = [];
+  for (const cell of cellsOf('West Meroshe Desert')) if (landDistance(cell.x, cell.z) < 120) westShore.push(cell);
+  for (const cell of cellsOf('South Meroshe Desert')) if (landDistance(cell.x, cell.z) < 120) southShore.push(cell);
+  assert.ok(westShore.length >= 4, `${westShore.length} West Meroshe hexes within 120 m of the water`);
+  assert.ok(southShore.length >= 2, `${southShore.length} South Meroshe hexes within 120 m of the water`);
+  for (const cell of [...westShore, ...southShore]) assert.ok(southwestAridity(cell.x, cell.z) > .995,
+    'the shore is as arid as the interior');
+  // The skirt lets go at the shore, so the West Meroshe's own hexes are not under the sea: measured,
+  // 0 m at the waterline, 2.6 at twenty metres in and 10.4 at a hundred and thirty.
+  for (const cell of cellsOf('West Meroshe Desert')) if (landDistance(cell.x, cell.z) > 12)
+    assert.ok(H(cell.x, cell.z) > 0, `(${cell.q},${cell.r}) stands at ${H(cell.x, cell.z).toFixed(2)} m`);
+});
+
+test('four surfaces, because one word and one code cannot tell four countries apart', () => {
+  // **The design answer of this job, as arithmetic.** Erg, reg, hamada and salt pan are four real and
+  // distinct desert surfaces and the game had drawn none of them at scale. Each is one country's and
+  // stops at its own border, which is what makes the four quarters four countries.
+  //
+  // *North: the hamada's benches.* Nine, striking north and south on the dip off the Dinelv highland,
+  // one to two metres of riser each, taken as a maximum and not a sum so nine of them make a stepped
+  // floor and not a staircase nine risers high.
+  assert.equal(MEROSHE_BENCHES.length, 9);
+  let lift = 0;
+  for (const cell of cellsOf('North Meroshe Desert')) for (let i = 0; i < 100; i++) {
+    const x = cell.x + (i % 10 - 5) * 10, z = cell.z + (Math.floor(i / 10) - 5) * 10;
+    if (hexOwnerAt(x, z) !== 'North Meroshe Desert') continue;
+    lift = Math.max(lift, merosheBench(x, z).lift);
+  }
+  assert.ok(lift > 1.6 && lift < 2.2, `the benches stand ${lift.toFixed(2)} m at most`);
+  assert.ok(Math.max(...MEROSHE_BENCHES.map(b => b.rise)) <= 2, 'no bench is more than two metres');
+  for (const b of MEROSHE_BENCHES) assert.equal(hexOwnerAt(b.x, b.z), 'North Meroshe Desert', `${b.id} starts off the hamada`);
+  assert.equal(merosheBenches(-2980, 2480, 1), 0, 'the benches are the hamada\u2019s and stop at its border');
+  //
+  // *Central: the sink and the erg.* The sink first, because an erg is sand that had nowhere left to
+  // go: three and a half metres of closed basin with no outlet and no river edge anywhere on it. Then
+  // the dunes, on the summer wind's own bearing - job 1's `GANESH_WIND.grainBearing`, because it is
+  // the same wind - seven metres crest to floor, two hundred and thirty apart, and **forty-eight per
+  // cent of every wavelength dead-flat corridor**, which is the whole of why this country cannot be
+  // crossed in a straight line.
+  // Six metres crest to floor at a hundred and forty apart, which is one in twenty-three: a real
+  // erg's ratio, and the second try at it. The first was 7 m at 230 - the same ratio as a fifty-metre
+  // dune a mile and a half wide - and it put **two ridges in the whole country**, which the hillshade
+  // caught and the arithmetic did not.
+  assert.equal(MEROSHE_DUNES.height, 6);
+  assert.equal(MEROSHE_DUNES.wave, 140);
+  assert.equal(MEROSHE_DUNES.floor, .48);
+  assert.ok(MEROSHE_DUNES.wave / MEROSHE_DUNES.height > 18 && MEROSHE_DUNES.wave / MEROSHE_DUNES.height < 32,
+    'the dunes keep a real erg’s height-to-spacing ratio');
+  // And the country is wide enough for a field rather than a pair: at least four ridge crests stand
+  // between the two ends of its long axis.
+  let crossings = 0, was = duneProfile(-3250, 2500);
+  for (let k = 1; k <= 120; k++) {
+    const here = duneProfile(-3250 + k * 5, 2500);
+    if (was > .5 && here <= .5) crossings++;
+    was = here;
+  }
+  assert.ok(crossings >= 4, `only ${crossings} dune crests across six hundred metres`);
+  assert.ok(merosheSink(MEROSHE_SINK.x, MEROSHE_SINK.z, 1) < -3.4, 'the sink is not a sink');
+  assert.equal(merosheSink(-2950, 2021, 1), 0, 'and it is the sand sea\u2019s own');
+  let crest = 0, floors = 0, samples = 0;
+  for (const cell of cellsOf('Central Meroshe Desert')) for (let i = 0; i < 100; i++) {
+    const x = cell.x + (i % 10 - 5) * 10, z = cell.z + (Math.floor(i / 10) - 5) * 10;
+    if (hexOwnerAt(x, z) !== 'Central Meroshe Desert') continue;
+    samples++;
+    const erg = merosheErg(x, z, regionShare('Central Meroshe Desert', x, z));
+    crest = Math.max(crest, merosheDunes(x, z, erg));
+    if (merosheCorridor(x, z) > .92) floors++;
+  }
+  assert.ok(crest > 5.5 && crest < 6.1, `the tallest dune stands ${crest.toFixed(2)} m`);
+  assert.ok(floors / samples > .5 && floors / samples < .75, `${(floors / samples * 100).toFixed(0)}% of the sand sea is corridor floor`);
+  assert.equal(merosheCorridor(-2950, 2021), 0, 'the corridors are the sand sea\u2019s own');
+  //
+  // *West: the skirt, the fans and the salt.* The skirt is a one-sided ramp to the ocean, nought at
+  // the sand sea's margin and its whole seven metres at the shore; the three fans are a grain-size
+  // field on top of it, coarse at the apex and dust at the toe; and the Malhat is a levelled floor
+  // and not a bowl, because a playa is flat to the centimetre.
+  assert.equal(MEROSHE_FANS.length, 3);
+  assert.equal(MEROSHE_SKIRT.drop, 7);
+  assert.ok(merosheSkirt(MEROSHE_SKIRT.from.x, MEROSHE_SKIRT.from.z, 1) > -.2, 'the ramp is nought at the sand sea margin');
+  assert.ok(merosheSkirt(-3700, 2450, 1) < -5, 'and its full drop near the shore');
+  for (const f of MEROSHE_FANS) assert.equal(hexOwnerAt(f.x, f.z), 'West Meroshe Desert', `${f.id}\u2019s apex is off the skirt`);
+  assert.ok(merosheFan(MEROSHE_FANS[1].x - 20, MEROSHE_FANS[1].z + 20) > .85, 'the fan heads are coarse');
+  assert.ok(merosheFan(-3500, 2620) < .35, 'and the toes are not');
+  assert.equal(hexOwnerAt(MEROSHE_SALT.x, MEROSHE_SALT.z), 'West Meroshe Desert');
+  assert.ok(onSaltPan(MEROSHE_SALT.x, MEROSHE_SALT.z) > .99 && onSaltPan(-2950, 2021) === 0);
+  assert.equal(southwestClear(MEROSHE_SALT.x, MEROSHE_SALT.z), true, 'nothing roots in brine');
+  // Flat to the centimetre: the pan's floor is one level over three hundred metres.
+  let low = 99, high = -99;
+  for (let a = 0; a < 16; a++) for (const k of [.2, .5, .7]) {
+    const t = a / 16 * Math.PI * 2;
+    const x = MEROSHE_SALT.x + Math.cos(t) * MEROSHE_SALT.radiusX * k, z = MEROSHE_SALT.z + Math.sin(t) * MEROSHE_SALT.radiusZ * k;
+    low = Math.min(low, H(x, z)); high = Math.max(high, H(x, z));
+  }
+  assert.ok(high - low < .12, `the Malhat's floor varies ${(high - low).toFixed(3)} m across itself`);
+  assert.ok(Math.abs(saltPanLevel() - H(MEROSHE_SALT.x, MEROSHE_SALT.z)) < .01, 'and it is the level the module measured');
+  //
+  // *South: the fog and the varnish.* The one `BWh` country in Azhora whose surface gets wet: two
+  // fronts, one off the southern ocean and one off the Trogo margin, taken as a maximum, so the
+  // south-eastern corner is fog and the north-western one against Hama and the sand sea is not.
+  let fogLow = 9, fogHigh = -9;
+  for (const cell of cellsOf('South Meroshe Desert')) for (let i = 0; i < 100; i++) {
+    const x = cell.x + (i % 10 - 5) * 10, z = cell.z + (Math.floor(i / 10) - 5) * 10;
+    if (hexOwnerAt(x, z) !== 'South Meroshe Desert') continue;
+    const fog = merosheFog(x, z);
+    fogLow = Math.min(fogLow, fog); fogHigh = Math.max(fogHigh, fog);
+  }
+  assert.ok(fogLow < .1 && fogHigh > .9, `the fog reads ${fogLow.toFixed(2)}\u2026${fogHigh.toFixed(2)}: bare desert and fog belt both`);
+  assert.ok(merosheFog(-2580, 2660) > .8, 'the Trogo margin is in the fog');
+  assert.ok(merosheFog(-2950, 2714) < .3, 'the Hama corner is not');
+  assert.ok(merosheVarnish(-2600, 2700) > merosheVarnish(-2900, 2740) + .3, 'and the pavement is darkest where the fog is');
+  assert.equal(merosheFog(-2950, 2021), 0, 'the fog stops where the block\u2019s own hexes do');
+  assert.equal(merosheVarnish(-2980, 2480), 0, 'the varnish is the stone floor\u2019s own');
+  // And nothing of any of it reaches outside the Meroshe box.
+  assert.ok(MEROSHE_BOX.minX < -3840 && MEROSHE_BOX.maxX > -2600 && MEROSHE_BOX.minZ < 1845 && MEROSHE_BOX.maxZ > 3150);
+  assert.equal(merosheShare(-2205, 902), 0);
+});
+
+test('the Ganesh Plain seam is the flattest in the block, and its divide did not move', () => {
+  // **The one seam in this job with a built country on the other side of it**, and the brief asked
+  // for three things back: the seam itself, the Ganesh Plain's three channels re-measured, and
+  // whether the divide moved. Measured against the same ground built without the Meroshe at all
+  // (`git archive` of the base commit, run side by side):
+  //
+  //  - the three channels fall **1.60 m, 3.00 m and 4.07 m** head to mouth, to the centimetre the
+  //    same as before, and all three still run downhill the way they ran;
+  //  - the divide's crest stands at **x = -2800** along z = 1790 and **x = -2735** along z = 1730,
+  //    the same two points. **The divide did not move.**
+  //  - what did move is the plain's own southern margin, and upward: its hex-centre mean goes from
+  //    18.670 m to **18.971**, because the row of hexes south of it stopped being `outland` at base
+  //    11.5 and became the hamada at 21. That is the rib at that margin disappearing, which is what
+  //    building a neighbour is for.
+  const falls = GANESH_PLAIN_CHANNELS.map(channel => {
+    const a = channel.line[0], b = channel.line.at(-1);
+    return +(H(a.x, a.z) - H(b.x, b.z)).toFixed(2);
+  });
+  assert.deepEqual(falls, [1.60, 3.00, 4.07], 'the three channels fall exactly as they did');
+  const crestAt = z => {
+    let best = -99, at = 0;
+    for (let x = -2900; x <= -2600; x += 5) { const h = H(x, z); if (h > best) { best = h; at = x; } }
+    return at;
+  };
+  assert.equal(crestAt(1790), -2800, 'the divide crest has not moved along z = 1790');
+  assert.equal(crestAt(1730), -2735, 'nor along z = 1730');
+  const plain = cellsOf('Ganesh Plain').map(cell => H(cell.x, cell.z));
+  const mean = plain.reduce((a, b) => a + b, 0) / plain.length;
+  assert.ok(Math.abs(mean - 18.971) < .01, `the plain means ${mean.toFixed(3)} m`);
+  // And the seam is walked over without noticing: the plain at 22 against the rock floor at 21, on
+  // the same wavelength, with the block's own tilt running through both.
+  assert.ok(Math.abs(REGION_TERRAIN['Ganesh Plain'].base - REGION_TERRAIN['North Meroshe Desert'].base) <= 1);
+  let worst = 0;
+  for (const cell of cellsOf('North Meroshe Desert')) for (const [dq, dr] of AXIAL) {
+    if (owner.get(`${cell.q + dq},${cell.r + dr}`) !== 'Ganesh Plain') continue;
+    const mate = cellsOf('Ganesh Plain').find(o => o.q === cell.q + dq && o.r === cell.r + dr);
+    for (let i = 0; i < 24; i++) {
+      const t = (i + .5) / 24, x = cell.x + (mate.x - cell.x) * t, z = cell.z + (mate.z - cell.z) * t;
+      if (wholeShare(x, z) < .999) continue;
+      worst = Math.max(worst, step(x, z));
+    }
+  }
+  assert.ok(worst < .6, `the halves meet with ${worst.toFixed(2)} m in two metres`);
+});
+
+test('seven ranges over ninety-five hexes, and the sand sea carries one of them', () => {
+  const mine = SOUTHWEST_WILDLIFE_ZONES.filter(zone => MEROSHE.includes(zone.region));
+  assert.equal(mine.length, 7);
+  // **Sparser per hex than the Ganesh, which was already the sparsest country in the game.** Job 1
+  // carries three ranges over the Ganesh Desert's thirty-one hexes, 0.097 a hex; this half carries
+  // seven over ninety-five, 0.074 - a quarter sparser again, on ground with no green corner and no
+  // permanent water anywhere in it. Emptiness measured, which is what the brief asked for.
+  const perHex = mine.length / 95;
+  assert.ok(perHex < 3 / 31, `${perHex.toFixed(3)} a hex against the Ganesh's ${(3 / 31).toFixed(3)}`);
+  // Only three of the seven stand on the ground, and the largest country of the four has one range
+  // in it, fifty-two metres up: the emptiest country in Azhora.
+  assert.equal(mine.filter(zone => !zone.air).length, 3);
+  const erg = mine.filter(zone => zone.region === 'Central Meroshe Desert');
+  assert.equal(erg.length, 1);
+  assert.equal(erg[0].air, 52);
+  assert.ok(erg[0].air > Math.max(...SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone !== erg[0]).map(zone => zone.air ?? 0)),
+    'and it flies higher than anything else in the southwest');
+  // Nothing domestic - the dustback herds and the caravan animals are somebody's - and no gull, hare
+  // or bone-bird is anywhere it cannot stand.
+  for (const zone of mine) {
+    assert.ok(!['longhorn', 'hill-sheep', 'nethrani-cattle'].includes(zone.species), `${zone.id} is somebody's stock`);
+    assert.ok(Math.hypot(zone.maxX - zone.minX, zone.maxZ - zone.minZ) / 2 < 130, `${zone.id}'s range is wider than it is run from`);
+    for (const [x, z] of zone.sites) {
+      assert.equal(hexOwnerAt(x, z), zone.region, `${zone.id}'s home at (${x}, ${z}) is on ${hexOwnerAt(x, z)}'s hex`);
+      if (zone.air) continue;
+      assert.equal(regionAt(x, z)?.name, zone.region, `${zone.id}'s home is not in its own country`);
+      assert.equal(westWaterSurface(x, z), null, `${zone.id}'s home is under water`);
+      assert.equal(southwestClear(x, z), false, `${zone.id}'s home is on a dry bed or the salt`);
+      assert.ok(step(x, z) < 2, `${zone.id}'s home at (${x}, ${z}) steps ${step(x, z).toFixed(2)} m`);
+    }
+  }
+  // The gulls are the exception that proves the rule: the one abundant life in this desert is on the
+  // waterline and comes out of the sea, so their sites are the only ones in the block within forty
+  // metres of a shore.
+  const gulls = mine.find(zone => zone.species === 'gull');
+  for (const [x, z] of gulls.sites) {
+    const d = landDistance(x, z);
+    assert.ok(d > 4 && d < 45, `a gull stands ${d.toFixed(0)} m inland`);
+  }
+});
+
+test('the four Meroshe are charted, levelled, spoken for and listed, and nothing is built in any of them', () => {
+  for (const name of MEROSHE) {
+    assert.ok(REGION_BIOMES[name]?.ownScatter, `${name} does not scatter its own country`);
+    const region = regions.find(entry => entry.name === name);
+    assert.ok(region, `${name} is not a region`);
+    assert.deepEqual(region.npcIds, [], `${name} has people in it`);
+    assert.ok(region.landmarks.length >= 4, `${name} has too few landmarks`);
+    for (const id of region.landmarks) assert.ok(SOUTHWEST_LANDMARKS.some(place => place.id === id), `${name} names a landmark that is not built: ${id}`);
+    assert.equal(hexOwnerAt(region.spawn.x, region.spawn.z), name, `${name}'s spawn is not on its own hexes`);
+    assert.equal(westWaterSurface(region.spawn.x, region.spawn.z), null, `${name}'s spawn is in the water`);
+    assert.equal(southwestClear(region.spawn.x, region.spawn.z), false, `${name}'s spawn is on a dry bed or the salt`);
+    assert.ok(step(region.spawn.x, region.spawn.z) < 2, `${name}'s spawn steps ${step(region.spawn.x, region.spawn.z).toFixed(2)} m`);
+    assert.equal(regionBuildStatus(name).state, 'early', `${name} is not listed as early`);
+    assert.ok(regionBuildStatus(name).work.length > 40, `${name} does not say what is left`);
+    assert.ok(regionLevel(name) >= 3, `${name} has no level`);
+    assert.ok(DEV_WORLD_DESTINATIONS.some(place => place.regionId === name), `${name} has no travel stop`);
+    assert.ok(SUBREGIONS.some(area => area.region === name), `${name} has no chart area`);
+    assert.ok(WEST_REGION_NAMES.includes(name), `${name} is not a western region`);
+    assert.notDeepEqual(regionSky(region), DEFAULT_SKY, `${name} takes the default sky`);
+  }
+  // **Three skies over four countries, and the argument for each is the atlas's own.** The two
+  // interior quarters take job 1's desert sky unchanged, .0024, the clearest air in Azhora. The West
+  // Meroshe has ten hex edges of open western ocean, so it carries sea air over a desert at .0032.
+  // And the South Meroshe is under fog, so it is **the one `BWh` country in the game whose air is
+  // thicker than the average rather than thinner** - .0046, against the Oves steppe's .0034 - and the
+  // only desert in Azhora a traveler cannot see across.
+  const sky = name => regionSky(regions.find(entry => entry.name === name));
+  assert.deepEqual(sky('North Meroshe Desert'), sky('Central Meroshe Desert'));
+  assert.deepEqual(sky('North Meroshe Desert'), sky('Ganesh Desert'), 'the interior shares job 1\u2019s desert sky');
+  assert.ok(sky('West Meroshe Desert').density > sky('North Meroshe Desert').density, 'the coast is hazier than the interior');
+  assert.ok(sky('South Meroshe Desert').density > sky('West Meroshe Desert').density, 'and the fog belt hazier than the coast');
+  assert.ok(sky('South Meroshe Desert').density < DEFAULT_SKY.density, 'but still clearer than an ordinary sky');
+  // **Plain Maroshi, and no dialect, which is a decision.** The desert peoples' own speech is the
+  // centre of this family rather than a margin of it, and both Maroshi dialects the game has are
+  // margins: the coastal court form the base tongue carries, and `ganesh`, the northern contact seam
+  // on the Ganesh Plain. The Meroshe is neither.
+  for (const name of MEROSHE) {
+    assert.equal(REGION_LANGUAGE[name].language, 'maroshi', `${name} speaks something else`);
+    assert.equal(REGION_LANGUAGE[name].dialect, null, `${name} has been given a dialect`);
+  }
+  assert.equal(REGION_LANGUAGE['Ganesh Desert'].dialect, 'ganesh', 'and the Ganesh keeps the plain\u2019s');
 });

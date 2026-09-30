@@ -47,7 +47,8 @@ test('the default sky is the three numbers src/main.js has always used', () => {
 // declare their own cool horizons in region-world.js; all other countries keep the default.
 // The West Lotharn is the twelfth, and the first to ask for its horizon on account of height:
 // five hundred and fifty metres of range wants thinner, clearer air than the East's.
-const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
+const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert']);
 
 test('every region but the ones that asked for their own gets the default sky, to the digit', () => {
   for (const region of regions) {

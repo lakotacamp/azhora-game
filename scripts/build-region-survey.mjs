@@ -19,7 +19,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
   'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
-  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain'];
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -88,6 +89,15 @@ export const ENCLOSED_HEXES = Object.freeze({
  * Heth is its western neighbour across five hex edges, and without those hexes
  * the desert would have looked out on open water where the atlas draws a cape.
  *
+ * Then `minQ` was -41, and **the four Meroshe deserts moved it again without
+ * reaching west at all**. Their westernmost hex is the West Meroshe's (-37,133)
+ * at x = -3750, a hundred and fifty metres inside the edge the Ganesh Desert set,
+ * so `WORLD_BOUNDS.minX` does not move. What moves is `maxZ` (see below), and
+ * because x = W(q + r/2) puts a low q and a high r at the same world x, a lattice
+ * that reaches nine rows further south reaches four columns further west in the
+ * same breath. Measured over the whole lattice: q **-45**...34, and the columns
+ * at q = -45 are reached only on rows 142-144, in the far south-west corner.
+ *
  * `minR` was 92, which is the East Lotharn's own northern row, and the East Lotharn is the first
  * playable country to reach it. Its northern edge then takes the world's bounds to its hexes'
  * rim, and the coast lattice samples out to COAST_MARGIN plus a circumradius beyond that: row 90
@@ -122,8 +132,27 @@ export const ENCLOSED_HEXES = Object.freeze({
  * Selemi's six among them, the island a hundred and seventy metres south of the tip across a
  * channel one hex wide - and with 133 they were all the sea: the tip would have looked out on open
  * water where the atlas draws Selemi's shore. So 135, the last row the lattice reaches, and no slack.
+ *
+ * Then `maxR` was 135, and **the four Meroshe deserts are the first playable countries past it** -
+ * the only direction this world had left. The South Meroshe Desert's southernmost hexes are
+ * (-32,141) and (-31,141), their centres at z = 3060.09 and their lower vertices a circumradius
+ * (57.735 m) past that at 3117.82, so the world's southern edge goes from 2398.401 to
+ * **3177.823940164498** and the world from 45.656 hexes tall to **53.450**. It is now 45.70 by
+ * 53.45: taller than it is wide, for the first time since the Ascarths.
+ *
+ * The coast lattice is laid COAST_MARGIN (96 m) beyond that and snapped to its own fixed phase, so
+ * its last row now stands at z = **3275.65** (it was 2496.22) and the lattice is 1,192 x 1,386 =
+ * 1,652,112 points. Sampling all of them and collecting every hex any sample falls in gives
+ * q -45...34, r 79...**144**, measured rather than reasoned. So maxR is 144: the last row the
+ * lattice reaches, and no slack.
+ *
+ * That widening turns **143 claimed hexes in seven countries** from sea into land: Babon 50, Trogo
+ * 29, Hama 19, the Azhor Stones 12 - and **thirty-three of the block's own**, which is the part
+ * that matters. The South Meroshe Desert's twenty-one hexes, eight of the Central's and four of the
+ * West's all lay south of row 135: without this they would have been open water in the middle of a
+ * playable country. LAND_HEXES goes from 1,935 to **2,078**.
  */
-export const WINDOW = { minQ: -41, maxQ: 34, minR: 79, maxR: 135 };
+export const WINDOW = { minQ: -45, maxQ: 34, minR: 79, maxR: 144 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

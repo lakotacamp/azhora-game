@@ -1178,7 +1178,8 @@ export const WEST_POOLS = Object.freeze([
 /** The regions this module shapes, in the order they were built. */
 export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains',
   'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
-  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

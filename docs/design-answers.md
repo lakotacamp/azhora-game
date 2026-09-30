@@ -4,6 +4,76 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-30 — The southwest, job 2: the four Meroshe deserts
+
+Built to `docs/southwest-2-brief.md`; the whole account is `docs/southwest-2-report.md`. Terrain,
+climate, water, scenery and wildlife only, and nothing that belongs to anybody. **Job 2 of the
+four-job programme** covering Azhora's southwest, on a branch cut from job 1's.
+
+- **The design question the brief set, answered: ninety-five hexes of `plains` and `BWh` are made
+  worth crossing by the surface underfoot, not by relief.** Erg, reg, hamada and sabkha — sand sea,
+  stone pavement, bare rock, salt pan — are four real and distinct desert surfaces and the game had
+  drawn none of them at scale. One to each quarter, which is also the lore's own division of the
+  Moroshe ("the rocky hammada of the northern transition zone… through the great sand seas of the
+  central interior, to the canyon country of the south"). What changes between the four is **how far
+  you can see** (to the horizon on the hamada, two hundred paces in the erg, twenty miles on the reg,
+  six hundred metres in the fog), **how you navigate** (the hamada's rock benches strike north and
+  south, the sand sea's ridges north-west to south-east on the wind, so the ground itself is the
+  compass), and **which single edge of the desert each one faces** — the Ganesh Plain and Marosh's
+  Mediterranean corner from the North, the Dinelv escarpment and the open ocean from the West, a
+  rainforest and the southern ocean from the South, and **nothing at all** from inside the Central,
+  which is why it is the largest of the four and carries one range of animals.
+- **The climate is flat and that is the finding.** All ninety-five hexes are `BWh`; measured,
+  `southwestAridity` reads 1.000 on ninety-four of them and 0.893 on the ninety-fifth, which is the
+  one hex that stands beside the Ganesh Plain's `Csb` row. Job 1's half is sorted by a climate
+  gradient and this half cannot be, so the scatter needed a second pass of its own.
+- **Every hot-desert hex on the claimed atlas is in this one quarter of the continent** — 245 of
+  them, of which these four are 95. There is no other desert in Azhora.
+- **The world box grew, and south.** `minX` did not move, as the brief predicted; `maxZ` went from
+  2398.401 to **3177.824** and the world from 45.656 hexes tall to **53.450**, because the South
+  Meroshe reaches row 141. The survey window moved in **both** axes for it — `maxR` 135 → 144 and
+  `minQ` −41 → −45, the second without anything reaching west at all, because x = W(q + r/2). Nine
+  world-box guards in eight files were moved for it, and **a third of the 143 hexes the widening
+  turned from sea into land are the block's own**: without it the whole South Meroshe would have been
+  open water in the middle of a playable country.
+- **The west and south edges are sea**, measured on the World Builder map: the West Meroshe's ten sea
+  edges are six `coast` hexes and the South Meroshe's four are three, with `ocean` beyond both. So
+  the driest ground in Azhora runs out at an **open** ocean twice more, and is as arid a hundred
+  paces inland of the surf as twenty miles in.
+- **No water at all.** The atlas draws 572 river edges and not one touches the ninety-five. The
+  Malhat, the salt pan at the fan skirt's dead end, is a **crust and not a water surface** — the one
+  place in the desert where water can be seen and not drunk.
+- **The Ganesh Plain seam did not move anything.** Measured against the same ground built without the
+  Meroshe: the plain's three channels fall 1.60, 3.00 and 4.07 m exactly as before and **the divide's
+  crest is at the same two points**. What did move is the plain's southern margin, up 0.30 m, because
+  the row south of it stopped being `outland` and became the hamada — the rib there disappearing.
+- **Seven ranges over ninety-five hexes, five of them birds in the air**: 0.074 a hex against the
+  Ganesh Desert's 0.097, so sparser per hex than the sparsest country in the game. The largest of the
+  four carries **one**, fifty-two metres up. A bone-bird in each quarter and nothing else in more
+  than one, because the lore's one direct statement is that they are "the most visible large animals
+  of the Moroshé". **No new rig was spent**: the sand-cat still needs a night, the spine lizard a
+  gait, and the **canyon tortoise** — which the lore does describe — fails the west's own law that
+  nothing can be walked down. **The dustback is held exactly where job 1 held it**: named, never
+  described, and inventing a shape for it is the user's decision.
+- **Three skies over four countries**, all argued from the atlas: the two interior quarters take job
+  1's desert sky at .0024, the West Meroshe .0032 for ten hex edges of open ocean, and the South
+  Meroshe **.0046** for the fog — the one `BWh` country in the game whose air is thicker rather than
+  thinner, and the only desert a traveler cannot see across.
+- **Plain Maroshi and no dialect**, because the desert peoples' speech is the centre of that family
+  and both dialects the game has are margins of it. **One name taken and nothing coined**: the salt
+  pan is the **Malhat**, the tongue's own word for salt, the way job 1 took *vaellir* for the river.
+- **The spelling: follow the atlas, *Meroshe*.** Both forms are in the archive and both are correct;
+  a closing note was added to `moroshe_desert.md` saying which to use where, and the file was **not**
+  renamed.
+- The lore was adjusted in place on eight claims, the largest being that the desert is on the
+  continent's south-west rather than its eastern face, that it **does** reach the coast on the west
+  and the south, and that the fourth surface — the fan skirt and its salt pan — was missing from the
+  file entirely.
+- **A permanent guard was added for a mistake found in four separate files.** "These are the last N
+  regions in the list" has now broken four times; `tests/region-layout.test.js` states the invariant
+  it was always reaching for — PLAYABLE_REGIONS is in strictly increasing REGION_IDS order with no
+  gaps — once, for every country, with no count in it.
+
 ## 2026-09-30 — The southwest, job 1: Navarth, West Pyros, the Ganesh Desert and the Ganesh Plain
 
 Built to `docs/southwest-1-brief.md`; the whole account is `docs/southwest-1-report.md`. Terrain,

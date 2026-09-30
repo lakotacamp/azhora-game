@@ -224,7 +224,8 @@ import { inLotharnBox } from './east-lotharn-world.js';
 import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY as WEST_LONG_VALLEY, NORTH_VALLEY as WEST_NORTH_VALLEY, NOTCH as WEST_LOTHARN_NOTCH, COL as WEST_LOTHARN_COL, pointOn as westLotharnPointOn } from './west-lotharn-world.js';
 import { MITHALA_SUMMER_CHANNELS as MITHALA_SUMMER, MITHALA_LANDMARKS as MITHALA_MARKS } from './mithala-world.js';
 import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BRAID, MITHALA_WEST_ARM as MITHALA_ARM } from './west-regions.js';
-import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS } from './southwest-world.js';
+import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS,
+  MEROSHE_BENCHES as SOUTHWEST_BENCHES, MEROSHE_SALT as SOUTHWEST_SALT, MEROSHE_DUNES as SOUTHWEST_DUNES, MEROSHE_FANS as SOUTHWEST_FANS } from './southwest-world.js';
 import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
@@ -2064,6 +2065,44 @@ function init() {
       // The gulf shore: a desert running out at the sea.
       if(view==='southwest-shore'){const m=mark('ganesh-shore');
         return shot({x:m.x+150,z:m.z+90},{x:m.x-90,z:m.z-60},.04,4);}
+      // ----- The four Meroshe deserts. Each view shows one country's one surface, worked out from
+      // that surface's own numbers - a bench's own line, the dune field's own bearing, the salt pan's
+      // own ellipse, a fan's own down-slope - so none of them can drift off the thing it is for.
+      // The hamada: crossing two bench risers, with the thorn in the joints and bare rock between.
+      if(view==='southwest-hamada'){const b=SOUTHWEST_BENCHES[2];
+        return shot({x:b.x+62,z:b.z-80},{x:b.x-46,z:b.z-215},.05,2.2);}
+      // A corridor in the sand sea, looking along it: the only fast ground there is, and it runs
+      // north-west to south-east because the ridges do. The bearing is the dune field's own.
+      if(view==='southwest-erg'){const m=mark('meroshe-corridors');
+        const a=SOUTHWEST_DUNES.bearing+Math.PI/2, dx=Math.cos(a), dz=Math.sin(a);
+        return shot({x:m.x-dx*70,z:m.z-dz*70},{x:m.x+dx*260,z:m.z+dz*260},.04,1.8);}
+      // From the crest of a ridge, across the grain: a dozen more of them and no horizon at all.
+      if(view==='southwest-erg-crest'){const m=mark('meroshe-sand-sea');
+        // South-west across the grain, not north-east: the first try looked out of the sand sea
+        // altogether and photographed the hamada's thorn trees on the horizon.
+        // Two hundred metres across the grain and no more: the crest under the camera, the corridor
+        // below it and the next crest beyond. At three hundred and twenty it looked clean out of the
+        // sand sea, over Hama, and photographed the ocean.
+        const c=Math.cos(SOUTHWEST_DUNES.bearing), s=Math.sin(SOUTHWEST_DUNES.bearing);
+        return shot({x:m.x,z:m.z},{x:m.x+c*200,z:m.z+s*200},.03,2.6);}
+      // The Malhat from its own rim: three hundred paces of white floor, flat to the centimetre.
+      if(view==='southwest-malhat'){
+        // On the rim and no further: at two hundred and fifty metres through the coast's own haze the
+        // crust washed out and the first photograph was of the sea beyond it.
+        return shot({x:SOUTHWEST_SALT.x+SOUTHWEST_SALT.radiusX+22,z:SOUTHWEST_SALT.z+12},{x:SOUTHWEST_SALT.x-SOUTHWEST_SALT.radiusX*.6,z:SOUTHWEST_SALT.z},.03,2.1);}
+      // The fan heads, looking down the skirt: cobbles under the camera, dust four hundred paces off.
+      if(view==='southwest-fans'){const f=SOUTHWEST_FANS[1];
+        return shot({x:f.x-f.bearingX*24,z:f.z-f.bearingZ*24},{x:f.x+f.bearingX*300,z:f.z+f.bearingZ*300},.04,3);}
+      // The western shore: a desert running out at an open ocean, with the weather of half a world on it.
+      if(view==='southwest-dry-shore'){const m=mark('meroshe-dry-shore');
+        // Straight out to sea, low, and close enough that the fan skirt's own swell is behind the
+        // camera rather than in front of it. Two tries stood fifty and a hundred metres inland and
+        // photographed the swell; the shore is thirty-five metres from here.
+        return shot({x:m.x-32,z:m.z+8},{x:m.x-170,z:m.z+8},.02,2.2);}
+      // The reg under the fog: dark pavement, lichen in the lee of every pebble, and the only thorn
+      // in the Meroshe standing close enough together to walk round.
+      if(view==='southwest-reg'){const m=mark('meroshe-fog-margin');
+        return shot({x:m.x-96,z:m.z+52},{x:m.x+150,z:m.z-40},.04,1.9);}
     }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.

@@ -118,7 +118,9 @@ test('this country does not grow the world box, and the four north of it do', ()
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
+  // ...and the four Meroshe deserts took the south, 2398.401 -> 3177.824, which this range is two
+  // and a half kilometres north of (docs/southwest-2-report.md).
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3177.823940164498) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   // This range's own hexes are a long way inside the northern edge the Mithala set, and that edge
   // is the Mithala's: 866 m of new world north of where this country's own build left it.
   assert.ok(WORLD_BOUNDS.minZ < -2100 && Math.min(...cells.map(cell => cell.z)) - WORLD_BOUNDS.minZ > 1100);

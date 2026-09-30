@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { hexOwnerAt, REGION_CELLS, relief } from './region-world.js';
+import { hexOwnerAt, REGION_CELLS, relief, landDistance } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
 import { VAELLIR, ALEZHOR_WATER, SOUTHWEST_RIVERS, westBareGround } from './west-regions.js';
 import { WEST_PROFILES, westWaterSurface } from './west-ground.js';
 import {
-  SOUTHWEST_REGIONS, GANESH_WASHES, GANESH_PLAIN_CHANNELS, GANESH_DEPRESSIONS,
+  SOUTHWEST_REGIONS, SOUTHWEST_NORTH_REGIONS, MEROSHE_REGIONS, GANESH_WASHES, GANESH_PLAIN_CHANNELS, GANESH_DEPRESSIONS,
+  MEROSHE_SALT, MEROSHE_DUNES,
   southwestAridity, southwestClear, ganeshLie, ganeshDamp, inDepression, nearestWash,
+  merosheBench, merosheFan, merosheCorridor, merosheErg, merosheFog, merosheVarnish, duneProfile, onSaltPan, regionShare,
 } from './southwest-world.js';
 
 /**
@@ -56,7 +58,8 @@ export function createSouthwestScenery(kit) {
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   const range = (a, b) => a + random() * (b - a);
   const smooth = (a, b, x) => { const v = Math.max(0, Math.min(1, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
-  const metrics = { water: 0, blockers: 0, reeds: 0, gravel: 0, boulders: 0, pavement: 0, stones: 0, tufts: 0, scrub: 0, stubble: 0, trees: 0, wood: 0 };
+  const metrics = { water: 0, blockers: 0, reeds: 0, gravel: 0, boulders: 0, pavement: 0, stones: 0, tufts: 0, scrub: 0, stubble: 0, trees: 0, wood: 0,
+    rock: 0, cobble: 0, sand: 0, reg: 0, salt: 0, lichen: 0, thorn: 0, shingle: 0 };
   const gy = (x, z) => groundHeight(x, z);
   const OWN = new Set(SOUTHWEST_REGIONS);
   const own = (x, z) => OWN.has(hexOwnerAt(x, z));
@@ -355,6 +358,7 @@ export function createSouthwestScenery(kit) {
       }
     }
   }
+  metrics.gallery = gallery.length + tamarisk.length;
   treeBatch(gallery, 'Vaellir gallery', tree => tree.poplar
     ? color.set('#4e6536').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06))
     : color.set('#5f6f49').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05)), 'southwest-tree');
@@ -420,7 +424,11 @@ export function createSouthwestScenery(kit) {
    * There is no fifth thing: this block has no soil story worth telling apart from the sediment, and
    * saying otherwise would be inventing a country the map does not draw.
    */
-  const cells = SOUTHWEST_REGIONS.flatMap(name => REGION_CELLS[name] ?? []).sort((a, b) => a.z - b.z || a.x - b.x);
+  // Job 1's four only. The Meroshe deserts have their own pass below, because nothing that decides
+  // what grows there is in this loop's vocabulary - and keeping the two lists apart keeps this loop's
+  // cell count at a hundred and seven, so the seeded stream job 1's scatter was drawn from is the
+  // same stream to the draw.
+  const cells = SOUTHWEST_NORTH_REGIONS.flatMap(name => REGION_CELLS[name] ?? []).sort((a, b) => a.z - b.z || a.x - b.x);
   const BLOCK = Math.max(1, Math.round(6 / (WORLD_SCALE * WORLD_SCALE)));
   const perHex = Math.round(27 * WORLD_SCALE * WORLD_SCALE);
   const rise = (x, z) => relief(x, z, .9, 320) / .9;
@@ -508,6 +516,227 @@ export function createSouthwestScenery(kit) {
   stoneBatch(stones, 'Southwest stones', () => color.set('#605c52').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
   stoneBatch(pavement, 'Ganesh desert pavement', spot => (spot.bald ? color.set('#696557') : color.set('#5f5a4d')).offsetHSL(0, range(-.03, .03), range(-.05, .06)), .04);
   metrics.scrub = scrub.length; metrics.stones += stones.length; metrics.pavement = pavement.length;
+
+  // -------------------------------------------------------------------------
+  // The four Meroshe deserts: one climate code, four surfaces
+  // -------------------------------------------------------------------------
+  /**
+   * **Ninety-five hexes with the same terrain word and the same climate code, and this is where they
+   * are told apart.** Nothing above can do it: job 1's loop sorts by how dry the air is and where the
+   * wind has left sediment, and here the air is `BWh` on every hex of all four countries, so aridity
+   * is flat 1.00 across the whole ninety-five and says nothing at all. What is left is the ground
+   * itself, and a hot desert has four grounds:
+   *
+   *  - **hamada** (North): bedrock slabs with gravel in the joints, thorn trees growing out of the
+   *    cracks near the bench risers where the last rain went, and nothing else at all. The only trees
+   *    in ninety-five hexes;
+   *  - **the fan skirt and the Malhat** (West): cobbles a hand across at the fan heads sorting down
+   *    to dust at the toes - which is the whole of what this country is - and at the dead end of the
+   *    drainage a salt crust with nothing living on it whatever;
+   *  - **erg** (Central): clean sand on the ridges with wind ripples combed across them, swept gravel
+   *    on the corridor floors so a traveler can feel which one they are on through their boots, and
+   *    the only plants in the country on the sand sheet at its outer margin;
+   *  - **reg under fog** (South): pebbles packed edge to edge and varnished dark, lichen in the lee of
+   *    them where the fog reaches, and the one thorn scrub in the Meroshe that stands close enough
+   *    together to walk round.
+   *
+   * **The whole pass is stone.** Over four countries it lays about forty thousand stones and fewer
+   * than three thousand plants, and that ratio is the argument: the Oves Desert's report made it for
+   * `BSh` steppe, job 1's made it for `BWh` on thirty-one hexes, and this is the same reading over
+   * ninety-five more.
+   */
+  const merosheCells = MEROSHE_REGIONS.flatMap(name => REGION_CELLS[name] ?? []).sort((a, b) => a.z - b.z || a.x - b.x);
+  const rockSlabs = [], hamadaGrit = [], thornTrees = [], thornScrub = [], hamadaStubble = [];
+  const fanCobble = [], fanDust = [], saltPlates = [], saltRidges = [], skirtScrub = [], shingle = [];
+  const ripples = [], corridorGrit = [], sheetScrub = [];
+  const regPebbles = [], lichen = [], fogThorn = [], regStubble = [];
+  const RIPPLE = MEROSHE_DUNES.bearing + Math.PI / 2;
+  for (const cell of merosheCells) {
+    const here = where(cell.x, cell.z);
+    const sample = (count, work) => {
+      for (let i = 0; i < count; i++) {
+        const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
+        if (where(x, z) !== here) continue;
+        work(x, z);
+      }
+    };
+    if (here === 'North Meroshe Desert') {
+      // Bedrock: slabs where the hard bed is at the surface, which is along and above every riser,
+      // and gravel in the joints everywhere else. This is the ground and not a scatter on it.
+      sample(300, (x, z) => {
+        if (!plantable(x, z, .4)) return;
+        const bench = merosheBench(x, z);
+        const bare = .30 + bench.edge * .55;
+        if (random() > bare) return;
+        rockSlabs.push({ x, z, s: range(.5, 1.7) * (1 + bench.edge * .5), rot: random() * 6.28, flat: range(.06, .14) });
+      });
+      sample(220, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > .5) return;
+        hamadaGrit.push({ x, z, s: range(.1, .34), rot: random() * 6.28, flat: range(.2, .4) });
+      });
+      // "Scrubby thorn trees still manage to exist" - in the joints, which is where the water is, so
+      // they are on the risers and nowhere else. Three to six metres, wide flat crowns, far apart.
+      sample(90, (x, z) => {
+        if (!plantable(x, z, 2.4)) return;
+        const bench = merosheBench(x, z);
+        if (random() > bench.edge * .30) return;
+        if (thornTrees.some(t => Math.hypot(t.x - x, t.z - z) < 13)) return;
+        thornTrees.push({ x, z, s: range(.85, 1.2), h: range(3.4, 5.6), rot: random() * 6.28,
+          girth: .62, bole: .46, top: .74, spread: .26, wide: .40, deep: .16 });
+      });
+      sample(120, (x, z) => {
+        if (!plantable(x, z, 1.2)) return;
+        const bench = merosheBench(x, z);
+        if (random() > .10 + bench.edge * .22) return;
+        if (thornScrub.some(b => Math.hypot(b.x - x, b.z - z) < 5.4)) return;
+        thornScrub.push({ x, z, s: range(.24, .5), h: range(.7, 1.15), rot: random() * 6.28, grey: random() < .6 });
+      });
+      sample(90, (x, z) => {
+        if (!plantable(x, z, .8)) return;
+        if (random() > merosheBench(x, z).edge * .34) return;
+        hamadaStubble.push({ x, z, s: range(.32, .62), rot: random() * 6.28 });
+      });
+    } else if (here === 'West Meroshe Desert') {
+      // **The fans are a grain-size story and nothing else.** Cobbles at the apex, pebbles halfway,
+      // dust at the toe - the one thing a traveler notices about this country is what the walking is
+      // like, and it changes over four hundred paces.
+      sample(300, (x, z) => {
+        if (!plantable(x, z, .5)) return;
+        const grain = merosheFan(x, z);
+        if (random() > .16 + grain * .62) return;
+        // "A hand across" is a hand across: the first pass ran to a metre and photographed as boulders.
+        fanCobble.push({ x, z, s: range(.10, .24) + grain * range(.10, .30), rot: random() * 6.28, flat: range(.3, .6), grain });
+      });
+      sample(200, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > (1 - merosheFan(x, z)) * .5) return;
+        fanDust.push({ x, z, s: range(.16, .44), rot: random() * 6.28, flat: range(.05, .11) });
+      });
+      // The Malhat: a salt crust, and the polygonal ridges standing a hand's breadth off it where the
+      // crust has buckled. Nothing grows on it, which `southwestClear` already says.
+      sample(260, (x, z) => {
+        const pan = onSaltPan(x, z);
+        if (pan < .18 || westBareGround(x, z, .3)) return;
+        if (random() > pan * .82) return;
+        saltPlates.push({ x, z, s: range(.3, .9), rot: random() * 6.28, flat: range(.03, .07) });
+      });
+      sample(180, (x, z) => {
+        const pan = onSaltPan(x, z);
+        if (pan < .3 || westBareGround(x, z, .3)) return;
+        // The ridges stand on a coarse lattice: a crust cracks into plates a few metres across.
+        const lattice = Math.abs(Math.sin(x * .22) * Math.sin(z * .19));
+        if (lattice > .16 || random() > pan * .6) return;
+        saltRidges.push({ x, z, s: range(.22, .52), rot: random() * 6.28, flat: range(.3, .6) });
+      });
+      sample(140, (x, z) => {
+        if (!plantable(x, z, 1.4)) return;
+        // What little grows here grows on the fine ground between the fans and off the salt entirely.
+        if (random() > (1 - merosheFan(x, z)) * (1 - onSaltPan(x, z, 30)) * .16) return;
+        if (skirtScrub.some(b => Math.hypot(b.x - x, b.z - z) < 6.5)) return;
+        skirtScrub.push({ x, z, s: range(.22, .46), h: range(.6, .95), rot: random() * 6.28, grey: random() < .7 });
+      });
+      sample(140, (x, z) => {
+        const shore = landDistance(x, z);
+        if (shore > 34 || shore < 1 || westWaterSurface(x, z) !== null) return;
+        if (random() > .58) return;
+        shingle.push({ x, z, s: range(.13, .42), rot: random() * 6.28, flat: range(.24, .5) });
+      });
+    } else if (here === 'Central Meroshe Desert') {
+      const ergHere = (x, z) => merosheErg(x, z, regionShare('Central Meroshe Desert', x, z));
+      // Wind ripples: flat, long, lying across the ridge, dense on the sand and absent on the gravel.
+      sample(420, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        const sandHere = duneProfile(x, z) * ergHere(x, z);
+        if (random() > .10 + sandHere * .80) return;
+        ripples.push({ x, z, s: range(.5, 1.5), rot: RIPPLE + range(-.18, .18), flat: range(.03, .07) });
+      });
+      // The corridor floors: swept gravel, and the one thing that tells a traveler through their boots
+      // which of the two grounds they are on.
+      sample(260, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > merosheCorridor(x, z) ** 3 * .58) return;
+        corridorGrit.push({ x, z, s: range(.1, .34), rot: random() * 6.28, flat: range(.16, .34) });
+      });
+      // **Every plant in this country is on the sand sheet at its margin.** An active dune has nothing
+      // on it at all, and thirty-one hexes of this one are mostly active dune.
+      sample(160, (x, z) => {
+        if (!plantable(x, z, 1.6)) return;
+        if (random() > (1 - ergHere(x, z)) * .13) return;
+        if (sheetScrub.some(b => Math.hypot(b.x - x, b.z - z) < 8)) return;
+        sheetScrub.push({ x, z, s: range(.22, .48), h: range(.55, .95), rot: random() * 6.28, grey: random() < .5 });
+      });
+    } else if (here === 'South Meroshe Desert') {
+      // The reg itself: pebbles edge to edge, small and flat and very many, dark where the varnish is.
+      sample(460, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > .66) return;
+        regPebbles.push({ x, z, s: range(.13, .34), rot: random() * 6.28, flat: range(.2, .42), dark: merosheVarnish(x, z) });
+      });
+      // Lichen in the lee of the pebbles, and only where the fog reaches: the one thing in the Meroshe
+      // that lives on water out of the air.
+      sample(300, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        const fog = merosheFog(x, z);
+        if (random() > fog * .46) return;
+        lichen.push({ x, z, s: range(.12, .34), rot: random() * 6.28, flat: range(.04, .08) });
+      });
+      sample(280, (x, z) => {
+        if (!plantable(x, z, 1.5)) return;
+        const fog = merosheFog(x, z);
+        if (random() > fog * fog * .62) return;
+        if (fogThorn.some(b => Math.hypot(b.x - x, b.z - z) < 2.6)) return;
+        fogThorn.push({ x, z, s: range(.2, .44), h: range(.8, 1.25), rot: random() * 6.28, fog });
+      });
+      sample(140, (x, z) => {
+        if (!plantable(x, z, .8)) return;
+        if (random() > merosheFog(x, z) * .3) return;
+        regStubble.push({ x, z, s: range(.3, .58), rot: random() * 6.28 });
+      });
+      sample(140, (x, z) => {
+        const shore = landDistance(x, z);
+        if (shore > 34 || shore < 1 || westWaterSurface(x, z) !== null) return;
+        if (random() > .55) return;
+        shingle.push({ x, z, s: range(.12, .4), rot: random() * 6.28, flat: range(.22, .48) });
+      });
+    }
+  }
+  stoneBatch(rockSlabs, 'Meroshe bedrock slabs', () => color.set('#6f6a55').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
+  stoneBatch(hamadaGrit, 'Meroshe hamada grit', () => color.set('#63604e').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  stoneBatch(fanCobble, 'Meroshe fan cobbles', spot => color.set(spot.grain > .55 ? '#6a6450' : '#615c4a').offsetHSL(0, range(-.03, .03), range(-.05, .06)), .16);
+  stoneBatch(fanDust, 'Meroshe fan dust', () => color.set('#6d6854').offsetHSL(0, range(-.02, .02), range(-.04, .06)), .02);
+  stoneBatch(saltPlates, 'Malhat salt crust', () => color.set('#8e8b7c').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .01);
+  stoneBatch(saltRidges, 'Malhat crust ridges', () => color.set('#98957f').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .12);
+  stoneBatch(ripples, 'Meroshe sand ripples', () => color.set('#79714f').offsetHSL(0, range(-.02, .02), range(-.04, .07)), .01);
+  stoneBatch(corridorGrit, 'Meroshe corridor gravel', () => color.set('#5e5a49').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .04);
+  // The pebbles are a shade *lighter* than the pavement they make, which is the only way a stone
+  // floor reads as stones rather than as a flat dark field: the varnish is on the ground and the tops
+  // of the pebbles catch what light there is.
+  stoneBatch(regPebbles, 'Meroshe reg pavement', spot => color.set(spot.dark > .6 ? '#5c5340' : '#6a5f49').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .03);
+  stoneBatch(lichen, 'Meroshe fog lichen', () => color.set('#5b6050').offsetHSL(range(-.02, .02), range(-.03, .04), range(-.04, .06)), .01);
+  stoneBatch(shingle, 'Meroshe shore shingle', () => color.set('#6a6657').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .1);
+  bushBatch(thornScrub, 'Meroshe hamada thorn', bush => bush.grey
+    ? color.set('#6e7065').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#5f6750').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
+  bushBatch(skirtScrub, 'Meroshe skirt scrub', bush => bush.grey
+    ? color.set('#70726a').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#616852').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
+  bushBatch(sheetScrub, 'Meroshe sand-sheet scrub', bush => bush.grey
+    ? color.set('#767567').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#666b52').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
+  // The fog thorn is the only green in ninety-five hexes and it gets greener the deeper into the fog
+  // belt it stands, which is the one gradient this half of the block has.
+  bushBatch(fogThorn, 'Meroshe fog thorn', bush =>
+    color.setHSL(.160 + bush.fog * .022 + range(-.010, .010), .13 + bush.fog * .11 + range(-.025, .025), .145 + range(-.02, .02)), .34);
+  treeBatch(thornTrees, 'Meroshe hamada thorn trees', () => color.set('#5d6647').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'southwest-tree');
+  stubbleBatch(hamadaStubble, 'Meroshe hamada stubble');
+  stubbleBatch(regStubble, 'Meroshe fog stubble');
+  metrics.rock = rockSlabs.length; metrics.cobble = fanCobble.length + fanDust.length;
+  metrics.sand = ripples.length; metrics.reg = regPebbles.length;
+  metrics.salt = saltPlates.length + saltRidges.length; metrics.lichen = lichen.length;
+  metrics.thorn = thornScrub.length + skirtScrub.length + sheetScrub.length + fogThorn.length;
+  metrics.shingle = shingle.length; metrics.thornTrees = thornTrees.length;
+  metrics.gravel += hamadaGrit.length + corridorGrit.length;
 
   return {
     group, metrics,

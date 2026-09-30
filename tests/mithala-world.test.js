@@ -165,7 +165,10 @@ test('the world grows north, and it is the biggest structural change any region 
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
-  assert.ok(Math.abs(tall - 45.656) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  // 45.656 when this plain set the northern edge; 53.450 since the South Meroshe Desert carried the
+  // southern one from 2398.401 to 3177.824. What the plain set is the *northern* edge, and that is
+  // the number to hold here rather than the height it happened to make at the time.
+  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // East to west the plain took nothing, and the number below is no longer 36.20 because the four
   // southwestern countries moved it afterwards: the Ganesh Desert took the western edge from
   // -3010.002 to -3960.002 and the width from 36.20 hexes to 45.70. What this plain is held to is
@@ -175,7 +178,9 @@ test('the world grows north, and it is the biggest structural change any region 
   // and nothing else. The western one has moved since, and not for anything on this plain.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6);
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6);
+  // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
+  // (docs/southwest-2-report.md), which the plain also spent nothing of.
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3177.823940164498) < 1e-6);
   // North Mithala alone spends it: row 82 against the East Lotharn's 92.
   assert.equal(Math.min(...CELLS['North Mithala'].map(cell => cell.r)), 82);
   assert.ok(Math.min(...CELLS['North Mithala'].map(cell => cell.z)) < Math.min(...CELLS['East Mithala'].map(cell => cell.z)));
@@ -185,7 +190,8 @@ test('the world grows north, and it is the biggest structural change any region 
   // z = -2264.35, and a pointy-top hex reaches a circumradius past its centre, so row 79's hexes
   // (centres -2309.3) come down to -2251.6 and are the last the lattice can land in.
   assert.equal(WINDOW.minR, 79);
-  assert.equal(WINDOW.maxR, 135);
+  // 135 when the Ascarth tip set it; 144 since the South Meroshe Desert carried the world south.
+  assert.equal(WINDOW.maxR, 144);
   assert.equal(WINDOW.maxQ, 34);
   const COAST_CELL = 4, COAST_MARGIN = 96, PHASE = -704.3502691896258;
   const latticeMinZ = PHASE + Math.floor((WORLD_BOUNDS.minZ - COAST_MARGIN - PHASE) / COAST_CELL + 1e-9) * COAST_CELL;

@@ -5,6 +5,8 @@ import {
   createAtlasTransform, LEGACY_ROAD_TRANSFORM, HEX_WORLD_TRANSFORM, TIDEHAVEN_ATLAS, METRES_PER_HEX, ATLAS_HEX_WIDTH, PLAYABLE_REGIONS, REGION_BIOMES,
   regionCells, regionOutline, pointInPolygon, regionAtWorld, cellAtWorld, worldBoundsFor, borderMidpoint, routeAnchors, compassHeading, findRegion,
 } from '../src/region-layout.js';
+import { REGION_IDS } from '../src/region-world.js';
+import { PLAYABLE } from '../scripts/build-region-survey.mjs';
 
 const survey = JSON.parse(readFileSync(new URL('../assets/azhora-dev-regions.json', import.meta.url), 'utf8'));
 const close = (a, b, tolerance = 1e-6) => Math.abs(a - b) <= tolerance;
@@ -144,12 +146,66 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * the coast lattice, which turned 71 claimed hexes in six countries from sea into land along the
    * block's western horizon - Cape Heth 19, the Dinelv Highlands 14, South Ibenal 14, the West
    * Meroshe Desert 13, Alezhor 7 and West Ibenwood 4. None of the 71 is the block's own.
+   *
+   * **Then the four Meroshe deserts took the south, and that one nobody saw coming.** Their brief
+   * predicted no movement at all, and it was right about the west: the westernmost Meroshe hex is
+   * the West Meroshe's (-37,133) at x = -3750, a hundred and fifty metres inside the edge the Ganesh
+   * Desert set, so `minX` does not move. What moves is the other axis. The South Meroshe Desert's
+   * southernmost hexes are (-32,141) and (-31,141), centres at z = 3060.089 and lower vertices a
+   * circumradius past that at 3117.824, so the southern edge goes from 2398.401 to **3177.824** and
+   * the height from 45.656 hexes to **53.450** - measured, not estimated. Each one's own case: the
+   * North Meroshe reaches z = 2281 and the West 2627, inside the Ascarth tip's own box; the Central
+   * reaches 2714 and would have spent four rows on its own; **the South Meroshe alone spends the last
+   * three.** So the north-south guard goes to 54 and its floor to 53.4, and the world is no longer
+   * square: **45.70 by 53.450**, taller than it is wide for the first time since the Ascarths, and
+   * there is no direction left that a playable country has not spent.
+   *
+   * The window moved in **both** axes for it, which is new: `maxR` 135 -> 144 is the lattice's own
+   * last row, and `minQ` -41 -> -45 came with it for free, because x = W(q + r/2) puts a low q and a
+   * high r at the same world x - a lattice nine rows further south reaches four columns further west
+   * without any country reaching an inch in that direction. 143 more claimed hexes turn from sea into
+   * land: Babon 50, Trogo 29, Hama 19, the Azhor Stones 12 - and **thirty-three of the block's own**,
+   * which job 1's 71 did not include one of. Without it the whole of the South Meroshe Desert would
+   * have been open water in the middle of a playable country.
    */
-  assert.ok(bounds.maxX - bounds.minX < 46 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 46 * METRES_PER_HEX, 'the playable regions fit a walkable world');
+  assert.ok(bounds.maxX - bounds.minX < 46 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
+  assert.ok(bounds.maxZ - bounds.minZ < 54 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 45.6 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
-  assert.ok(bounds.maxZ - bounds.minZ > 45.6 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 53.4 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+});
+
+/**
+ * **The permanent guard the fourth generation of one mistake earned.**
+ *
+ * Four separate test files have now written "these are the last N regions in the list" when what
+ * they meant was "these come after everything that was there before", and every one of them broke
+ * the next time somebody appended a country: the West Lotharn builder rewrote it in
+ * `tests/oves-world.test.js`, the Mithala builder in `tests/west-lotharn-world.test.js`, the
+ * southwest's job 1 in `tests/mithala-world.test.js` twice over, and job 2 in
+ * `tests/southwest-world.test.js`. The idiom is the bug, not the number in it.
+ *
+ * So this is the invariant the idiom was always reaching for, stated once, for every country, with no
+ * count in it at all: **`PLAYABLE_REGIONS` is in strictly increasing `REGION_IDS` order, the ids run
+ * 1..n with no gaps, and the survey script's own `PLAYABLE` is the same list in the same order.** A
+ * country appended at the end passes it; a country inserted anywhere else fails it, which is exactly
+ * what the scatter stream needs (`world-regions.js` walks this list with one seeded stream, so a name
+ * put anywhere but the end re-rolls every region after it). Nobody needs to write "last N" again.
+ */
+test('the region order is the id order, with no gaps and nothing inserted', () => {
+  const ids = PLAYABLE_REGIONS.map(name => REGION_IDS[name]);
+  for (const [index, name] of PLAYABLE_REGIONS.entries())
+    assert.ok(Number.isInteger(ids[index]), `${name} has no region id`);
+  for (let i = 1; i < ids.length; i++)
+    assert.ok(ids[i] > ids[i - 1], `${PLAYABLE_REGIONS[i]} (${ids[i]}) comes after ${PLAYABLE_REGIONS[i - 1]} (${ids[i - 1]})`);
+  assert.deepEqual(ids, Object.keys(REGION_IDS).map((_, i) => i + 1), 'the ids are 1..n with no gaps');
+  assert.equal(Object.keys(REGION_IDS).length, PLAYABLE_REGIONS.length, 'every id is a playable region and back');
+  // The survey script's own PLAYABLE is the same *set* and deliberately not the same order: it was
+  // written in build order and `PLAYABLE_REGIONS` in scatter order, and the two diverged long before
+  // this guard (Eer and Gala sit in different places in each). What has to hold is that neither list
+  // has a country the other has not.
+  assert.deepEqual([...PLAYABLE].sort(), [...PLAYABLE_REGIONS].sort(), 'the survey script builds the same countries');
 });
 
 test('route anchors follow the brief: Tidehaven on the coast, the Caloss on the Luscia border, the Moros west, Elod north-east', () => {

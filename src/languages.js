@@ -716,6 +716,31 @@ export const REGION_LANGUAGE = freeze({
   'West Pyros': spoken('pyrosi', 'west-pyrosi'),
   'Ganesh Plain': spoken('maroshi', 'ganesh'),
   'Ganesh Desert': spoken('maroshi', 'ganesh'),
+  // Thirty-six to thirty-nine, the four Meroshe deserts. **Plain Maroshi, and no dialect, and that is
+  // a decision rather than a gap.** moroshe_desert.md is emphatic that the desert peoples' own speech
+  // is the centre of this family and not a margin of it - "the desert languages are related to each
+  // other but not to the Mittoli family at all... a completely separate linguistic lineage that
+  // predates any contact with the western continent" - and the tongue entry above already says which
+  // end of Maroshi that is: "the court form is a dialect of Coastal Trade Moreshi; the deep-desert
+  // forms are the conservative ones."
+  //
+  // A dialect in this file marks a deviation from a centre. Both Maroshi dialects available are
+  // margins - the coastal court form the base tongue carries, and `ganesh`, the northern contact seam
+  // where Moreshi meets Mittoli on the Ganesh Plain - and the Meroshe is neither. So the four
+  // countries the atlas names after the desert itself speak the tongue without a twist on it, and the
+  // Ganesh Desert keeps `ganesh` because its own lore gives it to the plain's people rather than to
+  // the desert's. It is the argument Navarth got for sharing West Pyros's dialect, run the other way.
+  //
+  // **Nothing is coined.** The one Moreshi word this job uses is *malhat*, `maroshi.roots.salt`
+  // above, for the salt pan in the West Meroshe (src/southwest-world.js, `MEROSHE_SALT`) - the
+  // tongue's own word taken as a name, exactly as job 1 took *vaellir* from the Pyrosi lexicon for
+  // the river. The lore's own note on what "Moroshé" means is worth keeping in view while reading
+  // any of this: the Mittoli rendering is variously translated as "the wide nothing", "the place of
+  // patient waiting" or, in the oldest dialect still spoken in the deep interior, simply "home".
+  'North Meroshe Desert': spoken('maroshi'),
+  'West Meroshe Desert': spoken('maroshi'),
+  'Central Meroshe Desert': spoken('maroshi'),
+  'South Meroshe Desert': spoken('maroshi'),
 });
 
 /**

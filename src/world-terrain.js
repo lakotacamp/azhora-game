@@ -300,6 +300,14 @@ export function groundTint(color, x, z, THREE) {
     if (ground === gala) swatch.set(galaGroundColour(x, z));
     else if (oves !== null) swatch.set(oves);
     else if (mithala !== null) swatch.set(mithala);
+    // **This branch was missing.** `southwest` was computed on the line above and then dropped on the
+    // floor, so from the day the southwestern block was built until the day the Meroshe deserts were
+    // added to it, `southwestTint` ran on every ground sample in the block and its answer was thrown
+    // away: the swept floor and the sediment pocket in the Ganesh, the green of the Ganesh Plain's
+    // depressions, the damp reach and the two wet corners were all drawn as the flat biome swatch.
+    // Job 2 found it when its four desert surfaces - rock, sand, varnished pavement and salt - came
+    // back on the screen as one shade of tan. Everything else in this chain is unchanged.
+    else if (southwest !== null) swatch.set(southwest);
     else swatch.set(ground);
     target.r += swatch.r * weight; target.g += swatch.g * weight; target.b += swatch.b * weight; total += weight;
   }

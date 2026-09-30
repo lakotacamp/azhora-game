@@ -85,6 +85,15 @@ const navarthAnchor = point(942.235, 2872, -26, 119);
 const westPyrosAnchor = point(1066.942, 2896, -22, 120);
 const ganeshDesertAnchor = point(886.809, 2968, -30, 123);
 const ganeshPlainAnchor = point(1053.086, 3016, -25, 125);
+// The four Meroshe deserts, one middle hex each, clear of every border, every bench riser, every
+// dune crest and the salt pan. Same formula: the North Meroshe's plains (-27, 130) on the open rock
+// floor between two benches, the West Meroshe's plains (-35, 134) on the middle of the fan skirt and
+// well clear of the Malhat, the Central Meroshe's plains (-30, 134) on an interdune corridor in the
+// sand sea, and the South Meroshe's plains (-29, 138) in the middle of the stone floor.
+const northMerosheAnchor = point(1066.942, 3136, -27, 130);
+const westMerosheAnchor = point(900.666, 3232, -35, 134);
+const centralMerosheAnchor = point(1039.230, 3232, -30, 134);
+const southMerosheAnchor = point(1122.368, 3328, -29, 138);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -130,6 +139,10 @@ const LOCALS = [
   [33, 'West Pyros', 'west-pyros', 'West Pyros', westPyrosAnchor],
   [34, 'Ganesh Desert', 'ganesh-desert', 'Ganesh Desert', ganeshDesertAnchor],
   [35, 'Ganesh Plain', 'ganesh-plain', 'Ganesh Plain', ganeshPlainAnchor],
+  [36, 'North Meroshe', 'north-meroshe', 'North Meroshe Desert', northMerosheAnchor],
+  [37, 'West Meroshe', 'west-meroshe', 'West Meroshe Desert', westMerosheAnchor],
+  [38, 'Central Meroshe', 'central-meroshe', 'Central Meroshe Desert', centralMerosheAnchor],
+  [39, 'South Meroshe', 'south-meroshe', 'South Meroshe Desert', southMerosheAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),
