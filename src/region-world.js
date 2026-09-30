@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -443,6 +443,39 @@ export const REGION_TERRAIN = Object.freeze({
   }) }),
   'North Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['North Mithala'].ground, byTerrain: Object.freeze({
     grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#718647' }),
+  }) }),
+  // ---------------------------------------------------------------------------
+  // The southwestern block (src/southwest-world.js): Navarth, West Pyros, the Ganesh Desert and
+  // the Ganesh Plain - the driest quarter of the continent and the first true desert in the game.
+  // ---------------------------------------------------------------------------
+  // **Every profile here is on wavelength 320**, which is Gala's, the Oves's, the Mithala's and
+  // the Ascarths' for the same reason: `relief()` takes its phase from x / wave, the hex blend
+  // mixes the wavelengths, and a country on another wave shifts the phase of every sine within
+  // reach of its border. These four share forty-six internal hex edges, so one wave across all
+  // of them is what makes those edges invisible.
+  //
+  // The bases carry the block's shape, and a base blends linearly across a hex boundary and is
+  // therefore already smooth - it is the sine that chirps. Navarth is the high ground at 40 with
+  // its hills at 58 (the crests on top of them are `navarthCrests`); West Pyros falls south to the
+  // Vaellir's mouth from 26; the Ganesh Desert is the lowest at 20 and falls north-west to a gulf
+  // shore; the Ganesh Plain at 22 sits on the divide between the two drainages. The `grassland`
+  // hex in West Pyros and the one in the Ganesh Plain are the block's two wettest hexes - both
+  // `Csa`, both a hex from the southern sea - and both are lower, greener and a little rougher
+  // than the plains behind them, which is what the atlas means by the change of word.
+  Navarth: Object.freeze({ base: 40, amp: 1.1, wave: 320, ground: REGION_BIOMES.Navarth.ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 58, amp: 2.8, wave: 320, ground: '#675e44' }),
+    // The one forest hex in the block, (-24,116), `Csb`, at Navarth's north-eastern tip against the
+    // South and East Ibenwood. It is the plateau's wooded shoulder falling into the forest belt, so
+    // it stands well below the tableland rather than on it: the Ibenwood is low wet ground and this
+    // is the last hex of Navarth before it.
+    forest: Object.freeze({ base: 34, amp: 1.3, wave: 320, ground: '#5d6840' }),
+  }) }),
+  'West Pyros': Object.freeze({ base: 26, amp: .9, wave: 320, ground: REGION_BIOMES['West Pyros'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .8, wave: 320, ground: '#6b7542' }),
+  }) }),
+  'Ganesh Desert': Object.freeze({ base: 20, amp: .9, wave: 320, ground: REGION_BIOMES['Ganesh Desert'].ground }),
+  'Ganesh Plain': Object.freeze({ base: 22, amp: .85, wave: 320, ground: REGION_BIOMES['Ganesh Plain'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 14, amp: .8, wave: 320, ground: '#737a4d' }),
   }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
@@ -1174,6 +1207,30 @@ const REGION_TEXT = {
     description: 'The plain going north until it stops being plain. Tall grass on a dry shelf in the south, and then a long imperceptible fall northward into sedge and rush and standing water as the Acor Wetlands begin, with no line anywhere to say where one becomes the other. The north braid comes down out of that ground on two heads and runs south to the meeting. Along the northern and north-eastern horizon the treeline thickens: the Acorwood, which closes off the north of the continent, approached across open country without a wall or a cliff to announce it.',
     palette: { ground: '#6b8045', accent: '#ccc491', fog: '#b0bca3', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
     npcIds: [], landmarks: ['the-north-braid', 'north-braid-heads', 'north-mithala-shelf', 'north-mithala-fen', 'acorwood-approach'] },
+  // The southwestern block (src/southwest-world.js). **Two skies over four countries**, and the
+  // first of them is the first true-desert sky in the game. Navarth, the Ganesh Desert and the
+  // Ganesh Plain read `BWh` over seventy-four of their eighty hexes between them, and what a hot
+  // desert does to the air is take the water out of it: the clearest air in Azhora at .0030,
+  // against the Oves Desert's .0034, with a pale bleached-blue sky and a haze that is dust rather
+  // than moisture. West Pyros is the one steppe country of the four - `BSh` over eighteen of its
+  // twenty-seven hexes, with a river down the whole of its eastern side - so it gets the steppe
+  // sky Gala and Ovesos share, a shade greener and a shade closer.
+  Navarth: { subtitle: 'The plateau above the desert', spawn: point(-3350, 1155),
+    description: 'The high ground of the southwest and the last of the Pyrosi country going north: a worn tableland of pale stone and thin soil standing forty metres over the plain, with ten broad rounded swells on it and open sweeps of bare scrub between them. Hot desert over all of it but the north-eastern tip, where two hexes of Mediterranean air carry the one piece of forest the atlas gives this quarter and the Ibenwood’s southern edge begins. The country’s only water runs along its northern border, out of the green country beyond it and away west to the sea; from the western swells the ground falls away into the Ganesh and there is nothing at all between here and the horizon.',
+    palette: { ground: '#6f6449', accent: '#b3a884', fog: '#a19b84', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['navarth-plateau', 'navarth-swells', 'navarth-west-rim', 'navarth-wood', 'alezhor-water'] },
+  'West Pyros': { subtitle: 'The plain and the great river', spawn: point(-3000, 1241),
+    description: 'An open semi-arid plain falling south from the Navarth rim to the sea, with the Vaellir - the largest river in this quarter of the continent - running the whole length of its eastern border and growing from a wadeable head to a hundred paces of water nobody crosses. Bunch grass in tussocks with bare earth between them over most of it, thinning west into desert scrub against Navarth; a ribbon of poplar and tamarisk along the river and no other wood anywhere; and at the southern tip, where the river reaches the sea, one hex and a half of genuinely green Mediterranean country. Everything the lore of Pyros is about - the terraces, the fumarole sites, the Fire Memory, and Gala on its hill above the confluence - belongs to somebody and none of it is here.',
+    palette: { ground: '#6c6944', accent: '#aea580', fog: '#9a9a83', sky: 0xbdd2ce, haze: 0xc3bb9c, hazeDensity: .0036 },
+    npcIds: [], landmarks: ['the-vaellir', 'vaellir-ford', 'vaellir-mouth', 'pyros-open-plain', 'pyros-green-tip'] },
+  'Ganesh Desert': { subtitle: 'The dry crossing', spawn: point(-3550, 1501),
+    description: 'Thirty-one hexes of true hot desert, the first in Azhora and the largest single country in the southwest: flat to gently rolling ground made by old alluvium rather than uplift, with no canyon, no escarpment and nothing dramatic in it anywhere. Wind is the whole of what shapes it - a thin sheet of fine pale sediment over stone, swept down to gravel on the rises and gathered a hand deep in the pockets, with the grain of it running with the summer wind out of the north-west. Sparse deep-rooted scrub spaced wide enough to walk between and a stubble of bleached seed-heads where a wet year’s flush would be. Two washes cross it with nothing in either, one reach of one of them holding water below the gravel; and on the north-west it runs out at a gulf it is arid right up to, which is the strangest thing about it.',
+    palette: { ground: '#776d54', accent: '#b7ae8c', fog: '#a8a288', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['ganesh-floor', 'ganesh-washes', 'ganesh-damp-reach', 'ganesh-shore', 'ganesh-wind-grain'] },
+  'Ganesh Plain': { subtitle: 'The ground that cannot decide', spawn: point(-2930, 1620),
+    description: 'The transition between the desert and the green country to the south-east, and the lore says it behaves from decade to decade as though it cannot decide which it belongs to. Level clay-floored ground crossed by three shallow drainage channels too diffuse to be rivers, with closed depressions strung along them where the water gathers and the grass lasts longest - and in a dry year, which is the face the world can show, those depressions are the only green on it and everything between them is scrub and bare pale clay. A low divide runs down the eastern side, and the channels show it: two of them leave it westward for the Ganesh and the third runs east-south-east to the sea four hundred metres away. The south-eastern corner is the exception - one hex of Mediterranean grass where Marosh’s country begins.',
+    palette: { ground: '#70684c', accent: '#b3a988', fog: '#a59e86', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['ganesh-plain-channels', 'ganesh-depressions', 'ganesh-plain-divide', 'ganesh-plain-green-corner'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

@@ -4,6 +4,87 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-30 — The southwest, job 1: Navarth, West Pyros, the Ganesh Desert and the Ganesh Plain
+
+Built to `docs/southwest-1-brief.md`; the whole account is `docs/southwest-1-report.md`. Terrain,
+climate, water, scenery and wildlife only, and nothing that belongs to anybody. **This is the first
+quarter of a four-job programme** covering Azhora's whole southwest — thirteen regions, 322 hexes —
+which the user chose after asking how far "the southwest regions" reached, and which deliberately
+leaves the Ibenwood forest belt unbuilt for now.
+
+- **The block is an island, and the user chose that.** None of the four touches a built country: the
+  built frontier in the west is Nethereum and Isareos, which border the unbuilt Ibenwoods. So these
+  four are reached by F8 travel and by nothing else until the forest belt lands, every outer margin
+  is `outland`, and the block's own internal coherence is the only standard there was. **Its datum is
+  its two river mouths**, the gulf at the Ganesh Desert's north-west corner and the Vaellir's mouth
+  at West Pyros's southern tip, because those are the two places in it where sea level is a fact
+  rather than a choice. Jobs 2–4 inherit the same island and make it bigger.
+- **This is the first true desert in the game.** Read per hex off the World Builder map, eighty-one
+  of the hundred and seven hexes are **`BWh`** — hot desert — where nothing built before this was
+  drier than `BSh`, and the Oves Desert's own report had noted that the map's author had `BWh`
+  available and did not use it there. The Ganesh Desert's thirty-one hexes are the first country in
+  the game with hot desert on every one of them.
+- **And the climate is a gradient, which is the block's shape**: `BSh` × 18 down West Pyros's eastern
+  columns beside the great river, `Csb` × 6 and `Csa` × 2 on two green corners — Navarth's
+  north-eastern tip where the Ibenwood reaches in, and the south-eastern corner where Marosh and the
+  southern sea begin — and `BWh` over everything else. **Aridity increases westward and inland.**
+  `southwestAridity` blends it on the ground's own falloff and the scatter, the ground colour and the
+  wildlife all read off it; measured, the steepest change anywhere is 0.157 in twenty metres, where
+  the map itself puts `Csa` against `BWh` one hex apart.
+- **The atlas's three odd hexes are the block's three features and every one is also one of its
+  wettest.** The one `forest` hex is `Csb`; both `grassland` hexes are `Csa` and both are one hex
+  from the sea. Terrain and climate agree, so each carries a feature and not a band — the way the
+  West Lotharn's one `Dfa` hex became its cold head.
+- **The world grew west**, from 36.20 hexes wide to **45.70**, which is more than anything has spent
+  in that direction, and the Ganesh Desert alone spends it. `WINDOW.minQ` went **−33 to −41**,
+  measured off the coast lattice, which turned 71 claimed hexes in six countries from sea into land —
+  all of them the block's horizon and none of them its own ground. The world is now very nearly
+  square, 45.70 by 45.656.
+- **The lore of Navarth and of Pyros is the furthest from its atlas of anything built so far, and the
+  atlas won.** `navarth.md` describes cold snowy plateau country; the map says hot desert over twenty
+  of its twenty-two hexes, so the adjustment keeps the altitude, the exposure, the pastoral economy
+  and the whole Fire-Memory-at-a-distance argument and changes only the weather. `pyros.md` says West
+  Pyros is "the greener, wetter" half and East Pyros is in the rain shadow; the map reverses it, and
+  gives West Pyros no `hills` hex at all, so its famous terraces are on the ridge at its eastern edge
+  and its agriculture is bottomland. Nineteen claims across four lore files, adjusted in place.
+- **One name is coined and it is not an invention.** This is the first block in the west whose
+  people's tongue is actually in `azhoran_language_profiles.py`, so the great river is **the
+  Vaellir**, which is `src/languages.js`'s own Pyrosi word for a river, used the way an Avon is a
+  river. Two new dialects, both the lore's: `west-pyrosi` for Navarth and West Pyros (Navarth gets no
+  dialect of its own because its lore makes it scrupulous about the centre's forms, not divergent
+  from them), and `ganesh`, the contact speech of the Moreshi/Mittoli junction the plain sits on,
+  shared with the desert, which has no speech of its own.
+- **One new rig, and it was overdue: the bone-bird.** The fauna overview names it, gives it a
+  two-and-a-half-metre wingspan and a bald head, and puts it exactly here — "the large scavenger of
+  the desert margins... the most visible large animals of the Moreshe from caravan routes". Both the
+  Oves and the Mithala had used the turkey-vulture as a stand-in for it and said so; the stand-in is
+  spent here.
+- **Emptiness is the answer, harder than in the Oves.** Seventeen ranges over a hundred and seven
+  hexes, seven of them on the one river; **the Ganesh Desert, the largest of the four at thirty-one
+  hexes, has three and two of those are birds in the air**, because its own lore says a severe dry
+  year "presents a surface that appears essentially lifeless". The river fox is absent by
+  measurement: the only river margin in Navarth is on an unbuilt border and the widest clear run
+  behind any point of its bank is twelve metres, where a fox that never flees needs a hundred.
+- **Seven stale lists**, three beyond the ones the brief named. The world-box guards in
+  `region-layout`, `isareos-world` and `nethereum-world`; the `minX` pin in `west-lotharn-world`; the
+  two `OWN_SKY` copies in `region-sky` and `eer-world`; and **two in `tests/mithala-world.test.js`**,
+  one of them the third generation of the same "last in the list" mistake two previous builders had
+  already rewritten in two other files. `open-country` passed untouched again.
+- **One landmark of another country moved, and the render is why.** Growing the world west shifts
+  every coarse-band terrain vertex, which pushed the Mithala's `east-mithala-gallery` from just under
+  a metre buried in the drawn ground to 1.04 m. It stood on a levee crest the seven-metre grid cannot
+  follow; it is eight metres further off the channel now, on the bank the gallery actually stands on.
+- **`west-life`'s three failures are all somebody else's animals.** Run law by law (the chase tests
+  are now very slow: five minutes for the run-down law, seventeen for the return-home one), the two
+  laws about this block's own kind of animal pass and the three that fail name
+  `elagos-meadow-cattle`, `feradom-country-17-98` and `oveth-herons` — the same three the last three
+  builders have recorded as pre-existing. None of this block's seventeen ranges appears in any of them.
+- **The colour pass took three renders and the haze was the culprit.** The desert came back as white
+  sand; two rounds of darkening the ground swatches barely moved it, because at .0030 density a
+  near-white haze was more than half of every pixel past a hundred and fifty metres. The desert sky's
+  haze is a warm dust now (`0xc6b996`) at **.0024**, which is the clearest air in the game and is what
+  a hot desert should have anyway.
+
 ## 2026-09-29 — The Mithala plain: four countries built as one landform
 
 Built to `docs/mithala-brief.md`; the full account is `docs/mithala-report.md`. Terrain, climate,

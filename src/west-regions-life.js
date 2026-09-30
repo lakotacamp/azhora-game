@@ -12,6 +12,7 @@ import { ASCARTH_WILDLIFE_ZONES } from './ascarth-wildlife.js';
 import { OVES_WILDLIFE_ZONES } from './oves-wildlife.js';
 import { WEST_LOTHARN_WILDLIFE_ZONES } from './west-lotharn-wildlife.js';
 import { MITHALA_WILDLIFE_ZONES } from './mithala-wildlife.js';
+import { SOUTHWEST_WILDLIFE_ZONES } from './southwest-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -510,6 +511,52 @@ function models() {
     },
 
     /**
+     * **The bone-bird**, and the one new rig the southwestern block asked for. The fauna overview
+     * names it and puts it exactly here: "The large scavenger of the desert margins is the
+     * **bone-bird** - a heavy, bald-headed vulture relative with a wingspan approaching two and a
+     * half meters, capable of processing large carcasses completely and serving the essential
+     * sanitation function in an environment where decomposition is slow. Bone-birds are the most
+     * visible large animals of the Moroshe from caravan routes; they are often the first indicator
+     * of water, since both potential death and potential life concentrate around it."
+     *
+     * Both of the game's dry countries have wanted it and neither could have it. The Oves report
+     * put it in its open questions ("the overview's bone-bird - what this country would want and is
+     * not a rig the game has; the turkey-vulture is the nearest bird already built") and used the
+     * turkey-vulture as a stand-in twice over; the Mithala did the same for its own soar-bird. The
+     * Ganesh Desert is the first true `BWh` desert in the game and is the animal's own ground - the
+     * northern margin of the Moreshe system - so the stand-in is spent here and the bird is built.
+     *
+     * **How it is told from a turkey-vulture at any distance**, which is the whole of the design:
+     * half again the wingspan (the wing runs to 1.72 against the vulture's 1.43, which at the
+     * game's scale is the two and a half metres the lore gives it); a **bald head**, pale bone-grey
+     * and bare to the shoulders, carried forward instead of tucked; a heavy hooked bill that is the
+     * biggest thing on the head; a pale ruff at the base of the neck where the bare skin meets the
+     * feathers; and wings held flatter and steadier than any other soarer's, because a bird this
+     * heavy does not rock. Everything below the neck is the vulture's own build at a larger size,
+     * because it is a vulture relative and should read as one.
+     */
+    'bone-bird': {
+      body: geometry([
+        S(0x3a332c, [0, 0, -.04], [.125, .120, .33]),
+        S(0x2c2622, [0, -.04, .08], [.108, .088, .22]),
+        S(0x4a4138, [0, .012, -.38], [.105, .030, .22], [.05, 0, 0]),
+        // The bare neck and the bald head: pale bone-grey, carried forward and clear of the ruff.
+        S(0xb9ae96, [0, .055, .21], [.046, .046, .10]),
+        S(0xc6bb9f, [0, .075, .30], [.060, .062, .072]),
+        // The ruff, where the bare skin stops and the feathers start.
+        S(0x6d6252, [0, .03, .13], [.095, .080, .055]),
+        // The bill: hooked, heavy, and the biggest thing on the head.
+        C(0xe3d8bc, [0, .055, .39], [.030, .085, .028], [Math.PI / 2 + .34, 0, 0]),
+        ...both(side => S(0x141110, [side * .040, .105, .335], [.013, .014, .012])),
+      ]),
+      wing: geometry([
+        S(0x352e28, [.48, 0, .02], [.55, .028, .175]),
+        S(0x453c33, [1.06, -.005, -.05], [.50, .022, .125]),
+        S(0x211c19, [1.52, -.010, -.12], [.20, .017, .066]),
+      ]),
+    },
+
+    /**
      * **The Great White Sea-plunger**, the gannet-relative the fauna overview catalogues on "certain
      * rocky headlands and offshore islands - particularly along the Svaleen coast and the exposed
      * Legemum headlands", "whose vertical dives from height into the Iberos shoals are one of the more
@@ -978,6 +1025,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...OVES_WILDLIFE_ZONES,
   ...WEST_LOTHARN_WILDLIFE_ZONES,
   ...MITHALA_WILDLIFE_ZONES,
+  ...SOUTHWEST_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -1038,6 +1086,10 @@ const SOAR = Object.freeze({
   harrier: { slow: .55, rock: .20, dihedral: .38 },
   // A seabird on long narrow wings held flat and nearly still: it rides the wind off the sea.
   'sea-plunger': { slow: .5, rock: .08, dihedral: .05 },
+  // The bone-bird is heavier than anything else in this sky and holds its wings flatter and
+  // steadier for it: the least rock of any of them and almost no dihedral. A bird with two and a
+  // half metres of wing over a desert with no cover on it does not have to work at staying up.
+  'bone-bird': { slow: .22, rock: .07, dihedral: .11 },
 });
 const SOARERS = new Set(Object.keys(SOAR));
 
@@ -1265,9 +1317,9 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * keeps them from being chased to the horizon. The fox still never flees.
    */
   const FLEE_AT = { longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
-    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14, frostback: 9.5 };
+    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14, frostback: 9.5, 'bone-bird': 13 };
   const WALK = { longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
-    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5, frostback: .40 };
+    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5, frostback: .40, 'bone-bird': .5 };
   const RUN = { 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
     egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6 };
   /**
@@ -1292,7 +1344,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   const FOX = Object.freeze({ floor: 1, cap: 6.6, lead: 1.06, arm: 2.8, notice: 10 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
   const RETURN = { longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
-    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4, frostback: 1.4 };
+    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4, frostback: 1.4, 'bone-bird': 1.4 };
   const HOME = 16, SETTLED = 6;
   const BACK = [0, .35, -.35, .7, -.7], ALONG = [1.05, -1.05, 1.4, -1.4, 1.75, -1.75, 2.1, -2.1];
 

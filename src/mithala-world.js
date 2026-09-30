@@ -606,7 +606,14 @@ export const MITHALA_LANDMARKS = freeze([
     description: 'The lowest and wettest ground in the Mithala, where the threads of the main channel come back together for the run to the sea. Rank grass to the knee on silt that is still soft in August, backswamps on both sides that stand under water for weeks of every spring, and a gallery of willow and poplar two trees deep on the water.' }),
   freeze({ id: 'the-river-mouth', name: 'The River Mouth', ...besideLine(MITHALA_MAIN, .97, 26),
     description: 'Where the plain ends and the water goes. The channel widens, the levees flatten out, the grass turns to sand within forty paces, and the sea is there with nothing at all to announce it. Everything the Mithala grows that leaves the Mithala leaves past this point, in boats nobody here has built yet.' }),
-  freeze({ id: 'east-mithala-gallery', name: 'The Gallery', ...besideLine(MITHALA_MAIN, .62, 22),
+  // Thirty metres off the centre line and not twenty-two: at twenty-two the point stood on the
+  // levee crest, where the analytic ground rises a pace and a half over eighteen metres and the
+  // renderer's seven-metre grid cannot follow it, so the drawn triangle floated a metre over the
+  // ground a traveler walks on. It had been within a hand's breadth of the limit since this plain
+  // was built and went over it when the world grew west and every coarse-band vertex moved a
+  // little (docs/southwest-1-report.md). Thirty is off the crest and on the bank the gallery
+  // actually stands on, which is what this landmark was always about.
+  freeze({ id: 'east-mithala-gallery', name: 'The Gallery', ...besideLine(MITHALA_MAIN, .62, 30),
     description: 'The only wood on the plain: willow, black poplar and alder standing two and three trees deep along the channel banks, roots in water that freezes every winter and floods every spring, which is a combination very little else will tolerate. Seen from half a mile out on the grass it is a dark line with nothing behind it, and it is how you find the river.' }),
   freeze({ id: 'acorwood-horizon', name: 'The Acorwood Horizon', x: -1150, z: -1680,
     description: 'The north-eastern skyline, where the treeline thickens along the top of the plain until it is a forest. There is no wall, no cliff and no line: the Acorwood closes off the north of the continent and it does it by getting gradually nearer. The river communities have no reason that would outweigh the navigation, and do not go in.' }),

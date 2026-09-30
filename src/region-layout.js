@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -208,6 +208,25 @@ export const REGION_BIOMES = Object.freeze({
   'North Mithala': Object.freeze({ id: 'fen-margin', name: 'The northern Mithala', ground: '#6b8045', canopy: '#4a6640', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'sedge-grass', ownScatter: true,
     relief: { amplitude: .55, wavelength: 320 }, clearings: ['north-mithala-fen'],
     note: 'The plain going north until it stops being plain: tall grass on the dry shelf in the south, sedge and rush on the damp fall toward the Acor Wetlands, the north braid coming down out of that ground on two heads, and the Acorwood thickening along the northern horizon without a wall or a cliff to announce it.' }),
+  // The southwestern block (src/southwest-world.js, src/southwest-scenery.js): four countries in the
+  // driest quarter of the continent, and the first `BWh` - true hot desert - ground in Azhora.
+  // Eighty-one of their hundred and seven hexes read `BWh` on the World Builder map, against
+  // `BSh` eighteen times in West Pyros's eastern columns and `Csa`/`Csb` on the seven green hexes at
+  // the block's two wet corners. All four scatter their own country, because on this ground what
+  // grows is decided by how far a point is from water and how much fine sediment the wind has left
+  // it, and a single count per hex cannot say either.
+  Navarth: Object.freeze({ id: 'navarth-plateau', name: 'The Navarth plateau', ground: '#6f6449', canopy: '#576046', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: 1.1, wavelength: 320 }, clearings: ['navarth-crests'],
+    note: 'The block’s high ground: a worn tableland of pale stone and thin soil at forty-odd metres with ten hexes of rounded hills on it, the highest along the western rim above the Ganesh. Hot desert over twenty of its twenty-two hexes, with a bare scrub of wormwood and thorn spaced wide; the north-eastern tip is the exception, two `Csb` hexes where the Ibenwood’s southern edge reaches in and the one forest hex the atlas gives this quarter stands.' }),
+  'West Pyros': Object.freeze({ id: 'pyros-steppe', name: 'The West Pyros plain', ground: '#6c6944', canopy: '#546241', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'bunch-grass', ownScatter: true,
+    relief: { amplitude: .9, wavelength: 320 }, clearings: ['vaellir-gallery'],
+    note: 'An open plain falling south along the great river that is its whole eastern border: semi-arid bunch grass with bare earth between the tussocks over most of it, desert scrub on the western columns against Navarth, and a green southern tip where the river reaches the sea and the country turns Mediterranean for the last hex and a half. The gallery on the water is the only wood in the block outside Navarth’s one forest hex.' }),
+  'Ganesh Desert': Object.freeze({ id: 'ganesh-desert', name: 'The Ganesh', ground: '#776d54', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .9, wavelength: 320 }, clearings: ['ganesh-washes'],
+    note: 'Thirty-one hexes of true hot desert, every one of them `BWh`, falling north-west to a gulf shore it is arid right up to. Flat to gently rolling, the relief made by old alluvium and not by uplift; wind is the defining force, and what it leaves is a thin sheet of fine pale sediment over stone, swept bare on the rises and gathered in the pockets. Sparse deep-rooted perennial scrub, a stubble of dead annual seed-heads where a wet year’s flush would be, and two dry washes with nothing in them but one damp reach.' }),
+  'Ganesh Plain': Object.freeze({ id: 'ganesh-plain', name: 'The Ganesh Plain', ground: '#70684c', canopy: '#586341', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .85, wavelength: 320 }, clearings: ['ganesh-depressions'],
+    note: 'The transition ground between the desert and the green south-east, and it cannot decide which it is: level clay-floored country crossed by shallow drainage channels too diffuse to be rivers, with closed depressions strung along them where water concentrates and the grass lasts longest. Dry-year face, so the perennial bunch grass has contracted to the depressions and the open ground between them is scrub and bare clay; the south-eastern corner, one `Csa` hex and three `Csb`, is where Marosh’s country begins and is green.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

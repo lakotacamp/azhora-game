@@ -166,9 +166,14 @@ test('the world grows north, and it is the biggest structural change any region 
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   assert.ok(Math.abs(tall - 45.656) < .01, `north to south is ${tall.toFixed(3)} hexes`);
-  assert.ok(Math.abs(wide - 36.20) < .01, `east to west is ${wide.toFixed(2)} hexes, untouched`);
-  // The other three edges are exactly where they were: this block spends northing and nothing else.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -3010.001927939127) < 1e-6);
+  // East to west the plain took nothing, and the number below is no longer 36.20 because the four
+  // southwestern countries moved it afterwards: the Ganesh Desert took the western edge from
+  // -3010.002 to -3960.002 and the width from 36.20 hexes to 45.70. What this plain is held to is
+  // that it spent none of it, which is what its own box being inside -2400...-950 says.
+  assert.ok(Math.abs(wide - 45.70) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
+  // The other three edges are exactly where they were when this plain was built: it spends northing
+  // and nothing else. The western one has moved since, and not for anything on this plain.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6);
   assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6);
   // North Mithala alone spends it: row 82 against the East Lotharn's 92.
@@ -479,8 +484,15 @@ test('what lives here: nineteen ranges, one new rig, and none of it is anybodyâ€
 test('nobody lives here yet: no people, no road, no made place, and the chart says what is built', () => {
   for (const [index, name] of NAMES.entries()) {
     assert.equal(REGION_IDS[name], 28 + index, `${name} is ${28 + index}`);
-    assert.equal(PLAYABLE_REGIONS[PLAYABLE_REGIONS.length - 4 + index], name, 'appended, never inserted');
-    assert.equal(PLAYABLE[PLAYABLE.length - 4 + index], name, 'and in the survey in the same order');
+    // Appended, never inserted - the rule `world-regions.js`'s one seeded scatter stream depends on.
+    // It used to read `PLAYABLE_REGIONS.length - 4 + index`, which said "last four in the list" when
+    // it meant "after everything that was there before"; the four southwestern countries went on the
+    // end afterwards and it failed. This is the same assertion the West Lotharn builder had to
+    // rewrite in tests/oves-world.test.js and the Mithala builder in tests/west-lotharn-world.test.js.
+    const at = PLAYABLE_REGIONS.indexOf(name);
+    assert.equal(at, PLAYABLE_REGIONS.indexOf('South Mithala') + index, 'appended, never inserted');
+    for (const later of PLAYABLE_REGIONS.slice(at + 1)) assert.ok(REGION_IDS[later] > REGION_IDS[name], `${later} was inserted before ${name}`);
+    assert.equal(PLAYABLE.indexOf(name), PLAYABLE.indexOf('South Mithala') + index, 'and in the survey in the same order');
     const region = regions.find(one => one.name === name);
     assert.deepEqual(region.npcIds, []);
     assert.equal(WEST_REGION_NAMES.includes(name), true);

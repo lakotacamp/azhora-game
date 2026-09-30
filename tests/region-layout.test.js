@@ -125,10 +125,30 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * lattice (scripts/build-region-survey.mjs), which turned 329 claimed hexes in seventeen countries
    * from sea into land along the whole northern horizon.
    */
-  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 46 * METRES_PER_HEX, 'the playable regions fit a walkable world');
+  /*
+   * **The four southwestern countries spend nine hexes and a half east to west, which is more than
+   * anything has spent in that direction, and they state their case.** Nethereum set the western
+   * edge at its own north-western hex, -3010.002; the driest quarter of the continent runs on west
+   * of it past the unbuilt Ibenwood belt, and **the Ganesh Desert alone spends it**: its westernmost
+   * hexes are (-33,123) through (-33,126), whose outer flat stands at x = -3900, so the edge goes to
+   * **-3960.002** and the width from 36.20 hexes to **45.70** - measured, not estimated. Each one's
+   * own case: Navarth reaches x = -3600 and would have spent six hexes on its own; West Pyros
+   * reaches -3200 and the Ganesh Plain -3250, and neither would have spent anything the other three
+   * did not; **the Ganesh Desert alone spends the last three columns**. North to south they take
+   * nothing at all: the whole block lies between z = 837 and z = 1905, inside the box the East
+   * Lotharn, the Mithala plain and the two Ascarths already made. So the east-west guard goes to 46
+   * and no further, and its floor goes with it, and the world is now very nearly square: 45.70 by
+   * 45.656.
+   *
+   * The survey window moved with the world again: `WINDOW.minQ` from -33 to **-41**, measured off
+   * the coast lattice, which turned 71 claimed hexes in six countries from sea into land along the
+   * block's western horizon - Cape Heth 19, the Dinelv Highlands 14, South Ibenal 14, the West
+   * Meroshe Desert 13, Alezhor 7 and West Ibenwood 4. None of the 71 is the block's own.
+   */
+  assert.ok(bounds.maxX - bounds.minX < 46 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 46 * METRES_PER_HEX, 'the playable regions fit a walkable world');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
-  assert.ok(bounds.maxX - bounds.minX > 36 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxX - bounds.minX > 45.6 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
   assert.ok(bounds.maxZ - bounds.minZ > 45.6 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 

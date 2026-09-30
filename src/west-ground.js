@@ -29,6 +29,7 @@ import { westLotharnGround } from './west-lotharn-world.js';
 import { galaRise, galaWash } from './gala-world.js';
 import { ovesGround } from './oves-world.js';
 import { mithalaGround } from './mithala-world.js';
+import { southwestGround } from './southwest-world.js';
 import {
   WEST_RIVERS, WEST_POOLS, WEST_GROUND, VASTOS_SINTER, VASTOS_BRAID, VASTOS_RIVER,
   MENETH_RIDGES, menethRidgePhase, CARICAS_SHELF, WEST_BRAIDS, WEST_REGION_BOXES, inBox,
@@ -234,9 +235,9 @@ export const nethereumWet = (x, z) => clamp(nethereumHollow(x, z) / NETHEREUM_HO
  * corner is the one piece of the west that comes down to the sea, so the coast's slope is put
  * back there first (`lotharnCoast`).
  */
-const baseBeforeWater = (x, z) => mithalaGround(x, z, westLotharnGround(x, z, lotharnGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z)))
+const baseBeforeWater = (x, z) => southwestGround(x, z, mithalaGround(x, z, westLotharnGround(x, z, lotharnGround(x, z, westNaturalGround(x, z) + lotharnCoast(x, z)))
   + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z) + galaRise(x, z) - galaWash(x, z)
-  + ovesGround(x, z));
+  + ovesGround(x, z)));
 
 // ---------------------------------------------------------------------------
 // Standing water
@@ -427,14 +428,16 @@ export function westShaping(x, z) {
  * Gala's steppe shoulder and its dry wash with them for the same reason (src/gala-world.js),
  * and Ovesos's and the Oves Desert's landforms with those — the basin's tilt, the rim hills, the
  * broken stone, the Sorten's bench and four dry channels, in one term (`ovesGround`) —
+ * and the southwestern block's outermost of all (`southwestGround`), because its swale reshapes
+ * the ground the rest of them leave rather than adding to it, exactly as the Mithala's does —
  * channels last because a river cuts through whatever it finds.
  * `natural` is the region's own blended relief; everything here only reshapes it.
  */
 export function westGround(x, z, natural) {
   if (!westShaping(x, z)) return natural;
-  return channel(x, z, pooled(x, z, mithalaGround(x, z, westLotharnGround(x, z, lotharnGround(x, z, natural))
+  return channel(x, z, pooled(x, z, southwestGround(x, z, mithalaGround(x, z, westLotharnGround(x, z, lotharnGround(x, z, natural))
     + sinterRise(x, z) + menethRidge(x, z) + caricasShelf(x, z) - nethereumHollow(x, z) + galaRise(x, z) - galaWash(x, z)
-    + ovesGround(x, z))));
+    + ovesGround(x, z)))));
 }
 
 /** The western ground of a point on its own, for the scenery and the tests. */

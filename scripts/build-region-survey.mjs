@@ -18,7 +18,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
-  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'];
+  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -60,12 +61,32 @@ export const ENCLOSED_HEXES = Object.freeze({
  * Nether Desert behind it -3050, so without them the ground immediately west of
  * Nethereum would be open water.
  *
- * -33 is measured, not chosen: over the world bounds the six produce, the coast
+ * -33 was measured, not chosen: over the world bounds the six produce, the coast
  * lattice can sample a hex whose centre lies within COAST_MARGIN plus one hex
  * circumradius of the bounds, and the westernmost such hex on the whole atlas is
  * at q = -31. Two hexes of slack, and no more, because every hex in the window
  * is a line in a generated file.
-
+ *
+ * Then `minQ` was -33, and **the Ganesh Desert is the first playable country to
+ * reach it**: its westernmost hexes are (-33,123) through (-33,126), whose outer
+ * flat stands at x = -3900, so the world's western edge goes from -3010.002 to
+ * **-3960.002** and the world from 36.20 hexes wide to **45.70**. The coast
+ * lattice is laid COAST_MARGIN (96 m) beyond that and snapped to its own fixed
+ * phase, so its first column now stands at x = **-4056.002**. Sampling the whole
+ * lattice (1,192 x 1,191 points) and collecting every hex any sample falls in
+ * gives q **-41**...34, r 79...135 - measured rather than reasoned, the same rule
+ * maxR 135 and minR 79 were set by. The westernmost column the lattice reaches is
+ * q = -41 on rows 134-135, in the far south-west, because x = W(q + r/2) puts a
+ * low q and a high r at the same world x. So minQ is -41: the last column the
+ * lattice reaches, and no slack.
+ *
+ * That widening turns **71 claimed hexes in six countries** from sea into land -
+ * Cape Heth 19 (the whole of it), the Dinelv Highlands 14, South Ibenal 14, the
+ * West Meroshe Desert 13, Alezhor 7 and West Ibenwood 4. **None of them is the
+ * block's own**: all four southwestern countries already lay inside q >= -33.
+ * What the 71 are is the block's horizon, and the Ganesh Desert needs them: Cape
+ * Heth is its western neighbour across five hex edges, and without those hexes
+ * the desert would have looked out on open water where the atlas draws a cape.
  *
  * `minR` was 92, which is the East Lotharn's own northern row, and the East Lotharn is the first
  * playable country to reach it. Its northern edge then takes the world's bounds to its hexes'
@@ -102,7 +123,7 @@ export const ENCLOSED_HEXES = Object.freeze({
  * channel one hex wide - and with 133 they were all the sea: the tip would have looked out on open
  * water where the atlas draws Selemi's shore. So 135, the last row the lattice reaches, and no slack.
  */
-export const WINDOW = { minQ: -33, maxQ: 34, minR: 79, maxR: 135 };
+export const WINDOW = { minQ: -41, maxQ: 34, minR: 79, maxR: 135 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

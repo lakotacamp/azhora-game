@@ -42,7 +42,15 @@ export const RIVER_REGIONS = ['Pueth', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   // with them. Measured before they were added: no existing chain loses its key, changes a
   // single point, or gains a confluence - the nearest built water is the East Lotharn's border
   // water, and its two Lotharn-only pieces are 14 and 2 points before and after, to the digit.
-  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'];
+  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+  // The four southwestern countries, added together for the same reason again: the atlas draws
+  // twenty-eight edges on them in two chains, and both chains cross a country border - the
+  // northern water runs along Navarth's border with Alezhor and then along the Ganesh Desert's,
+  // and the Vaellir runs the whole of West Pyros's eastern border. Naming them one at a time
+  // would chop both into pieces at a border and then silently re-join them. Measured before they
+  // were added: no chain that already existed loses its key, changes a point or gains a
+  // confluence - the nearest built water is the Oveth, a thousand metres east of West Pyros.
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain'];
 const NEIGHBORS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const SIZES = new Set(['small', 'medium', 'large']);
 

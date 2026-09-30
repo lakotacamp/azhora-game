@@ -19,6 +19,7 @@ import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
 import { ovesTint } from './oves-world.js';
 import { mithalaTint } from './mithala-world.js';
+import { southwestTint } from './southwest-world.js';
 import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
@@ -286,10 +287,16 @@ export function groundTint(color, x, z, THREE) {
   // often it is under water. The levee crest, the open plain and the backswamp between two channels
   // are three different colours inside two hundred metres, and the northern fen margin a fourth
   // (`mithalaTint`, src/mithala-world.js).
+  // And in the southwestern block four more, because there what decides the colour is how dry the
+  // air is (a gradient across all four countries), whether the wind has swept the sediment off the
+  // stone (which changes over forty metres in the Ganesh), whether a point is in one of the Ganesh
+  // Plain's depressions, which is where all the grass on that plain is, and whether it is on the
+  // damp reach, which is the only green in the desert (`southwestTint`, src/southwest-world.js).
   const gala = inGalaBox(x, z) ? REGION_TERRAIN.Gala.ground : null;
   for (const [ground, weight] of Object.entries(mix.grounds ?? {})) {
     if (!weight) continue;
     const oves = ovesTint(x, z, ground), mithala = oves === null ? mithalaTint(x, z, ground) : null;
+    const southwest = oves === null && mithala === null ? southwestTint(x, z, ground) : null;
     if (ground === gala) swatch.set(galaGroundColour(x, z));
     else if (oves !== null) swatch.set(oves);
     else if (mithala !== null) swatch.set(mithala);

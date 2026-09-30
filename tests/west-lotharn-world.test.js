@@ -107,9 +107,15 @@ test('this country does not grow the world box, and the four north of it do', ()
   // **The four Mithala countries built next did grow it, north.** North Mithala reaches atlas row
   // 82 against this range's 95, so the world's northern edge went from -1301.17 to -2167.196 and
   // the world from 37.00 hexes tall to 45.66. Nothing this country stands on moved with it: the
-  // three edges it does not set are still the numbers they were, and the one it does - the western
-  // x, which Nethereum set - is untouched. So what this test now holds is the two facts together.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -3010.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
+  // three edges it does not set are still the numbers they were.
+  //
+  // **And the four southwestern countries built after those did grow it, west.** The Ganesh Desert
+  // reaches atlas column q -33 against this range's -8, its westernmost hexes' outer flat standing
+  // at x = -3900, so the world's western edge went from -3010.002 to -3960.002 and the world from
+  // 36.20 hexes wide to 45.70. This range stands at x -2550...-1550, a kilometre and a half inside
+  // it, and nothing of it moved for that either. So what this test now holds is the three facts
+  // together: this country spent nothing, the Mithala spent the north, the southwest spent the west.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 2398.401076758503) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);

@@ -1111,6 +1111,53 @@ export const LONG_VALLEY_WEST_BECK = river('long-valley-west-beck', 'The west be
 export const WEST_LOTHARN_WATERS = Object.freeze([KEMRATH_REACH, WEST_LOTHARN_NORTH_BECK, LONG_VALLEY_EAST_BECK, LONG_VALLEY_WEST_BECK]);
 
 // ---------------------------------------------------------------------------
+// The southwest: the Vaellir and the Alezhor water, and they are the only water in a desert
+// ---------------------------------------------------------------------------
+/**
+ * **Two courses over a hundred and seven hexes, both of them on a border, and both of them
+ * reaching the sea.** The atlas draws twenty-eight river edges on the four southwestern countries
+ * and not one of them is inside any of them: everything this quarter has runs along its edge, which
+ * is what a desert's water does - it is somebody else's rain passing through.
+ *
+ *  - **The Vaellir**, twenty edges down the whole of West Pyros's eastern border, growing from
+ *    `small` at its head through `medium` to **`large`** at its mouth. The atlas draws `large`
+ *    three times in the whole world: through Caricas and Eer, which is the Lizeem, and here. So
+ *    this is the second great river in the game, and after the Lizeem the largest water in it.
+ *  - **The Alezhor water**, eight `small` edges running west-south-west along Navarth's northern
+ *    border and then the Ganesh Desert's north-eastern one, out of the wet `Csb` grassland of
+ *    Alezhor and down to the gulf. It is an exogenous river - it rises in green country and
+ *    crosses a desert without gaining anything - and it is the only running water the Ganesh
+ *    Desert ever sees.
+ *
+ * **The names.** `world-builder/azhoran_language_profiles.py` *does* have a `pyrosi` profile - the
+ * first country in the west whose people's tongue is in it - and `src/languages.js` carries it with
+ * its lexicon, in which `vaellir` is simply the word for "river". So the great river of West Pyros
+ * is **the Vaellir**, which is the Pyrosi for the river, the way an Avon is a river: nothing is
+ * coined, the tongue's own word is used. The other is named for the country it comes out of, which
+ * is what `MITHALA_CELDER_WATER` did one quarter of the continent away. The Ganesh's own name is
+ * left alone entirely: `ganesh_desert.md` is emphatic that it is pre-Moreshi and that "whoever
+ * named this desert named it in a way that no current language on the peninsula can explain".
+ *
+ * **The Vaellir is a wall below its first quarter**, which is the house rule for a big river (the
+ * Lizeem is `fordUntil: 0` and the Isa and the Carica are walled below their gravel heads). Its
+ * five `small` edges at the head are waded over gravel; from the first `medium` edge down there is
+ * no way across it on foot, and there is nothing to cross to, because East Pyros is not built.
+ */
+export const VAELLIR = river('vaellir', 'The Vaellir', shoreward(atlasCourse('East Pyros,West Pyros')),
+  { halfWidth: 3, halfWidthEnd: 14, cut: 1.5, cutEnd: 3.1, bed: 1.6, fordUntil: .24 });
+/**
+ * The Alezhor water, out of the green country on the north and away west to the gulf. Small on the
+ * atlas over all eight of its edges and small here: two metres of water either side at the head and
+ * three at the mouth, waded anywhere along it, which is the only reason the Ganesh Desert and
+ * Navarth are connected to each other at all round the north.
+ */
+export const ALEZHOR_WATER = river('alezhor-water', 'The Alezhor Water',
+  shoreward(atlasCourse('Alezhor,Ganesh Desert,Navarth')),
+  { halfWidth: 2, halfWidthEnd: 3.2, cut: 1, cutEnd: 1.35, bed: .5 });
+/** Every course of the southwestern block. */
+export const SOUTHWEST_RIVERS = Object.freeze([VAELLIR, ALEZHOR_WATER]);
+
+// ---------------------------------------------------------------------------
 // Every piece of western water, and the questions the rest of the game asks of it
 // ---------------------------------------------------------------------------
 /**
@@ -1121,7 +1168,7 @@ export const WEST_LOTHARN_WATERS = Object.freeze([KEMRATH_REACH, WEST_LOTHARN_NO
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS, ...MITHALA_RIVERS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS, ...MITHALA_RIVERS, ...SOUTHWEST_RIVERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -1130,7 +1177,8 @@ export const WEST_POOLS = Object.freeze([
 
 /** The regions this module shapes, in the order they were built. */
 export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains',
-  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala']);
+  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

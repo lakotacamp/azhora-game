@@ -224,6 +224,8 @@ import { inLotharnBox } from './east-lotharn-world.js';
 import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY as WEST_LONG_VALLEY, NORTH_VALLEY as WEST_NORTH_VALLEY, NOTCH as WEST_LOTHARN_NOTCH, COL as WEST_LOTHARN_COL, pointOn as westLotharnPointOn } from './west-lotharn-world.js';
 import { MITHALA_SUMMER_CHANNELS as MITHALA_SUMMER, MITHALA_LANDMARKS as MITHALA_MARKS } from './mithala-world.js';
 import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BRAID, MITHALA_WEST_ARM as MITHALA_ARM } from './west-regions.js';
+import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS } from './southwest-world.js';
+import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -2025,6 +2027,43 @@ function init() {
       // The north braid coming down off the shelf, from its own bank.
       if(view==='mithala-braid'){const a=along(MITHALA_BRAID,.58),b=along(MITHALA_BRAID,.80);
         return shot(beside(a,26),{x:b.x,z:b.z},.05,3);}
+    }
+    // The southwestern block. Worked out from the country's own numbers - the Vaellir's own sample
+    // line, the washes' and the depressions' own points, and the landmarks - so a view cannot drift
+    // off the thing it shows when a course or a landform moves.
+    if(view.startsWith('southwest-')){
+      const along=(course,t)=>{const s=course.samples,i=Math.max(0,Math.min(s.length-1,Math.round((s.length-1)*t)));return s[i];};
+      const beside=(sample,out)=>({x:sample.x+sample.nx*out,z:sample.z+sample.nz*out});
+      const mark=id=>SOUTHWEST_MARKS.find(one=>one.id===id);
+      // The Ganesh: standing on the desert floor looking west along the wind grain at nothing at all.
+      if(view==='southwest-ganesh'){const m=mark('ganesh-floor');
+        return shot({x:m.x+60,z:m.z+40},{x:m.x-420,z:m.z-120},.02,5);}
+      // The western rim of the Navarth plateau, from the desert below it: thirty metres of fall and
+      // then a horizon with nothing on it.
+      if(view==='southwest-rim'){const m=mark('navarth-west-rim');
+        return shot({x:m.x-230,z:m.z+120},{x:m.x,z:m.z},.06,8);}
+      // The plateau itself, from one swell looking across the sweeps to the next.
+      if(view==='southwest-plateau'){const a=SOUTHWEST_CRESTS[5],b=SOUTHWEST_CRESTS[6];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.04,4);}
+      // The Vaellir from its own bank, below the ford, where it is a wall of deep water. Two tries
+      // were wrong and both are the same mistake: at +34 the camera stood in the middle of the
+      // river, and at -62 it stood in East Pyros, which is not built and takes the default sky. The
+      // West Pyros bank is the **positive** side of this course's normal, measured; the camera
+      // stands sixty metres back on it and looks across.
+      if(view==='southwest-vaellir'){const a=along(SOUTHWEST_VAELLIR,.55);
+        return shot(beside(a,62),beside(a,-26),.06,4);}
+      // The gallery from out on the plain: the dark line with nothing behind it that finds the river.
+      if(view==='southwest-gallery'){const a=along(SOUTHWEST_VAELLIR,.62);
+        return shot(beside(a,175),{x:a.x,z:a.z},.05,10);}
+      // A wash: a cut bed with nothing in it, walked down the middle out of the wind.
+      if(view==='southwest-wash'){const w=SOUTHWEST_WASHES[1],a=w.line[1],b=w.line[3];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.06,1.4);}
+      // A depression on the Ganesh Plain, from the bare clay outside it: the only green there is.
+      if(view==='southwest-depression'){const pan=SOUTHWEST_PANS[2];
+        return shot({x:pan.x+pan.radius+90,z:pan.z+40},{x:pan.x,z:pan.z},.05,2.5);}
+      // The gulf shore: a desert running out at the sea.
+      if(view==='southwest-shore'){const m=mark('ganesh-shore');
+        return shot({x:m.x+150,z:m.z+90},{x:m.x-90,z:m.z-60},.04,4);}
     }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
@@ -10084,7 +10123,7 @@ function init() {
         // are worked out by the same function. The spots come from the regions' own numbers
         // rather than typed in, so a view cannot drift off the thing it is meant to show
         // when the ground under it is adjusted.
-        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')){
+        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')||view.startsWith('southwest-')){
           questStage=QUEST_DONE;combat.finishPractice();player.setArmed(true);
           const spot=westReviewSpot(view);
           if(spot){
