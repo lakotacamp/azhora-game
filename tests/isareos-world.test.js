@@ -98,11 +98,15 @@ test('Isareos is the country that spent most of the hex budget', () => {
   assert.ok(WORLD_BOUNDS.minX < -2900, `the world's western edge is ${WORLD_BOUNDS.minX.toFixed(0)}`);
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  // And the southwestern block took it from 36.20 to 45.70 by reaching west past the unbuilt
+  // And Cape Heth took it from 45.70 to 49.70 by reaching four hundred metres further west than the
+  // Ganesh Desert: its one `coast` hex, (-39,127), stands at x = -4250 against the desert's -3850,
+  // because x = W(q + r/2) and its rows are four higher. Job 2's report predicted job 3 would not move
+  // the box; it predicted correctly about the *window* and the box is a different thing.
+  // Before that, the southwestern block took it from 36.20 to 45.70 by reaching west past the unbuilt
   // Ibenwood belt, which is the Ganesh Desert's westernmost hexes at x = -3900 (their outer flat)
   // and the world's edge at -3960.002. Isareos's own rim at -2850 is nine hundred metres inside it
   // now; what this test is about is that nothing here moved when the edge did.
-  assert.ok(wide > 45.6 && wide < 46, `the world is ${wide.toFixed(2)} hexes wide`);
+  assert.ok(wide > 49.6 && wide < 50, `the world is ${wide.toFixed(2)} hexes wide`);
   // North to south was 30.93 hexes, set by West Izol and Amod, and nothing here touched it; the
   // East Lotharn took it to 35.26 by reaching north to the Mithala border, the Ascarth Peninsula
   // to 37.00 (36.996) by reaching south past West Izol to its tip, and the four Mithala countries

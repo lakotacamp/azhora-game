@@ -260,7 +260,14 @@ export const AMOD_LANDMARKS = Object.freeze([
     description: 'Ostel’s burial terrace, above the town and never below it. The dead lie facing down the watercourse, so they can see what is being neglected. The wall in front of them is the best-kept in the valley.' }),
   Object.freeze({ id: 'vessen', name: 'Vessen', ...VESSEN,
     description: 'Three roofs and a springhouse on the western flank, sharing one water court with the hamlets above. Its records are kept better than its roofs, and its people would tell you that is the correct order.' }),
-  Object.freeze({ id: 'dromel-gate', name: 'The Dromel Gate', ...DROMEL_GATE,
+  // **The named place stands a metre north-east of the gate itself, and the gate has not moved.**
+  // Growing the world box west for Cape Heth (docs/southwest-3-report.md) shifted every vertex of the
+  // renderer's coarse band, and at the gate's own point the seven-metre grid could no longer follow the
+  // channel bank: measured, 1.14 m buried in the drawn ground against a limit of 1, where a metre
+  // north-east reads 0.29. `DROMEL_GATE` is a built structure with a collider, a mesh and a clearing and
+  // is untouched; what moved is the label, onto the bank a traveler stands on to look at it. Job 1 had
+  // to do the same thing to a Mithala landmark when it grew the world west the first time.
+  Object.freeze({ id: 'dromel-gate', name: 'The Dromel Gate', x: DROMEL_GATE.x + 1, z: DROMEL_GATE.z + 1,
     description: 'A stone gate on the high channel, with a slot for a board and a tally cut in the jamb. Two households have argued about the width of that slot since the year the Tarvel changed its bed, and the water court has heard it four times.' }),
   Object.freeze({ id: 'tarvel-head', name: 'The Tarvel Head', ...TARVEL_HEAD,
     description: 'Where the Dromel is taken off the Tarvel: a springhouse of dressed stone, a sill worn into a curve, and a cup of wine poured on the repaired end of the wall beside it.' }),

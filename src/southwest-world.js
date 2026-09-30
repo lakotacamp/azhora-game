@@ -72,7 +72,24 @@ const lerp = (a, b, t) => a + (b - a) * t;
  */
 export const SOUTHWEST_NORTH_REGIONS = freeze(['Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain']);
 export const MEROSHE_REGIONS = freeze(['North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert']);
-export const SOUTHWEST_REGIONS = freeze([...SOUTHWEST_NORTH_REGIONS, ...MEROSHE_REGIONS]);
+/**
+ * **The block's western edge, and the three countries that are each a first.** Job 3's three are kept
+ * as their own list for the same reason the Meroshe's four are: their landforms are theirs. A cape
+ * does not have a fan skirt and a plateau does not have a dune.
+ *
+ *  - **Cape Heth** holds the only `coast` hex any country on the atlas holds. Of the 1,332 `coast`
+ *    hexes the map paints round the continent, 1,331 are unclaimed shoreline and one, (-39,127), falls
+ *    inside somebody's outline: the point of this cape.
+ *  - **The Dinelv Highlands** are the only desert highland - `BWh` on all thirty-five hexes with
+ *    twenty-six `hills`, six `plains` and three `mountain`, and those three are the *only* hot-desert
+ *    `mountain` hexes on the whole map. The Lotharns are humid and the Meroshe is flat; this is
+ *    neither.
+ *  - **Hama** is the wet edge of the desert: nine `Csb` hexes against ten `BWh`, and the atlas draws
+ *    the same line twice, once with the terrain word and once with the climate code, with no hex where
+ *    the two disagree.
+ */
+export const WEST_EDGE_REGIONS = freeze(['Cape Heth', 'Dinelv Highlands', 'Hama']);
+export const SOUTHWEST_REGIONS = freeze([...SOUTHWEST_NORTH_REGIONS, ...MEROSHE_REGIONS, ...WEST_EDGE_REGIONS]);
 
 // ---------------------------------------------------------------------------
 // The climate, which for once is a gradient
@@ -189,9 +206,72 @@ export const SOUTH_MEROSHE_CLIMATE = freeze({
 export const MEROSHE_CLIMATE = freeze({
   ...NORTH_MEROSHE_CLIMATE, ...WEST_MEROSHE_CLIMATE, ...CENTRAL_MEROSHE_CLIMATE, ...SOUTH_MEROSHE_CLIMATE,
 });
+/**
+ * **Cape Heth: eighteen `BWh` hexes and one `Cfb`, and the `Cfb` is the sea's and not the air's.**
+ *
+ * The one odd hex is (-39,127), the point of the cape, and it is the only hex in the block whose
+ * terrain word is `coast`. Its climate reads `Cfb`, which everywhere else in Azhora is oceanic
+ * temperate - and taking it at face value would put a wet green headland on the tip of a desert cape.
+ * It was measured before it was believed: **all 1,332 of the atlas's `coast` hexes read `Cfb`, and
+ * 13,619 of its 13,622 `ocean` hexes read `Cfb` too.** So `Cfb` on a shoreline hex is the code the map
+ * paints on water, the way `azhora.cmap.json` says `Cfb` for almost everything (job 1's finding), and
+ * it says nothing whatever about the air over this cape. `CLIMATE_CENTRES` therefore gives this one hex
+ * the desert's own dryness and records the map's word unchanged, and
+ * `tests/southwest-world.test.js` holds both halves of that.
+ */
+export const CAPE_HETH_CLIMATE = freeze({
+  '-35,125': 'BWh', '-34,125': 'BWh',
+  '-38,126': 'BWh', '-37,126': 'BWh', '-36,126': 'BWh', '-35,126': 'BWh', '-34,126': 'BWh',
+  '-39,127': 'Cfb', '-38,127': 'BWh', '-37,127': 'BWh', '-36,127': 'BWh', '-35,127': 'BWh', '-34,127': 'BWh',
+  '-38,128': 'BWh', '-37,128': 'BWh', '-36,128': 'BWh', '-35,128': 'BWh',
+  '-37,129': 'BWh', '-36,129': 'BWh',
+});
+/**
+ * **The Dinelv Highlands: thirty-five hexes, one code, and every one of them hot.** `BWh` on the
+ * `plains` in the basins, on the `hills` of the rolling upland and on all three `mountain` hexes,
+ * which is the fact that decides how high those three can be: a summit high enough to be a mountain
+ * in the Lotharn sense would read `ET` or `Dfc` at its top, and the map's author wrote `BWh`. Across
+ * the whole atlas `mountain` reads `BWh` exactly three times, and these are the three.
+ *
+ * The lore agrees and is worth quoting, because it is the only place in the archive that describes a
+ * desert upland: "The surface is arid - rainfall at the plateau elevation is somewhat higher than on
+ * the coast directly below, but not substantially, and the thin soils and rocky substrate do not
+ * retain what moisture falls."
+ */
+export const DINELV_CLIMATE = freeze({
+  '-31,126': 'BWh', '-30,126': 'BWh', '-29,126': 'BWh',
+  '-33,127': 'BWh', '-32,127': 'BWh', '-31,127': 'BWh', '-30,127': 'BWh', '-29,127': 'BWh',
+  '-34,128': 'BWh', '-33,128': 'BWh', '-32,128': 'BWh', '-31,128': 'BWh', '-30,128': 'BWh', '-29,128': 'BWh',
+  '-35,129': 'BWh', '-34,129': 'BWh', '-33,129': 'BWh', '-32,129': 'BWh', '-31,129': 'BWh', '-30,129': 'BWh',
+  '-37,130': 'BWh', '-36,130': 'BWh', '-35,130': 'BWh', '-34,130': 'BWh', '-33,130': 'BWh', '-32,130': 'BWh', '-31,130': 'BWh',
+  '-37,131': 'BWh', '-36,131': 'BWh', '-35,131': 'BWh', '-34,131': 'BWh', '-33,131': 'BWh',
+  '-37,132': 'BWh', '-36,132': 'BWh', '-35,132': 'BWh',
+});
+/**
+ * **Hama: nine `Csb` and ten `BWh`, and the terrain field draws the same line.** Every one of the nine
+ * `grassland` hexes reads `Csb` and every one of the ten `plains` hexes reads `BWh`, with no hex
+ * anywhere in the country where the two fields disagree. **That agreement is the most valuable single
+ * fact in job 3**: it means the wet/dry line here is something the atlas states twice rather than
+ * something a build has to interpolate, and it is the only country in the block where the two fields
+ * agree over the whole of it. (Job 1 found the same agreement on its three odd hexes and made features
+ * of all three; this is the same thing across nineteen.)
+ *
+ * The green is on the seaward side - the atlas gives Hama nineteen hex edges of ocean, west and south -
+ * and the dry is inland toward the Meroshe, which is exactly what `hama.md` says the geography is: "the
+ * western face is open-ocean coast, exposed to the weather patterns that originate in the far west and
+ * arrive at the peninsula having crossed considerable water."
+ */
+export const HAMA_CLIMATE = freeze({
+  '-36,137': 'Csb', '-35,137': 'BWh', '-34,137': 'BWh',
+  '-37,138': 'Csb', '-36,138': 'Csb', '-35,138': 'BWh', '-34,138': 'BWh', '-33,138': 'BWh', '-32,138': 'BWh',
+  '-36,139': 'Csb', '-35,139': 'Csb', '-34,139': 'BWh', '-33,139': 'BWh', '-32,139': 'BWh',
+  '-35,140': 'Csb', '-34,140': 'Csb', '-33,140': 'BWh',
+  '-34,141': 'Csb', '-33,141': 'Csb',
+});
+export const WEST_EDGE_CLIMATE = freeze({ ...CAPE_HETH_CLIMATE, ...DINELV_CLIMATE, ...HAMA_CLIMATE });
 export const SOUTHWEST_CLIMATE = freeze({
   ...NAVARTH_CLIMATE, ...WEST_PYROS_CLIMATE, ...GANESH_DESERT_CLIMATE, ...GANESH_PLAIN_CLIMATE,
-  ...MEROSHE_CLIMATE,
+  ...MEROSHE_CLIMATE, ...WEST_EDGE_CLIMATE,
 });
 /**
  * How dry a hex's code is, on one scale: 1 is hot desert, 0 is the Mediterranean corner. The two
@@ -200,10 +280,20 @@ export const SOUTHWEST_CLIMATE = freeze({
  * southern sea.
  */
 export const ARIDITY = freeze({ BWh: 1, BSh: .58, Csa: .18, Csb: .08 });
+/**
+ * **A `coast` hex's code is the water's and not the air's, so it takes the desert's dryness.** The map
+ * paints `Cfb` on all 1,332 of its `coast` hexes and on 13,619 of its 13,622 `ocean` ones, so the one
+ * `Cfb` in this block - Cape Heth's point, (-39,127) - is the shoreline's default and not a wet hex.
+ * Left to `ARIDITY[code] ?? 1` it would have fallen through to 1 by accident and looked right for the
+ * wrong reason, which is the failure mode job 2's `groundTint` bug taught this block to distrust: it is
+ * stated here instead, and the test asserts the point of the cape is as arid as the rest of it.
+ */
+export const COAST_HEX_DRY = 1;
 const CLIMATE_CENTRES = freeze(Object.entries(SOUTHWEST_CLIMATE).map(([key, code]) => {
   const [q, r] = key.split(',').map(Number);
   const cell = SOUTHWEST_REGIONS.flatMap(name => REGION_CELLS[name] ?? []).find(c => c.q === q && c.r === r);
-  return freeze({ q, r, code, dry: ARIDITY[code] ?? 1, x: cell?.x ?? 0, z: cell?.z ?? 0 });
+  const dry = cell?.terrain === 'coast' ? COAST_HEX_DRY : (ARIDITY[code] ?? 1);
+  return freeze({ q, r, code, dry, x: cell?.x ?? 0, z: cell?.z ?? 0 });
 }));
 /**
  * The climate as a field rather than as a hex list, blended on the same falloff the ground's own
@@ -308,6 +398,16 @@ export function merosheShare(x, z, mix = null) {
   const weights = (mix ?? terrainMix(x, z)).weights;
   let own = 0;
   for (const name of MEROSHE_REGIONS) own += weights[name] ?? 0;
+  return smooth(.22, .70, own);
+}
+
+/** The three countries of the western edge together, for the tint and for the things that cross them. */
+export const WEST_EDGE_BOX = boxOf(WEST_EDGE_REGIONS);
+export function westEdgeShare(x, z, mix = null) {
+  if (!inBox(WEST_EDGE_BOX, x, z)) return 0;
+  const weights = (mix ?? terrainMix(x, z)).weights;
+  let own = 0;
+  for (const name of WEST_EDGE_REGIONS) own += weights[name] ?? 0;
   return smooth(.22, .70, own);
 }
 
@@ -937,6 +1037,548 @@ export function merosheVarnish(x, z, mix = null) {
 }
 
 // ---------------------------------------------------------------------------
+// Cape Heth: one low ridge decides everything on it
+// ---------------------------------------------------------------------------
+/**
+ * **The cape the lore is careful to say is not dramatic.** "It is not a dramatic geographical feature
+ * in the mode of high cliff headlands or bold rocky outcrops; it is a low, extended point of land that
+ * juts far enough west to matter as a navigational landmark" - and the atlas agrees, `plains` on
+ * eighteen of nineteen hexes and nothing that could carry a cliff. So this country gets **one landform
+ * and two consequences of it**, and both are the lore's own sentences.
+ *
+ * The landform is **the spine**: "buildings in the lee of the cape's slight ridge". It runs the length
+ * of the cape, east and a little south from the point, and it is *slight* - six metres at its highest
+ * and nothing at either end - because six metres is what a low sedimentary point has. What it does is
+ * split the cape in two, which is the whole of the lore's geography here:
+ *
+ *  - **"The cape's western face is the maritime face - the side that ships at sea see, the side that
+ *    weather hits first."** The seaward third and the ridge's own south-west flank are swept: bare
+ *    grey-brown sandstone, gravel, salt, and lichen, and nothing that roots. The lore measures storms
+ *    on this cape by how far up it the salt water got.
+ *  - **"The eastern, landward side of the cape is more sheltered... gardens on the soil that has
+ *    accumulated in the drainage hollows."** So the lee flank carries `HETH_HOLLOWS`, five shallow
+ *    closed hollows a metre or two deep, which hold every scrap of soil the cape has. There are no
+ *    gardens in them: a garden is a work.
+ *
+ * The cross-section is asymmetric on purpose - the fall is short and steep on the weather side and long
+ * and slack on the lee - because that is what a ridge with a prevailing wind on one side of it becomes,
+ * and it is the only reason the lee is a lee.
+ */
+export const HETH_SPINE = freeze({
+  from: point(-4215, 1845), to: point(-3810, 1892), lift: 6,
+  weather: 62,          // the short steep fall on the south-western side
+  lee: 128,             // the long slack fall on the north-eastern side
+  head: .10, tail: .74, // nothing at the point, and gone before the escarpment foot takes over
+});
+const hethAxis = (() => {
+  const dx = HETH_SPINE.to.x - HETH_SPINE.from.x, dz = HETH_SPINE.to.z - HETH_SPINE.from.z;
+  const length = Math.hypot(dx, dz);
+  return freeze({ ax: dx / length, az: dz / length, nx: -dz / length, nz: dx / length, length });
+})();
+/** How far along the cape a point is (0 at the point, 1 at the landward end) and how far off the spine. */
+export function hethSpineAt(x, z) {
+  const dx = x - HETH_SPINE.from.x, dz = z - HETH_SPINE.from.z;
+  const along = (dx * hethAxis.ax + dz * hethAxis.az) / hethAxis.length;
+  const across = dx * hethAxis.nx + dz * hethAxis.nz;   // positive on the north-eastern, lee side
+  return { along, across };
+}
+export function hethSpine(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const { along, across } = hethSpineAt(x, z);
+  const ends = smooth(-.04, HETH_SPINE.head, along) * (1 - smooth(HETH_SPINE.tail, 1.04, along));
+  if (ends <= 0) return 0;
+  const reach = across >= 0 ? HETH_SPINE.lee : HETH_SPINE.weather;
+  return HETH_SPINE.lift * ends * (1 - smooth(0, reach, Math.abs(across))) * own;
+}
+/**
+ * **The drainage hollows on the lee flank**, which are the only ground on this cape with soil in it -
+ * "gardens on the soil that has accumulated in the drainage hollows". Shallow, closed and small; a
+ * metre and a half is as much as a cape six metres high can cut.
+ */
+export const HETH_HOLLOWS = freeze([
+  // The seaward-most hollow, and it is as far out as a hollow can be and still be in the lee: at
+  // (-4145,1895) the spray field reads 0.91 and nothing roots at all, which is the weather face and not
+  // a hollow. Measured, this is where it drops under two thirds.
+  freeze({ id: 'point-hollow', x: -4104, z: 1912, depth: 1.3, radius: 44 }),
+  freeze({ id: 'west-hollow', x: -4060, z: 1918, depth: 1.8, radius: 56 }),
+  freeze({ id: 'mid-hollow', x: -3975, z: 1930, depth: 1.6, radius: 52 }),
+  freeze({ id: 'north-hollow', x: -4020, z: 1798, depth: 1.4, radius: 46 }),
+  freeze({ id: 'lee-hollow', x: -3890, z: 1936, depth: 1.5, radius: 50 }),
+]);
+/** 1 in the middle of a hollow, 0 on the open cape: what the scatter and the tint read for soil. */
+export function inHethHollow(x, z) {
+  let best = 0;
+  for (const hollow of HETH_HOLLOWS) {
+    const d = Math.hypot(x - hollow.x, z - hollow.z);
+    if (d >= hollow.radius) continue;
+    best = Math.max(best, 1 - smooth(0, 1, d / hollow.radius));
+  }
+  return best;
+}
+export function hethHollows(x, z, own = 0) {
+  if (own <= 0) return 0;
+  let cut = 0;
+  for (const hollow of HETH_HOLLOWS) {
+    const d = Math.hypot(x - hollow.x, z - hollow.z);
+    if (d >= hollow.radius) continue;
+    cut = Math.max(cut, hollow.depth * (1 - smooth(0, 1, d / hollow.radius)));
+  }
+  return -cut * own;
+}
+/**
+ * **How hard the sea gets at a point**: 1 on the weather face - the seaward third of the cape and the
+ * ridge's south-western flank, near the water - and 0 in the lee hollows at the landward end. It is
+ * read off two things the lore puts together, the westerly exposure and the distance from the surf, and
+ * the scatter, the tint and the wildlife all sort by it. Nothing roots where this is above about .7.
+ */
+export function hethSpray(x, z) {
+  const own = regionShare('Cape Heth', x, z);
+  if (own <= 0) return 0;
+  const { along, across } = hethSpineAt(x, z);
+  const seaward = 1 - smooth(.06, .70, along);            // the point end takes it worst
+  const face = across >= 0 ? 1 - smooth(0, 90, across) : 1;
+  const near = 1 - smooth(8, 86, landDistance(x, z));
+  return clamp(near * (.30 + .70 * Math.max(seaward, face * .72)), 0, 1) * own;
+}
+
+// ---------------------------------------------------------------------------
+// The Dinelv Highlands: the first desert highland, and the bedding is the point
+// ---------------------------------------------------------------------------
+/**
+ * **Thirty-five hexes of hot desert standing eighty metres over everything round them.** The game has
+ * built humid mountains (both Lotharns, both Ascarth hills, Feradom's barrier) and flat desert (the
+ * Ganesh, the four Meroshe quarters) and has never built the two together. The lore's account is
+ * short and every sentence of it is a landform:
+ *
+ *  1. "rises sharply from the coastal strip through **a series of stepped escarpments**";
+ *  2. "**exposed sedimentary rock cut by seasonal water channels**, with the older geological layers
+ *     visible in the cliff faces as **horizontal bands** of different character. The lower bands are
+ *     the warm-toned desert stone that the Dinelv construction trade prizes; the upper bands shift to a
+ *     harder, darker stone";
+ *  3. "the plateau opens into **a rolling upland** that extends twenty to forty miles inland";
+ *  4. "**a series of ridge systems crosses it from roughly north to south**, aligned with the
+ *     peninsula's long axis. These ridges create **the passes**";
+ *  5. "the thin soils and rocky substrate do not retain what moisture falls... **deeper-rooted plants
+ *     occupying the water-concentration points**".
+ *
+ * So: `DINELV_BANDS` is the bedding, `DINELV_RIDGES` the ridge systems with their gaps,
+ * `DINELV_MESAS` the three `mountain` hexes, `DINELV_BASINS` the six `plains` hexes as the
+ * water-concentration points, `DINELV_CHANNELS` the seasonal channels down the face, and
+ * `DINELV_ASCENT` the one graded way up. Everything the lore is actually *about* - the city below, the
+ * plateau road, the garrisons at the passes, their cisterns, the quarries, the Plateau Watch, the
+ * pastoral communities and their herds - belongs to somebody and none of it is built.
+ *
+ * **The escarpment is not authored at all**, and that is worth saying: `hills` at base 96 against the
+ * Ganesh Desert's 20, Cape Heth's 13 and the West Meroshe's 14 makes the hex blend do the whole of it,
+ * which is the West Lotharn's rule - "that fall belongs to the hex blend and is measured rather than
+ * being hidden by a lower base, because a mountain front is what the atlas draws here". What is authored
+ * is what the face is *made of*: the bands, the channels and the one way up.
+ */
+
+/**
+ * **The bedding, and it is a function of height and nothing else.** A sedimentary bed is horizontal, so
+ * a term that depends only on `h` is horizontal by construction: it needs no bearing, no line and no
+ * anchor, it cannot be laid crooked, and it draws a stack of benches and risers up every steep face in
+ * the country while leaving flat ground nothing but a smooth offset. That is the whole trick and it is
+ * the cheapest landform in the block.
+ *
+ * `h + A sin(2 pi h / period)` is monotone in `h` as long as `A < period / 2 pi`, so the surface stays
+ * single-valued and nothing overhangs: at period 16 and amplitude 1.9 the slope is multiplied by
+ * between 0.25 and 1.75 (the first pass ran at 15 and 1.1 and the courses did not show on the mesa
+ * flanks at all in the review render), which turns an even fall into treads a traveler can stand on and risers they
+ * cannot, without changing the total fall by a centimetre. On the plateau itself, where the ground
+ * wanders three metres over three hundred, it adds a set of low contour-parallel benches, which is what
+ * a stripped bedded surface in a desert actually looks like.
+ *
+ * The tint reads the same term (`SOUTHWEST_GROUND.warmStone` low, `hardStone` high), because the lore
+ * says the bands differ in character as well as in height and names both stones.
+ */
+export const DINELV_BANDS = freeze({ period: 16, amp: 1.9, from: 8, to: 205, feather: 11 });
+export function dinelvBands(height, own = 0) {
+  if (own <= 0) return 0;
+  const b = DINELV_BANDS;
+  const gate = smooth(b.from - b.feather, b.from + b.feather, height) * (1 - smooth(b.to - b.feather, b.to + b.feather, height));
+  if (gate <= 0) return 0;
+  return b.amp * Math.sin(height * 6.2831853 / b.period) * gate * own;
+}
+
+/**
+ * **The ridge systems, on the peninsula's own axis.** The lore says the ridges run "from roughly north
+ * to south, aligned with the peninsula's long axis", and those are two claims; on the atlas they are
+ * nearly but not quite the same claim, so the atlas wins and the lore's "roughly" carries it. Measured
+ * off this country's own hexes, the row centres walk from x = -3400 at row 126 to x = -3700 at row 132,
+ * which is a long axis running **north-north-east to south-south-west at about thirty degrees west of
+ * south**. The ridges are laid on that bearing, in a frame of its own: `a` along the strike and `c`
+ * across it, so a ridge is one number and a length.
+ *
+ * Job 2 took the same sentence for the hamada's benches one hex-row south and built them due north and
+ * south. The thirty degrees between them is inside the lore's "roughly", and the two are the same
+ * structure seen twice: these are the ridges and the hamada's benches are their dip slope, which is why
+ * job 2's report calls them "harder beds outcropping on a dip that runs east off the Dinelv highland".
+ *
+ * **Taken as a maximum and not a sum** (`ovesRim`'s rule): two ridges whose skirts overlap make one
+ * broader double-crested system rather than a ridge twice as high, and a ridge *system* is exactly that.
+ *
+ * **And the lines are not chosen - the atlas draws them.** In the strike frame every one of these
+ * thirty-five hexes falls on one of six rows of constant `c`, eighty-six and a half metres apart, and
+ * read along those rows the terrain field says this:
+ *
+ * ```
+ *   c = -2237   hills hills hills hills hills                     an unbroken ridge
+ *   c = -2150   hills hills PLAINS PLAINS  mtn   hills hills       a ridge with a wide gap
+ *   c = -2064   hills PLAINS  mtn   mtn   hills PLAINS hills       a ridge with two gaps
+ *   c = -1977   hills hills PLAINS PLAINS hills hills hills        a ridge with a wide gap
+ *   c = -1891   hills hills hills hills hills                      an unbroken ridge
+ *   c = -1804   hills hills hills                                  the inner shoulder
+ * ```
+ *
+ * So the six rows are the six ridges, **the `plains` hexes are the gaps in them**, and the three
+ * `mountain` hexes are the high points of two of the middle rows. Nothing is imposed: the structure is
+ * read off the terrain field in the frame the lore's own sentence names.
+ *
+ * **The gaps and the water points are the same ground, and that is the finding.** The lore says two
+ * things about this plateau without joining them - "these ridges create the passes that matter to the
+ * Route Registry" and "the deeper-rooted plants occupying the water-concentration points that only
+ * become visible in wet years" - and on this structure they are one thing, because the ridges are the
+ * divides and the gaps are the only low ground there is. That is why the court's cisterns are at the
+ * passes and why the pastoral communities move between them. `DINELV_BASINS` cuts the same four places
+ * this list leaves open. The garrisons, the road surface, the cisterns and the tariff inspection are the
+ * court's and are not built.
+ */
+export const DINELV_STRIKE = freeze({ ax: -.5, az: .866, cx: .866, cz: .5 });
+export const dinelvAlong = (x, z) => x * DINELV_STRIKE.ax + z * DINELV_STRIKE.az;
+export const dinelvAcross = (x, z) => x * DINELV_STRIKE.cx + z * DINELV_STRIKE.cz;
+/** A point in the strike frame back in world metres: the frame is a reflection, so it is its own inverse. */
+export const dinelvPoint = (a, c) => point(DINELV_STRIKE.ax * a + DINELV_STRIKE.cx * c, DINELV_STRIKE.az * a + DINELV_STRIKE.cz * c);
+const ridge = (id, name, c, from, to, lift, half, gaps) => freeze({ id, name, c, from, to, lift, half, gaps: freeze(gaps.map(g => freeze(g))) });
+export const DINELV_RIDGES = freeze([
+  ridge('seaward-ridge', 'The Seaward Ridge', -2237, 3380, 3870, 12, 26, []),
+  ridge('saddle-ridge', 'The Saddle Ridge', -2150, 3230, 3920, 13, 26, [{ a: 3525, half: 88, id: 'middle-saddle', name: 'The Middle Saddle' }]),
+  ridge('table-ridge', 'The Table Ridge', -2064, 3180, 3870, 15, 26,
+    [{ a: 3325, half: 52, id: 'north-gap', name: 'The North Gap' }, { a: 3725, half: 52, id: 'rim-gap', name: 'The Rim Gap' }]),
+  ridge('low-ridge', 'The Low Ridge', -1977, 3130, 3820, 12, 26, [{ a: 3425, half: 88, id: 'low-gap', name: 'The Low Gap' }]),
+  ridge('inner-ridge', 'The Inner Ridge', -1891, 3180, 3670, 11, 26, []),
+  ridge('shoulder-ridge', 'The Inner Shoulder', -1804, 3230, 3520, 9, 24, []),
+]);
+/** Every gap in every ridge, with where it stands: the four crossings of the plateau's grain. */
+export const DINELV_GAPS = freeze(DINELV_RIDGES.flatMap(r => r.gaps.map(g =>
+  freeze({ ...g, ridge: r.id, ...dinelvPoint(g.a, r.c) }))));
+/** How high the ridge systems stand at a point, and how near a crest it is: the scatter reads both. */
+export function dinelvRidgeAt(x, z) {
+  const a = dinelvAlong(x, z), c = dinelvAcross(x, z);
+  let lift = 0, crest = 0;
+  for (const r of DINELV_RIDGES) {
+    const ends = smooth(r.from - 34, r.from + 34, a) * (1 - smooth(r.to - 34, r.to + 34, a));
+    if (ends <= 0) continue;
+    let gap = 1;
+    for (const g of r.gaps) gap = Math.min(gap, 1 - (1 - smooth(g.half * .45, g.half, Math.abs(a - g.a))) * .92);
+    const across = 1 - smooth(0, r.half * 2.3, Math.abs(c - r.c));
+    const here = r.lift * ends * gap * across;
+    if (here > lift) lift = here;
+    crest = Math.max(crest, ends * gap * (1 - smooth(0, r.half * .9, Math.abs(c - r.c))));
+  }
+  return { lift, crest };
+}
+export function dinelvRidges(x, z, own = 0) {
+  if (own <= 0) return 0;
+  return dinelvRidgeAt(x, z).lift * own;
+}
+
+/**
+ * **The three `mountain` hexes are mesas, and the climate code is what decides it.** The atlas paints
+ * all three `BWh`, and across the whole map `mountain` reads `BWh` exactly three times - these three.
+ * A summit high enough to be a mountain in the Lotharn sense (the West's crest is 550 m) would read
+ * `ET` or `Dfc` at its top; the map's author wrote hot desert, so these are low. What a hot desert
+ * makes of a bedded plateau that is being stripped away is not a peak, it is **a residual block with a
+ * flat top and cliff sides** - the last piece of an older and higher surface, standing over the present
+ * one - and that is what these are: fifty-five to seventy-four metres over the plateau, tops at a
+ * hundred and eighty to two hundred, sides too steep to walk.
+ *
+ * **Two of the three lie on one strike line and the third on the next ridge west**, which was measured
+ * and not chosen: (-32,128) and (-33,129) have the same across-strike coordinate to a fifth of a metre,
+ * so they are the highest exposures of `middle-ridge`, and (-35,130) stands eighty-seven metres west of
+ * that line on `west-ridge`. Taken as a maximum with the ridges, because a mesa on a ridge is the
+ * ridge's own high point and not a hill on top of one.
+ *
+ * Their flanks carry `DINELV_BANDS` like everything else in the country, so the courses run round them
+ * at the same heights they run along the escarpment - which is the one thing that says these three and
+ * the escarpment face are the same rock. **They cannot be walked up**: this is not a climbing region,
+ * and the lore's ridge-exposure mines, whose families hold the knowledge of where the good stone runs,
+ * are people's and are not built.
+ */
+const mesa = (id, name, x, z, lift, top, reach) => freeze({ id, name, x, z, lift, top, reach });
+export const DINELV_MESAS = freeze([
+  // **The tops are most of the radius and the fall is short**, which is what makes a table a table: the
+  // first pass put the full lift inside forty metres of an eighty-eight-metre reach and the review
+  // render came back with three rounded domes. Now the fall is twenty-six to thirty metres of run for
+  // fifty-five to seventy-four of lift, which is a cliff.
+  mesa('north-mesa', 'The North Table', -3500, 1934, 62, 46, 74),
+  mesa('long-mesa', 'The Long Table', -3550, 2021, 74, 52, 82),
+  mesa('west-mesa', 'The West Table', -3700, 2107, 55, 42, 68),
+]);
+export function dinelvMesaAt(x, z) {
+  let lift = 0, top = 0, flank = 0;
+  for (const m of DINELV_MESAS) {
+    const d = Math.hypot(x - m.x, z - m.z);
+    if (d >= m.reach) continue;
+    const here = m.lift * (1 - smooth(m.top, m.reach, d));
+    if (here > lift) lift = here;
+    top = Math.max(top, 1 - smooth(m.top * .8, m.top, d));
+    flank = Math.max(flank, smooth(m.top, m.top + 10, d) * (1 - smooth(m.reach - 12, m.reach, d)));
+  }
+  return { lift, top, flank };
+}
+export function dinelvMesas(x, z, own = 0) {
+  if (own <= 0) return 0;
+  return dinelvMesaAt(x, z).lift * own;
+}
+
+/**
+ * **The six `plains` hexes are the basins, and they are the only ground on the plateau where anything
+ * roots deep.** A `plains` hex ringed by `hills` is not a lowland: it is a hollow in an upland, and on
+ * an arid plateau with no outlet a hollow is where the runoff dies. The lore names them without calling
+ * them anything: "the water-concentration points that only become visible in wet years when they green
+ * faster than the surrounding ground". So they are cut nine to fourteen metres below the ridges round
+ * them, closed, with nothing leaving any of them, and the scatter reads `inDinelvBasin` for the one
+ * place on this plateau a deeper-rooted plant can be.
+ *
+ * **They are the ridge gaps, and they are placed by arithmetic rather than by eye**: each one is the
+ * centre of one of `DINELV_RIDGES`' four gaps, so the six `plains` hexes fall into four basins - two of
+ * them two hexes wide, where a row has two `plains` hexes side by side, and two of them one hex. The cut
+ * is small, eight or nine metres, because the ridge lift that is *absent* here has already put this ground
+ * ten to fifteen metres below the crests on either side; what the cut adds is the closure, so that
+ * nothing leaves a basin in any direction and the water that reaches one stays until it goes upward.
+ */
+export const DINELV_BASINS = freeze(DINELV_GAPS.map(gap => freeze({
+  id: gap.id + '-basin', gap: gap.id, x: gap.x, z: gap.z,
+  depth: gap.half > 70 ? 9 : 8, radius: gap.half > 70 ? 88 : 64,
+})));
+/** 1 in the middle of a basin, 0 on the ridges: where the plateau's water goes and its only deep roots. */
+export function inDinelvBasin(x, z) {
+  let best = 0;
+  for (const b of DINELV_BASINS) {
+    const d = Math.hypot(x - b.x, z - b.z);
+    if (d >= b.radius) continue;
+    best = Math.max(best, 1 - smooth(0, 1, d / b.radius));
+  }
+  return best;
+}
+export function dinelvBasins(x, z, own = 0) {
+  if (own <= 0) return 0;
+  let cut = 0;
+  for (const b of DINELV_BASINS) {
+    const d = Math.hypot(x - b.x, z - b.z);
+    if (d >= b.radius) continue;
+    cut = Math.max(cut, b.depth * (1 - smooth(0, 1, d / b.radius)));
+  }
+  return -cut * own;
+}
+
+/**
+ * **The seasonal channels down the escarpment face**, and three of the four end where job 2's fans
+ * begin. `dinelv_highlands.md`: "exposed sedimentary rock cut by seasonal water channels". Job 2's own
+ * open question asked for exactly this - "what will need a look is the three fan apexes, which sit
+ * thirty to fifty metres inside my own hexes and should read as being at the mouths of the escarpment's
+ * own channels" - so these three run down to `MEROSHE_FANS`' three apexes and stop at this country's
+ * edge, and the fan takes over below. The fourth runs west off the plateau onto Cape Heth, which is the
+ * coastal strip the lore says the ascent starts from.
+ *
+ * They are dry. There is no water surface anywhere in these thirty-five hexes and the atlas draws no
+ * river edge on any of them, which is the same reading the Ganesh's washes and the Meroshe's absence of
+ * water got: what crosses this face crosses it twice in a decade, and what it leaves is a cut bed with
+ * coarse rubble in it. They are narrow and deep for their width, because a channel on a bedded face cuts
+ * rather than spreads.
+ */
+const dinelvChannel = (id, name, cut, half, target, line) => freeze({ id, name, cut, half, target, line: freeze(line.map(([x, z]) => point(x, z))) });
+export const DINELV_CHANNELS = freeze([
+  dinelvChannel('north-channel', 'The North Channel', 2.6, 8, 'north-fan',
+    [[-3790, 2180], [-3766, 2245], [-3740, 2300], [-3722, 2338]]),
+  dinelvChannel('middle-channel', 'The Middle Channel', 2.8, 9, 'middle-fan',
+    [[-3655, 2196], [-3628, 2254], [-3604, 2308], [-3592, 2338]]),
+  dinelvChannel('east-channel', 'The East Channel', 2.4, 8, 'east-fan',
+    [[-3492, 2120], [-3476, 2178], [-3460, 2230], [-3452, 2264]]),
+  dinelvChannel('cape-channel', 'The Cape Channel', 2.2, 7, null,
+    [[-3772, 2032], [-3820, 2050], [-3870, 2062], [-3906, 2070]]),
+]);
+export function nearestDinelvChannel(x, z, margin = 0) {
+  let best = null;
+  for (const channel of DINELV_CHANNELS) {
+    const found = lineWalk(channel.line, x, z, channel.half * 3 + margin);
+    if (found && (!best || found.distance < best.distance)) best = { channel, ...found };
+  }
+  return best;
+}
+export function dinelvChannelCut(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const found = nearestDinelvChannel(x, z);
+  if (!found) return 0;
+  const { channel, distance, along } = found;
+  const across = 1 - smooth(channel.half, channel.half * 2.4, distance);
+  const ends = smooth(0, .12, along) * (1 - smooth(.88, 1.02, along));
+  return -channel.cut * across * ends * own;
+}
+/** True on a channel's own rubble floor, where nothing roots. */
+export function onDinelvChannelFloor(x, z, margin = 0) {
+  const found = nearestDinelvChannel(x, z, margin);
+  if (!found) return false;
+  const ends = smooth(0, .12, found.along) * (1 - smooth(.88, 1.02, found.along));
+  return ends > .35 && found.distance < found.channel.half + margin;
+}
+
+/**
+ * **The one way up, and it is the lore's own.** "The northern plateau pass is the primary overland
+ * connection between Dinelv and the plateau interior, and through the plateau interior, to the caravan
+ * routes that cross the Meroshe... The ascent from the city takes a full day on the standard road."
+ *
+ * Everything else on this country's margin is an escarpment: measured on the built ground before this
+ * was laid, the fall to the sea on the south-western corner is sixty-four metres in fifty, which is a
+ * sea cliff, and the faces to Cape Heth and to the Meroshe are half of that. Somewhere there has to be
+ * ground a loaded animal can be walked up, or the plateau is an island inside an island and the lore's
+ * whole account of it - a stone trade downhill, food uphill, a pass that can be closed - means nothing.
+ *
+ * So the northern margin, where the plateau meets the Ganesh Desert across ten hex edges and the fall is
+ * already the gentlest it gets, carries a graded ascent: the ground within `half` metres of the line is
+ * levelled toward a constant grade and comes back to the ordinary escarpment by `half * 2.6`. It is the
+ * swale's own machinery (`SOUTHWEST_SWALE`) turned on its side, and the grade is **measured** in
+ * `tests/southwest-world.test.js` rather than typed here - the test walks it and holds every two-metre
+ * step on it inside the walking budget, and floods the country to prove the plateau can be reached at
+ * all. Nothing is built on it: no road surface, no cutting, no cistern, no waystation and no garrison.
+ */
+export const DINELV_ASCENT = freeze({
+  // Laid **along the grain**, up the swale between the inner ridge and the low ridge (c ~ -1935), which
+  // is how a plateau of parallel ridges is actually climbed: along a valley rather than over the ribs.
+  // It arrives in the swale and the Low Gap takes a traveler across to the next one.
+  line: freeze([point(-3222, 1716), point(-3262, 1772), point(-3300, 1826), point(-3330, 1878), point(-3352, 1926), point(-3368, 1968)]),
+  half: 19, outer: 48,
+});
+const dinelvAscentProfile = (() => {
+  const line = DINELV_ASCENT.line;
+  let total = 0;
+  for (let i = 1; i < line.length; i++) total += Math.hypot(line[i].x - line[i - 1].x, line[i].z - line[i - 1].z);
+  return freeze({ total });
+})();
+/**
+ * How much of a point the ascent owns, and where along it: the ground function levels toward the
+ * straight line between the ascent's two measured ends, which are the ordinary ground at each end so
+ * the ramp joins what it joins without a step.
+ */
+export function dinelvAscentAt(x, z) {
+  const found = lineWalk(DINELV_ASCENT.line, x, z, DINELV_ASCENT.outer);
+  if (!found) return null;
+  const inner = 1 - smooth(DINELV_ASCENT.half, DINELV_ASCENT.outer, found.distance);
+  const ends = smooth(0, .18, found.along) * (1 - smooth(.82, 1, found.along));
+  return { along: found.along, weight: inner * ends };
+}
+let ascentEnds = null;
+export function dinelvAscentLevel(along) {
+  if (ascentEnds === null) {
+    const line = DINELV_ASCENT.line, foot = line[0], head = line[line.length - 1];
+    const level = p => terrainMix(p.x, p.z).base + southwestSlope(p.x, p.z);
+    ascentEnds = freeze({ foot: level(foot), head: level(head) });
+  }
+  return lerp(ascentEnds.foot, ascentEnds.head, clamp(along, 0, 1));
+}
+
+// ---------------------------------------------------------------------------
+// Hama: the wet edge of the desert, and the line is the country
+// ---------------------------------------------------------------------------
+/**
+ * **The only place in the block where the aridity gradient reaches a green country from the dry side.**
+ * Job 1's gradient ran from `BWh` down to two green corners at the block's *other* end; job 2's half was
+ * flat 1.000 on ninety-four of ninety-five hexes. Here the field has somewhere to go again, and this
+ * time the atlas states where: nine `Csb` `grassland` hexes on the seaward side, ten `BWh` `plains`
+ * hexes inland, and **not one hex where the terrain word and the climate code disagree**.
+ *
+ * So Hama needs no field of its own to decide where the green is - `southwestAridity` already knows,
+ * because it is the same blend of the same hex codes on the same falloff. `hamaGreen` is that field read
+ * back on Hama's own hexes and stretched, so 1 is the wet half and 0 the dry one and the whole of the
+ * change happens over about two hundred paces, which is what the blend's reach of 1.28 hexes comes to.
+ * The scatter, the ground colour and the wildlife all sort by it, and where it crosses a half is **the
+ * line** - a measured curve, reported rather than authored.
+ */
+export function hamaGreen(x, z, mix = null) {
+  const own = regionShare('Hama', x, z, mix);
+  if (own <= 0) return 0;
+  return clamp(1 - smooth(.22, .86, southwestAridity(x, z)), 0, 1) * own;
+}
+/**
+ * **The friction, which is the one thing the lore says about this country's ground**: "The terrain
+ * between Hama and the Meroshe interior is rough without being impassable - enough friction to make
+ * overland access from the desert difficult for large-scale military movement, easy enough for the small
+ * commercial caravans and courier traffic that are Hama's normal overland commerce."
+ *
+ * The atlas gives the inland half `plains`, so the friction cannot be relief: it is **surface**, which is
+ * job 2's answer to flat country used a fourth time. A metre and three quarters on two turned bearings
+ * of forty and sixty-three metres - one field on one bearing reads as corrugation, which is the Ascarth
+ * plateau's lesson - which is a stony broken rise a laden animal picks its way over and a column cannot
+ * keep ranks on. It is twice the roughest thing in the Meroshe and it is gated on the **dry** half by
+ * `hamaGreen`, because the green side is grass over soil and has no friction in it at all.
+ */
+export const HAMA_BROKEN = freeze({ amp: .95, waveA: 40, waveB: 63, bearingA: .34, bearingB: -1.18, ribAmp: .8, ribWave: 118, ribBearing: .52 });
+export function hamaBroken(x, z, own = 0, green = 0) {
+  if (own <= 0) return 0;
+  const b = HAMA_BROKEN;
+  const a = Math.sin(turned(x, z, b.bearingA) * 6.2831853 / b.waveA);
+  const c = Math.sin(turned(x, z, b.bearingB) * 6.2831853 / b.waveB);
+  const rib = Math.sin(turned(x, z, b.ribBearing) * 6.2831853 / b.ribWave);
+  return (b.amp * (a * .6 + c * .4) + b.ribAmp * rib) * own * (1 - green * .88);
+}
+/** 1 on a bare stony rib the walking is bad on, 0 in the fine ground between: what the scatter reads. */
+export function hamaLie(x, z) {
+  const own = regionShare('Hama', x, z);
+  if (own <= 0) return 0;
+  const raw = hamaBroken(x, z, 1, 0);
+  return clamp((raw + HAMA_BROKEN.amp + HAMA_BROKEN.ribAmp) / (2 * (HAMA_BROKEN.amp + HAMA_BROKEN.ribAmp)), 0, 1);
+}
+/**
+ * **The winter watercourses, and they are dry.** `Csb` is a Mediterranean code and what it means is that
+ * the rain comes in winter and the summer is dry; `hama.md` says the consequence - "the soils thin, the
+ * seasonal water supply unreliable in dry years" - and the atlas draws no river edge on any of Hama's
+ * nineteen hexes, so there is no permanent water in this country at all. What the winter rain leaves is
+ * three shallow beds running off the stony rise, across the green and into the two seas, with the
+ * greenest growth in the whole block standing in their floors and nothing running in any of them.
+ *
+ * They are the Ganesh Plain's channels on a wetter country: shallower cuts, softer banks, and grass
+ * rather than gravel in them, because on this side of the line the ground has soil in it.
+ */
+const hamaBed = (id, name, cut, half, line) => freeze({ id, name, cut, half, line: freeze(line.map(([x, z]) => point(x, z))) });
+export const HAMA_BEDS = freeze([
+  hamaBed('north-bed', 'The North Bed', 1.5, 9, [[-3330, 2726], [-3386, 2752], [-3444, 2778], [-3488, 2798]]),
+  hamaBed('middle-bed', 'The Middle Bed', 1.6, 10, [[-3186, 2856], [-3236, 2876], [-3268, 2888], [-3292, 2898]]),
+  hamaBed('south-bed', 'The South Bed', 1.4, 8, [[-2962, 2988], [-2980, 3024], [-2992, 3048], [-3002, 3066]]),
+]);
+export function nearestHamaBed(x, z, margin = 0) {
+  let best = null;
+  for (const bed of HAMA_BEDS) {
+    const found = lineWalk(bed.line, x, z, bed.half * 3 + margin);
+    if (found && (!best || found.distance < best.distance)) best = { bed, ...found };
+  }
+  return best;
+}
+export function hamaBedCut(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const found = nearestHamaBed(x, z);
+  if (!found) return 0;
+  const { bed, distance, along } = found;
+  const across = 1 - smooth(bed.half, bed.half * 2.8, distance);
+  const ends = smooth(0, .10, along) * (1 - smooth(.90, 1.02, along));
+  // **It lets go at the shore**, which is `merosheSkirt`'s lesson and the swale's before it: the coast
+  // field has already brought the last forty metres down to the water before `southwestGround` sees the
+  // ground, so a metre and a half of cut laid on top of that put the mouth of the middle bed below sea
+  // level. It holds its full cut to fifty-two metres inland and releases over the last thirty-four, and
+  // all three lines were trimmed back to ground that stands thirty metres clear of the surf.
+  const shore = smooth(18, 52, landDistance(x, z));
+  return -bed.cut * across * ends * shore * own;
+}
+/** How near a winter bed's damp floor a point is: the greenest thing in the southwest stands here. */
+export function inHamaBed(x, z) {
+  const found = nearestHamaBed(x, z);
+  if (!found) return 0;
+  const ends = smooth(0, .10, found.along) * (1 - smooth(.90, 1.02, found.along));
+  return ends * (1 - smooth(found.bed.half * .4, found.bed.half * 1.9, found.distance));
+}
+
+// ---------------------------------------------------------------------------
 // The swale: a designed floor for two rivers drawn on unbuilt borders
 // ---------------------------------------------------------------------------
 /**
@@ -1001,19 +1643,41 @@ export function southwestGround(x, z, ground) {
   const hamada = regionShare('North Meroshe Desert', x, z, mix);
   const skirt = regionShare('West Meroshe Desert', x, z, mix);
   const erg = regionShare('Central Meroshe Desert', x, z, mix);
+  const cape = regionShare('Cape Heth', x, z, mix);
+  const plateau = regionShare('Dinelv Highlands', x, z, mix);
+  const hama = regionShare('Hama', x, z, mix);
   const tilt = southwestSlope(x, z) * bank
     + ganeshBasin(x, z, desert) + ganeshPlainFall(x, z, plain) + pyrosFall(x, z, pyros)
     + merosheSkirt(x, z, skirt) + merosheSink(x, z, erg);
   let height = ground + tilt + navarthCrests(x, z, navarth) + ganeshStone(x, z, desert)
-    + merosheBenches(x, z, hamada) + merosheFans(x, z, skirt) + merosheDunes(x, z, merosheErg(x, z, erg));
+    + merosheBenches(x, z, hamada) + merosheFans(x, z, skirt) + merosheDunes(x, z, merosheErg(x, z, erg))
+    // Job 3's three. The cape's one ridge; the plateau's ridge systems and its three mesas, taken as
+    // one maximum because a mesa on a ridge is the ridge's own high point; and Hama's broken ground,
+    // which is gated on the dry half of it by `hamaGreen`.
+    + hethSpine(x, z, cape)
+    + (plateau > 0 ? Math.max(dinelvRidgeAt(x, z).lift, dinelvMesaAt(x, z).lift) * plateau : 0)
+    + hamaBroken(x, z, hama, hamaGreen(x, z, mix));
   const near = nearestSouthwestRiver(x, z);
   const swale = southwestSwaleWeight(x, z, bank, near);
   // The designed surface: the blend's own base, the tilt, and no relief at all.
   if (swale > 0) height = height + (mix.base + tilt - height) * swale;
-  height += ganeshWashCut(x, z, desert) + ganeshPlainChannelCut(x, z, plain) + ganeshDepressionCut(x, z, plain);
+  height += ganeshWashCut(x, z, desert) + ganeshPlainChannelCut(x, z, plain) + ganeshDepressionCut(x, z, plain)
+    + hethHollows(x, z, cape) + dinelvBasins(x, z, plateau) + dinelvChannelCut(x, z, plateau)
+    + hamaBedCut(x, z, hama);
   // **The salt pan is levelled, not cut**: a playa is flat to the centimetre over hundreds of metres.
   const salt = skirt > 0 ? onSaltPan(x, z) * skirt : 0;
   if (salt > 0) height = lerp(height, saltPanLevel(), salt);
+  // **The one way up the escarpment is levelled toward a constant grade**, the swale's machinery turned
+  // on its side. It is applied before the bedding, so the bands run across the ramp rather than being
+  // flattened out of it: a graded road cut through bedded rock still shows the courses in its sides.
+  if (plateau > 0) {
+    const ascent = dinelvAscentAt(x, z);
+    if (ascent && ascent.weight > 0) height = lerp(height, dinelvAscentLevel(ascent.along), ascent.weight * plateau);
+    // **The bedding, last, because it is a function of the finished height and nothing else** - which is
+    // what makes it horizontal by construction. It moves no ground by more than 1.1 m and changes the
+    // total fall of the escarpment by nothing at all.
+    height += dinelvBands(height, plateau);
+  }
   return height;
 }
 
@@ -1022,7 +1686,7 @@ export function southwestGround(x, z, ground) {
  * salt pan's crust, where nothing roots at all because the ground it would root in is brine.
  */
 export const southwestClear = (x, z, margin = 0) => onWashFloor(x, z, margin) || onChannelFloor(x, z, margin)
-  || onSaltPan(x, z, margin) > .25;
+  || onSaltPan(x, z, margin) > .25 || onDinelvChannelFloor(x, z, margin);
 
 // ---------------------------------------------------------------------------
 // The colour of the ground
@@ -1054,6 +1718,19 @@ export const SOUTHWEST_GROUND = freeze({
   sand: 0x7e7250,      // erg: clean quartz sand, the warmest and lightest ground in the block
   reg: 0x352a1c,       // reg: close-packed pebbles under desert varnish, the darkest dry ground in the game
   crust: 0x9c9a89,     // sabkha: a salt crust, and the only near-white the block is allowed
+  // Job 3's five. The two escarpment stones are the lore's own two - "the lower bands are the
+  // warm-toned desert stone that the Dinelv construction trade prizes; the upper bands shift to a
+  // harder, darker stone" - and they are read off height, which is what a bedding plane is.
+  // **All five were pulled a third darker after the first review render**, which is job 2's lesson met
+  // for the second time: the renderer reads an authored colour as linear and lifts it a long way, so
+  // the first set - chosen as numbers - came back on screen as pale tan on the escarpment and as a
+  // sand spit on the cape. The warm stone in particular had to go a long way down, because mixing a
+  // warm colour into a ground at up to sixty per cent pushes the whole country orange.
+  warmStone: 0x53422a, // the lower escarpment bands: the warm-toned stone the Dinelv trade quarries
+  hardStone: 0x37362c, // the upper bands and the mesa caps: harder, darker, no commercial appeal
+  capeRock: 0x47453a,  // Cape Heth's grey-brown marine sandstone, soft enough to cut with hand tools
+  spray: 0x5c5a51,     // the weather face: salt-bleached bare rock where nothing roots
+  meadow: 0x394d22,    // Hama's `Csb` half - the greenest ground in the southwest, and the only wet one
 });
 const SWATCHES = freeze(new Set(SOUTHWEST_REGIONS.flatMap(name => {
   const profile = REGION_TERRAIN[name];
@@ -1080,26 +1757,88 @@ export function southwestTint(x, z, ground) {
   if (pan > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.05, .8, pan) * .55);
   const damp = ganeshDamp(x, z);
   if (damp > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .7, damp) * .8);
-  if (!inBox(MEROSHE_BOX, x, z)) return colour === base ? null : colour;
-  // The four Meroshe surfaces, in the order a traveler crossing from the Ganesh Plain meets them.
-  // **The rock and the sand are pulled well below the swatch they start from** and the salt crust is
-  // the only pale thing allowed, which is job 1's haze lesson taken at its word: at .0024 with a warm
-  // dust haze, more than half of every pixel past a hundred and fifty metres is haze rather than
-  // ground, so a ground that is honest about a desert on the screen has to be darker than a desert.
+  // **The Meroshe's early return became a branch**, because job 3's boxes overlap job 2's: the Dinelv
+  // Highlands' box and `MEROSHE_BOX` share three hundred metres of their corners, so a `return` here
+  // would have thrown away the plateau's own colours on every point in the overlap. Job 2's report asked
+  // for `groundTint` to become a table of (inBox, tint) pairs walked in order; this is that shape held
+  // inside one country's own tint, which is as far as job 3 could take it without touching the chain.
   const mix = terrainMix(x, z);
-  const rock = regionShare('North Meroshe Desert', x, z, mix);
-  if (rock > 0) colour = mixHex(colour, SOUTHWEST_GROUND.rock, rock * (.58 + merosheBench(x, z).edge * .34));
-  const erg = merosheErg(x, z, regionShare('Central Meroshe Desert', x, z, mix));
-  if (erg > 0) colour = mixHex(colour, SOUTHWEST_GROUND.sand, erg * (.50 + duneProfile(x, z) * .42));
-  const varnish = merosheVarnish(x, z, mix);
-  if (varnish > 0) colour = mixHex(colour, SOUTHWEST_GROUND.reg, varnish * .88);
-  const skirt = regionShare('West Meroshe Desert', x, z, mix);
-  if (skirt > 0) {
-    colour = mixHex(colour, SOUTHWEST_GROUND.rock, skirt * merosheFan(x, z) * .52);
-    const salt = onSaltPan(x, z) * skirt;
-    if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.crust, smooth(.05, .75, salt) * .94);
+  if (inBox(MEROSHE_BOX, x, z)) {
+    // The four Meroshe surfaces, in the order a traveler crossing from the Ganesh Plain meets them.
+    // **The rock and the sand are pulled well below the swatch they start from** and the salt crust is
+    // the only pale thing allowed, which is job 1's haze lesson taken at its word: at .0024 with a warm
+    // dust haze, more than half of every pixel past a hundred and fifty metres is haze rather than
+    // ground, so a ground that is honest about a desert on the screen has to be darker than a desert.
+    const rock = regionShare('North Meroshe Desert', x, z, mix);
+    if (rock > 0) colour = mixHex(colour, SOUTHWEST_GROUND.rock, rock * (.58 + merosheBench(x, z).edge * .34));
+    const erg = merosheErg(x, z, regionShare('Central Meroshe Desert', x, z, mix));
+    if (erg > 0) colour = mixHex(colour, SOUTHWEST_GROUND.sand, erg * (.50 + duneProfile(x, z) * .42));
+    const varnish = merosheVarnish(x, z, mix);
+    if (varnish > 0) colour = mixHex(colour, SOUTHWEST_GROUND.reg, varnish * .88);
+    const skirt = regionShare('West Meroshe Desert', x, z, mix);
+    if (skirt > 0) {
+      colour = mixHex(colour, SOUTHWEST_GROUND.rock, skirt * merosheFan(x, z) * .52);
+      const salt = onSaltPan(x, z) * skirt;
+      if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.crust, smooth(.05, .75, salt) * .94);
+    }
+  }
+  if (inBox(WEST_EDGE_BOX, x, z)) {
+    // **Cape Heth is one rock and one gradient across it**: grey-brown sandstone everywhere, bleached
+    // pale where the sea gets at it and darkened toward the ordinary swatch in the lee hollows, which
+    // are the only ground on the cape with soil in them.
+    const cape = regionShare('Cape Heth', x, z, mix);
+    if (cape > 0) {
+      colour = mixHex(colour, SOUTHWEST_GROUND.capeRock, cape * .66);
+      const salt = hethSpray(x, z);
+      if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.spray, smooth(.15, .95, salt) * .74);
+      const hollow = inHethHollow(x, z) * cape;
+      if (hollow > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.1, .9, hollow) * .30);
+    }
+    // **The plateau is coloured by height, because a bedding plane is a height.** The lore names two
+    // stones and says which is where: warm-toned low on the face, harder and darker above it. So the
+    // mix runs from `warmStone` at the escarpment foot to `hardStone` on the mesa caps, with the
+    // bedding's own sine on top of it so the individual courses read as courses - the one thing that
+    // says the mesa flanks and the escarpment face are the same rock.
+    const plateau = regionShare('Dinelv Highlands', x, z, mix);
+    if (plateau > 0) {
+      const height = groundLevelFor(x, z);
+      const warm = 1 - smooth(22, 96, height);
+      colour = mixHex(colour, SOUTHWEST_GROUND.warmStone, plateau * warm * .62);
+      colour = mixHex(colour, SOUTHWEST_GROUND.hardStone, plateau * smooth(66, 172, height) * .70);
+      const course = .5 + .5 * Math.sin(height * 6.2831853 / DINELV_BANDS.period);
+      colour = mixHex(colour, course > .5 ? SOUTHWEST_GROUND.hardStone : SOUTHWEST_GROUND.warmStone,
+        plateau * Math.abs(course - .5) * .46);
+      const basin = inDinelvBasin(x, z) * plateau;
+      if (basin > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.08, .85, basin) * .34);
+    }
+    // **Hama is the one country in the block that is allowed to be green**, and the mix is the aridity
+    // field's own answer: `meadow` where the map says `Csb`, nothing at all where it says `BWh`, and the
+    // whole change over two hundred paces. The winter beds are greener again, because they are the only
+    // damp ground in the southwest outside the Vaellir.
+    const hama = regionShare('Hama', x, z, mix);
+    if (hama > 0) {
+      const green = hamaGreen(x, z, mix);
+      if (green > 0) colour = mixHex(colour, SOUTHWEST_GROUND.meadow, smooth(.04, .9, green) * .80);
+      const bed = inHamaBed(x, z) * hama;
+      if (bed > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .8, bed) * .68);
+      colour = mixHex(colour, SOUTHWEST_GROUND.swept, hama * (1 - green) * hamaLie(x, z) * .34);
+    }
   }
   return colour === base ? null : colour;
+}
+/**
+ * The plateau's finished height at a point, for the tint alone. The tint runs outside the ground pass
+ * and has no height in hand, so it asks for one - and it asks the same way the salt pan's own level does,
+ * through the blend's base and this block's tilt plus the plateau's own landforms, rather than calling
+ * back into the terrain chain (which would recurse through `groundTint`).
+ */
+function groundLevelFor(x, z) {
+  const mix = terrainMix(x, z);
+  const plateau = regionShare('Dinelv Highlands', x, z, mix);
+  const base = mix.base + southwestSlope(x, z) * smooth(.05, .30, southwestWeight(x, z, mix));
+  if (plateau <= 0) return base;
+  const lift = Math.max(dinelvRidgeAt(x, z).lift, dinelvMesaAt(x, z).lift) * plateau;
+  return base + lift + dinelvBasins(x, z, plateau);
 }
 
 // ---------------------------------------------------------------------------
@@ -1149,7 +1888,13 @@ export const SOUTHWEST_LANDMARKS = freeze([
     description: 'Where the plateau ends. Four swells in a line along the western edge, and from the top of any of them the ground goes down thirty metres and then does not come up again: the Ganesh runs from the foot of this rim to a horizon that has nothing on it at all. It is the one view in the southwest that explains the geography in a single look.' }),
   freeze({ id: 'navarth-wood', name: 'The North Wood', x: -3300, z: 900,
     description: 'The block’s one hex of forest, at Navarth’s north-eastern tip, where the air turns Mediterranean for two hexes and the Ibenwood’s southern edge begins. Oak and pine standing well apart on a shoulder falling north-east, with the desert scrub thinning out behind them and the great forest going on north out of sight. Two hundred paces south of the last tree it has not rained properly in years.' }),
-  freeze({ id: 'alezhor-water', name: 'The Alezhor Water', ...onCourse(ALEZHOR_WATER, .45, 26),
+  // **Twenty-six metres off the water became thirty, and the reason is the world box.** Growing the
+  // world west for Cape Heth shifted every vertex of the renderer's coarse band, and at twenty-six
+  // this place stood on a bank the seven-metre grid cannot follow: measured, 1.56 m buried in the
+  // drawn ground against a limit of 1. Four metres further back it reads -0.02. **This is exactly
+  // what job 1 had to do to a Mithala landmark when it grew the world west**, for exactly the same
+  // reason, and it is the second time the box has done it.
+  freeze({ id: 'alezhor-water', name: 'The Alezhor Water', ...onCourse(ALEZHOR_WATER, .45, 30),
     description: 'A small river running west along the top of Navarth and then down the Ganesh’s north-eastern edge to the sea. It rises in the green grassland country over the northern border and gains nothing at all on the way through: what reaches the gulf is what left Alezhor, less what the ground and the air took. Waded anywhere along it, and the only running water in eighty hexes.' }),
   // ----- West Pyros -----
   freeze({ id: 'the-vaellir', name: 'The Vaellir', ...onCourse(VAELLIR, .55, 30),
@@ -1220,4 +1965,41 @@ export const SOUTHWEST_LANDMARKS = freeze([
     description: 'The eastern edge of the stone floor, and the sharpest boundary the atlas draws anywhere: thirteen hex edges of hot desert against tropical rainforest. Trogo begins at the next hex east and goes up in one wall of dark canopy with cloud sitting in it: "the desert’s last water meets the coast’s first moisture and produces a consequence that neither the desert peoples to the northwest nor the Maroshi kingdom to the north has entirely figured out what to do with: tropical rainforest." **Trogo is not built**, so there is no canopy on that horizon yet. What has already crossed the line is the fog, and this is where it stands thickest.' }),
   freeze({ id: 'meroshe-south-shore', name: 'The Southern Shore', x: -2860, z: 3040,
     description: 'The bottom of the desert and the bottom of the continent’s southwest: the stone floor runs south until the pebbles turn to shingle and then to the southern ocean, with the whole Meroshe behind it and nothing but water in front. Four hex edges of it, and the fog comes ashore here first.' }),
+  // ----- Cape Heth -----
+  freeze({ id: 'heth-point', name: 'The Point', x: -4245, z: 1848,
+    description: 'The westernmost ground in Azhora, and the only hex on the whole atlas where the map draws the shoreline itself inside somebody’s country: one `coast` hex, with open water on four of its six sides and the cape behind it on the other two. Bare wave-cut grey-brown sandstone three metres above the water, scoured clean, with gravel in the joints and lichen in the lee of anything that stands. The lore says this point is the whole reason the cape matters - "it reaches far enough west into the ocean to be visible at sea when the coast behind it has already dropped below the horizon" - and there is nothing on it at all. Four hundred metres of ocean further west than the Ganesh’s gulf shore, and it is the same desert: a hundred paces inland it has not rained in years.' }),
+  freeze({ id: 'heth-spine', name: 'The Spine', x: -4020, z: 1868,
+    description: 'The cape’s one landform, and the lore calls it exactly what it is: "the cape’s slight ridge". Six metres at its highest, running the length of the promontory from the point east-north-east, and it decides everything on this ground. Standing on it a traveler has the open ocean on one hand a hundred and fifty paces off and the shelter of its own lee on the other, and the difference between the two sides is the difference between bare rock and the only soil the cape has.' }),
+  freeze({ id: 'heth-weather-face', name: 'The Weather Face', x: -4150, z: 1892,
+    description: 'The seaward side, which is the side the lore measures storms by: "the ocean-facing slope is low enough that spray overtops it in the largest winter storms; the cape’s residents describe major storm events by how far the salt water got". So there is nothing growing on it for eighty metres up from the water - bare sandstone with the bedding showing, gravel, a crust of salt in the hollows of the rock, and lichen in whatever lies in the lee of a stone. It is hot desert and it is soaked in salt water twice a decade, which is a combination nowhere else in Azhora manages.' }),
+  freeze({ id: 'heth-hollows', name: 'The Drainage Hollows', x: -4046, z: 1899,
+    description: 'Five shallow closed hollows on the landward flank of the spine, a metre and a half deep and fifty paces across, and every scrap of soil on this cape is in one of them. "Gardens on the soil that has accumulated in the drainage hollows", the lore says, and the hollows are here; the gardens are the cape communities’ and are not built. What stands in them is what a desert puts on soil that keeps a little water: scrub twice the size of anything on the open rock, and a stubble of grass round the lowest part of each.' }),
+  freeze({ id: 'heth-bight', name: 'The Heth Bight', x: -3968, z: 1718,
+    description: 'The shallow water north of the cape, in the angle between the promontory running west and the Ganesh’s shore running away north-east - "a shallow embayment where the cape and the mainland form two sides of an angle... too shallow for deep-draft vessels but provides additional shelter for the small-boat traffic that moves along the coast". The lore puts it east of the cape; the atlas puts the angle on the north, and the atlas wins. From the shore here the water is flat where the weather face a hundred and fifty paces south has surf on it, which is the whole of what a bight is.' }),
+  // ----- The Dinelv Highlands -----
+  freeze({ id: 'dinelv-plateau', name: 'The Dinelv Plateau', x: -3420, z: 1900,
+    description: 'The first desert highland in the game and the high ground of the whole southwest: a rolling arid upland at a hundred metres and more, hot desert on every one of its thirty-five hexes, with thin soil over bedded rock and scrub so widely spaced that the ground between it is the thing a traveler remembers. "The plateau opens into a rolling upland that extends twenty to forty miles inland before the terrain descends again toward the Meroshe interior." From here the ground falls away on three sides - to the cape on the west, to the Ganesh on the north, to the sand deserts on the south - and on a clear day all three are visible at once, which is a view no other country in Azhora has.' }),
+  freeze({ id: 'dinelv-escarpment', name: 'The Escarpment', x: -3786, z: 2075,
+    description: 'The way up, and the lore calls it "the most dramatic terrain on the eastern peninsula": eighty metres of exposed sedimentary rock in stepped bands, a tread a traveler can walk and then a riser they cannot, over and over to the rim. The bands are what the rock is - "the older geological layers visible in the cliff faces as horizontal bands of different character. The lower bands are the warm-toned desert stone that the Dinelv construction trade prizes; the upper bands shift to a harder, darker stone" - so the face changes colour as it goes up, warm at the foot and grey at the top. The quarries that cut the warm stone, the road that climbs the face and the day it takes to walk it are all somebody’s. On the south-western corner there is no face at all and no coastal strip: the plateau stands straight over the open ocean, sixty metres of it in fifty paces.' }),
+  freeze({ id: 'dinelv-ridges', name: 'The Ridge Systems', x: -3317, z: 1974,
+    description: 'Four ridge systems crossing the plateau, "from roughly north to south, aligned with the peninsula’s long axis" - which on the atlas is north-north-east to south-south-west, thirty degrees off due north, and that is the bearing they are laid on. Ten to fifteen metres of crest with a broad swale between each pair, and they are the reason this plateau is not flat and the reason it has passes: a traveler crossing it along the grain walks four hundred paces of open swale, and a traveler crossing against the grain climbs every one of them. The hamada one hex-row south is the dip slope of the same beds, which is why its steps run on almost the same line.' }),
+  freeze({ id: 'dinelv-north-pass', name: 'The North Pass', x: -3300, z: 1844,
+    description: 'The one place a loaded animal can be walked onto this plateau. "The northern plateau pass is the primary overland connection between Dinelv and the plateau interior, and through the plateau interior, to the caravan routes that cross the Meroshe... The ascent from the city takes a full day on the standard road." Every other margin of this country is an escarpment, and this one is a graded ramp up the northern face at a walking grade the whole way, four hundred paces long, with the bedding still showing in the rock on both sides of it. There is no road surface on it, no cutting, no cistern, no waystation and no garrison: the pass is ground, and the establishment the lore hangs on it is the Maroshi court’s.' }),
+  freeze({ id: 'dinelv-middle-saddle', name: 'The Middle Saddle', x: -3647, z: 1967,
+    description: 'A gap through the west ridge, and the second of the lore’s two named crossings: "the middle saddle is used by lighter traffic: express riders, small trading parties, and the livestock movements that the highland pastoral communities manage seasonally. It is not maintained to the standard of the northern pass and is not operable for full caravan trains." It is a notch forty paces wide where the ridge simply stops and starts again, with the crest standing ten metres over it on either hand. The smaller gaps in the other ridges are the routes the Registry calls "local use" and does not record; there are three of them and nothing at any of them.' }),
+  freeze({ id: 'dinelv-massifs', name: 'The Tables', x: -3419, z: 1844,
+    description: 'Three flat-topped blocks standing sixty and seventy metres over the plateau with sides too steep to walk, and they are the only three hot-desert `mountain` hexes on the whole atlas. That climate code is what decides what they are: a summit high enough to be a mountain in the Lotharn sense would carry snow at the top, and the map’s author wrote hot desert, so these are not peaks - they are what is left of a higher and older plateau surface that the desert has stripped away round them, with the same horizontal courses running across their flanks that run along the escarpment face. Two of them stand on one ridge line and the third on the next ridge west. The ridge-exposure mines the lore puts on ground like this, and the families who know where the good stone runs, are people’s.' }),
+  freeze({ id: 'dinelv-basins', name: 'The Water Points', x: -3399, z: 1989,
+    description: 'Six closed hollows in the plateau, nine to fourteen metres below the ridges round them, with no outlet from any of them - and on an arid upland with thin soil over rock, a hollow with no outlet is the only place water goes. The lore names them by what they do: "the deeper-rooted plants occupying the water-concentration points that only become visible in wet years when they green faster than the surrounding ground". So the scrub in these is twice the size of the scrub outside them and stands close enough together to walk round, and everything else on this plateau is spaced wide. The pastoral communities who move between them - higher and inland in the wet months, down toward the escarpment in the dry summer - are the plateau’s own people and none of them is built.' }),
+  // ----- Hama -----
+  freeze({ id: 'hama-green-line', name: 'The Line', x: -3206, z: 2880,
+    description: 'Where the desert stops, and the only place in the southwest where it stops in something green. Walking inland from the grass a traveler watches it happen over about two hundred paces: the sward breaks into tussocks, the tussocks stand further apart, the soil thins to grit between them, and then there is gravel underfoot and a stony rise ahead and the Meroshe beyond it. The atlas draws this line twice over - nine `grassland` hexes that are every one of them Mediterranean and ten `plains` hexes that are every one of them hot desert, with no hex where the two fields disagree - which makes it the only boundary in this block that the map states rather than implies. It has no name in the lore and nothing is built on it.' }),
+  freeze({ id: 'hama-grass', name: 'The Seaward Grass', x: -3200, z: 2973,
+    description: 'Two hexes of real Mediterranean country at the bottom corner of the continent: winter-rain grass thick enough to walk through, low evergreen scrub in the hollows, and a few trees leaning inland off the sea wind. After two hundred hexes of desert it is the first ground in this block since the Vaellir’s mouth where the green is because of the weather and not because of a hollow. The lore is careful about how much of it there is - "the coastal strip at the peninsula’s tip is narrow, the soils thin, the seasonal water supply unreliable in dry years" - and the plots that the Haman houses work on this margin are theirs and are not built.' }),
+  freeze({ id: 'hama-broken-ground', name: 'The Broken Ground', x: -3000, z: 2887,
+    description: 'The inland half, and the lore gives it one sentence that is exactly a landform: "the terrain between Hama and the Meroshe interior is rough without being impassable - enough friction to make overland access from the desert difficult for large-scale military movement, easy enough for the small commercial caravans and courier traffic". The atlas says `plains`, so the friction is not relief: it is surface. Stony ribs a pace or two high on two crossing grains, with coarse gravel between them and a low ridge every hundred paces, over ten hexes of hot desert. A laden animal picks its way over it at a walk and a column cannot keep ranks on it, which is the whole reason Marosh has never put a garrison at Hama.' }),
+  freeze({ id: 'hama-corner', name: 'The Corner', x: -3365, z: 2900,
+    description: 'The bottom-left corner of the continent, where the western ocean and the southern ocean meet: "Hama sits at the southwestern tip of the Dinova Peninsula where the peninsula’s two coasts converge and the open-ocean approaches narrow toward the cape." Standing here the water runs away north on one hand and east on the other and there is nothing but ocean between the two. The grass comes down to within thirty paces of the water, which no other shore in the southwest does - the Ganesh’s gulf, the fan skirt’s dry shore and the Meroshe’s southern beach are all desert to the surf. Hama Harbour is somewhere on this corner and it is the Council of Merchant Houses’; it is not built.' }),
+  freeze({ id: 'hama-winter-beds', name: 'The Winter Beds', x: -3271, z: 2881,
+    description: 'Three shallow beds running off the stony rise, across the grass and into the two seas, and all three are dry. `Csb` means the rain comes in winter and the summer is not wet, and the atlas draws no river edge anywhere on Hama’s nineteen hexes, so there is no permanent water in this country at all - the lore says as much when it calls the seasonal supply "unreliable in dry years". What a traveler finds is a metre and a half of soft-banked cut with the greenest grass in the southwest standing in the floor of it, and nothing whatever to drink.' }),
 ]);

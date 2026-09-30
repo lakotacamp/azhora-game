@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -251,6 +251,24 @@ export const REGION_BIOMES = Object.freeze({
   'South Meroshe Desert': Object.freeze({ id: 'meroshe-reg', name: 'The Meroshe stone floor', ground: '#3d3427', canopy: '#464a30', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
     relief: { amplitude: .6, wavelength: 320 }, clearings: ['meroshe-fog-margin'],
     note: 'The reg: a floor of close-packed pebbles varnished almost black, flat enough to see twenty miles over and swept so clean that a footprint shows. Thirteen of its hex edges are Trogo’s tropical rainforest, four are the southern ocean, and what crosses the line between them is the fog - "where desert air meets ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days" - so the southern third of this country is desert that gets wet without ever being rained on, and carries a crust and a thorn scrub that the rest of the Meroshe cannot.' }),
+  // The three countries of the block's western edge (src/southwest-world.js, src/southwest-scenery.js),
+  // and each of them is a first. **Cape Heth is the only country on the atlas that holds a `coast`
+  // hex** - 1,332 of them ring the continent and exactly one falls inside somebody's outline, at the
+  // point of this cape. **The Dinelv Highlands are the only desert highland**: `BWh` on all
+  // thirty-five hexes with twenty-six `hills`, three `mountain` and six `plains`, and those three are
+  // the only hot-desert `mountain` hexes on the whole map. **Hama is the wet edge of the desert**, nine
+  // `Csb` hexes against ten `BWh` with the terrain word and the climate code drawing the same line on
+  // all nineteen. All three scatter their own country, because what grows on each is decided by
+  // distance from the surf, by height on an escarpment, or by which side of one line a point stands.
+  'Cape Heth': Object.freeze({ id: 'heth-cape', name: 'Cape Heth', ground: '#514e40', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'salt-scrub', ownScatter: true,
+    relief: { amplitude: .8, wavelength: 320 }, clearings: ['heth-point'],
+    note: 'A low desert promontory with the sea on three sides of it: "not a dramatic geographical feature in the mode of high cliff headlands... a low, extended point of land that juts far enough west to matter as a navigational landmark". Grey-brown marine sandstone soft enough to work with hand tools, one long low ridge down the spine with a spray-swept western face and a sheltered eastern one, drainage hollows on the lee side where what soil there is has gathered, and at the tip the only `coast` hex the atlas gives any country. Twenty-one of its hex edges are open water and eighteen of its nineteen hexes are hot desert.' }),
+  'Dinelv Highlands': Object.freeze({ id: 'dinelv-plateau', name: 'The Dinelv plateau', ground: '#4d4839', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: 3.2, wavelength: 320 }, clearings: ['dinelv-north-pass'],
+    note: 'The first desert highland in the game, and the high ground of the whole southwest: an arid plateau standing eighty metres over the cape on one side and the sand deserts on the other, reached by stepped escarpments whose cliff faces show the rock in horizontal bands - warm-toned stone low down, harder dark stone above. On top, a rolling upland of thin soil and spaced scrub with ridge systems crossing it north to south, three passes through them, six closed basins where the runoff dies, and three residual massifs standing over the lot. Hot desert on every one of its thirty-five hexes, tops included.' }),
+  Hama: Object.freeze({ id: 'hama-corner', name: 'The Hama corner', ground: '#475433', canopy: '#3c5030', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'rank-grass', ownScatter: true,
+    relief: { amplitude: 1.1, wavelength: 320 }, clearings: ['hama-green-line'],
+    note: 'Where the desert stops. Hama holds the corner of the continent - ocean on the west and ocean on the south - and the atlas splits it in half twice over: nine `grassland` hexes that are all `Csb` on the seaward side, ten `plains` hexes that are all `BWh` inland, and no hex where the two fields disagree. So the green is real winter-rain Mediterranean grass two hexes deep along the surf, the dry half is a stony broken rise between it and the Meroshe - "rough without being impassable" - and the line between them is the only place in the southwest where the aridity gradient reaches a green country from the dry side.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

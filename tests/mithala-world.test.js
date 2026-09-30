@@ -169,14 +169,18 @@ test('the world grows north, and it is the biggest structural change any region 
   // southern one from 2398.401 to 3177.824. What the plain set is the *northern* edge, and that is
   // the number to hold here rather than the height it happened to make at the time.
   assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(3)} hexes`);
-  // East to west the plain took nothing, and the number below is no longer 36.20 because the four
+  // East to west the plain took nothing, and the number below has moved twice for other people since
+  // this test was written: to 45.70 for the Ganesh Desert and to **49.700** for Cape Heth, whose one
+  // `coast` hex reaches four hundred metres further west again. What this plain is held to is unchanged:
+  // it spent none of it. The original note follows: the number was no longer 36.20 because the four
   // southwestern countries moved it afterwards: the Ganesh Desert took the western edge from
   // -3010.002 to -3960.002 and the width from 36.20 hexes to 45.70. What this plain is held to is
   // that it spent none of it, which is what its own box being inside -2400...-950 says.
-  assert.ok(Math.abs(wide - 45.70) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
+  assert.ok(Math.abs(wide - 49.70) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
   // The other three edges are exactly where they were when this plain was built: it spends northing
-  // and nothing else. The western one has moved since, and not for anything on this plain.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6);
+  // and nothing else. The western one has moved twice since, and neither time for anything on this
+  // plain: -3960.002 for the Ganesh Desert and **-4360.002** for Cape Heth's one `coast` hex.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4360.001927939127) < 1e-6);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6);
   // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
   // (docs/southwest-2-report.md), which the plain also spent nothing of.

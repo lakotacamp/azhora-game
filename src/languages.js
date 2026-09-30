@@ -259,7 +259,7 @@ export const LANGUAGES = freeze({
     where: 'the Marosh fens and the coast beyond them, and inland to the canyon country',
     sound: 'Long vowels and hissing consonants on compact endings: maan, nur, qad, sax, waa, rih, closing -ah, -at, -iim, -ub.',
     from: 'the world-builder profile `moreshi`',
-    dialects: ['ganesh'],
+    dialects: ['ganesh', 'plateau', 'haman'],
     note: 'A separate lineage, older than the western families and possibly older than their common ancestor, and of no practical use to anyone trying to get directions in the Moroshe. The court form is a dialect of Coastal Trade Moreshi; the deep-desert forms are the conservative ones. There is a ritual register nobody has been able to analyse, and the desert peoples do not discuss it in terms that help.',
     onsets: ['al', 'ar', 'bar', 'ghay', 'ha', 'kal', 'maan', 'mar', 'naj', 'nur', 'qad', 'rih', 'sab', 'sar', 'sax', 'waa', 'zar'],
     middles: ['a', 'aa', 'i', 'ii', 'u', 'uu'],
@@ -609,6 +609,33 @@ export const DIALECTS = freeze({
   highland: dialect('highland', 'the highland Izoli', 'izoli',
     'Conservative where the coastal towns have moved on, and carrying shrine-keeping vocabulary the towns do not have and the tribes do not translate.',
     word => word.replace(/([bcdfgklmnprstvz])$/, '$1$1')),
+  // **The Dinelv plateau's Moreshi**, and it is the most closely described dialect in the whole archive.
+  // `dinelv_highlands.md`: "These communities are Moreshi-speaking, but their dialect sits closer to the
+  // canyon communities' speech than to the Coastal Trade Moreshi of the city. The [r]/[ʀ] distinction
+  // that the canyon traditions maintain is preserved in the highland dialect; the specific lexical
+  // contrasts that the distinction marks in canyon Moreshi are present in the highland speech, though
+  // with different distribution. Coastal Maroshi scholars who have studied the highland dialect classify
+  // it as transitional between canyon and coastal registers, which is accurate as a description and
+  // tells one nothing about how the highland speakers understand their own speech."
+  //
+  // It is called `plateau` and not `highland` because `highland` is already the Izoli one above. The
+  // transform doubles the r, which is the one sound change the lore actually specifies.
+  plateau: dialect('plateau', 'the plateau Moreshi', 'maroshi',
+    'The speech of people who were on the plateau before the city below it was administered and expect to be there after: Moreshi with the canyon country’s [r]/[ʀ] distinction kept where the coast has let it go, and the lexical contrasts that distinction marks still doing work, though not always the same work the canyons give them. Coastal scholars file it as transitional between canyon and coastal registers, which describes it and says nothing about how it is understood by the people speaking it. What it is rich in is stone and water: the kinds of bed in an escarpment and which of them will bear a load, and the names of the water points, in an order that is also a route and a season. The garrisons at the passes do not learn it, and their commanders’ reports say so without noticing that they are saying it.',
+    word => word.replace(/r/, 'rr').replace(/aa/, 'a')),
+  // **Hama's merchant dialect**, which `hama.md` names in its own tags and describes at length: "Hama's
+  // merchant dialect is a further-evolved form of Maroshi that has diverged specifically in its
+  // commercial and legal registers... developing compound roots and novel Form VIII reflexive
+  // constructions for specific contract conditions that do not occur in standard Coastal Trade
+  // correspondence. A treaty drafted in formal Haman commercial Moreshi requires a specialist to
+  // interpret if the reader's background is standard Dinelv administrative Moreshi."
+  //
+  // **The register the lore is about belongs to the Council of Merchant Houses and is not built.** What
+  // the dialect is here is the speech of the corner - the ordinary words of a green two hexes with an
+  // ocean on each side of it - and its famous contract grammar is named and left where it belongs.
+  haman: dialect('haman', 'the Haman merchant speech', 'maroshi',
+    'Coastal Trade Moreshi pushed further than the coast has pushed it, and pushed in one direction only: the derived stem forms that let a Moreshi contract say exactly which obligation falls when have been extended here into compound roots and reflexive constructions that no other Moreshi correspondence uses, and the Dinelv court has kept specialist translators for Haman documents since the early archives. Outside a contract it is ordinary enough - the words for the two winds, the words for the state of the sward in a dry winter, and a whole vocabulary for weather that arrives having crossed an ocean. The seven houses whose registers made it what it is, and every treaty in it, are theirs.',
+    word => word.replace(/at$/, 'aat').replace(/ii/, 'i')),
 });
 
 export const DIALECT_IDS = freeze(Object.keys(DIALECTS));
@@ -741,6 +768,32 @@ export const REGION_LANGUAGE = freeze({
   'West Meroshe Desert': spoken('maroshi'),
   'Central Meroshe Desert': spoken('maroshi'),
   'South Meroshe Desert': spoken('maroshi'),
+  // Forty to forty-two, the block's western edge (src/southwest-world.js). **Two new dialects and one
+  // adjustment, and all three are the lore's own words rather than a builder's guess.**
+  //
+  //  - **Cape Heth is the adjustment, and the lore states the problem itself.** `cape_heth.md` is at
+  //    pains to say who these people are *not*: "They are not related by language or cultural tradition
+  //    to the Boueni, despite the cape's position at the cold-current margin; they are a southwestern
+  //    Azhoran coastal people, related by language and material culture to the communities of the
+  //    Alezhor coast and Ibenale to the north." So the tongue wanted here is the Alezhor coast's - and
+  //    the Alezhor coast is not built, has no lore file of its own and has no entry in `LANGUAGES`. The
+  //    rule this table sets for that case is to "map it to the nearest one the lore itself calls its
+  //    parent or its neighbour and say so in the comment rather than inventing a language". The lore
+  //    names two neighbours and the atlas names two more: Alezhor and Ibenale to the north, which are
+  //    unbuilt, and the Ganesh Desert and the Dinelv Highlands to the east, which are built and speak
+  //    Moreshi. Alezhor is the Ganesh Desert's own northern neighbour and its water crosses the desert;
+  //    the Pyrosi profile is the only other western tongue within reach, and `pyrosi` belongs to the
+  //    hill empire and not to this coast. So the cape carries **plain Maroshi with no dialect** - the
+  //    nearest built speech, marked as a stand-in here rather than as a finding - and `boueni` is
+  //    explicitly *not* used, because the file it would have come from spends four paragraphs saying it
+  //    would be wrong. Whoever builds Alezhor or Ibenale should revisit this line first.
+  //  - **The Dinelv Highlands get `plateau`**, which the lore describes in more detail than it gives any
+  //    other dialect in the archive, down to a named phonemic contrast.
+  //  - **Hama gets `haman`**, which the lore names in its own tags as the "merchant dialect" and
+  //    describes in a paragraph of its own.
+  'Cape Heth': spoken('maroshi'),
+  'Dinelv Highlands': spoken('maroshi', 'plateau'),
+  Hama: spoken('maroshi', 'haman'),
 });
 
 /**

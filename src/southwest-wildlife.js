@@ -169,4 +169,79 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
     { air: 38 }),
   zone('fog-margin-hares', 'upland-hare', 'South Meroshe Desert', .3, [-2720, -2600, 2700, 2840], [[-2640, 2760], [-2650, 2790], [-2680, 2780]],
     'Extension, and the strongest case for one anywhere in the Meroshe: the fog belt is the only ground in ninety-five hexes that is reliably damp. "Where desert air meets ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days", and what it leaves is lichen in the lee of every pebble and thorn standing close enough together to make a traveler walk round it - cover and something green, on a hex the atlas still calls hot desert. Trogo’s rainforest is half a mile east of here and none of its animals are built.'),
+  // ---------------------------------------------------------------------
+  // Cape Heth, the Dinelv Highlands and Hama: thirteen ranges over seventy-three hexes
+  // ---------------------------------------------------------------------
+  /**
+   * **Two jobs made this block emptier and this one stops it, and the arithmetic is the argument.**
+   * Job 1 put seventeen ranges on a hundred and seven hexes (0.159 a hex), job 2 put seven on
+   * ninety-five (**0.074**, a quarter sparser than the Ganesh, which was already the sparsest country in
+   * the game), and this job puts **thirteen on seventy-three (0.178)** - the densest of the three. That
+   * is not a change of standard, it is the same standard applied to different ground:
+   *
+   *  - **Cape Heth: four ranges over nineteen hexes (0.211), and three of the four are sea birds.** The
+   *    land is `BWh` on eighteen of nineteen hexes and carries one range, in the drainage hollows, which
+   *    is the only ground on the cape with soil in it. Everything else here came out of the water, and
+   *    a cold-current coast against a desert is the most productive water there is - which is job 2's
+   *    own argument for its dry-shore gulls, and this cape has twenty-one hex edges of it against the
+   *    West Meroshe's ten.
+   *  - **Dinelv Highlands: four ranges over thirty-five hexes (0.114).** A desert plateau with no
+   *    permanent water, so two of the four are birds in the air over the escarpment and the tables, and
+   *    the two on the ground are both in basins, because the basins are the only ground on this plateau
+   *    with close cover or grass. Thirty-one of the thirty-five hexes carry nothing at all.
+   *  - **Hama: five ranges over nineteen hexes (0.263), the densest country in nine.** Nine of its hexes
+   *    are `Csb` Mediterranean grassland with ocean on two sides, and that is genuinely richer country
+   *    than anything in the block except the Vaellir - whose own West Pyros carries 0.259 a hex. The
+   *    fifth range is the one that is *not* in the grass: a bone-bird over the dry half, and the point of
+   *    it is where it stops.
+   *
+   * **No new rig, and the block has now built nine countries on job 1's one.** Every species here is
+   * already in `src/west-regions-life.js`. Two calls were close:
+   *
+   *  - **the Ganesh dustback stays out, exactly where jobs 1 and 2 left it.** The lore names it and never
+   *    describes its body, the only dustback the lore *does* describe is a domestic bovid, and inventing
+   *    a body for a named animal is the user's decision and not a builder's;
+   *  - **the canyon tortoise got closer and still fails.** `dinelv_highlands.md` puts the highland
+   *    communities' own trade with "the canyon peoples further interior", and the overview's tortoise is
+   *    "a large, slow-moving grazer of desert seeps and seasonal wash vegetation" - which is precisely
+   *    what `DINELV_BASINS` are, so this plateau is the best home the game has ever had for it. It still
+   *    fails `tests/west-life.test.js`'s first law, that nothing in the west can be walked down, and an
+   *    animal whose whole character is that it can be needs either a burrow to go into or an exemption in
+   *    the law. Both are design decisions.
+   *
+   * **Nothing domestic.** The plateau's pastoral communities move their herds between the water points
+   * by season, the highland breeds' fibre is what the court cannot tax, and Hama's food comes in by sea;
+   * every animal in any of that belongs to somebody, and a herd with nobody near it is still somebody's.
+   */
+  zone('heth-point-plungers', 'sea-plunger', 'Cape Heth', .3, [-4299, -4192, 1808, 1894], [[-4232, 1848], [-4259, 1854]],
+    'The Great White Sea-plunger, which the overview puts on "the exposed Legemum headlands" and whose "vertical dives from height into the Iberos shoals" it calls one of the more visible demonstrations of the sea’s productivity. Extension, and the best-argued one in the block: Legemum is a quarter of the continent east, and **this is the other exposed headland on the atlas** - the westernmost land in Azhora, four hundred metres further out than anything else, with the cold current the lore builds this whole cape on running past the end of it. Circling off the point and folding into the water in turn.',
+    { air: 22, circle: 26, period: 17, bob: 1.4, plunge: freeze({ every: 9, fall: 1.1, under: 1.8, climb: 3.2 }) }),
+  zone('heth-point-gulls', 'gull', 'Cape Heth', .3, [-4270, -4164, 1820, 1926], [[-4204, 1868], [-4223, 1886], [-4230, 1860]],
+    'Gulls on the point’s bare rock, and they are here for the same reason the cape matters to anybody: a low promontory reaching into a cold current is where the sea concentrates. Extension - the overview catalogues the Iberos colonies on the far side of the continent and says nothing about this coast. Forty paces inland of them the ground is hot desert and has nothing on it, which is the same joke job 2 found on the fan skirt’s shore and this cape tells three times over, once on each side.'),
+  zone('heth-bight-waders', 'wading-bird', 'Cape Heth', .4, [-4068, -3925, 1674, 1803], [[-3985, 1739], [-3965, 1714], [-4028, 1763]],
+    'Waders on the sheltered northern shore, in the angle the lore calls the Heth Bight: "too shallow for deep-draft vessels but provides additional shelter for the small-boat traffic... and it is the productive zone for the shallow-water fishing that the cape communities use to supplement the offshore catch". Shallow water over sand with a flat calm on it is a wading bird’s living anywhere, and this is the only sheltered water on four hundred metres of coast. Extension: the overview’s wading assemblage is catalogued on the Lizeem.'),
+  zone('heth-hollow-hares', 'upland-hare', 'Cape Heth', .3, [-4110, -4004, 1860, 1966], [[-4044, 1908], [-4063, 1926], [-4070, 1900]],
+    '**The only animal on the ground in the whole of Cape Heth**, and it is in the drainage hollows, because they hold every scrap of soil the cape has - "gardens on the soil that has accumulated in the drainage hollows". Extension, at the same dry limit the Ganesh’s damp reach put the west’s hare at, with salt instead of drought doing the work: eighty paces up the ridge from here the spray gets over the top in a winter storm and nothing grows at all.'),
+  zone('dinelv-rim-hawk', 'plateau-hawk', 'Dinelv Highlands', .3, [-3826, -3746, 2033, 2113], [[-3786, 2073]],
+    'The fauna overview’s dry-plateau hawk, which "hunts the upland grasslands" of the rain-shadow country. **Not an extension**: this is an arid upland in rain-shadow country and it is the largest one on the atlas. From the rim here the bird has ninety metres of fall under it and the whole fan skirt, the salt pan and the western ocean beyond that - more air below a raptor than anywhere else in the southwest. Job 1 put the same bird on Navarth’s western rim, which is this argument at half the height.',
+    { air: 33 }),
+  zone('dinelv-table-bone-bird', 'bone-bird', 'Dinelv Highlands', .3, [-3495, -3415, 1974, 2054], [[-3455, 2014]],
+    'One bone-bird over the tables, and it is here for the cliffs rather than for the carrion: the three mesas are the only vertical rock in a hundred and seventy hexes of desert, and a bird with two and a half metres of wing over hot ground beside a cliff has lift for nothing. The overview calls them "the most visible large animals of the Moroshé from caravan routes", and the caravan route that matters to this country climbs past here to the Meroshe crossing. It is the ninth of the block’s bone-birds and the highest ground any of them works.',
+    { air: 40 }),
+  zone('dinelv-basin-hares', 'upland-hare', 'Dinelv Highlands', .3, [-3473, -3374, 1914, 2038], [[-3414, 1980], [-3433, 1998], [-3417, 1954]],
+    'Extension: hares in the eastern basins, which are the plateau’s water points and the only ground on it that is not bare between the plants - "the deeper-rooted plants occupying the water-concentration points that only become visible in wet years when they green faster than the surrounding ground". The scrub in a basin stands close enough to hide in and the plateau outside one does not, so the animals are in the basins for the same reason the routes and the herds are.'),
+  zone('dinelv-saddle-hares', 'upland-hare', 'Dinelv Highlands', .3, [-3700, -3594, 1914, 2020], [[-3634, 1980], [-3637, 1954], [-3660, 1977]],
+    'Extension: the same animal in the wide western basin under the Middle Saddle, two hundred and twenty metres from the eastern ones with a ridge crest between. Two bands rather than one for the reason job 1 gave on the Ganesh Plain’s depressions: on this plateau the basins are the country and the ridges between them have nothing on them, so a band spread over both would be walking over bare rock for half its range.'),
+  zone('hama-sward-hares', 'upland-hare', 'Hama', .3, [-3291, -3171, 2860, 2963], [[-3224, 2900], [-3251, 2906], [-3211, 2923]],
+    'Hares in the seaward sward, and after two hundred hexes of desert this is the first range in the block since the Vaellir’s own plain that is on grass because of the weather rather than because of a hollow. Extension: the west’s hare on `Csb` Mediterranean grassland, which is the ground it keeps on the Ascarth peninsula and in Gala’s green south. Two hundred paces north-east of here the grass gives out and there are none.'),
+  zone('hama-bed-hares', 'upland-hare', 'Hama', .3, [-3470, -3362, 2708, 2814], [[-3405, 2774], [-3402, 2748], [-3430, 2765]],
+    'Extension: a second band in the north winter bed, where the greenest grass in the southwest stands in a dry channel floor. `Csb` means the rain comes in winter and the summer is not wet, so in the face the world can show these beds are dry and the grass in them is what the last of the water left - which is the damp reach’s argument in the Ganesh, on a country wet enough that it is grass and not scrub.'),
+  zone('hama-harrier', 'harrier', 'Hama', .3, [-3184, -3104, 2920, 3000], [[-3144, 2960]],
+    'Extension: a harrier quartering the seaward grass. No lore file for this corner names a raptor, and two hexes of thick Mediterranean sward between a stony rise and an ocean is a harrier’s whole living - it beats low and follows the ground rather than soaring, the way the one on West Pyros’s plain and the one over the Ganesh Plain’s hollows do. It turns back at the line: there is nothing for it to hunt on the gravel.',
+    { air: 9, circle: 32, period: 18, quarter: 66, bob: 1.5, follow: true }),
+  zone('hama-corner-gulls', 'gull', 'Hama', .3, [-3420, -3314, 2857, 2963], [[-3354, 2905], [-3373, 2923], [-3380, 2897]],
+    'Gulls at the corner where the western ocean and the southern ocean meet - "the southwestern tip of the Dinova Peninsula... where the peninsula’s two coasts converge and the open-ocean approaches narrow toward the cape". **This is the only shore in the southwest where the grass comes down to within thirty paces of the water**: the Ganesh’s gulf, the fan skirt’s dry shore and the Meroshe’s southern beach are all desert to the surf, and the gulls on those are the only living thing for a mile. These ones have a green country behind them.'),
+  zone('hama-line-bone-bird', 'bone-bird', 'Hama', .3, [-3054, -2974, 2860, 2940], [[-3014, 2900]],
+    '**The last bone-bird, and the point of it is where it stops.** Job 2 put one in each of the four Meroshe quarters and called them what the lore calls them, "the most visible large animals of the Moroshé"; this one works Hama’s stony inland half, which is hot desert like all of it, and does not cross the line. Two hundred paces south-west of the end of its range the ground is Mediterranean grass with a harrier over it. The bird is the desert’s and the desert ends here.',
+    { air: 38 }),
 ]);

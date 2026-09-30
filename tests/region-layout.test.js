@@ -160,6 +160,21 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * square: **45.70 by 53.450**, taller than it is wide for the first time since the Ascarths, and
    * there is no direction left that a playable country has not spent.
    *
+   * Then **Cape Heth widened it west again**, from 45.70 to **49.700**, and that move is worth reading
+   * twice because job 2's report predicted it would not happen. The prediction was that job 3's three
+   * countries lie inside the survey *window*, which is true; the box is a different thing. `x = W(q + r/2)`,
+   * so Cape Heth's q -39 at row 127 stands four hundred metres west of the Ganesh Desert's q -33 at row
+   * 123. Its westernmost hex is the one `coast` hex the atlas puts inside any country, (-39,127), centre
+   * x = -4250, outer flat -4300, margin 60 -> `minX` **-4360.001927939127**. Nothing else moves: the
+   * Dinelv Highlands reach -3900, Hama -3500, and Hama's southernmost row ties the South Meroshe's to the
+   * millimetre without passing it. The world is **49.700 by 53.450**.
+   *
+   * `WINDOW.minQ` -45 -> **-49** with it, measured off the lattice, and **that widening pulls in nothing
+   * at all**: the four columns q -49...-46 hold no claimed hex anywhere on the atlas in rows 79-144,
+   * because west of Cape Heth the map is open ocean to the edge of the sheet. LAND_HEXES stays at 2,078
+   * and the generated survey is identical either way; the window moves because the invariant it keeps is
+   * "the last column the lattice reaches, and no slack".
+   *
    * The window moved in **both** axes for it, which is new: `maxR` 135 -> 144 is the lattice's own
    * last row, and `minQ` -41 -> -45 came with it for free, because x = W(q + r/2) puts a low q and a
    * high r at the same world x - a lattice nine rows further south reaches four columns further west
@@ -168,11 +183,11 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * which job 1's 71 did not include one of. Without it the whole of the South Meroshe Desert would
    * have been open water in the middle of a playable country.
    */
-  assert.ok(bounds.maxX - bounds.minX < 46 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
+  assert.ok(bounds.maxX - bounds.minX < 50 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
   assert.ok(bounds.maxZ - bounds.minZ < 54 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
-  assert.ok(bounds.maxX - bounds.minX > 45.6 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxX - bounds.minX > 49.6 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
   assert.ok(bounds.maxZ - bounds.minZ > 53.4 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 

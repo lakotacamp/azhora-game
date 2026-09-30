@@ -45,7 +45,15 @@ test('the baked survey carries every playable region and the land around them', 
   // regions so the coastline knows where the Stills begin.
   const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
   for (const region of PLAYABLE_SURVEY.regions) for (const cell of region.cells) assert.ok(land.has(`${cell.q},${cell.r}`));
-  assert.ok(LAND_HEXES.length > PLAYABLE_SURVEY.regions.reduce((sum, region) => sum + region.cells.length, 0) * 2);
+  // **This used to read `LAND_HEXES.length > playable cells * 2` and it was a stale list** rather than
+  // an invariant: the ratio falls every time a country that was somebody's horizon becomes playable, and
+  // the southwest has now done that eleven times. It is 2,078 against 1,099 - 1.89 - and it will keep
+  // falling. What the line is *for* is that the window reaches past the playable regions so the coast
+  // field knows where the Stills begin, so that is what it says now: several hundred land hexes in the
+  // window that no playable region claims.
+  const claimed = new Set(PLAYABLE_SURVEY.regions.flatMap(region => region.cells.map(cell => `${cell.q},${cell.r}`)));
+  const horizon = LAND_HEXES.filter(([q, r]) => !claimed.has(`${q},${r}`));
+  assert.ok(horizon.length > 500, `only ${horizon.length} land hexes in the window are horizon rather than playable`);
   for (const [q, r] of LAND_HEXES) assert.ok(q >= WINDOW.minQ && q <= WINDOW.maxQ && r >= WINDOW.minR && r <= WINDOW.maxR);
 });
 

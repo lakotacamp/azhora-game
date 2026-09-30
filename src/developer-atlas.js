@@ -94,6 +94,15 @@ const northMerosheAnchor = point(1066.942, 3136, -27, 130);
 const westMerosheAnchor = point(900.666, 3232, -35, 134);
 const centralMerosheAnchor = point(1039.230, 3232, -30, 134);
 const southMerosheAnchor = point(1122.368, 3328, -29, 138);
+// Cape Heth, the Dinelv Highlands and Hama, one middle hex each. Same formula, and each one had to
+// dodge something new: Cape Heth's plains (-36, 127) on the middle of the cape, clear of the point,
+// the weather face and every drainage hollow; the Dinelv Highlands' hills (-31, 129) on the inner
+// ridge's crest, clear of all three mesas, all four basins and the escarpment on every side; and
+// Hama's grassland (-35, 139) in the middle of the seaward sward, clear of the winter beds and of the
+// line itself, because an anchor that landed on the line would be a point about which nothing is true.
+const capeHethAnchor = point(775.959, 3064, -36, 127);
+const dinelvAnchor = point(942.236, 3112, -31, 129);
+const hamaAnchor = point(969.948, 3352, -35, 139);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -143,6 +152,9 @@ const LOCALS = [
   [37, 'West Meroshe', 'west-meroshe', 'West Meroshe Desert', westMerosheAnchor],
   [38, 'Central Meroshe', 'central-meroshe', 'Central Meroshe Desert', centralMerosheAnchor],
   [39, 'South Meroshe', 'south-meroshe', 'South Meroshe Desert', southMerosheAnchor],
+  [40, 'Cape Heth', 'cape-heth', 'Cape Heth', capeHethAnchor],
+  [41, 'Dinelv Highlands', 'dinelv', 'Dinelv Highlands', dinelvAnchor],
+  [42, 'Hama', 'hama', 'Hama', hamaAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

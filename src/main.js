@@ -225,7 +225,9 @@ import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY a
 import { MITHALA_SUMMER_CHANNELS as MITHALA_SUMMER, MITHALA_LANDMARKS as MITHALA_MARKS } from './mithala-world.js';
 import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BRAID, MITHALA_WEST_ARM as MITHALA_ARM } from './west-regions.js';
 import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS,
-  MEROSHE_BENCHES as SOUTHWEST_BENCHES, MEROSHE_SALT as SOUTHWEST_SALT, MEROSHE_DUNES as SOUTHWEST_DUNES, MEROSHE_FANS as SOUTHWEST_FANS } from './southwest-world.js';
+  MEROSHE_BENCHES as SOUTHWEST_BENCHES, MEROSHE_SALT as SOUTHWEST_SALT, MEROSHE_DUNES as SOUTHWEST_DUNES, MEROSHE_FANS as SOUTHWEST_FANS,
+  HETH_SPINE as SOUTHWEST_SPINE, HETH_HOLLOWS as SOUTHWEST_HOLLOWS, DINELV_MESAS as SOUTHWEST_TABLES, DINELV_GAPS as SOUTHWEST_GAPS,
+  DINELV_ASCENT as SOUTHWEST_ASCENT, HAMA_BEDS as SOUTHWEST_HAMA_BEDS } from './southwest-world.js';
 import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
@@ -2103,6 +2105,47 @@ function init() {
       // in the Meroshe standing close enough together to walk round.
       if(view==='southwest-reg'){const m=mark('meroshe-fog-margin');
         return shot({x:m.x-96,z:m.z+52},{x:m.x+150,z:m.z-40},.04,1.9);}
+      // ----- Cape Heth, the Dinelv Highlands and Hama. Every one is worked out from its own
+      // landform's numbers - the spine's own axis, a hollow's own centre, a table's own reach, a gap's
+      // own point, the ascent's own line, a bed's own points - so none can drift off its subject.
+      // The point of the cape: the westernmost ground in Azhora, with water on three sides of it.
+      // **Across the point from the north-east**, so the water is on both hands. The first try aimed
+      // a hundred and twenty metres past the headland and the coast field's own beach filled three
+      // quarters of the frame with the point itself somewhere in the middle of it.
+      if(view==='southwest-heth-point'){const m=mark('heth-point');
+        return shot({x:m.x+74,z:m.z-58},{x:m.x-30,z:m.z+34},.03,2.6);}
+      // The weather face, looking out: bare bedding, salt crust, and the open western ocean.
+      if(view==='southwest-heth-weather'){const m=mark('heth-weather-face');
+        return shot({x:m.x+38,z:m.z+18},{x:m.x-160,z:m.z-30},.02,2.0);}
+      // A drainage hollow on the lee flank: the only soil on the cape, from the open rock beside it.
+      if(view==='southwest-heth-hollow'){const h=SOUTHWEST_HOLLOWS[2];
+        return shot({x:h.x+h.radius+34,z:h.z+22},{x:h.x,z:h.z},.03,1.9);}
+      // The escarpment from below, on the plateau's own foot: eighty metres of banded rock going up.
+      if(view==='southwest-dinelv-scarp'){const m=mark('dinelv-escarpment');
+        return shot({x:m.x-24,z:m.z+120},{x:m.x+150,z:m.z-40},.02,4);}
+      // The tables, from the gap below them: flat tops, cliff sides, blocks at the foot.
+      if(view==='southwest-dinelv-tables'){const t=SOUTHWEST_TABLES[0],m=mark('dinelv-massifs');
+        return shot({x:m.x,z:m.z},{x:t.x,z:t.z},.05,3);}
+      // Along the grain of the plateau: a ridge crest under the camera and the next swale beyond it.
+      if(view==='southwest-dinelv-ridges'){const m=mark('dinelv-ridges'),g=SOUTHWEST_GAPS[3];
+        return shot({x:m.x,z:m.z},{x:g.x,z:g.z},.04,3.4);}
+      // The one way up, looking up it: the ascent's own line, from its foot to its head.
+      if(view==='southwest-dinelv-pass'){const l=SOUTHWEST_ASCENT.line,a=l[1],b2=l[l.length-1];
+        return shot({x:a.x,z:a.z},{x:b2.x,z:b2.z},.05,2.6);}
+      // **The line**, from the dry side looking into the green: the picture of the whole job.
+      // The first try looked three hundred metres past the line and photographed the open ocean with a
+      // strip of grass in the corner: measured, the shore is only eighty metres beyond the line here.
+      if(view==='southwest-hama-line'){const m=mark('hama-green-line');
+        return shot({x:m.x+110,z:m.z-34},{x:m.x-55,z:m.z+22},.03,2.0);}
+      // The seaward grass with the ocean behind it: the only green shore in the southwest.
+      // Aimed at the corner itself rather than past it: the first try focused a hundred metres out to sea.
+      if(view==='southwest-hama-grass'){const m=mark('hama-corner');
+        return shot({x:m.x+95,z:m.z-58},{x:m.x,z:m.z},.03,2.2);}
+      // A winter bed: a metre and a half of soft-banked cut with the greenest grass in the block in it.
+      // Up-bed, where the cut is at its full metre and a half: the last point of every bed is where the
+      // shore release has taken the cut back out again, so a view from there has no bed in it.
+      if(view==='southwest-hama-bed'){const bed=SOUTHWEST_HAMA_BEDS[1],a=bed.line[0],c=bed.line[2];
+        return shot({x:a.x,z:a.z},{x:c.x,z:c.z},.05,1.4);}
     }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.

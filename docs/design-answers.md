@@ -4,6 +4,72 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-30 — The southwest, job 3: Cape Heth, the Dinelv Highlands and Hama
+
+Built to `docs/southwest-3-brief.md`; the whole account is `docs/southwest-3-report.md`. Terrain,
+climate, water, scenery and wildlife only, and nothing that belongs to anybody. **Job 3 of the
+four-job programme** covering Azhora's southwest, on a branch cut from job 2's. Seventy-three hexes,
+and each of the three countries is a first.
+
+- **Cape Heth holds the only `coast` hex any country on the atlas holds.** The map paints 1,332 of
+  them round the continent and exactly one falls inside somebody's outline: (−39,127), the point of
+  this cape, with four of its six neighbours open water. **Its `Cfb` is the sea's code and not the
+  air's** — measured, all 1,332 `coast` hexes and 13,619 of 13,622 `ocean` hexes read `Cfb` — so the
+  point takes the desert's own dryness and the cape is eighteen `BWh` hexes with the sea on three
+  sides of it. Twenty-one hex edges of open water, the most maritime country in the block.
+- **The Dinelv Highlands are the first desert highland in the game**: `BWh` on all thirty-five hexes
+  with twenty-six `hills`, six `plains` and three `mountain` — and across the whole map `mountain`
+  reads `BWh` exactly three times, all three here. That code decides what they can be, because a
+  summit high enough to be a mountain in the Lotharn sense would carry snow; **they are flat-topped
+  residual tables** sixty and seventy metres over the plateau with sides too steep to walk.
+- **The bedding is a function of height and nothing else**, `h + A sin(2πh/P)`, which makes it
+  horizontal by construction and impossible to lay crooked; with `A < P/2π` it stays single-valued so
+  nothing overhangs. It draws treads and risers up every steep face in the country without changing
+  the total fall by a centimetre, and it is the cheapest landform in the block.
+- **The ridge systems are the atlas's own rows.** Read in the frame the lore's own sentence names —
+  the peninsula's long axis, measured at thirty degrees west of due south — every hex but one falls on
+  a row of constant cross-strike coordinate, and **the six `plains` hexes are the gaps in those rows**.
+  So the lore's passes and its water-concentration points are the same four places, which is the one
+  thing it says twice without joining up, and which is why the court's cisterns are at the passes.
+- **The plateau can be walked up in exactly one place** — the lore's northern plateau pass, a graded
+  ramp laid along the grain, 29 m to 85 m over 293 with a worst grade of 0.53 — and the tables cannot
+  be walked at all. A flood fill at a 0.45 grade reaches 117.6 m and stops well under their 164.7.
+- **Hama is the wet edge of the desert, and the atlas draws the line twice**: nine `grassland` hexes
+  that are every one `Csb`, ten `plains` hexes that are every one `BWh`, and no hex where the two
+  fields disagree. Measured on the ground, the line lies **sixty-nine to a hundred and ten metres
+  inland of the surf** all the way round the corner of the continent — the ocean draws it and the
+  Meroshe does not — and it explains job 2's South Meroshe fog belt: one ocean, rain on the exposed
+  western face and fog on the sheltered southern one.
+- **The world box moved again and job 2's brief had predicted it would not.** `minX` −3960.002 →
+  **−4360.002**, the world 45.700 hexes wide → **49.700**, all of it Cape Heth's one `coast` hex,
+  because `x = W(q + r/2)` and its rows are four higher than the Ganesh Desert's. **The lesson is that
+  a prediction about the survey window is not a prediction about the world box**; three briefs in a
+  row have made that substitution and two of them were wrong. `WINDOW.minQ` −45 → −49 with it, and
+  that widening is the first that pulls in nothing at all: there is no claimed hex west of Cape Heth.
+- **The Meroshe fan heads lifted with nothing changed**, which is what job 2 predicted when it wrote
+  `merosheSkirt` as a one-sided ramp: the three apexes went from 9.28, 11.66 and 15.63 m to 38.73,
+  33.54 and 33.95, and every metre came through the hex blend's own base.
+- **Thirteen ranges over seventy-three hexes (0.178 a hex), and the block stops getting emptier.**
+  Job 1 was 0.159 and job 2 was 0.074; Hama's nine `Csb` hexes carry **0.263 a hex**, the densest
+  country in eleven, and Cape Heth's 0.211 is three sea birds and one hare. **No new rig**: the
+  Ganesh dustback is held out for the third time (named, never described — the user's decision), and
+  the canyon tortoise now has its perfect home in the Dinelv basins and still fails the west's first
+  law that nothing can be walked down.
+- **Two new dialects, both the lore's own**: `plateau` for the Dinelv highland Moreshi, which the lore
+  describes down to a named phonemic contrast, and `haman` for Hama's merchant dialect. **Cape Heth
+  speaks plain Maroshi as a marked stand-in**, because its own file names the Alezhor coast and
+  Ibenale as its kin and spends four paragraphs ruling out the Boueni, and none of those is built.
+- **`OWN_SKY` is one list now** (`tests/own-sky.js`), which is the permanent guard job 2 asked for
+  after five builders found and extended the same two copies.
+- **Eight files and ten stale assertions were moved**, six of them the world-box width; and two
+  landmarks had to move a metre or four because growing the box shifts every vertex of the renderer's
+  coarse band — job 1's Alezhor Water and Amod's Dromel Gate label (the gate itself is untouched).
+- The lore was adjusted in place on nine claims across `cape_heth.md` (the cape runs into desert and
+  not forest; the bight is north; there are no trees), `dinelv_highlands.md` (the coast is west; the
+  escarpment's south-western corner is a sea cliff; the ridges' bearing; the three tables, which the
+  lore does not mention) and `hama.md` (the two converging coasts are both open ocean; the green is
+  nearly half the country).
+
 ## 2026-09-30 — The southwest, job 2: the four Meroshe deserts
 
 Built to `docs/southwest-2-brief.md`; the whole account is `docs/southwest-2-report.md`. Terrain,

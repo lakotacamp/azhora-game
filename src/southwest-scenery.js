@@ -4,10 +4,11 @@ import { WORLD_SCALE } from './world-scale.js';
 import { VAELLIR, ALEZHOR_WATER, SOUTHWEST_RIVERS, westBareGround } from './west-regions.js';
 import { WEST_PROFILES, westWaterSurface } from './west-ground.js';
 import {
-  SOUTHWEST_REGIONS, SOUTHWEST_NORTH_REGIONS, MEROSHE_REGIONS, GANESH_WASHES, GANESH_PLAIN_CHANNELS, GANESH_DEPRESSIONS,
+  SOUTHWEST_REGIONS, SOUTHWEST_NORTH_REGIONS, MEROSHE_REGIONS, WEST_EDGE_REGIONS, GANESH_WASHES, GANESH_PLAIN_CHANNELS, GANESH_DEPRESSIONS,
   MEROSHE_SALT, MEROSHE_DUNES,
   southwestAridity, southwestClear, ganeshLie, ganeshDamp, inDepression, nearestWash,
   merosheBench, merosheFan, merosheCorridor, merosheErg, merosheFog, merosheVarnish, duneProfile, onSaltPan, regionShare,
+  hethSpray, inHethHollow, dinelvRidgeAt, dinelvMesaAt, inDinelvBasin, nearestDinelvChannel, hamaGreen, hamaLie, inHamaBed,
 } from './southwest-world.js';
 
 /**
@@ -59,7 +60,8 @@ export function createSouthwestScenery(kit) {
   const range = (a, b) => a + random() * (b - a);
   const smooth = (a, b, x) => { const v = Math.max(0, Math.min(1, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
   const metrics = { water: 0, blockers: 0, reeds: 0, gravel: 0, boulders: 0, pavement: 0, stones: 0, tufts: 0, scrub: 0, stubble: 0, trees: 0, wood: 0,
-    rock: 0, cobble: 0, sand: 0, reg: 0, salt: 0, lichen: 0, thorn: 0, shingle: 0 };
+    rock: 0, cobble: 0, sand: 0, reg: 0, salt: 0, lichen: 0, thorn: 0, shingle: 0,
+    capeRock: 0, capeSalt: 0, plateauRock: 0, blocks: 0, rubble: 0, hamaStone: 0, edgeTrees: 0 };
   const gy = (x, z) => groundHeight(x, z);
   const OWN = new Set(SOUTHWEST_REGIONS);
   const own = (x, z) => OWN.has(hexOwnerAt(x, z));
@@ -737,6 +739,278 @@ export function createSouthwestScenery(kit) {
   metrics.thorn = thornScrub.length + skirtScrub.length + sheetScrub.length + fogThorn.length;
   metrics.shingle = shingle.length; metrics.thornTrees = thornTrees.length;
   metrics.gravel += hamadaGrit.length + corridorGrit.length;
+
+  // -------------------------------------------------------------------------
+  // Cape Heth, the Dinelv Highlands and Hama: a third pass, and it is where the block stops emptying
+  // -------------------------------------------------------------------------
+  /**
+   * **Two jobs made this block emptier and this one turns it round, in exactly one of three
+   * countries.** Job 1 laid 5,527 grass tufts over a hundred and seven hexes and job 2 laid none at all
+   * over ninety-five; nine of Hama's nineteen hexes are `Csb` Mediterranean grassland with the ocean on
+   * two sides of them, and pretending otherwise would be as dishonest as pretending the Ganesh had a
+   * meadow in it. So this pass is three different arguments, one per country:
+   *
+   *  - **Cape Heth is sorted by salt and by nothing else.** `hethSpray` runs 1 on the weather face and 0
+   *    in the lee hollows, and what a point gets follows: bare grey-brown sandstone with the bedding
+   *    showing, gravel, a crust of salt in the rock hollows and lichen in the lee of every stone on the
+   *    seaward side; spaced scrub on the open lee; and in the five drainage hollows, which hold every
+   *    scrap of soil the cape has, scrub twice the size and a stubble of grass round the lowest part.
+   *    "The ocean-facing slope is low enough that spray overtops it in the largest winter storms."
+   *  - **The Dinelv Highlands are sorted by the ridge and the basin**, which is the lore's own division:
+   *    "the vegetation is scrub: low, spaced, adapted to the dryness, with deeper-rooted plants occupying
+   *    the water-concentration points that only become visible in wet years when they green faster than
+   *    the surrounding ground". So the plateau carries spaced scrub that thins to nothing on the crests
+   *    where the rock is bare, the escarpment and the three mesas carry slabs and the blocks that have
+   *    fallen off their cliffs, the channel floors carry rubble, and the four basins carry everything
+   *    else in the country - close scrub, grass, and the plateau's only trees.
+   *  - **Hama is sorted by the line.** `hamaGreen` is 1 in the `Csb` half and 0 in the `BWh` half and the
+   *    whole change happens over two hundred paces; the sward, the evergreen scrub, the few wind-shaped
+   *    trees and the greenest grass in the block are on one side of it, and gravel, stony ribs and
+   *    bleached stubble are on the other. **It is the only place in nine countries where a traveler can
+   *    watch a desert end.**
+   *
+   * Nothing here is anybody's: no plot on the coastal margin, no garden in a hollow, no cistern at a
+   * pass, no quarry on the escarpment, no mine on a ridge exposure, no harbour on either corner.
+   */
+  const edgeCells = WEST_EDGE_REGIONS.flatMap(name => REGION_CELLS[name] ?? []).sort((a, b) => a.z - b.z || a.x - b.x);
+  const capeSlabs = [], capeGrit = [], capeSalt = [], capeLichen = [], capeScrub = [], hollowScrub = [], hollowGrass = [], capeShingle = [];
+  const plateauSlabs = [], plateauGrit = [], mesaBlocks = [], channelRubble = [], plateauScrub = [], basinScrub = [], basinGrass = [], basinTrees = [], plateauStubble = [];
+  const hamaSward = [], hamaMaquis = [], hamaTrees = [], bedGrass = [], hamaRibs = [], hamaGravel = [], hamaStubble = [];
+  for (const cell of edgeCells) {
+    const here = where(cell.x, cell.z);
+    const sample = (count, work) => {
+      for (let i = 0; i < count; i++) {
+        const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
+        if (where(x, z) !== here) continue;
+        work(x, z);
+      }
+    };
+    if (here === 'Cape Heth') {
+      // The rock itself, and the bedding showing through it: a sedimentary cape, "grey-brown, soft
+      // enough to be worked by hand tools", so the slabs are thin and lie flat.
+      sample(300, (x, z) => {
+        if (!plantable(x, z, .4)) return;
+        const salt = hethSpray(x, z);
+        if (random() > .22 + salt * .52) return;
+        capeSlabs.push({ x, z, s: range(.35, 1.25), rot: random() * 6.28, flat: range(.05, .12), salt });
+      });
+      sample(220, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > .34 + hethSpray(x, z) * .3) return;
+        capeGrit.push({ x, z, s: range(.1, .32), rot: random() * 6.28, flat: range(.18, .38) });
+      });
+      // **Salt in the rock hollows on the weather face**, which is the cape's own signature and the one
+      // thing in the block outside the Malhat that is white: sea water thrown over a low shore and left
+      // to dry in a hot desert leaves crust, and the lore's storm archive is a record of how far it got.
+      sample(200, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > Math.max(0, hethSpray(x, z) - .42) * 1.5) return;
+        capeSalt.push({ x, z, s: range(.18, .55), rot: random() * 6.28, flat: range(.02, .05) });
+      });
+      sample(240, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > hethSpray(x, z) * .40) return;
+        capeLichen.push({ x, z, s: range(.1, .3), rot: random() * 6.28, flat: range(.03, .07) });
+      });
+      // Scrub: nothing where the salt gets, spaced on the open lee, and close and large in the hollows.
+      sample(180, (x, z) => {
+        if (!plantable(x, z, 1.4)) return;
+        const hollow = inHethHollow(x, z), salt = hethSpray(x, z);
+        if (hollow > .25) {
+          if (random() > hollow * .44) return;
+          if (hollowScrub.some(b => Math.hypot(b.x - x, b.z - z) < 3.4)) return;
+          hollowScrub.push({ x, z, s: range(.34, .72), h: range(.85, 1.35), rot: random() * 6.28, grey: random() < .35 });
+          return;
+        }
+        if (random() > Math.max(0, .26 - salt * .30)) return;
+        if (capeScrub.some(b => Math.hypot(b.x - x, b.z - z) < 5.6)) return;
+        capeScrub.push({ x, z, s: range(.2, .44), h: range(.55, .9), rot: random() * 6.28, grey: random() < .7 });
+      });
+      sample(200, (x, z) => {
+        if (!plantable(x, z, .6)) return;
+        const hollow = inHethHollow(x, z);
+        if (random() > hollow * hollow * .8) return;
+        hollowGrass.push({ x, z, s: range(.6, 1.15), wide: 1.2, rot: random() * 6.28, hollow });
+      });
+      // Shingle on the bight's sheltered northern shore, and nothing on the weather face, where the
+      // surf takes anything loose away.
+      sample(140, (x, z) => {
+        const shore = landDistance(x, z);
+        if (shore > 30 || shore < 1 || westWaterSurface(x, z) !== null) return;
+        if (random() > Math.max(0, .62 - hethSpray(x, z) * .5)) return;
+        capeShingle.push({ x, z, s: range(.12, .4), rot: random() * 6.28, flat: range(.24, .5) });
+      });
+    } else if (here === 'Dinelv Highlands') {
+      const crest = (x, z) => dinelvRidgeAt(x, z).crest;
+      const mesa = (x, z) => dinelvMesaAt(x, z);
+      // Bedrock: bare along every crest and all over the mesa flanks, because that is where the beds
+      // outcrop. The slabs are thin and flat for the same reason Cape Heth's are - it is bedded rock.
+      sample(320, (x, z) => {
+        if (!plantable(x, z, .4)) return;
+        const bare = .16 + crest(x, z) * .46 + mesa(x, z).flank * .5;
+        if (random() > bare) return;
+        plateauSlabs.push({ x, z, s: range(.4, 1.5), rot: random() * 6.28, flat: range(.05, .13) });
+      });
+      sample(240, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > .44) return;
+        plateauGrit.push({ x, z, s: range(.1, .34), rot: random() * 6.28, flat: range(.18, .4) });
+      });
+      // **The blocks at the foot of the cliffs**, which is what tells a mesa from a hill: a flat-topped
+      // block with vertical sides sheds its cap in pieces, and the pieces lie in an apron round the base
+      // at the size the bedding gives them. They are the biggest stones in the whole block.
+      sample(200, (x, z) => {
+        if (!plantable(x, z, 1.1)) return;
+        const m = mesa(x, z);
+        if (random() > m.flank * .52) return;
+        if (mesaBlocks.some(s => Math.hypot(s.x - x, s.z - z) < 2.6)) return;
+        mesaBlocks.push({ x, z, s: range(.5, 1.9), rot: random() * 6.28, flat: range(.45, .95) });
+      });
+      sample(180, (x, z) => {
+        const found = nearestDinelvChannel(x, z);
+        if (!found || found.distance > found.channel.half * 1.3 || westBareGround(x, z, .3)) return;
+        if (random() > .58) return;
+        channelRubble.push({ x, z, s: range(.16, .6), rot: random() * 6.28, flat: range(.3, .62) });
+      });
+      // The scrub, "low, spaced, adapted to the dryness", and the basins where it is not spaced.
+      sample(260, (x, z) => {
+        if (!plantable(x, z, 1.4)) return;
+        const basin = inDinelvBasin(x, z), m = mesa(x, z);
+        if (basin > .2) {
+          if (random() > basin * .48) return;
+          if (basinScrub.some(b => Math.hypot(b.x - x, b.z - z) < 3.2)) return;
+          basinScrub.push({ x, z, s: range(.32, .68), h: range(.8, 1.3), rot: random() * 6.28, grey: random() < .3 });
+          return;
+        }
+        if (random() > Math.max(0, .24 - crest(x, z) * .18 - m.flank * .2 - m.top * .2)) return;
+        if (plateauScrub.some(b => Math.hypot(b.x - x, b.z - z) < 6.2)) return;
+        plateauScrub.push({ x, z, s: range(.18, .42), h: range(.5, .85), rot: random() * 6.28, grey: random() < .65 });
+      });
+      sample(200, (x, z) => {
+        if (!plantable(x, z, .6)) return;
+        const basin = inDinelvBasin(x, z);
+        if (random() > basin * basin * .72) return;
+        basinGrass.push({ x, z, s: range(.55, 1.05), wide: 1.2, rot: random() * 6.28, basin });
+      });
+      // **The plateau's only trees, and all of them are in a basin**, which is the lore's own claim
+      // about where the deep roots are. Small, far apart, and visible from a long way off across a
+      // plateau that has nothing else standing on it.
+      sample(80, (x, z) => {
+        if (!plantable(x, z, 2.4)) return;
+        if (random() > inDinelvBasin(x, z) * .18) return;
+        if (basinTrees.some(t => Math.hypot(t.x - x, t.z - z) < 16)) return;
+        basinTrees.push({ x, z, s: range(.85, 1.15), h: range(3.2, 5.2), rot: random() * 6.28,
+          girth: .6, bole: .46, top: .74, spread: .24, wide: .38, deep: .17 });
+      });
+      sample(120, (x, z) => {
+        if (!plantable(x, z, .8)) return;
+        if (random() > .10 + inDinelvBasin(x, z) * .3) return;
+        plateauStubble.push({ x, z, s: range(.32, .62), rot: random() * 6.28 });
+      });
+    } else if (here === 'Hama') {
+      const greenAt = (x, z) => hamaGreen(x, z);
+      // **The sward**, and it is the densest scatter in nine countries. Thick where the map says `Csb`,
+      // gone where it says `BWh`, and the whole of the change over two hundred paces.
+      sample(880, (x, z) => {
+        if (!plantable(x, z, .5)) return;
+        const green = greenAt(x, z), bed = inHamaBed(x, z);
+        // **Raised from 520 after the first review render**, where two hundred and fifty tufts a hex -
+        // the Mithala plain's own density - read as bare ground at a low angle across a wide view. It is
+        // four hundred a hex now, which is the densest scatter in eleven countries and the only one in
+        // the block that is meant to read as a sward rather than as spaced plants on bare earth.
+        const cover = green * green * .86 + bed * .5;
+        if (random() > cover) return;
+        (bed > .45 ? bedGrass : hamaSward).push({ x, z, s: range(.8, 1.6) * (1 + bed * .3), wide: 1.3, rot: random() * 6.28, green, bed });
+      });
+      // Low evergreen scrub in the hollows of the green half: mastic, juniper and wild-olive shapes, which
+      // is what a `Csb` grassland carries where it is sheltered. Nothing cultivated - the plots are the
+      // merchant houses' and are not built.
+      sample(200, (x, z) => {
+        if (!plantable(x, z, 1.6)) return;
+        const green = greenAt(x, z);
+        if (random() > green * green * .34) return;
+        if (hamaMaquis.some(b => Math.hypot(b.x - x, b.z - z) < 4.4)) return;
+        hamaMaquis.push({ x, z, s: range(.4, .95), h: range(1, 1.7), rot: random() * 6.28, grey: random() < .2 });
+      });
+      // **A few trees, and every one of them leans inland**, because this corner takes the weather of
+      // half an ocean: "the western face is open-ocean coast, exposed to the weather patterns that
+      // originate in the far west and arrive at the peninsula having crossed considerable water".
+      sample(90, (x, z) => {
+        if (!plantable(x, z, 2.6)) return;
+        const green = greenAt(x, z);
+        if (random() > green * green * .16 * smooth(20, 120, landDistance(x, z))) return;
+        if (hamaTrees.some(t => Math.hypot(t.x - x, t.z - z) < 14)) return;
+        hamaTrees.push({ x, z, s: range(.9, 1.25), h: range(5.5, 8.5), rot: random() * 6.28,
+          girth: .95, bole: .44, top: .72, spread: .3, wide: .34, deep: .24 });
+      });
+      // The dry half: stony ribs where the walking is bad, gravel between them, and a bleached stubble
+      // across the change where the grass has given out and nothing has taken its place yet.
+      sample(320, (x, z) => {
+        if (!plantable(x, z, .4)) return;
+        const dry = 1 - greenAt(x, z), lie = hamaLie(x, z);
+        if (random() > dry * (.14 + lie * .5)) return;
+        (lie > .6 ? hamaRibs : hamaGravel).push({ x, z, s: lie > .6 ? range(.3, .95) : range(.12, .36), rot: random() * 6.28,
+          flat: lie > .6 ? range(.22, .5) : range(.16, .36) });
+      });
+      sample(200, (x, z) => {
+        if (!plantable(x, z, .7)) return;
+        const green = greenAt(x, z);
+        if (random() > (1 - Math.abs(green - .34) * 2.6) * .5) return;
+        hamaStubble.push({ x, z, s: range(.36, .7), rot: random() * 6.28 });
+      });
+    }
+  }
+  stoneBatch(capeSlabs, 'Cape Heth bedding slabs', spot => color.set(spot.salt > .55 ? '#54524a' : '#47453a').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
+  stoneBatch(capeGrit, 'Cape Heth grit', () => color.set('#454336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  stoneBatch(capeSalt, 'Cape Heth salt crust', () => color.set('#6e6d62').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .01);
+  stoneBatch(capeLichen, 'Cape Heth lichen', () => color.set('#464a3e').offsetHSL(range(-.02, .02), range(-.03, .04), range(-.04, .06)), .01);
+  stoneBatch(capeShingle, 'Heth Bight shingle', () => color.set('#514f46').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .1);
+  stoneBatch(plateauSlabs, 'Dinelv bedding slabs', () => color.set('#4f4a3c').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
+  stoneBatch(plateauGrit, 'Dinelv plateau grit', () => color.set('#464336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  // The fallen cap rock is the harder darker upper bed, so the blocks are darker than the ground they
+  // lie on - which is the reverse of the reg's pebbles and is true for the same kind of reason.
+  stoneBatch(mesaBlocks, 'Dinelv cliff blocks', () => color.set('#302f29').offsetHSL(0, range(-.02, .02), range(-.04, .06)), .22);
+  stoneBatch(channelRubble, 'Dinelv channel rubble', () => color.set('#4a4639').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .14);
+  stoneBatch(hamaRibs, 'Hama stony ribs', () => color.set('#4a483b').offsetHSL(0, range(-.02, .03), range(-.05, .06)), .12);
+  stoneBatch(hamaGravel, 'Hama gravel', () => color.set('#454336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  bushBatch(capeScrub, 'Cape Heth scrub', bush => bush.grey
+    ? color.set('#565849').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#494e3c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
+  bushBatch(hollowScrub, 'Heth hollow scrub', bush => bush.grey
+    ? color.set('#525648').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#3f4c2c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .4);
+  bushBatch(plateauScrub, 'Dinelv plateau scrub', bush => bush.grey
+    ? color.set('#54564d').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#474c3c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
+  bushBatch(basinScrub, 'Dinelv basin scrub', bush => bush.grey
+    ? color.set('#505448').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#3d4a2b').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .4);
+  bushBatch(hamaMaquis, 'Hama evergreen scrub', bush => bush.grey
+    ? color.set('#4e5346').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
+    : color.set('#2e4423').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .46);
+  treeBatch(basinTrees, 'Dinelv basin thorn', () => color.set('#434b34').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'southwest-tree');
+  treeBatch(hamaTrees, 'Hama wind trees', () => color.set('#334823').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'southwest-tree');
+  // **Hama's grass is the only properly green scatter in the block**, and the beds in it are greener
+  // again. Everything else in nine countries is buff, grey or bleached.
+  tuftBatch(hamaSward, 'Hama sward', tuft => color.setHSL(.212 + tuft.green * .022 + range(-.012, .012),
+    .21 + tuft.green * .16 + range(-.03, .03), .17 + tuft.green * .06 + range(-.025, .025)));
+  tuftBatch(bedGrass, 'Hama winter-bed grass', tuft => color.setHSL(.238 + range(-.010, .010),
+    .30 + range(-.03, .03), .20 + range(-.02, .02)));
+  tuftBatch(hollowGrass, 'Heth hollow grass', tuft => color.setHSL(.140 + tuft.hollow * .030 + range(-.012, .012),
+    .20 + range(-.03, .03), .33 + range(-.03, .03)));
+  tuftBatch(basinGrass, 'Dinelv basin grass', tuft => color.setHSL(.132 + tuft.basin * .026 + range(-.012, .012),
+    .21 + range(-.03, .03), .32 + range(-.03, .03)));
+  stubbleBatch(hamaStubble, 'Hama transition stubble');
+  stubbleBatch(plateauStubble, 'Dinelv plateau stubble');
+  metrics.capeRock = capeSlabs.length + capeGrit.length;
+  metrics.capeSalt = capeSalt.length; metrics.lichen += capeLichen.length;
+  metrics.plateauRock = plateauSlabs.length + plateauGrit.length;
+  metrics.blocks = mesaBlocks.length; metrics.rubble = channelRubble.length;
+  metrics.hamaStone = hamaRibs.length + hamaGravel.length;
+  metrics.scrub += capeScrub.length + hollowScrub.length + plateauScrub.length + basinScrub.length + hamaMaquis.length;
+  metrics.tufts += 0;                                    // tuftBatch counts its own
+  metrics.shingle += capeShingle.length;
+  metrics.edgeTrees = basinTrees.length + hamaTrees.length;
 
   return {
     group, metrics,

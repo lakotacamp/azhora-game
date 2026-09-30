@@ -112,10 +112,12 @@ test('this country does not grow the world box, and the four north of it do', ()
   // **And the four southwestern countries built after those did grow it, west.** The Ganesh Desert
   // reaches atlas column q -33 against this range's -8, its westernmost hexes' outer flat standing
   // at x = -3900, so the world's western edge went from -3010.002 to -3960.002 and the world from
-  // 36.20 hexes wide to 45.70. This range stands at x -2550...-1550, a kilometre and a half inside
-  // it, and nothing of it moved for that either. So what this test now holds is the three facts
-  // together: this country spent nothing, the Mithala spent the north, the southwest spent the west.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -3960.0019279391277) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
+  // 36.20 hexes wide to 45.70, and **Cape Heth then took it to -4360.002 and 49.70**, on the one
+  // `coast` hex the atlas puts inside any country (docs/southwest-3-report.md). This range stands at
+  // x -2550...-1550, nearly two kilometres inside it, and nothing of it moved for either. So what
+  // this test now holds is the three facts together: this country spent nothing, the Mithala spent
+  // the north, the southwest spent the west - twice.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4360.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   // ...and the four Meroshe deserts took the south, 2398.401 -> 3177.824, which this range is two

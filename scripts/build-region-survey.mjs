@@ -20,7 +20,8 @@ export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West S
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
   'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
   'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
-  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert'];
+  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert',
+  'Cape Heth', 'Dinelv Highlands', 'Hama'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -98,6 +99,36 @@ export const ENCLOSED_HEXES = Object.freeze({
  * same breath. Measured over the whole lattice: q **-45**...34, and the columns
  * at q = -45 are reached only on rows 142-144, in the far south-west corner.
  *
+ * Then `minQ` was -45, and **Cape Heth moved it again, this time by reaching.**
+ * Job 2's report predicted that job 3 would not move the world box at all, on the
+ * ground that Cape Heth's columns (q -39...-34) are well inside the window - which
+ * is true of the *window* and says nothing about the *box*, because x = W(q + r/2)
+ * and Cape Heth's rows are higher than the Ganesh Desert's. Cape Heth's westernmost
+ * hex is its one `coast` hex, (-39,127), whose centre stands at x = **-4250** where
+ * the Ganesh Desert's westernmost centres stand at -3850; its outer flat is at -4300
+ * and the margin 60, so `WORLD_BOUNDS.minX` goes from -3960.002 to
+ * **-4360.001927939127** and the world from 45.700 hexes wide to **49.700**.
+ * Nothing else moves: the Dinelv Highlands reach x = -3900 and Hama -3500, and
+ * Hama's southernmost hexes (-34,141) and (-33,141) stand at z = 3060.089, which is
+ * exactly the row the South Meroshe already set, so `maxZ` does not budge.
+ *
+ * The coast lattice is laid COAST_MARGIN (96 m) beyond that and snapped to its own
+ * fixed phase, so its first column now stands at x = **-4456.001927939127** (it was
+ * -4056.002) and the lattice is 1,292 x 1,386 = 1,790,712 points. Sampling all of
+ * them and collecting every hex any sample falls in gives q **-49**...34,
+ * r 79...144, measured rather than reasoned, with the columns at q = -49 reached
+ * only on rows 142-144 again. So minQ is -49: the last column the lattice reaches,
+ * and no slack.
+ *
+ * **That widening pulls in nothing at all, and that is the finding.** Every earlier
+ * move of this window bought horizon or ground; the four columns q -49...-46 hold
+ * **no claimed hex on the whole atlas** in rows 79-144, because west of Cape Heth
+ * the map is open ocean to the edge of the sheet. LAND_HEXES stays at 2,078 plus
+ * the block's own seventy-three, and the generated file is identical whether minQ
+ * is -45 or -49. The value moves anyway, because the invariant this window keeps is
+ * "the last column the lattice reaches, and no slack", and a window that lied about
+ * that would be a trap for the next builder who widens the world west.
+ *
  * `minR` was 92, which is the East Lotharn's own northern row, and the East Lotharn is the first
  * playable country to reach it. Its northern edge then takes the world's bounds to its hexes'
  * rim, and the coast lattice samples out to COAST_MARGIN plus a circumradius beyond that: row 90
@@ -152,7 +183,7 @@ export const ENCLOSED_HEXES = Object.freeze({
  * West's all lay south of row 135: without this they would have been open water in the middle of a
  * playable country. LAND_HEXES goes from 1,935 to **2,078**.
  */
-export const WINDOW = { minQ: -45, maxQ: 34, minR: 79, maxR: 144 };
+export const WINDOW = { minQ: -49, maxQ: 34, minR: 79, maxR: 144 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35, 'North Meroshe Desert': 36, 'West Meroshe Desert': 37, 'Central Meroshe Desert': 38, 'South Meroshe Desert': 39 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35, 'North Meroshe Desert': 36, 'West Meroshe Desert': 37, 'Central Meroshe Desert': 38, 'South Meroshe Desert': 39, 'Cape Heth': 40, 'Dinelv Highlands': 41, Hama: 42 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -503,6 +503,54 @@ export const REGION_TERRAIN = Object.freeze({
   'West Meroshe Desert': Object.freeze({ base: 14, amp: .85, wave: 320, ground: REGION_BIOMES['West Meroshe Desert'].ground }),
   'Central Meroshe Desert': Object.freeze({ base: 16, amp: .55, wave: 320, ground: REGION_BIOMES['Central Meroshe Desert'].ground }),
   'South Meroshe Desert': Object.freeze({ base: 14, amp: .6, wave: 320, ground: REGION_BIOMES['South Meroshe Desert'].ground }),
+  // ---------------------------------------------------------------------------
+  // Cape Heth, the Dinelv Highlands and Hama (src/southwest-world.js): the block's western edge, and
+  // the one place in it where the profile table has real work to do again. Job 2's four countries
+  // could not be told apart by a base or an amplitude at all; these three differ by eighty-five
+  // metres of base between them, which is more than any three neighbours in the game outside the two
+  // Lotharns.
+  //
+  // **Every one is on wavelength 320**, which is now nine countries of this block and eleven on the
+  // wave: `relief()` takes its phase from x / wave, the hex blend mixes the wavelengths, and these
+  // three share fifty-two hex edges with the block's other eight. The `mountain` profile is on 320
+  // too, where both Lotharns put their mountain hexes on a wave of their own - because a Lotharn
+  // mountain hex sits inside a range of mountain hexes and these three sit one hex from `hills` on
+  // every side of them.
+  //
+  // **Cape Heth is low and nearly flat**, base 13 against the Ganesh Desert's 20, because the lore is
+  // emphatic that this cape is "not a dramatic geographical feature... a low, extended point of land",
+  // and because twenty-one of its hex edges are open water: a cape that stood high would be a cliff
+  // headland, which is the thing the lore says it is not. `byTerrain.coast` at 5 is the point of the
+  // cape itself - the only `coast` hex any country on the atlas holds - and it is the lowest authored
+  // base in the game, three metres above the tideline, because the lore measures this cape's storms
+  // by how far up it the salt water got.
+  //
+  // **The Dinelv Highlands are the high ground of the whole southwest**, and the first desert
+  // highland in the game: `hills` at 96 is thirty-eight metres over Navarth's 58 and the highest
+  // non-Lotharn base there is. The `plains` hexes at 82 are *not* low plains - they are the six
+  // closed basins inside the plateau, fourteen metres under the rolling upland round them, which is
+  // what `plains` means when it is ringed by `hills`. And `mountain` at 138 is deliberately low for
+  // the word: the atlas paints these three hexes `BWh`, and a summit high enough to be a mountain in
+  // the Lotharn sense could not read as hot desert at its top. They are the only three hot-desert
+  // `mountain` hexes on the map and they are residual massifs, not peaks.
+  //
+  // **Hama is a coastal ramp**, and its two halves are the country's whole subject: `plains` at 28 is
+  // the stony broken rise on the inland side - "rough without being impassable", the highest and
+  // roughest of the block's `plains` after the hamada - and `grassland` at 15 is the green strip along
+  // the surf. Thirteen metres of fall over three hundred, and the atlas draws the climate line in the
+  // same place it draws the terrain line. Both are two metres higher than first authored, because job
+  // 1's tilt plane now runs over Hama too and takes seven metres off this corner on its own.
+  'Cape Heth': Object.freeze({ base: 13, amp: .8, wave: 320, ground: REGION_BIOMES['Cape Heth'].ground, byTerrain: Object.freeze({
+    coast: Object.freeze({ base: 5, amp: .5, wave: 320, ground: '#4c4b41' }),
+  }) }),
+  // The default here is the `hills` of the rolling upland, which is twenty-six of the thirty-five.
+  'Dinelv Highlands': Object.freeze({ base: 96, amp: 3.2, wave: 320, ground: REGION_BIOMES['Dinelv Highlands'].ground, byTerrain: Object.freeze({
+    plains: Object.freeze({ base: 82, amp: 1.4, wave: 320, ground: '#514c3a' }),
+    mountain: Object.freeze({ base: 138, amp: 5, wave: 320, ground: '#454234' }),
+  }) }),
+  Hama: Object.freeze({ base: 28, amp: 1.6, wave: 320, ground: REGION_BIOMES.Hama.ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 15, amp: .9, wave: 320, ground: '#44532f' }),
+  }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1293,6 +1341,35 @@ const REGION_TEXT = {
     description: 'The bottom of the desert, and the one part of it that gets wet. The ground is reg — a pavement of pebbles packed edge to edge over the whole country, flat enough to see twenty miles over and varnished so dark by iron and manganese that it looks wet from a distance and holds a footprint for a year. Thirteen of its hex edges are Trogo’s tropical rainforest and four are the southern ocean, and what crosses the line between the two is fog: warm, thick, close, standing for days at a time, watering a surface the atlas still calls hot desert. So the southern third of this country carries a crust, lichen in the lee of every pebble, and thorn scrub standing close enough together to walk round — none of which the rest of the Meroshe can manage — and the north-western third, against the sand sea, is as bare as anything in Azhora. On the atlas a rainforest stands half a mile off the eastern edge with cloud sitting in it; Trogo is not built, so what is there today is the fog and not the canopy. The canyon communities the lore puts south of here, and everything they own, are not built.',
     palette: { ground: '#3d3427', accent: '#847a64', fog: '#7c735e', sky: 0xbec9c3, haze: 0xc0bcab, hazeDensity: .0046 },
     npcIds: [], landmarks: ['meroshe-stone-floor', 'meroshe-fog-margin', 'meroshe-forest-wall', 'meroshe-south-shore'] },
+  // Cape Heth, the Dinelv Highlands and Hama (src/southwest-world.js): the block's western edge, and
+  // **three skies, every one of them argued from the atlas rather than from the climate code.**
+  //
+  //  - **Cape Heth** is a desert with the sea on three sides of it and twenty-one hex edges of open
+  //    water, which is more maritime than anything in the block: sea air over a hot desert, so .0034,
+  //    a little bluer and a little closer than the interior's .0024. It is the West Meroshe's argument
+  //    (.0032, ten ocean edges) taken twice as far, and the number is that country's plus a shade.
+  //  - **The Dinelv Highlands** get the *clearest* air in Azhora, .0021, and the reason is altitude and
+  //    not dryness: the plateau stands eighty metres over everything round it, the lore says "rainfall
+  //    at the plateau elevation is somewhat higher than on the coast directly below, but not
+  //    substantially", and what a hot-desert upland has less of than a hot-desert floor is dust. This
+  //    is the West Lotharn's argument (.0027 at five hundred metres) run in a desert.
+  //  - **Hama** is the one country in the whole block whose air is properly wet, and it earns it twice:
+  //    nine of its nineteen hexes read `Csb` and nineteen of its hex edges are ocean. .0052 - thicker
+  //    than the South Meroshe's fog belt, which is the block's previous record - with a sky that is
+  //    blue rather than bleached and a haze of sea moisture rather than dust. Standing on the line
+  //    between its halves a traveler can see the difference in the air as well as in the ground.
+  'Cape Heth': { subtitle: 'The desert that runs out at the sea on three sides', spawn: point(-4000, 1848),
+    description: 'A low desert promontory reaching four hundred metres further west than any other ground in Azhora, with open water on the north, the west and the south of it. The lore is careful to say what it is not: "not a dramatic geographical feature in the mode of high cliff headlands or bold rocky outcrops; it is a low, extended point of land that juts far enough west to matter as a navigational landmark" - and the atlas agrees, giving it `plains` on eighteen hexes and hot desert on all eighteen. The rock is grey-brown marine sandstone soft enough to cut with hand tools; one long low ridge runs down the spine, and it decides everything - the western face takes the weather and the salt and carries nothing but lichen and gravel, the eastern side is in its lee and holds what soil the cape has in a string of shallow drainage hollows. At the point is the only `coast` hex the atlas puts inside any country on the map: bare wave-cut rock three metres above the water with sea on four of its six sides. The cape communities, their harbour on the south-eastern face, their cisterns, their salvage and the whole navigation trade the lore builds on this headland belong to somebody and none of it is built.',
+    palette: { ground: '#514e40', accent: '#9b9880', fog: '#8e8c78', sky: 0xbdcfd0, haze: 0xc2bda9, hazeDensity: .0034 },
+    npcIds: [], landmarks: ['heth-point', 'heth-spine', 'heth-weather-face', 'heth-hollows', 'heth-bight'] },
+  'Dinelv Highlands': { subtitle: 'The desert plateau', spawn: point(-3400, 1989),
+    description: 'The first desert highland in the game and the high ground of the whole southwest: thirty-five hexes of hot desert standing eighty metres over the cape on one side and the sand deserts on the other, with `hills` on twenty-six of them, `BWh` on every single one, and no green hex anywhere. The way up is the escarpment, which the lore calls "the most dramatic terrain on the eastern peninsula" - exposed sedimentary rock in horizontal bands, warm-toned stone low down and a harder darker stone above it, cut by seasonal channels that run twice a decade and stand as dark lines down the face the rest of the time. On top it is not flat: ridge systems cross it north to south "aligned with the peninsula’s long axis", three gaps get a traveler through them, six closed basins hold what water the plateau gets and are the only ground on it where anything roots deep, and three massifs stand over the whole plateau - the only three hot-desert `mountain` hexes on the atlas, and residual blocks rather than peaks, because a summit high enough to be a mountain could not read as hot desert at its top. The city of Dinelv below, the plateau road, the garrisons at the passes, their cisterns, the quarries and the pastoral communities who have been up here longer than any of it are all somebody’s and none of them is built.',
+    palette: { ground: '#4d4839', accent: '#9a937a', fog: '#8d8873', sky: 0xc6d6cd, haze: 0xc8bc9a, hazeDensity: .0021 },
+    npcIds: [], landmarks: ['dinelv-plateau', 'dinelv-escarpment', 'dinelv-ridges', 'dinelv-north-pass', 'dinelv-middle-saddle', 'dinelv-massifs', 'dinelv-basins'] },
+  Hama: { subtitle: 'Where the desert stops', spawn: point(-3250, 2887),
+    description: 'The corner of the continent, with ocean on the west and ocean on the south, and the only place in the southwest where the desert ends in something green instead of in water or in more desert. The atlas draws the line twice and in the same place: nine `grassland` hexes that are every one of them `Csb`, and ten `plains` hexes that are every one of them `BWh`, with no hex where the two fields disagree. So the seaward two hexes are real Mediterranean country - winter-rain grass thick enough to walk through, low evergreen scrub in the hollows, a few wind-shaped trees leaning inland - and the inland half is a stony broken rise between that and the Meroshe, which the lore calls "rough without being impassable: enough friction to make overland access from the desert difficult". Between them, over about two hundred paces, the grass thins to tussocks and then to nothing and the ground turns to gravel, and that two hundred paces is the country. The winter watercourses that carry the rain down to the sea are dry, as they are in the dry years the lore says Hama cannot rely on. Hama Harbour, the Council of Merchant Houses, the seven families and every plot on the coastal margin are somebody’s and none of them is built.',
+    palette: { ground: '#475433', accent: '#8b9a6c', fog: '#828e72', sky: 0xb4c8d2, haze: 0xb9bdb0, hazeDensity: .0052 },
+    npcIds: [], landmarks: ['hama-green-line', 'hama-grass', 'hama-broken-ground', 'hama-corner', 'hama-winter-beds'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {
