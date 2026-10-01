@@ -104,7 +104,7 @@ export function createOvesScenery(kit) {
    * the Sorten, Gala's reach is waded over rock again, which is the lore's "narrows, drops through a
    * rocky lower section". So the wall is the middle of the river and the crossings are its two ends.
    *
-   * The southern border stream carries none: it is waded anywhere, and the desert's only two edges
+   * The Caelin carries none: it is waded anywhere, and the desert's only two edges
    * with Gala are Gala's reach of it. And the wall gives out `OVETH_WALL.to` of the way down rather
    * than at the mouth: the last twenty-five metres narrow over the rock Gala's own ford is on, so the
    * two builders' fords meet at the three-country corner instead of a wall meeting a ford there.
@@ -323,8 +323,8 @@ export function createOvesScenery(kit) {
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(2.4, border ? 7 : 12);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!plantable(x, z, 2.2)) continue;
-      // Thicker on the bottomland than on the stony bank opposite, and thinnest on the desert's
-      // own border stream, which runs off a rain shadow and not out of an upland.
+      // Thicker on the bottomland than on the stony bank opposite, and thinnest on the Caelin,
+      // which runs off a rain shadow and not out of an upland.
       const soil = border ? .3 : .45 + ovesosShare(x, z) * .5 + (onSorten(x, z) ? .2 : 0);
       if (random() > soil) continue;
       const shrub = random() < .42;

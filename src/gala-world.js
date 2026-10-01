@@ -14,7 +14,7 @@
  *  - three climates in three straight bands: `BSh` over the northern three rows, `Csb` over the
  *    next two, `Csa` on the southern row at the sea (`GALA_CLIMATE`);
  *  - its water, all of it on its borders: the Lizeem east (built), the Oveth and a medium stream
- *    north and north-west, a small stream down the Telemonia border to the sea (src/west-regions.js);
+ *    north and north-west (the Caelin), the Treloss down the Telemonia border to the sea (src/west-regions.js);
  *  - its neighbours, and one of them in particular: Northern Ascarth on eight edges of the
  *    south-east side, being built in another branch at the same time (`GALA_SEAM`).
  *
@@ -269,7 +269,7 @@ export const GALA_LANDMARKS = freeze([
   freeze({ id: 'gala-mouths', name: 'The Braided Mouths', ...mouthsMiddle,
     description: 'The plain’s own water coming down to the sea: one slow channel splitting into three round low bars of sand, reed and tamarisk thick along all of them, and the black geese on the widest of the water. The Lizeem’s distributaries, the lore calls them; the river itself goes out to sea a few hundred paces east, in country that is not Gala.' }),
   freeze({ id: 'gala-shore', name: 'The Galan Shore', x: -1745, z: 1432,
-    description: 'Gala’s whole coast, and it is short: a few hundred paces of low sand between the Telemonia stream’s mouth and the Ascarth ground, the Iberos Sea in front and dolphins out past the break. The harbour the lore gives the city of Gala is somewhere else, and is somebody’s.' }),
+    description: 'Gala’s whole coast, and it is short: a few hundred paces of low sand between the Treloss’s mouth and the Ascarth ground, the Iberos Sea in front and dolphins out past the break. The harbour the lore gives the city of Gala is somewhere else, and is somebody’s.' }),
 ]);
 
 /** Whether scatter should keep off a point for Gala's own reasons: the wash's floor. Water is `westBareGround`'s. */

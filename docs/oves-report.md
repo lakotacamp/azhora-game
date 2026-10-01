@@ -415,6 +415,15 @@ _(see the section below, written after the render)_
 4. **Two names are the user's**: the Oves Desert's southern border stream and Ovesos's dry gully are
    unnamed in the lore and in the atlas, and are called "the southern border stream" and "the Dry
    Gully" in plain words rather than coined.
+   **Answered 2026-10-01** (docs/southwest-finish-report.md): the southern border stream is **the
+   Caelin**, *mittoli.roots.flow* ("the flow", `src/languages.js`, built from the `mittoli` profile's own
+   `cael` root and `-in` suffix) - and it carries the same name as Gala's reach of it, because the atlas
+   draws the two as one chain and they hand over at (-1850, 1039), the way the Oveth's two reaches do.
+   The **Dry Gully stays descriptive**: it is a dry cut rather than a watercourse, Standard Mittoli's
+   lexicon has no word for a dry channel, inner-branch Ovesian's documented vocabulary (*thris-kael*,
+   *vel-sorten*, *osk-milis*) is all water administration and a gully with no water has no place in it,
+   and the only words available would have called it a river. It stays with the other seven plain-English
+   terrain names of these two countries.
 5. **The Neth's mouth stands 2.2 m below the Lizeem it runs into** (12.01 against the Lizeem's ~14.2
    at that point). That was already true before this build — 3.6 m — and this build halved it by
    raising the Neth's southern bank, but the two rivers still do not meet at one level. It belongs to

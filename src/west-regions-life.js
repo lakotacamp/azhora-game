@@ -811,6 +811,117 @@ function models() {
       wing: geometry([S(0x9aa3a8, [.20, 0, 0], [.26, .032, .16]), S(0x3d454a, [.40, -.008, -.06], [.16, .024, .10])]),
       leg: geometry([Y(0xc4a05a, [0, -.11, 0], [.016, .22, .016]), B(0xbe9a56, [0, -.22, .03], [.05, .02, .09])]),
     },
+
+    /**
+     * **The ghubr — the Ganesh dustback.** Three builders refused this animal because they went
+     * looking for a body and found a behaviour. The behaviour *is* the description, and it is in
+     * `ganesh_desert.md`: the Ganesh dustback "appears in the northern desert margin during hot dry
+     * months. **It is not the Meroshe's dustback** … The Ganesh dustback is a **smaller, drier
+     * creature, feeding on the surface-level insect populations** that persist even in dry years.
+     * Caravan guides use its presence as an indicator of the wind direction and the air temperature
+     * near the surface — **the dustback does not stand still in conditions where the surface air is
+     * actively dangerous**, and a **dustback seen resting in shade** is a reliable signal of
+     * temperature conditions that the caravan's load animals will find stressful."
+     *
+     * And the name is glossed twice. `culture/azhoran_livestock.md` on the domestic Moroshé beast:
+     * "They are called dustbacks because their coats carry **a pale powdery ridge along the spine and
+     * shoulders**." `peoples/languages/moreshi.md` on the word: *ghubr*, "root **Gh-B-R**: to become
+     * dust-coated through long exposure; to be grey-browned by the desert… The Mittoli name 'dustback'
+     * is a translation of what the word already means." That ridge is the whole of what the two animals
+     * share, and it is what the name says. So it is on this body, pale along the spine and over the
+     * shoulders, and it is the one thing that reads on it at any distance.
+     *
+     * **The choice of body is the builder's and is labelled as such: a bird, not a small mammal.** The
+     * lore does not say, and three things in it argue for a bird. The guides read **wind direction** off
+     * the animal, and what a small bird on bare ground does about wind is stand into it — a posture a
+     * guide can read at a hundred paces and a mammal does not have. It is watched **in the day, standing
+     * and resting**, and the fauna overview is explicit that the desert's mammals are the other way
+     * about: "the large animals of the Moroshé interior move at night, rest in shade during the day",
+     * the sand-cat "almost entirely nocturnal". And a diurnal surface insectivore out on hot pavement is
+     * a courser's trade. Negatively: the lore's second sentence exists to stop the reader confusing this
+     * animal with the bovid, and a small four-legged build is exactly that confusion drawn.
+     *
+     * So: a plover-shaped bird of the open desert floor, held level and long-legged, about a gull's
+     * bulk; sand and grey-buff, with the pale ridge; a short straight bill for picking insects off the
+     * surface rather than a wader's probe. Its behaviour is in `tickGround` and on the zone (`shade`):
+     * it never stands still out on the open floor, and where it is seen resting is its own patch of
+     * scrub, which in the Ganesh is the only shade there is.
+     */
+    ghubr: {
+      body: geometry([
+        // A trunk carried level, which is what a running ground bird is and what a duck is not.
+        S(0x8d8368, [0, .255, -.015], [.073, .063, .150]),
+        S(0x7c7156, [0, .232, .060], [.060, .050, .088]),
+        // **The pale powdery ridge along the spine and the shoulders**, which is what the name means.
+        // Pale and not white: photographed at 0xd9d0b5 it came back as a white cape, which is the
+        // renderer's own lift met again - an authored colour is read as linear and raised a long way -
+        // and a *powdery* ridge is dust on a buff bird rather than a saddle of snow.
+        S(0xc0b698, [0, .307, -.020], [.041, .018, .118]),
+        S(0xc0b698, [0, .293, .056], [.052, .016, .046]),
+        S(0x6e6550, [0, .252, -.170], [.038, .028, .078], [.22, 0, 0]),
+        // The head up on a short neck: it feeds with the body level and the head on the ground.
+        S(0x8d8368, [0, .326, .106], [.047, .045, .051]),
+        S(0xb4a98c, [0, .347, .086], [.037, .022, .035]),
+        C(0x3a3328, [0, .318, .166], [.013, .050, .012], [Math.PI / 2 + .06, 0, 0]),
+        ...both(side => S(0x16140f, [side * .031, .339, .129], [.011, .012, .010])),
+      ]),
+      wing: geometry([S(0x8a8065, [.145, 0, 0], [.185, .022, .096]), S(0x5f5747, [.300, -.006, -.040], [.120, .017, .062])]),
+      leg: geometry([Y(0x9d8d63, [0, -.085, 0], [.012, .170, .012]), B(0x94845d, [0, -.170, .022], [.034, .015, .056])]),
+    },
+
+    /**
+     * **The canyon tortoise**, and the fauna overview both names it and describes it: "the **canyon
+     * tortoise**, a large, slow-moving grazer of desert seeps and seasonal wash vegetation, may live as
+     * long as two centuries, a lifespan that places individual animals in living memory across multiple
+     * human generations." Its home is the Dinelv Highlands' four closed basins, which
+     * `dinelv_highlands.md` calls "the water-concentration points that only become visible in wet years
+     * when they green faster than the surrounding ground" — a desert seep, in the lore's own words.
+     *
+     * **It is the one animal in the west that can be walked up to**, and that is not an exemption from
+     * the west's first law but an answer to it: see `SHUT` and `tickGround`. A tortoise that is come upon
+     * does not run, because it cannot; it stops and shuts, and then there is nothing there to catch.
+     *
+     * Drawn as the shell first and the animal second, because that is what is seen: a high domed
+     * carapace in four courses of scute with a pale sutured keel down the middle of it, a pale plastron
+     * rim standing proud of the ground all round, and a blunt grey head on a thick neck out of the front
+     * of it. Shut, the head and the four legs are drawn pulled in under the dome (`render`), which at any
+     * distance is a stone with a pattern on it — and that is the whole point of the animal.
+     */
+    'canyon-tortoise': {
+      body: geometry([
+        // The dome, in two shells so the back is higher than the haunch: a desert tortoise is steepest over the shoulder.
+        S(0x5a5140, [0, .225, .02], [.230, .205, .300]),
+        S(0x4e4636, [0, .205, -.185], [.195, .170, .140]),
+        /**
+         * **The marginal course: a band of scute standing a centimetre and a half proud all round the
+         * widest part of the shell, and it is the only relief on this animal.** It is where it is because
+         * of how the game is lit, which took four review rounds to learn and is worth writing down:
+         *
+         *  - sunk *inside* the dome, courses of scute are invisible, except that a pale keel bead's facets
+         *    poked through and photographed as two white slivers on a smooth boulder;
+         *  - stood three centimetres proud on top, with a keel ridge and a plastron rim wider than the
+         *    shell, the animal came back wearing a crown of knobs and sitting on a white sled;
+         *  - stood one centimetre proud and then three millimetres, pale and then *darker than the shell*,
+         *    they still read as pebbles somebody had set on its back. **A horizontal face under this
+         *    light is near-white whatever colour it is given**, so anything standing on top of a dome
+         *    photographs brighter than the dome and reads as a separate object.
+         *
+         * At the **equator** that reverses: the surface there is vertical, so a band proud of it shows its
+         * side and shades exactly as the shell's own flank does. So the plating is a rim rather than a
+         * row of plates — which is also the thing that reads in silhouette, and the thing a traveler
+         * standing over a shut tortoise would actually see.
+         */
+        S(0x6b6149, [0, .222, .020], [.245, .060, .316]),
+      ]),
+      head: geometry([
+        S(0x55503f, [0, 0, .04], [.060, .055, .080]),
+        S(0x4a4537, [0, -.012, .110], [.048, .042, .048]),
+        S(0x6d6552, [0, .022, .060], [.040, .030, .050]),
+        ...both(side => S(0x12110d, [side * .038, .010, .118], [.012, .013, .011])),
+      ]),
+      // Short, heavy, scaled and splayed, with a flat sole: an animal built to carry a shell and not to run.
+      leg: geometry([Y(0x5f5744, [0, -.048, 0], [.052, .096, .052], [.22, 0, 0]), B(0x4a4336, [0, -.098, .018], [.078, .028, .090])]),
+    },
   };
 }
 
@@ -1228,6 +1339,10 @@ const BIRD_RIG = Object.freeze({
   // The goose is the duck's row at half as big again: a bird that sits on the water, not a wader.
   goose: { shoulder: .32, hip: .17, out: .11, apart: .06, beat: 1.3, swing: .18, fold: .34, sweep: 1.30, tuck: .60 },
   gull: { shoulder: .43, hip: .27, out: .08, apart: .042, beat: 1.2, swing: .20, fold: .28, sweep: 1.25, tuck: .55 },
+  // The ghubr: a ground bird, so the row is the gull's pulled down and the legs set wider and longer
+  // under it. `swing` is the loudest in the table because what this bird does on the ground is walk,
+  // and a courser's stride is its whole gait.
+  ghubr: { shoulder: .27, hip: .18, out: .055, apart: .032, beat: 1.15, swing: .26, fold: .26, sweep: 1.26, tuck: .54 },
 });
 
 /** Ambient creatures only: they cannot be attacked, collected or block a quest. */
@@ -1313,7 +1428,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
         id: `${zone.id}-${i + 1}`, species: zone.species, region: zone.region, zone, index: i, scale,
         ...home, y: zone.sea ? SEA_LEVEL : footingY(home.x, home.z, zone) + (zone.air ?? 0), home: { ...home },
         yaw: (i * 1.83 + .5) % TAU, action: zone.air ? 'soar' : zone.sea ? 'swim' : 'graze', timer: 1.4 + i * .71,
-        clock: i * .43, speed: 0, lift: 0, watching: 0, detour: 0, blocked: 0, flight: 0, hidden: false, landing: null, homing: false, cornered: 0, breakYaw: 0, slip: 0, slipFrom: 0, slipTo: null,
+        clock: i * .43, speed: 0, lift: 0, watching: 0, detour: 0, blocked: 0, flight: 0, hidden: false, landing: null, homing: false, cornered: 0, breakYaw: 0, slip: 0, slipFrom: 0, slipTo: null, shutFor: 0,
       });
     }
     creatures.push(...animals);
@@ -1404,17 +1519,30 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * walk, and somebody running can herd them; cattle are big and unhurried and do not bolt at
    * all. They turn to face you and give ground at about a walk, which is truer than fleeing and
    * keeps them from being chased to the horizon. The fox still never flees.
+   *
+   * **And the canyon tortoise has no pace in this sense at all**, because it never tries to open
+   * distance: it has a walk and no run, and what it does when somebody comes at it is `SHUT`.
    */
   const FLEE_AT = { longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
     egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14, frostback: 9.5, 'bone-bird': 13,
     // A cat goes before anything else here does and it goes up: the first law of the west is that
     // nothing in it can be walked down, and an arboreal predator is the least walkable thing there is.
-    'forest-cat': 16, albatross: 12 };
+    'forest-cat': 16, albatross: 12,
+    // The ghubr lets a traveler come well in before it goes, which is the whole reason a caravan guide
+    // can read one: ten metres, where the geese go at fourteen, the bone-birds at thirteen and the egrets
+    // at twelve. Only the gull, which is used to people, lets anybody nearer.
+    ghubr: 10 };
   const WALK = { longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
     egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5, frostback: .40, 'bone-bird': .5,
-    'forest-cat': 1.05, albatross: .4 };
+    // The ghubr walks briskly for a bird of its size - .78 against the gull's .7 and the duck's .45,
+    // behind only the long-legged stilt - because walking is what it is for: "feeding on the surface-level
+    // insect populations", which is done at a trot over open ground.
+    'forest-cat': 1.05, albatross: .4, ghubr: .78,
+    // And the tortoise is the slowest animal in the game by a factor of four - "a large, slow-moving
+    // grazer of desert seeps". A traveler walks its whole range in the time it crosses a pace of it.
+    'canyon-tortoise': .11 };
   const RUN = { 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
-    egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6, 'forest-cat': 12.5 };
+    egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6, 'forest-cat': 12.5, ghubr: 10.2 };
   /**
    * Cattle, whatever breed. They do not bolt: they put their heads up, turn to face whoever
    * it is, and give ground at a shade over a walking pace. This used to be a test on the
@@ -1430,15 +1558,32 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * Everything that answers a traveler by getting off the ground. A bird cannot be
    * run down, which is the whole of why they are all here and the hare is not.
    */
-  const FLIES = new Set(['wading-bird', 'egret', 'stilt', 'duck', 'gull', 'goose']);
+  const FLIES = new Set(['wading-bird', 'egret', 'stilt', 'duck', 'gull', 'goose', 'ghubr']);
   /** Cattle giving ground: a shade over the traveler's walk, so a walker never closes and a runner does. */
   const GIVE = 4.5;
   /** The fox drifts back as fast as you come on, up to `cap`: only a flat run gains on it, and slowly. */
   const FOX = Object.freeze({ floor: 1, cap: 6.6, lead: 1.06, arm: 2.8, notice: 10 });
+  /**
+   * **The canyon tortoise, and it is the one animal in Azhora that does not run from anybody.**
+   *
+   * The west's first law is that nothing in it can be walked down, and every animal here answers it the
+   * same way: by opening distance. A tortoise cannot, and pretending it could would have been the lie.
+   * What it does instead is the thing the law was really about — it makes the approach pointless. At
+   * `notice` metres it stops where it stands, pulls its head and its four legs in under the shell, and
+   * shuts; and a traveler who then walks the last seven metres and stands over it has reached a stone.
+   * It stays shut for `hold` seconds after the last time anybody was that close, and opens again when
+   * they have gone.
+   *
+   * So the law in `tests/west-life.test.js` was changed rather than the animal: it no longer asks only
+   * "did somebody get within arm's length", which assumes flight, but asks of an animal that shuts the
+   * question that actually matters — *and did it get them anything*. Nothing is exempted and no flag
+   * skips the animal; the law simply has two halves now, because animals do.
+   */
+  const SHUT = Object.freeze({ notice: 7, hold: 2.6 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
   const RETURN = { longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
     egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4, frostback: 1.4, 'bone-bird': 1.4,
-    'forest-cat': 2.6, albatross: 1.4 };
+    'forest-cat': 2.6, albatross: 1.4, ghubr: 1.6, 'canyon-tortoise': .13 };
   const HOME = 16, SETTLED = 6;
   const BACK = [0, .35, -.35, .7, -.7], ALONG = [1.05, -1.05, 1.4, -1.4, 1.75, -1.75, 2.1, -2.1];
 
@@ -1604,6 +1749,20 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
         return;
       }
       animal.watching = Math.max(0, animal.watching - dt);
+    } else if (species === 'canyon-tortoise') {
+      /**
+       * **It does not flee. It shuts.** Inside `SHUT.notice` it stops wherever it is, draws in and
+       * stays drawn in while anybody is that close and for `SHUT.hold` seconds after they are not. It
+       * does not turn, it does not give ground, it is not hidden - it is in plain view the whole time
+       * and there is simply nothing to take hold of. Nothing else in the game does this.
+       */
+      if (near < SHUT.notice) animal.shutFor = SHUT.hold;
+      if (animal.shutFor > 0) {
+        animal.shutFor = Math.max(0, animal.shutFor - dt);
+        animal.action = 'shut'; animal.timer = 1; animal.speed = 0; animal.lift = 0;
+        animal.y = footingY(animal.x, animal.z, animal.zone);
+        return;
+      }
     } else if (CATTLE.has(species) && near < FLEE_AT[species]) {
       // Cattle do not bolt. They put their heads up, turn to face you, and give ground.
       animal.action = 'yield'; animal.timer = 1.2;
@@ -1670,7 +1829,24 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
         }
       }
     } else if (animal.timer <= 0) {
-      if (['walk', 'flee', 'withdraw', 'yield'].includes(animal.action)) {
+      const shade = animal.zone.shade ?? 0;
+      if (shade && fromHome > shade) {
+        /**
+         * **The ghubr's own rule, and it is the lore's sentence rather than an animation.**
+         * `ganesh_desert.md`: "the dustback does not stand still in conditions where the surface air is
+         * actively dangerous", and "a dustback seen resting in shade is a reliable signal of temperature
+         * conditions that the caravan's load animals will find stressful". The game has no hour of the
+         * day and no season, so the Ganesh is always the hot dry month the lore puts this bird in -
+         * which means it never stands still out on the open floor at all. `zone.shade` is how far the
+         * shade of its own patch of perennial scrub reaches from the spot it keeps, and beyond that its
+         * idle choice is always a walk. The further out it is the more that walk points back at the
+         * shade, so what it works is a circuit off its own bush and back to it rather than a line away.
+         */
+        animal.action = 'walk'; animal.timer = 1.3 + (animal.index % 2) * .8;
+        const back = Math.atan2(animal.home.x - animal.x, animal.home.z - animal.z);
+        const pull = clamp((fromHome - shade) / Math.max(1, HOME - shade), 0, 1);
+        animal.yaw += angleDelta(back, animal.yaw) * pull + Math.sin(animal.clock + animal.index) * 1.7 * (1 - pull);
+      } else if (['walk', 'flee', 'withdraw', 'yield', 'shut'].includes(animal.action)) {
         animal.action = 'graze'; animal.timer = 2.4 + (animal.index % 3) * .8;
       } else {
         animal.action = 'walk'; animal.timer = 1.3 + (animal.index % 2) * .8;
@@ -1706,6 +1882,11 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   function settle(flock, elapsed) {
     for (const animal of flock.animals) {
       if (flock.zone.air || flock.zone.sea) continue;
+      // A tortoise that has been left to itself longer than it stays shut is out again, whether or not
+      // it has anywhere to walk back to: unwatched time passes for it as it does for everything else.
+      if (animal.shutFor > 0 && elapsed > animal.shutFor) {
+        animal.shutFor = 0; animal.action = 'graze'; animal.timer = 1 + animal.index * .3; animal.speed = 0;
+      }
       const dx = animal.home.x - animal.x, dz = animal.home.z - animal.z, d = Math.hypot(dx, dz);
       const aloft = animal.action === 'fly' || animal.action === 'dive';
       if (!aloft && d <= HOME / 2) continue;
@@ -1906,6 +2087,24 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
           Math.sin(animal.clock * .7) * .09);
         for (let leg = 0; leg < 4; leg++) place(flock.meshes.legs, i * 4 + leg, leg % 2 ? .17 : -.17, .36,
           leg < 2 ? .26 : -.26, walking ? Math.sin(phase + (leg === 0 || leg === 3 ? 0 : Math.PI)) * .46 : 0);
+        return;
+      }
+      if (species === 'canyon-tortoise') {
+        /**
+         * **Shut is the whole of this animal's acting.** Open, the head is out of the front of the shell
+         * on a thick neck and the four legs are splayed out from under the rim; shut, both are drawn in
+         * and down — the head back under the dome's front edge and smaller with it, the legs pulled in
+         * toward the mid-line and shortened — so what a traveler walks up to is a patterned stone sitting
+         * on the ground, which is what a tortoise that has shut is. There is no third pose.
+         */
+        const shut = animal.action === 'shut' ? 1 : 0, out = 1 - shut * .55;
+        place(flock.meshes.head, i, 0, .158 - shut * .030, .275 - shut * .190,
+          shut ? .42 : -.05 + Math.sin(animal.clock * .5) * .10, Math.sin(animal.clock * .4) * .18, 0,
+          out, out, out);
+        for (let leg = 0; leg < 4; leg++) place(flock.meshes.legs, i * 4 + leg,
+          (leg % 2 ? .175 : -.175) * (1 - shut * .5), .105, (leg < 2 ? .175 : -.175) * (1 - shut * .3),
+          walking ? Math.sin(phase + (leg === 0 || leg === 3 ? 0 : Math.PI)) * .22 : 0, 0, 0,
+          out, out, out);
         return;
       }
       // The fox and the otter: a low head that lifts and holds when the fox watches.

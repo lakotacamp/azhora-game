@@ -2209,117 +2209,180 @@ const mixHex = (from, to, t) => {
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 };
 const hexOf = swatch => (typeof swatch === 'string' ? parseInt(swatch.replace('#', ''), 16) : swatch);
+/**
+ * **The per-country tints as one table walked in order, which is the last thing the southwestern
+ * programme owed itself.**
+ *
+ * This was a chain: four block-wide terms, then three `if (inBox(...))` blocks with a nested
+ * `if (share > 0)` per country inside each. **The shape failed silently twice.** Job 2 found that
+ * `southwestTint` had been computed in `groundTint` and dropped on the floor since the day the block was
+ * built, so four countries' authored colour had never once been drawn; job 3 met the same failure mode
+ * one level down here, where an early `return` for the Meroshe would have thrown the Dinelv plateau's
+ * colours away on the three hundred metres its box overlaps `MEROSHE_BOX`. A missing branch in a chain
+ * like that produces no error, no warning and no visible difference until somebody photographs the right
+ * place. So: **adding a country's colour is adding a row here, and a missing row is a missing row.**
+ *
+ * Each row names the country it speaks for (`region`, or `null` for the one term that is the whole
+ * block's) and paints by returning a colour. The order is the chain's own, to the call, because mixing is
+ * not commutative: the block's aridity first, then the Ganesh's swept floor, the Ganesh Plain's
+ * depressions, the damp reach, the four Meroshe surfaces, the three western-edge countries and the two
+ * eastern ones. The group boxes are gone with the chain and nothing is lost by it: `regionShare` already
+ * answers 0 outside a country's own box, and each country's box is inside its group's by construction.
+ *
+ * `tests/southwest-world.test.js` holds two guards on it: **every row must move the colour of the ground
+ * somewhere on its own country's hexes**, and **every one of the thirteen countries must be tinted
+ * somewhere in it** - so a row that quietly stops painting turns the test red with its own id in the
+ * message, and a country whose row was never written turns it red with its own name.
+ */
+const SOUTHWEST_TINTS = freeze([
+  /**
+   * The block's own gradient, and the only row that is not one country's: `southwestAridity` runs across
+   * all thirteen, and what it decides at the wet end of it is the two green corners - Navarth's north
+   * wood and West Pyros's green tip - which have no other row and are coloured by this one alone.
+   */
+  freeze({ id: 'aridity', region: null, paint: (colour, x, z) => {
+    const dry = southwestAridity(x, z);
+    return dry < .55 ? mixHex(colour, SOUTHWEST_GROUND.green, smooth(.55, .12, dry) * .8) : colour;
+  } }),
+  /** The Ganesh's swept floor and its sediment pockets, which change over forty metres. */
+  freeze({ id: 'ganesh-lie', region: 'Ganesh Desert', paint: (colour, x, z) => {
+    const lie = ganeshLie(x, z);
+    return lie > 0 ? mixHex(colour, lie > .5 ? SOUTHWEST_GROUND.swept : SOUTHWEST_GROUND.pocket, Math.abs(lie - .5) * 1.3) : colour;
+  } }),
+  /** The Ganesh Plain's depressions, which is where all the grass on that plain is. */
+  freeze({ id: 'ganesh-plain-pans', region: 'Ganesh Plain', paint: (colour, x, z) => {
+    const pan = inDepression(x, z);
+    return pan > 0 ? mixHex(colour, SOUTHWEST_GROUND.green, smooth(.05, .8, pan) * .55) : colour;
+  } }),
+  /** The damp reach in the south wash, which is the only green in the desert. */
+  freeze({ id: 'ganesh-damp', region: 'Ganesh Desert', paint: (colour, x, z) => {
+    const damp = ganeshDamp(x, z);
+    return damp > 0 ? mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .7, damp) * .8) : colour;
+  } }),
+  /**
+   * The four Meroshe surfaces, in the order a traveler crossing from the Ganesh Plain meets them.
+   * **The rock and the sand are pulled well below the swatch they start from** and the salt crust is
+   * the only pale thing allowed, which is job 1's haze lesson taken at its word: at .0024 with a warm
+   * dust haze, more than half of every pixel past a hundred and fifty metres is haze rather than
+   * ground, so a ground that is honest about a desert on the screen has to be darker than a desert.
+   */
+  freeze({ id: 'north-meroshe-hamada', region: 'North Meroshe Desert', paint: (colour, x, z, mix) => {
+    const rock = regionShare('North Meroshe Desert', x, z, mix);
+    return rock > 0 ? mixHex(colour, SOUTHWEST_GROUND.rock, rock * (.58 + merosheBench(x, z).edge * .34)) : colour;
+  } }),
+  freeze({ id: 'central-meroshe-erg', region: 'Central Meroshe Desert', paint: (colour, x, z, mix) => {
+    const erg = merosheErg(x, z, regionShare('Central Meroshe Desert', x, z, mix));
+    return erg > 0 ? mixHex(colour, SOUTHWEST_GROUND.sand, erg * (.50 + duneProfile(x, z) * .42)) : colour;
+  } }),
+  freeze({ id: 'south-meroshe-reg', region: 'South Meroshe Desert', paint: (colour, x, z, mix) => {
+    const varnish = merosheVarnish(x, z, mix);
+    return varnish > 0 ? mixHex(colour, SOUTHWEST_GROUND.reg, varnish * .88) : colour;
+  } }),
+  freeze({ id: 'west-meroshe-fan', region: 'West Meroshe Desert', paint: (colour, x, z, mix) => {
+    const skirt = regionShare('West Meroshe Desert', x, z, mix);
+    if (skirt <= 0) return colour;
+    colour = mixHex(colour, SOUTHWEST_GROUND.rock, skirt * merosheFan(x, z) * .52);
+    const salt = onSaltPan(x, z) * skirt;
+    return salt > 0 ? mixHex(colour, SOUTHWEST_GROUND.crust, smooth(.05, .75, salt) * .94) : colour;
+  } }),
+  /**
+   * **Cape Heth is one rock and one gradient across it**: grey-brown sandstone everywhere, bleached
+   * pale where the sea gets at it and darkened toward the ordinary swatch in the lee hollows, which
+   * are the only ground on the cape with soil in them.
+   */
+  freeze({ id: 'cape-heth-sandstone', region: 'Cape Heth', paint: (colour, x, z, mix) => {
+    const cape = regionShare('Cape Heth', x, z, mix);
+    if (cape <= 0) return colour;
+    colour = mixHex(colour, SOUTHWEST_GROUND.capeRock, cape * .66);
+    const salt = hethSpray(x, z);
+    if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.spray, smooth(.15, .95, salt) * .74);
+    const hollow = inHethHollow(x, z) * cape;
+    return hollow > 0 ? mixHex(colour, SOUTHWEST_GROUND.green, smooth(.1, .9, hollow) * .30) : colour;
+  } }),
+  /**
+   * **The plateau is coloured by height, because a bedding plane is a height.** The lore names two
+   * stones and says which is where: warm-toned low on the face, harder and darker above it. So the
+   * mix runs from `warmStone` at the escarpment foot to `hardStone` on the mesa caps, with the
+   * bedding's own sine on top of it so the individual courses read as courses - the one thing that
+   * says the mesa flanks and the escarpment face are the same rock.
+   */
+  freeze({ id: 'dinelv-bands', region: 'Dinelv Highlands', paint: (colour, x, z, mix) => {
+    const plateau = regionShare('Dinelv Highlands', x, z, mix);
+    if (plateau <= 0) return colour;
+    const height = groundLevelFor(x, z);
+    const warm = 1 - smooth(22, 96, height);
+    colour = mixHex(colour, SOUTHWEST_GROUND.warmStone, plateau * warm * .62);
+    colour = mixHex(colour, SOUTHWEST_GROUND.hardStone, plateau * smooth(66, 172, height) * .70);
+    const course = .5 + .5 * Math.sin(height * 6.2831853 / DINELV_BANDS.period);
+    colour = mixHex(colour, course > .5 ? SOUTHWEST_GROUND.hardStone : SOUTHWEST_GROUND.warmStone,
+      plateau * Math.abs(course - .5) * .46);
+    const basin = inDinelvBasin(x, z) * plateau;
+    return basin > 0 ? mixHex(colour, SOUTHWEST_GROUND.green, smooth(.08, .85, basin) * .34) : colour;
+  } }),
+  /**
+   * **Hama is the one country in the block that is allowed to be green**, and the mix is the aridity
+   * field's own answer: `meadow` where the map says `Csb`, nothing at all where it says `BWh`, and the
+   * whole change over two hundred paces. The winter beds are greener again, because they are the only
+   * damp ground in the southwest outside the Vaellir.
+   */
+  freeze({ id: 'hama-sward', region: 'Hama', paint: (colour, x, z, mix) => {
+    const hama = regionShare('Hama', x, z, mix);
+    if (hama <= 0) return colour;
+    const green = hamaGreen(x, z, mix);
+    if (green > 0) colour = mixHex(colour, SOUTHWEST_GROUND.meadow, smooth(.04, .9, green) * .80);
+    const bed = inHamaBed(x, z) * hama;
+    if (bed > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .8, bed) * .68);
+    return mixHex(colour, SOUTHWEST_GROUND.swept, hama * (1 - green) * hamaLie(x, z) * .34);
+  } }),
+  /**
+   * **Marosh is coloured by how high on the ridge a point stands**, which is the same thing the climate
+   * field is coloured by: the eight `Csb` hexes are the eight `hills` hexes, so the crest is oak and
+   * maquis and the terrace below it is hot-summer grass. The four combes are the only damp ground.
+   */
+  freeze({ id: 'marosh-ridge', region: 'Marosh', paint: (colour, x, z, mix) => {
+    const marosh = regionShare('Marosh', x, z, mix);
+    if (marosh <= 0) return colour;
+    const crest = maroshCrest(x, z);
+    colour = mixHex(colour, SOUTHWEST_GROUND.maquis, marosh * smooth(.12, .86, crest) * .78);
+    colour = mixHex(colour, SOUTHWEST_GROUND.terrace, marosh * (1 - smooth(.05, .62, crest)) * .56);
+    const combe = inMaroshCombe(x, z) * marosh;
+    return combe > 0 ? mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .8, combe) * .62) : colour;
+  } }),
+  /**
+   * **Trogo is coloured by how much of a point is thicket and how high it stands**, in that order, and
+   * the two of them are the whole country: a closed canopy floor, a mossy cloud-forest floor on the
+   * crest, a lighter break wherever a way or a clearing opens the canopy, and the salt-pruned collar of
+   * the southern shore where the forest stops. The clearings and the ways are painted *lighter* than
+   * the floor between them, which is the reverse of everything else in this block and is the only way a
+   * corridor reads as a corridor from above: what a light gap in a rainforest is, is light.
+   */
+  freeze({ id: 'trogo-canopy', region: 'Trogo', paint: (colour, x, z, mix) => {
+    const trogo = regionShare('Trogo', x, z, mix);
+    if (trogo <= 0) return colour;
+    const thicket = smooth(.28, .88, trogoThicket(x, z));
+    colour = mixHex(colour, SOUTHWEST_GROUND.canopy, trogo * thicket * .9);
+    colour = mixHex(colour, SOUTHWEST_GROUND.saltPruned, trogo * (1 - thicket) * .72);
+    const fog = trogoFogForest(x, z);
+    if (fog > 0) colour = mixHex(colour, SOUTHWEST_GROUND.cloudFloor, trogo * thicket * smooth(.1, .9, fog) * .64);
+    const open = Math.max(inTrogoClearing(x, z), smooth(TROGO_WAY.open, .95, trogoWay(x, z)) * thicket);
+    return open > 0 ? mixHex(colour, SOUTHWEST_GROUND.cloudFloor, trogo * open * .5) : colour;
+  } }),
+]);
+/** The rows in the order they are walked, for the guard. */
+export const SOUTHWEST_TINT_ROWS = freeze(SOUTHWEST_TINTS.map(row => row.id));
+/** Which country each row speaks for, by row id, and `null` for the one row that is the whole block's. */
+export const SOUTHWEST_TINT_REGIONS = freeze(Object.fromEntries(SOUTHWEST_TINTS.map(row => [row.id, row.region])));
+/** One row of the table on its own, so the guard can ask whether that row paints anything. */
+export const southwestTintRow = (id, colour, x, z) =>
+  SOUTHWEST_TINTS.find(row => row.id === id).paint(colour, x, z, terrainMix(x, z));
+
 export function southwestTint(x, z, ground) {
   if (!inSouthwestBox(x, z) || !SWATCHES.has(ground)) return null;
   const own = southwestShare(x, z);
   if (own <= 0) return null;
-  const base = hexOf(ground);
+  const base = hexOf(ground), mix = terrainMix(x, z);
   let colour = base;
-  const dry = southwestAridity(x, z);
-  if (dry < .55) colour = mixHex(base, SOUTHWEST_GROUND.green, smooth(.55, .12, dry) * .8);
-  const lie = ganeshLie(x, z);
-  if (lie > 0) colour = mixHex(colour, lie > .5 ? SOUTHWEST_GROUND.swept : SOUTHWEST_GROUND.pocket,
-    Math.abs(lie - .5) * 1.3);
-  const pan = inDepression(x, z);
-  if (pan > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.05, .8, pan) * .55);
-  const damp = ganeshDamp(x, z);
-  if (damp > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .7, damp) * .8);
-  // **The Meroshe's early return became a branch**, because job 3's boxes overlap job 2's: the Dinelv
-  // Highlands' box and `MEROSHE_BOX` share three hundred metres of their corners, so a `return` here
-  // would have thrown away the plateau's own colours on every point in the overlap. Job 2's report asked
-  // for `groundTint` to become a table of (inBox, tint) pairs walked in order; this is that shape held
-  // inside one country's own tint, which is as far as job 3 could take it without touching the chain.
-  const mix = terrainMix(x, z);
-  if (inBox(MEROSHE_BOX, x, z)) {
-    // The four Meroshe surfaces, in the order a traveler crossing from the Ganesh Plain meets them.
-    // **The rock and the sand are pulled well below the swatch they start from** and the salt crust is
-    // the only pale thing allowed, which is job 1's haze lesson taken at its word: at .0024 with a warm
-    // dust haze, more than half of every pixel past a hundred and fifty metres is haze rather than
-    // ground, so a ground that is honest about a desert on the screen has to be darker than a desert.
-    const rock = regionShare('North Meroshe Desert', x, z, mix);
-    if (rock > 0) colour = mixHex(colour, SOUTHWEST_GROUND.rock, rock * (.58 + merosheBench(x, z).edge * .34));
-    const erg = merosheErg(x, z, regionShare('Central Meroshe Desert', x, z, mix));
-    if (erg > 0) colour = mixHex(colour, SOUTHWEST_GROUND.sand, erg * (.50 + duneProfile(x, z) * .42));
-    const varnish = merosheVarnish(x, z, mix);
-    if (varnish > 0) colour = mixHex(colour, SOUTHWEST_GROUND.reg, varnish * .88);
-    const skirt = regionShare('West Meroshe Desert', x, z, mix);
-    if (skirt > 0) {
-      colour = mixHex(colour, SOUTHWEST_GROUND.rock, skirt * merosheFan(x, z) * .52);
-      const salt = onSaltPan(x, z) * skirt;
-      if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.crust, smooth(.05, .75, salt) * .94);
-    }
-  }
-  if (inBox(WEST_EDGE_BOX, x, z)) {
-    // **Cape Heth is one rock and one gradient across it**: grey-brown sandstone everywhere, bleached
-    // pale where the sea gets at it and darkened toward the ordinary swatch in the lee hollows, which
-    // are the only ground on the cape with soil in them.
-    const cape = regionShare('Cape Heth', x, z, mix);
-    if (cape > 0) {
-      colour = mixHex(colour, SOUTHWEST_GROUND.capeRock, cape * .66);
-      const salt = hethSpray(x, z);
-      if (salt > 0) colour = mixHex(colour, SOUTHWEST_GROUND.spray, smooth(.15, .95, salt) * .74);
-      const hollow = inHethHollow(x, z) * cape;
-      if (hollow > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.1, .9, hollow) * .30);
-    }
-    // **The plateau is coloured by height, because a bedding plane is a height.** The lore names two
-    // stones and says which is where: warm-toned low on the face, harder and darker above it. So the
-    // mix runs from `warmStone` at the escarpment foot to `hardStone` on the mesa caps, with the
-    // bedding's own sine on top of it so the individual courses read as courses - the one thing that
-    // says the mesa flanks and the escarpment face are the same rock.
-    const plateau = regionShare('Dinelv Highlands', x, z, mix);
-    if (plateau > 0) {
-      const height = groundLevelFor(x, z);
-      const warm = 1 - smooth(22, 96, height);
-      colour = mixHex(colour, SOUTHWEST_GROUND.warmStone, plateau * warm * .62);
-      colour = mixHex(colour, SOUTHWEST_GROUND.hardStone, plateau * smooth(66, 172, height) * .70);
-      const course = .5 + .5 * Math.sin(height * 6.2831853 / DINELV_BANDS.period);
-      colour = mixHex(colour, course > .5 ? SOUTHWEST_GROUND.hardStone : SOUTHWEST_GROUND.warmStone,
-        plateau * Math.abs(course - .5) * .46);
-      const basin = inDinelvBasin(x, z) * plateau;
-      if (basin > 0) colour = mixHex(colour, SOUTHWEST_GROUND.green, smooth(.08, .85, basin) * .34);
-    }
-    // **Hama is the one country in the block that is allowed to be green**, and the mix is the aridity
-    // field's own answer: `meadow` where the map says `Csb`, nothing at all where it says `BWh`, and the
-    // whole change over two hundred paces. The winter beds are greener again, because they are the only
-    // damp ground in the southwest outside the Vaellir.
-    const hama = regionShare('Hama', x, z, mix);
-    if (hama > 0) {
-      const green = hamaGreen(x, z, mix);
-      if (green > 0) colour = mixHex(colour, SOUTHWEST_GROUND.meadow, smooth(.04, .9, green) * .80);
-      const bed = inHamaBed(x, z) * hama;
-      if (bed > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .8, bed) * .68);
-      colour = mixHex(colour, SOUTHWEST_GROUND.swept, hama * (1 - green) * hamaLie(x, z) * .34);
-    }
-  }
-  if (inBox(EAST_EDGE_BOX, x, z)) {
-    // **Marosh is coloured by how high on the ridge a point stands**, which is the same thing the climate
-    // field is coloured by: the eight `Csb` hexes are the eight `hills` hexes, so the crest is oak and
-    // maquis and the terrace below it is hot-summer grass. The four combes are the only damp ground.
-    const marosh = regionShare('Marosh', x, z, mix);
-    if (marosh > 0) {
-      const crest = maroshCrest(x, z);
-      colour = mixHex(colour, SOUTHWEST_GROUND.maquis, marosh * smooth(.12, .86, crest) * .78);
-      colour = mixHex(colour, SOUTHWEST_GROUND.terrace, marosh * (1 - smooth(.05, .62, crest)) * .56);
-      const combe = inMaroshCombe(x, z) * marosh;
-      if (combe > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .8, combe) * .62);
-    }
-    // **Trogo is coloured by how much of a point is thicket and how high it stands**, in that order, and
-    // the two of them are the whole country: a closed canopy floor, a mossy cloud-forest floor on the
-    // crest, a lighter break wherever a way or a clearing opens the canopy, and the salt-pruned collar of
-    // the southern shore where the forest stops. The clearings and the ways are painted *lighter* than
-    // the floor between them, which is the reverse of everything else in this block and is the only way a
-    // corridor reads as a corridor from above: what a light gap in a rainforest is, is light.
-    const trogo = regionShare('Trogo', x, z, mix);
-    if (trogo > 0) {
-      const thicket = smooth(.28, .88, trogoThicket(x, z));
-      colour = mixHex(colour, SOUTHWEST_GROUND.canopy, trogo * thicket * .9);
-      colour = mixHex(colour, SOUTHWEST_GROUND.saltPruned, trogo * (1 - thicket) * .72);
-      const fog = trogoFogForest(x, z);
-      if (fog > 0) colour = mixHex(colour, SOUTHWEST_GROUND.cloudFloor, trogo * thicket * smooth(.1, .9, fog) * .64);
-      const open = Math.max(inTrogoClearing(x, z), smooth(TROGO_WAY.open, .95, trogoWay(x, z)) * thicket);
-      if (open > 0) colour = mixHex(colour, SOUTHWEST_GROUND.cloudFloor, trogo * open * .5);
-    }
-  }
+  for (const row of SOUTHWEST_TINTS) colour = row.paint(colour, x, z, mix);
   return colour === base ? null : colour;
 }
 /**

@@ -37,7 +37,7 @@ import {
   MAROSH_RIDGE, MAROSH_GAP, MAROSH_COMBES, maroshRidgeAt, maroshCrest, inMaroshCombe,
   TROGO_CREST, TROGO_GULLIES, TROGO_PATHS, TROGO_CLEARINGS, TROGO_WAY,
   trogoCrestAt, trogoThicket, trogoWay, trogoBand, trogoFogForest, inTrogoClearing, onTrogoGullyFloor,
-  SOUTHWEST_SWALE_RIVERS,
+  SOUTHWEST_SWALE_RIVERS, SOUTHWEST_TINT_ROWS, SOUTHWEST_TINT_REGIONS, southwestTint, southwestTintRow,
 } from '../src/southwest-world.js';
 import { SOUTHWEST_WILDLIFE_ZONES } from '../src/southwest-wildlife.js';
 import { DEFAULT_SKY, regionSky } from '../src/region-sky.js';
@@ -667,18 +667,21 @@ test('nothing of this block is written outside its own hexes, and nobody else’
 });
 
 test('every animal stands on this block’s own ground, and the desert is nearly empty on purpose', () => {
-  assert.equal(SOUTHWEST_WILDLIFE_ZONES.length, 54);
+  // Fifty-six: the four jobs' fifty-four, plus the ghubr in the Ganesh Desert and the canyon tortoise in
+  // the Dinelv Highlands' north gap basin, which the user's two decisions of 2026-10-01 added.
+  assert.equal(SOUTHWEST_WILDLIFE_ZONES.length, 56);
   const byRegion = {};
   for (const zone of SOUTHWEST_WILDLIFE_ZONES) byRegion[zone.region] = (byRegion[zone.region] ?? 0) + 1;
-  assert.deepEqual(byRegion, { Navarth: 3, 'West Pyros': 7, 'Ganesh Desert': 3, 'Ganesh Plain': 4,
+  assert.deepEqual(byRegion, { Navarth: 3, 'West Pyros': 7, 'Ganesh Desert': 4, 'Ganesh Plain': 4,
     Marosh: 6, Trogo: 11,
     'North Meroshe Desert': 2, 'West Meroshe Desert': 2, 'Central Meroshe Desert': 1, 'South Meroshe Desert': 2,
-    'Cape Heth': 4, 'Dinelv Highlands': 4, Hama: 5 });
-  // Thirty-one hexes and three ranges, two of them birds in the air: the honest dry-year reading,
-  // and the lore's own — "the Ganesh in a severe dry year presents a surface that appears
-  // essentially lifeless."
+    'Cape Heth': 4, 'Dinelv Highlands': 5, Hama: 5 });
+  // Thirty-one hexes and four ranges, two of them birds in the air: the honest dry-year reading, and the
+  // lore's own — "the Ganesh in a severe dry year presents a surface that appears essentially lifeless."
+  // The two on the ground are the hare on the damp reach and the ghubr in the northern pockets, and the
+  // ghubr is the one animal of this country's own that the lore names.
   const ganesh = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.region === 'Ganesh Desert');
-  assert.equal(ganesh.filter(zone => !zone.air).length, 1);
+  assert.equal(ganesh.filter(zone => !zone.air).length, 2);
   for (const zone of SOUTHWEST_WILDLIFE_ZONES) {
     assert.ok(BLOCK.includes(zone.region), `${zone.id} claims ${zone.region}`);
     assert.ok(zone.note && zone.note.length > 80, `${zone.id} has no note`);
@@ -710,7 +713,28 @@ test('every animal stands on this block’s own ground, and the desert is nearly
   // Nothing domestic anywhere: Navarth's grey sheep, the plain's herds and the caravan animals all
   // belong to people, and this block has none of them.
   for (const zone of SOUTHWEST_WILDLIFE_ZONES)
-    assert.ok(!['longhorn', 'hill-sheep', 'nethrani-cattle'].includes(zone.species), `${zone.id} is somebody's stock`);
+    assert.ok(!['longhorn', 'hill-sheep', 'nethrani-cattle', 'frostback'].includes(zone.species), `${zone.id} is somebody's stock`);
+  /**
+   * **The ghubr, and the two halves of its own rule.** The lore gives this animal a behaviour and no
+   * body, which is why three jobs refused it: "the dustback does not stand still in conditions where the
+   * surface air is actively dangerous", and "a dustback seen resting in shade is a reliable signal". So
+   * the two things the build owes the lore are that it is in the **northern desert margin** and that it
+   * has **shade to rest in** - and in the Ganesh the only shade is the perennial scrub, which stands in
+   * the sediment pockets the wind has not swept (`ganeshLie` low). Both are measured here; the behaviour
+   * itself is proved in `tests/west-life.test.js`.
+   */
+  const ghubr = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.species === 'ghubr');
+  assert.equal(ghubr.length, 1, 'the ghubr is one range and it is the Ganesh Desert’s');
+  assert.equal(ghubr[0].region, 'Ganesh Desert');
+  assert.ok(ghubr[0].shade > 0, 'the ghubr has no shade to rest in, which is half of what the lore says about it');
+  const rows = cellsOf('Ganesh Desert').map(cell => cell.z).sort((a, b) => a - b);
+  for (const [x, z] of ghubr[0].sites) {
+    assert.ok(z < rows[0] + 180, `the ghubr at (${x}, ${z}) is not in the northern margin (the first row is ${rows[0].toFixed(0)})`);
+    assert.ok(ganeshLie(x, z) < .1, `the ghubr at (${x}, ${z}) rests on swept floor (lie ${ganeshLie(x, z).toFixed(3)}) and there is no shade there`);
+  }
+  // And it is the wild animal of the lore's own sentence and not somebody's bovid drawn small: the
+  // Moroshé dustback is the oasis houses' stock and has no range anywhere in the game.
+  for (const zone of SOUTHWEST_WILDLIFE_ZONES) assert.notEqual(zone.species, 'dustback', `${zone.id} is somebody's stock`);
 });
 
 test('the four are charted, levelled, spoken for and listed, and nothing is built in any of them', () => {
@@ -1551,7 +1575,9 @@ test('Hama’s wet/dry line is drawn twice by the atlas and lies eighty metres i
 
 test('thirteen ranges over seventy-three hexes, and the block stops getting emptier', () => {
   const mine = SOUTHWEST_WILDLIFE_ZONES.filter(zone => EDGE.includes(zone.region));
-  assert.equal(mine.length, 13);
+  // Thirteen were job 3's; the fourteenth is the canyon tortoise, which job 3 found the home for and
+  // could not build, and which the user's decision of 2026-10-01 put in the plateau's north gap basin.
+  assert.equal(mine.length, 14);
   // **The densities, and they are the argument.** Job 1: seventeen over a hundred and seven, 0.159 a
   // hex. Job 2: seven over ninety-five, 0.074, a quarter sparser than the Ganesh, which was already the
   // sparsest country in the game. Job 3: thirteen over seventy-three, **0.178**, the densest of the
@@ -1573,12 +1599,25 @@ test('thirteen ranges over seventy-three hexes, and the block stops getting empt
   // only other place in the game it stands.
   const plunger = cape.find(zone => zone.species === 'sea-plunger');
   assert.ok(plunger.plunge && plunger.plunge.under > 1, 'the plunger does not plunge');
-  // **Both of the Dinelv Highlands' ground ranges are in basins** - the only ground on the plateau with
-  // cover on it - and both of its birds are over the escarpment and the tables.
+  // **Every one of the Dinelv Highlands' ground ranges is in a basin** - the only ground on the plateau
+  // with cover on it - and both of its birds are over the escarpment and the tables. The tortoise's basin
+  // is the third of the four and is its own: the lore's "desert seeps" are these, and nothing else is in it.
   const plateau = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.region === 'Dinelv Highlands');
   assert.equal(plateau.filter(zone => zone.air).length, 2);
   for (const zone of plateau.filter(zone => !zone.air)) for (const [x, z] of zone.sites)
     assert.ok(inDinelvBasin(x, z) > .3, `${zone.id} is not in a basin`);
+  const tortoise = plateau.find(zone => zone.species === 'canyon-tortoise');
+  assert.ok(tortoise, 'the canyon tortoise has no range on the plateau the lore gives it');
+  const basinOf = (x, z) => DINELV_BASINS.reduce((best, b) =>
+    Math.hypot(x - b.x, z - b.z) < Math.hypot(x - best.x, z - best.z) ? b : best).id;
+  const basins = new Set(tortoise.sites.map(([x, z]) => basinOf(x, z)));
+  assert.deepEqual([...basins], ['north-gap-basin'], 'the tortoises are spread over more than one basin');
+  for (const zone of plateau.filter(zone => !zone.air && zone !== tortoise))
+    for (const [x, z] of zone.sites) assert.notEqual(basinOf(x, z), 'north-gap-basin', `${zone.id} shares the tortoise's basin`);
+  // Its range is the smallest in the block, because this animal does not go anywhere.
+  const span = zone => Math.hypot(zone.maxX - zone.minX, zone.maxZ - zone.minZ);
+  for (const zone of SOUTHWEST_WILDLIFE_ZONES.filter(zone => !zone.air && !zone.sea && zone !== tortoise))
+    assert.ok(span(zone) > span(tortoise), `${zone.id}'s range is tighter than the tortoise's`);
   // **The bone-bird's range stops at Hama's line**, which is the point of putting one there: the four
   // Meroshe quarters have one each, the tables have one, and the last one works the dry half of the only
   // green country in the block and does not cross into the grass.
@@ -1588,14 +1627,17 @@ test('thirteen ranges over seventy-three hexes, and the block stops getting empt
   for (const id of ['hama-sward-hares', 'hama-harrier'])
     for (const [x, z] of SOUTHWEST_WILDLIFE_ZONES.find(zone => zone.id === id).sites)
       assert.ok(hamaGreen(x, z) > .6, `${id} is on the dry side of the line`);
-  // No new rig: every species here is one the west already had.
+  // No new rig in job 3: every species it used is one the west already had. The canyon tortoise is the
+  // exception and is not job 3's - it is the follow-up's one new rig, built on 2026-10-01 after the user
+  // decided the law rather than the animal was what had to change.
   const older = new Set(SOUTHWEST_WILDLIFE_ZONES.filter(zone => !EDGE.includes(zone.region)).map(zone => zone.species));
   const ascarthOnly = new Set(['sea-plunger']);
-  for (const zone of mine) assert.ok(older.has(zone.species) || ascarthOnly.has(zone.species),
+  const afterwards = new Set(['canyon-tortoise']);
+  for (const zone of mine) assert.ok(older.has(zone.species) || ascarthOnly.has(zone.species) || afterwards.has(zone.species),
     `${zone.id} wants a rig the block has not got`);
   // Nothing domestic, and no dustback: the plateau's herds, the highland breeds and Hama's imported
   // food are all somebody's.
-  for (const zone of mine) assert.ok(!['longhorn', 'hill-sheep', 'nethrani-cattle', 'dustback'].includes(zone.species),
+  for (const zone of mine) assert.ok(!['longhorn', 'hill-sheep', 'nethrani-cattle', 'frostback', 'dustback'].includes(zone.species),
     `${zone.id} is somebody's stock`);
 });
 
@@ -1908,6 +1950,54 @@ test('every ground tint in the game reaches the screen, which is the guard two j
   }
 });
 
+test('every row of the southwest’s own tint table paints, and every one of the thirteen countries is tinted', () => {
+  /**
+   * **The guard one level down, which is where job 3 met the same failure mode.** `southwestTint` was a
+   * chain of three boxes with a nested branch per country inside each; it is now one table of rows walked
+   * in order (`SOUTHWEST_TINTS`, src/southwest-world.js). Two things are held here, and between them a
+   * missing row cannot be silent: **every row must move the colour somewhere on its own country's hexes**,
+   * and **every one of the thirteen countries must come out tinted somewhere in it**. A row added without
+   * a line here turns the first assertion red with its own id; a country built without a row turns the
+   * last one red with its own name.
+   */
+  assert.deepEqual([...SOUTHWEST_TINT_ROWS], ['aridity', 'ganesh-lie', 'ganesh-plain-pans', 'ganesh-damp',
+    'north-meroshe-hamada', 'central-meroshe-erg', 'south-meroshe-reg', 'west-meroshe-fan',
+    'cape-heth-sandstone', 'dinelv-bands', 'hama-sward', 'marosh-ridge', 'trogo-canopy'],
+  'a row was added to the southwest’s tint table without a line here');
+  // Every country that claims a row is one of the block's own.
+  for (const name of Object.values(SOUTHWEST_TINT_REGIONS))
+    if (name) assert.ok(BLOCK.includes(name), `${name} is not a country of this block`);
+  // **Every row paints.** A row is asked on its own country's hexes with a colour it cannot return by
+  // accident, and it must come back with something else somewhere.
+  const probe = 0x808080, around = [[0, 0], [40, 0], [-40, 0], [0, 40], [0, -40], [28, 28], [-28, -28]];
+  for (const id of SOUTHWEST_TINT_ROWS) {
+    // A row that names a country is asked on that country's hexes; `aridity`, which is the block's, is
+    // asked on all of them.
+    const row = SOUTHWEST_TINT_REGIONS[id];
+    const names = row ? [row] : BLOCK;
+    let painted = false;
+    for (const name of names) for (const cell of cellsOf(name)) {
+      for (const [dx, dz] of around) if (southwestTintRow(id, probe, cell.x + dx, cell.z + dz) !== probe) { painted = true; break; }
+      if (painted) break;
+    }
+    assert.ok(painted, `the ${id} row of the southwest tint table never paints anything in ${names.length === 1 ? names[0] : 'the block'}`);
+  }
+  // **And every one of the thirteen comes out tinted somewhere**, which is the assertion the two silent
+  // failures were really about: the four that have no row of their own are coloured by `aridity` and by
+  // the Ganesh's and the Ganesh Plain's rows, and if one of them ever stops being coloured, this says so.
+  for (const name of BLOCK) {
+    let tinted = false;
+    for (const cell of cellsOf(name)) {
+      const swatch = REGION_TERRAIN[name].byTerrain?.[cell.terrain]?.ground ?? REGION_TERRAIN[name].ground;
+      for (const [dx, dz] of [[0, 0], [40, 0], [-40, 0], [0, 40], [0, -40], [28, 28], [-28, -28], [44, -44], [-44, 44]]) {
+        if (southwestTint(cell.x + dx, cell.z + dz, swatch) !== null) { tinted = true; break; }
+      }
+      if (tinted) break;
+    }
+    assert.ok(tinted, `${name} has no authored ground colour anywhere in it`);
+  }
+});
+
 test('the two are charted, levelled, spoken for and listed, and nothing is built in either of them', () => {
   for (const name of EAST) {
     assert.ok(REGION_BIOMES[name].ownScatter, `${name} does not scatter its own country`);
@@ -1963,7 +2053,11 @@ test('seventeen ranges over forty-seven hexes, and the rainforest is the densest
     return ranges / hexes;
   };
   assert.ok(Math.abs(density(EAST) - 17 / 47) < 1e-9, 'job 4 carries seventeen ranges over forty-seven hexes');
-  assert.ok(density(EAST) > density(EDGE) * 2, 'job 4 is not twice job 3');
+  // Against job 3 the figure is 1.89 rather than the 2.03 job 4 reported, and the change is not job 4's:
+  // the canyon tortoise was added to the Dinelv Highlands on 2026-10-01, which moved job 3's block from
+  // thirteen ranges over seventy-three hexes to fourteen. The claim held to here is the one that survives
+  // it - the rainforest is most of twice the densest of the first three blocks - and it is measured.
+  assert.ok(density(EAST) > density(EDGE) * 1.85, `job 4 is ${(density(EAST) / density(EDGE)).toFixed(2)} times job 3`);
   assert.ok(density(EAST) > density(MEROSHE) * 4.5, 'job 4 is not nearly five times job 2');
   // **Trogo is the densest country in the game and the South Meroshe one of the emptiest**, and they
   // share thirteen hex edges: a traveler can walk from one to the other in four hundred paces.
@@ -1989,9 +2083,13 @@ test('seventeen ranges over forty-seven hexes, and the rainforest is the densest
       `${name} is ${existed ? 'already' : 'not'} an animal this game had`);
   }
   assert.ok(life.includes("'forest-cat': {") && life.includes('albatross: {'), 'the two new rigs are not built');
-  // **Three refusals held for the fourth time**: the Ganesh dustback, the canyon tortoise, and stock.
+  // **One refusal of job 4's three still stands, and it is the one that was never about the lore**:
+  // nothing in this block is anybody's stock. The other two were the user's to decide and were decided on
+  // 2026-10-01 - the Ganesh dustback is the ghubr in job 1's desert and the canyon tortoise is in job 3's
+  // basins - so what is held here is the refusal itself: the *Moroshé* dustback, the oasis houses' bovid
+  // whose numbers are what their standing is counted in, is somebody's and is not built.
   for (const zone of SOUTHWEST_WILDLIFE_ZONES)
-    assert.ok(!['dustback', 'canyon-tortoise', 'longhorn', 'hill-sheep', 'nethrani-cattle'].includes(zone.species),
+    assert.ok(!['dustback', 'longhorn', 'hill-sheep', 'nethrani-cattle', 'frostback'].includes(zone.species),
       `${zone.id} is ${zone.species}`);
   // The rainforest's own eleven: one range on the water, two on the estuary, one out at sea, one in the
   // air over the shore, one bone-bird that comes over the crest from the desert and does not cross it,

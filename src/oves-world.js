@@ -28,7 +28,7 @@
  *    gives eight `grassland` hexes over the northern two rows and eleven `plains` over the southern
  *    three, so the country is a tilt from upland grass at 16 m to the river's floor at 10.
  *  - **The Oves Desert has the hills and no permanent water.** Twenty `plains` hexes falling the
- *    length of a wedge to its eastern apex, where the Oveth and the southern border stream come
+ *    length of a wedge to its eastern apex, where the Oveth and the Caelin come
  *    together (`ovesBasin`); three `hills` hexes on the north-western rim, which is exactly where the
  *    lore puts the ridge the whole rain shadow depends on (`ovesRim`); a short, hard, broken stone
  *    relief that a sine wave of the world's own wavelength cannot draw (`ovesStone`); and four
@@ -280,7 +280,7 @@ export const onSorten = (x, z) => ovesSorten(x, z) > OVES_SORTEN.depth * .55;
 /**
  * **The basin.** "It occupies a wedge of the Oveth basin's … section, perhaps fifteen miles at its
  * widest, running … from the hill junction." On the atlas that wedge has its apex in the **east**,
- * at the corner where the Oveth and the southern border stream come together at (-1800, 953), and it
+ * at the corner where the Oveth and the Caelin come together at (-1800, 953), and it
  * opens westward to the rim hills. So the country's floor falls the length of it, from the rim down
  * to that corner, which is also the only direction its water could ever go: "the seasonal water
  * channels that cross the Oves" run down this tilt and the channels below are laid on it.
@@ -612,5 +612,5 @@ export const OVES_LANDMARKS = freeze([
   freeze({ id: 'oves-dry-wedge', name: 'The Dry Wedge', x: -2220, z: 940,
     description: 'The floor of the Oves: worn rock through a poor thin soil, gravel pavement wherever the rock is up, perennial scrub spaced wide enough to walk between, and a stubble of dead seed-heads in the pockets where the soil has gathered. In a wet year that stubble comes up as grass and the word desert looks like an overstatement. This is the other kind of year.' }),
   freeze({ id: 'oves-apex', name: 'The Wedge’s Point', x: -1868, z: 962,
-    description: 'The eastern point of the desert, where the Oveth comes down off the Ovesian border and the southern border stream comes in to meet it, and where three countries have a corner. The lowest ground in the Oves and the only place in it a traveler can drink, and the water belongs to the river and not to the desert.' }),
+    description: 'The eastern point of the desert, where the Oveth comes down off the Ovesian border and the Caelin comes in to meet it, and where three countries have a corner. The lowest ground in the Oves and the only place in it a traveler can drink, and the water belongs to the river and not to the desert.' }),
 ]);

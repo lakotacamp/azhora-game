@@ -4,6 +4,42 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-10-01 — Four decisions on the finished southwest: the ghubr, the tortoise, five names, a table
+
+**Four open questions the southwestern programme had left, answered in one sitting.** Built to
+`docs/southwest-finish-brief.md`; the whole account is `docs/southwest-finish-report.md`. No new region.
+
+- **The Ganesh dustback: "just come up with what you think it should be based on the lore."** Three
+  builders had refused it because they were looking for a body description; the description is
+  behavioural and it exists. It is the **ghubr** (`ganesh_desert.md`, `culture/azhoran_livestock.md`,
+  `peoples/languages/moreshi.md`): small, dry, insectivorous, of the northern desert margin, with a pale
+  powdery ridge along the spine and shoulders, moving at the surface and resting in shade. **Whether it
+  is a bird or a small mammal the lore does not say; the build chose a bird and says so** - the guides
+  read wind direction off it, it is watched standing in daylight where the desert's mammals are
+  nocturnal, and a four-legged build would be the confusion the lore's own second sentence exists to
+  prevent. It is **not** the Moroshé bovid, which is somebody's stock and stays unbuilt.
+- **The canyon tortoise: build it, and let it withdraw.** The blocker was the west's first law, that
+  nothing in it can be walked down. The decision: **the law assumed every animal flees, and a tortoise
+  does not - it stops and shuts.** So the behaviour is built (`SHUT`, `src/west-regions-life.js`) and
+  **the law was changed to ask the right question** rather than exempting the animal with a flag, which
+  the user explicitly rejected: `tests/west-life.test.js` now asks of an animal that shuts whether
+  walking it down *got anybody anything*, and chooses that half by what the animal did in the chase
+  itself. Its home is the Dinelv Highlands' north gap basin, which the lore calls a desert seep.
+- **Five watercourses: derive the names from the language profiles.** Three were named and two were
+  not, and both outcomes are the lore's. Gala's Telemonia border stream is **the Treloss** and the one
+  chain that Gala and the Oves Desert each built a reach of is **the Caelin**, both from the `mittoli`
+  profile's own roots and endings (`src/languages.js`: `roots.border` *trelith*, `roots.flow` *caelin*,
+  `roots.river` *caeloss*). **Gala's distributary and Ovesos's Dry Gully stay descriptive**: `gala.md`
+  says the names of Gala's small rivers are from a pre-Mittoli layer nobody can gloss, and a dry cut
+  with no water in it has no word in a water-administration vocabulary. A name that cannot be derived
+  honestly is left undrawn.
+- **`groundTint` should be a table.** It already was at the top level (job 4 did it); the level below,
+  `southwestTint`, was still a chain of three boxes with a branch per country nested in each, which is
+  the shape job 3 nearly lost the Dinelv plateau's colours to. It is now **thirteen rows walked in
+  order**, each naming the country it speaks for, and the guard asserts both that every row paints
+  somewhere on its own hexes and that **every one of the thirteen countries comes out tinted**.
+  Behaviour is identical: 362,894 answers compared against the base commit, none different.
+
 ## 2026-09-30 — What a deep forest is, and the southwest finished (job 4: Marosh and Trogo)
 
 **The user's decision, asked directly and answered in one sentence:** a deep forest in Azhora is

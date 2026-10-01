@@ -374,13 +374,13 @@ export const REGION_TERRAIN = Object.freeze({
   }) }),
   // The Oves Desert (src/oves-world.js): twenty `plains` hexes and three `hills`, and the hills are
   // exactly the north-western rim the lore builds the whole rain shadow on. The country is a wedge of
-  // the Oveth basin whose apex is its eastern tip, where the Oveth and the southern border stream come
+  // the Oveth basin whose apex is its eastern tip, where the Oveth and the Caelin come
   // together, so its floor falls the length of it from the rim to that corner; the fall is a landform
   // (`ovesBasin`) and not a level, the way Caricas's shelf is, because a base can only say one number.
   //
   // 12 on the plains is the country's mean and is chosen against two things: it is half a metre
   // above the `outland` 11.5 it replaces, so registering the desert moves Gala's own hexes, the
-  // Lizeem's level and Gala's border stream by centimetres; and it stands two metres above Ovesos's
+  // Lizeem's level and the Caelin's Gala reach by centimetres; and it stands two metres above Ovesos's
   // plain across the Oveth, which is what the side of a basin does over the river's bottomland. The
   // hills' 22 is the rim's shoulder, not the rim: the three summits are `ovesRim`, laid on top of
   // this, the way Ascarth's two hills are laid on top of its 7.
@@ -1258,7 +1258,7 @@ const REGION_TEXT = {
     palette: { ground: '#a8a06a', accent: '#e2d6a6', fog: '#cdc9ae', sky: 0xc6dad8, haze: 0xdad5bc, hazeDensity: .0044 },
     npcIds: [], landmarks: ['the-sorten', 'upper-oveth', 'oves-upland-grass', 'oveth-gully', 'oves-open-plain'] },
   'Oves Desert': { subtitle: 'The rain shadow and its dry channels', spawn: point(-2205, 902),
-    description: 'The far tail of the Pyros rain shadow: a wedge of the Oveth basin falling from the rim hills in the north-west to the point in the east where the Oveth and the southern border stream come together. Rocky rather than sandy \u2014 worn stone through a thin poor soil, gravel pavement wherever the rock is up, perennial scrub spaced wide enough to walk between, and a stubble of dead seed-heads in the pockets where a wet year\u2019s grasses would be. Three low rounded hills on the rim intercept what moisture the westerlies carry, and the cut channels run east-south-east off their feet with no water in any of them. There is no permanent water in the country at all: one reach of one channel holds it below the gravel, and that is the only green in the Oves.',
+    description: 'The far tail of the Pyros rain shadow: a wedge of the Oveth basin falling from the rim hills in the north-west to the point in the east where the Oveth and the Caelin come together. Rocky rather than sandy \u2014 worn stone through a thin poor soil, gravel pavement wherever the rock is up, perennial scrub spaced wide enough to walk between, and a stubble of dead seed-heads in the pockets where a wet year\u2019s grasses would be. Three low rounded hills on the rim intercept what moisture the westerlies carry, and the cut channels run east-south-east off their feet with no water in any of them. There is no permanent water in the country at all: one reach of one channel holds it below the gravel, and that is the only green in the Oves.',
     palette: { ground: '#ab9f7c', accent: '#e6dcb4', fog: '#d4cdb4', sky: 0xcedcd2, haze: 0xe3dabd, hazeDensity: .0034 },
     npcIds: [], landmarks: ['rim-hills', 'dry-channels', 'oves-damp-reach', 'oves-dry-wedge', 'oves-apex'] },
   'Southern Ascarth': { subtitle: 'The tip of the finger', spawn: point(-850, 2021),

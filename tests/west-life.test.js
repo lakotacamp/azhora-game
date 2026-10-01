@@ -17,6 +17,14 @@ import { canStand, canSwim } from '../src/game-state.js';
  * ones cannot be run down either; sheep can be herded by somebody running; cattle give ground
  * and face you instead of bolting; the fox never flees; and a band is home again in a few
  * minutes whether or not anybody stayed to watch.
+ *
+ * **One of those principles was a question with an assumption in it, and the assumption came out on
+ * 2026-10-01.** "Nothing can be walked down" was written as "nobody walking got within arm's length",
+ * which is true of every animal that answers a traveler by opening distance - and that was every animal
+ * in the west until the canyon tortoise. A tortoise cannot open distance and does not try: it stops and
+ * shuts. So the first law below now asks of an animal that shuts the question the law was always about -
+ * whether walking it down *got anybody anything* - and asks it of whatever shuts in the chase itself,
+ * rather than of anything flagged on a range. Nothing is exempted and no animal is skipped.
  */
 const { createWorld } = await sourceModule('../src/world.js');
 const { WEST_LIFE_ZONES, createWestLife, LIFE_REACH } = await sourceModule('../src/west-regions-life.js');
@@ -50,7 +58,7 @@ function chase(zone, pace, seconds, { bearing = Math.PI / 2, arm = 3 } = {}) {
   const band = () => life.state().creatures;
   const first = band()[0], homes = new Map(band().map(animal => [animal.id, { x: animal.x, z: animal.z }]));
   const player = { x: first.x + Math.sin(bearing) * 40, z: first.z + Math.cos(bearing) * 40 };
-  const seen = new Set(), report = { life, band, homes, player, zone, target: first.id, closest: Infinity, reachedAt: null, held: 0, within: 0, gap: Infinity, actions: seen, offFooting: 0, facing: [] };
+  const seen = new Set(), report = { life, band, homes, player, zone, target: first.id, closest: Infinity, reachedAt: null, held: 0, within: 0, gap: Infinity, actions: seen, offFooting: 0, facing: [], shutFor: 0, shutMoved: 0, openWithin: 0 };
   const watch = t => {
     for (const animal of band()) {
       seen.add(animal.action);
@@ -68,6 +76,11 @@ function chase(zone, pace, seconds, { bearing = Math.PI / 2, arm = 3 } = {}) {
       held = grounded && d < arm ? held + 1 : 0; report.held = Math.max(report.held, held / HZ);
       if (grounded && d < arm) report.within += 1 / HZ;
       report.gap = grounded ? d : Infinity;
+      // An animal that **shuts** instead of running (the canyon tortoise): how long it was shut, the
+      // fastest it moved while it was, and how long it was open with somebody inside arm's length —
+      // which is what "approaching it achieves nothing" means when it is measured rather than asserted.
+      if (animal.action === 'shut') { report.shutFor += 1 / HZ; report.shutMoved = Math.max(report.shutMoved, animal.speed); }
+      else if (d < arm) report.openWithin += 1 / HZ;
       if (animal.action === 'yield' || animal.action === 'withdraw') report.facing.push(turn(animal.yaw, Math.atan2(player.x - animal.x, player.z - animal.z)));
     }
   };
@@ -80,6 +93,11 @@ function chase(zone, pace, seconds, { bearing = Math.PI / 2, arm = 3 } = {}) {
   return report;
 }
 const fromHome = report => report.band().map(animal => { const home = report.homes.get(animal.id); return Math.hypot(animal.x - home.x, animal.z - home.z); });
+/** How far the one animal that was chased ended up from where it started, which is what a chase achieved. */
+const chasedMoved = report => {
+  const animal = report.band().find(item => item.id === report.target), home = report.homes.get(report.target);
+  return Math.hypot(animal.x - home.x, animal.z - home.z);
+};
 
 test('live wildlife positions and care effects update while saved observations remain detached', () => {
   const life = createWestLife(new THREE.Scene(), world);
@@ -127,11 +145,48 @@ test('no band is given a range it can run out of the reach of', () => {
   }
 });
 
-test('nothing in the west can be walked down', () => {
+/**
+ * **The law assumed that every animal flees, and one does not.**
+ *
+ * "Nothing in the west can be walked down" was written as one question — did somebody walking get
+ * within arm's length — because every animal in the west answered a traveler by opening distance. The
+ * canyon tortoise cannot, and the lore both names it and describes it ("a large, slow-moving grazer of
+ * desert seeps"), so for three jobs running it was the one animal the Dinelv Highlands wanted and could
+ * not have: a tortoise that fled would have been the lie, and a tortoise exempted from the law by a flag
+ * would have been the law giving up.
+ *
+ * So the question was wrong rather than the animal. What the law is *about* is that walking at an animal
+ * must not get the traveler anything, and distance is only how most animals arrange that. An animal that
+ * **shuts** arranges it the other way: it stops where it is, draws in, and becomes a stone. So the law
+ * now has two halves, chosen by **what the animal was observed to do in the chase itself** — not by a
+ * field on its range, which is what an exemption would have been. An animal that shuts is held to the
+ * harder half: it was shut before the traveler arrived, it did not move a centimetre while they stood
+ * over it, it never once opened while they were inside arm's length, and it is exactly where it started.
+ * An animal that does anything else is held to the old half, to the centimetre, as it always was.
+ */
+test('nothing in the west can be walked down: what flees keeps its distance, and what shuts cannot be caught', () => {
+  const shutters = new Set();
   for (const zone of ground) {
     const arm = zone.species === 'river-fox' ? 2 : CATTLE.has(zone.species) ? 5 : 3;
     const walked = chase(zone, WALK, 30, { arm });
-    if (zone.species !== 'hill-sheep')
+    if (walked.actions.has('shut')) {
+      shutters.add(zone.species);
+      // It can be approached — that is the half of the law a tortoise would have failed —
+      assert.ok(walked.reachedAt !== null, `${zone.id}: it shuts and still could not be walked up to (closest ${walked.closest.toFixed(2)} m)`);
+      assert.ok(!walked.actions.has('flee'), `${zone.id}: it fled, which is not what a tortoise does`);
+      // — and approaching it achieved nothing: shut for all but the walk up to it, never moving while
+      // shut, never open with somebody within arm's length, and still standing where it was. The bound is
+      // the walk itself rather than a number: it was shut from before the traveler got to it (it shuts at
+      // seven metres and a walker covers the last of that in a second and a half) to the end of the chase.
+      assert.ok(walked.shutFor > 30 - walked.reachedAt - .5,
+        `${zone.id}: it was shut for ${walked.shutFor.toFixed(1)} s of thirty and was reached at ${walked.reachedAt.toFixed(1)} s`);
+      assert.ok(walked.shutMoved < .02, `${zone.id}: it moved at ${walked.shutMoved.toFixed(3)} m/s while shut`);
+      assert.equal(walked.openWithin, 0, `${zone.id}: it was open for ${walked.openWithin.toFixed(1)} s with somebody at arm's length`);
+      // Twenty centimetres is the amble it takes before the traveler is near enough to shut it; after
+      // that it is where it was, and the chase is thirty seconds of a traveler achieving nothing.
+      assert.ok(chasedMoved(walked) < .5, `${zone.id}: a chase moved it ${chasedMoved(walked).toFixed(2)} m`);
+      assert.ok(walked.band().every(animal => !animal.hidden), `${zone.id}: it went somewhere, and a tortoise has nowhere to go`);
+    } else if (zone.species !== 'hill-sheep')
       assert.ok(walked.closest >= arm, `${zone.id}: somebody walking got within ${walked.closest.toFixed(2)} m of ${walked.target}`);
     else {
       // Sheep are the one kind that can be cornered on foot: they neither fly nor dive, their
@@ -147,6 +202,78 @@ test('nothing in the west can be walked down', () => {
     assert.equal(walked.offFooting, 0, `${zone.id}: an animal on the ground stood somewhere it cannot stand`);
     walked.life.dispose();
   }
+  // **And exactly one kind of animal in the west answers a traveler this way.** The second half of the
+  // law is the harder one to pass, so it must not be available to anything that could have fled instead.
+  assert.deepEqual([...shutters], ['canyon-tortoise'], 'the shut is not the tortoise’s alone');
+});
+
+/**
+ * **The canyon tortoise, both halves of it, on its own.** The law above proves the principle over every
+ * range in the west; this proves the animal, at a run as well as at a walk, and proves the thing a flag
+ * on the range could never have proved: that it opens again when it is left alone.
+ */
+test('the canyon tortoise withdraws instead of fleeing: it can be walked up to, and walking up to it achieves nothing', () => {
+  const zone = bySpecies('canyon-tortoise')[0];
+  assert.ok(zone, 'there is no canyon tortoise in the west');
+  for (const [pace, name] of [[WALK, 'a walk'], [RUN, 'a run']]) {
+    const come = chase(zone, pace, 20);
+    assert.ok(come.actions.has('shut'), `${name} did not shut it`);
+    assert.ok(!come.actions.has('flee') && !come.actions.has('fly') && !come.actions.has('dive'),
+      `at ${name} it did one of the things it has not got: ${[...come.actions].join(', ')}`);
+    assert.ok(come.reachedAt !== null && come.reachedAt < 12, `at ${name} it took ${come.reachedAt?.toFixed(1)} s to reach`);
+    // It was already shut when they arrived: the shutting is not a reaction to being touched.
+    assert.ok(come.shutFor > 20 - come.reachedAt - .5,
+      `at ${name} it was shut for ${come.shutFor.toFixed(1)} s of twenty and was reached at ${come.reachedAt.toFixed(1)} s`);
+    assert.equal(come.openWithin, 0, `at ${name} it was open with somebody at arm's length`);
+    assert.ok(come.shutMoved < .02, `at ${name} it moved at ${come.shutMoved.toFixed(3)} m/s while shut`);
+    assert.ok(chasedMoved(come) < .5, `at ${name} the chase moved it ${chasedMoved(come).toFixed(2)} m`);
+    assert.equal(come.offFooting, 0, 'a shut tortoise stood somewhere it cannot stand');
+    // And it opens again once they have gone, which is the half an exemption could not have expressed.
+    const away = { x: come.player.x + 400, z: come.player.z };
+    for (let i = 0; i < 20 * HZ; i++) come.life.update(1 / HZ, away, true);
+    come.life.update(1 / HZ, { x: come.player.x + 60, z: come.player.z }, true);
+    assert.ok(come.band().every(animal => animal.action !== 'shut'),
+      `twenty seconds after ${name} it is still shut`);
+    come.life.dispose();
+  }
+});
+
+/**
+ * **The ghubr's own rule, which is a sentence of lore rather than an animation.** `ganesh_desert.md`:
+ * "the dustback does not stand still in conditions where the surface air is actively dangerous", and "a
+ * dustback seen resting in shade is a reliable signal of temperature conditions that the caravan's load
+ * animals will find stressful". The game has no hour of the day, so the Ganesh is always that month: this
+ * bird never stands still out on the open floor, and where it is seen standing is its own patch of scrub.
+ */
+test('the ghubr does not stand still on the open desert floor, and where it rests is its shade', () => {
+  const zone = bySpecies('ghubr')[0];
+  assert.ok(zone?.shade > 0, 'the ghubr has no shade to rest in');
+  const life = createWestLife(new THREE.Scene(), world, { zones: [zone] });
+  const centre = { x: (zone.minX + zone.maxX) / 2, z: (zone.minZ + zone.maxZ) / 2 };
+  const homes = new Map(life.state().creatures.map(animal => [animal.id, { x: animal.x, z: animal.z }]));
+  // Far enough off that nothing minds (it goes at ten metres), near enough that the band is run.
+  const watcher = { x: centre.x + 70, z: centre.z + 70 };
+  let rested = 0, worked = 0, out = 0, standingOut = 0;
+  for (let i = 0; i < 150 * HZ; i++) {
+    life.update(1 / HZ, watcher, true);
+    for (const animal of life.state().creatures) {
+      const home = homes.get(animal.id), d = Math.hypot(animal.x - home.x, animal.z - home.z);
+      out = Math.max(out, d);
+      if (d <= zone.shade) { if (animal.action === 'graze') rested++; }
+      else if (animal.action === 'graze') standingOut++;
+      else worked++;
+    }
+  }
+  assert.ok(out > zone.shade, `no ghubr ever left its shade (furthest ${out.toFixed(1)} m of ${zone.shade})`);
+  assert.equal(standingOut, 0, `a ghubr stood still on the open floor for ${(standingOut / HZ).toFixed(1)} bird-seconds`);
+  assert.ok(worked / HZ > 20, `the birds were only out on the floor for ${(worked / HZ).toFixed(1)} bird-seconds of a hundred and fifty`);
+  assert.ok(rested / HZ > 5, `and they never rested in the shade (${(rested / HZ).toFixed(1)} bird-seconds)`);
+  // It is still a bird: walked at, it goes up, which is how it answers the first law.
+  const walked = chase(zone, WALK, 20);
+  assert.ok(walked.actions.has('fly'), 'a ghubr that is walked at does not take to the air');
+  assert.ok(walked.closest >= 3, `a walker got within ${walked.closest.toFixed(2)} m of it`);
+  walked.life.dispose();
+  life.dispose();
 });
 
 test('the quick ones cannot be run down either: the hare on its legs, the wader into the air, the otter into the water', () => {

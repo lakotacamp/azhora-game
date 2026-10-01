@@ -290,6 +290,12 @@ export function groundBeforeFeradom(x, z) {
  * `tests/southwest-world.test.js` holds the guard the silent failures wanted: **every family in this
  * table must move the colour of the screen somewhere in its own country.** Adding a sixth is one row
  * here and one row there, and forgetting the second turns the test red with the family's own name in it.
+ *
+ * **And the level below is a table too, as of 2026-10-01**: `southwestTint` was still a chain of three
+ * boxes with a branch per country nested inside each - which is the shape job 3 nearly lost the Dinelv
+ * plateau's colours to - and is now `SOUTHWEST_TINTS`, thirteen rows walked in order, each naming the
+ * country it speaks for. Its own guard holds two things the one here cannot: that every row paints
+ * somewhere on its own country's hexes, and that every one of the thirteen countries comes out tinted.
  */
 const GROUND_TINTS = Object.freeze([
   Object.freeze({ id: 'gala',

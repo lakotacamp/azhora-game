@@ -717,7 +717,7 @@ export const NETHEREUM_STREAMS = Object.freeze([
 ]);
 
 // ---------------------------------------------------------------------------
-// Gala: the Oveth's last reach, the two border streams, and the plain's own water
+// Gala: the Oveth's last reach, the Caelin, the Treloss, and the plain's own water
 // ---------------------------------------------------------------------------
 /**
  * Gala's water, and every metre of it is the atlas's or the ground's (docs/gala-brief.md).
@@ -726,14 +726,23 @@ export const NETHEREUM_STREAMS = Object.freeze([
  * whole Nesdor and Eer side is already built (`LIZEEM`, `LIZEEM_REACH`) and is not touched
  * here. The other three are built here, each only where it has Gala on one bank:
  *
- *  - **the desert border stream**, the two `medium` edges between Gala and the Oves Desert. The
+ *  - **the Caelin**, the two `medium` edges between Gala and the Oves Desert. The
  *    atlas carries it on west, `small`, between the Oves Desert and Telemonia; neither of those
  *    is built, so neither is that. It runs north along Gala's north-western corner to the Oveth.
  *  - **the Oveth**, its last reach: three `medium` edges between Gala and Ovesos, from the corner
- *    where the desert stream and the Oveth's own upper course (Ovesos's, unbuilt) come together,
+ *    where the Caelin and the Oveth's own upper course (Ovesos's, unbuilt) come together,
  *    east to the Lizeem.
- *  - **the Telemonia border stream**, `small`, down the whole western side to the sea, its last
- *    edge between Gala and Legemum. Unnamed in the lore and the atlas, and left so.
+ *  - **the Treloss**, `small`, down the whole western side to the sea, its last
+ *    edge between Gala and Legemum.
+ *
+ * **The two border streams were named on 2026-10-01 and the names are the Mittoli lexicon's own
+ * words**, in the way job 1 of the southwest named the Vaellir: `mittoli.roots.border` is *trelith*
+ * and `mittoli.roots.flow` is *caelin* (src/languages.js, from the `mittoli` profile in
+ * `world-builder/azhoran_language_profiles.py` - `lexical_roots.border` is `["trel", "dor"]`,
+ * `lexical_roots.river` is `["cael", "nil"]`, and `-oss`, `-ith` and `-in` are all in the profile's
+ * own suffix list). *Treloss* is **trel-** with the **-oss** the tongue puts on a watercourse
+ * (*caeloss* is "river"), and it is one of the eight names the profile's own `candidate_pool` emits.
+ * *Caelin* is taken whole. Why these two and not the distributary is at `GALA_CHANNEL`.
  *
  * And one course that is the ground's, not the atlas's, which is what the lore's "network of
  * small rivers" and its "Lizeem's distributaries" come to on a map that draws no river inside
@@ -789,14 +798,30 @@ function shortOf(points, parent, reach) {
 }
 
 /**
- * **The desert border stream.** Shallow over gravel the whole of its Gala reach and a step
+ * **The Caelin**, its lower reach, which Gala built as "the desert border stream" and which is the
+ * same watercourse as the Oves Desert's `OVES_BORDER_STREAM` - one chain on the atlas
+ * (`Gala,Oves Desert,Telemonia`), handed over at (-1850, 1039) and carried on north to the Oveth.
+ * **It was two names for one river until 2026-10-01 and is now one**, which is the arrangement the
+ * Oveth's two reaches have had since Gala was built: `OVETH_UPPER` and `OVETH_REACH` are both "The
+ * Oveth" and this is both "The Caelin".
+ *
+ * **The name is Mittoli for "the flow"** (`mittoli.roots.flow` = *caelin*, src/languages.js; the
+ * profile's own `cael` river root with its own `-in` suffix), taken whole as a name the way job 1 took
+ * *vaellir* for the Vaellir and job 2 took *malhat* for the Malhat. It earns it: the Oves Desert has
+ * **no permanent water inside it at all** and this is the one thing on its edge that runs, which is why
+ * the Ovesos Water Council's dispute with Telemonia - the one `oves_desert.md` spends a paragraph on -
+ * is a dispute about this line. The Council speaks inner-branch Mittoli (`ovesos.md`) and the desert has
+ * no speech of its own and takes Ovesos's (docs/oves-report.md), so the tongue that has a use for this
+ * water is the tongue that names it.
+ *
+ * Shallow over gravel the whole of its Gala reach and a step
  * across, which is what a stream off the rain-shadow margin is in any month but the wet ones.
  * It is also half of how the dry country reaches Gala on foot: the Oves Desert shares two edges
  * with Gala and both of them are this stream, so a stream built deep would have walled the
  * desert out of the country beside it. `medium` on the atlas and narrow here, because the
  * atlas's medium begins on these two edges and nowhere upstream of them.
  */
-export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The desert border stream',
+export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The Caelin',
   galaTail('Gala,Oves Desert,Telemonia', 3), { halfWidth: 2.4, halfWidthEnd: 3, cut: 1.1, cutEnd: 1.3, bed: .45 });
 
 /**
@@ -811,19 +836,34 @@ export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The desert border
  *
  * It drops as it goes: the cut deepens from a metre and a third to three and a half, which is
  * the "rocky lower section" and is also what brings its water down toward the Lizeem's, three
- * metres cut into its own bed where they meet. It takes its first level from the desert stream
+ * metres cut into its own bed where they meet. It takes its first level from the Caelin
  * (`headOf`), because a river cannot stand above the water that runs into it.
  */
 export const OVETH_REACH = river('oveth-reach', 'The Oveth', shortOf(atlasCourse('Gala,Ovesos'), LIZEEM, 25),
   { halfWidth: 3, halfWidthEnd: 5.4, cut: 1.3, cutEnd: 3.5, bed: .85, fordUntil: .4, headOf: 'gala-desert-stream' });
 
 /**
- * **The Telemonia border stream**: small on the atlas, a step across here, running south
- * down Gala's whole western side and out to the sea at its south-western corner. It has no
- * name in the lore and none in the atlas, and it is listed for the user rather than given one.
+ * **The Treloss**: small on the atlas, a step across here, running south
+ * down Gala's whole western side and out to the sea at its south-western corner.
  * It tapers out onto the beach (`shoreward`, `taper`), the way a stream reaching sand does.
+ *
+ * **Mittoli for "the border river", and both halves of it are the profile's**: the `mittoli` profile's
+ * `lexical_roots.border` is `["trel", "dor"]` and its suffix list carries `-oss`, which is the ending
+ * this tongue puts on a watercourse - `mittoli.roots.river` is *caeloss* and `roots.border` is *trelith*
+ * (src/languages.js). *Treloss* is the border root with the river ending, and the form is not even a
+ * coinage: it is one of the eight names in the profile's own `candidate_pool`. What it names is what this
+ * stream is and all it is - Gala's whole western side is the Telemonian border and this is the line of it,
+ * for every edge the atlas draws.
+ *
+ * Two things were checked and rejected. **Kellith**, Telemonia's own tongue, whose river root and border
+ * root are the *same* root (`lexical_roots.river` and `.border` both carry `ver`), is the profile a name
+ * for this border could have come from - but `gala.md` makes Gala Mittoli-speaking, Gala's builder said so
+ * at `GALA_LANDMARKS`, and the two forms the root yields, *Verath* and *Verith*, are both taken: the Verath
+ * is the Oremindi sacred system, with a lore file of its own. And *trelith* itself is a person in this
+ * game (Captain Nessa Trelith, src/batman.js), which is no reason to refuse a word but is a reason to take
+ * the other ending the profile offers.
  */
-export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Telemonia border stream',
+export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Treloss',
   shoreward(atlasCourse('Gala,Legemum,Telemonia')), { halfWidth: 1.5, halfWidthEnd: 2.2, cut: 1, cutEnd: .75, bed: .35, taper: 30 });
 
 /**
@@ -847,6 +887,19 @@ export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Telemon
  * (tests/gala-world.test.js measures it). That is why it bends west as it nears the sea: Gala's
  * south narrows to a single hex between Telemonia and Northern Ascarth, and the channel goes down
  * the western side of it.
+ *
+ * **It stays "the distributary", and that is an answer rather than a gap.** The two border streams were
+ * named from the Mittoli lexicon on 2026-10-01 and this one was looked at with them and left alone, on
+ * `gala.md`'s own sentence: "A layer of pre-Mittoli terms persists in the names of geographical features
+ * - **the small rivers**, the coastal inlets, the specific soils of the agricultural plain - in the way
+ * that the names of things that were there before the current speakers arrived tend to persist… The name
+ * *Gala* itself is from this older layer. What it meant to whoever named the place before the current
+ * population arrived is not established." So the lore does not say this water has no name; it says it has
+ * one, in a language that is in no profile and that nobody in the game can gloss. A border is named by
+ * whoever argues over it and both of Gala's are; a stream that rises inside the country and runs to its
+ * own shore is named by the country, and that name is the old layer's. This is the refusal job 1 made for
+ * the Ganesh, on the same kind of sentence, and the lore's own words for it are already used here: "the
+ * Lizeem's distributaries, as the Galans call it".
  */
 export const GALA_CHANNEL = river('gala-channel', 'The distributary', shoreward([
   point(-1535, 1078), point(-1572, 1116), point(-1610, 1153), point(-1650, 1191), point(-1691, 1231),
@@ -989,7 +1042,7 @@ export const WEST_BRAIDS = Object.freeze([
 
 
 // ---------------------------------------------------------------------------
-// Ovesos and the Oves Desert: the Oveth's upper course and the desert's southern border stream
+// Ovesos and the Oves Desert: the Oveth's upper course and the Caelin's upper reach
 // ---------------------------------------------------------------------------
 /**
  * The water of the two dry countries, and there is very little of it (docs/oves-brief.md).
@@ -1002,8 +1055,8 @@ export const WEST_BRAIDS = Object.freeze([
  *
  *  - **the Oveth's upper course**, seven `Oves Desert`|`Ovesos` edges from (-2050, 751) down to the
  *    corner at (-1800, 953) where Ovesos, the Oves Desert and Gala meet;
- *  - **the desert's southern border stream**, the `Oves Desert`|`Telemonia` reach of the chain whose
- *    last two edges Gala built as `GALA_DESERT_STREAM`.
+ *  - **the Caelin**, its upper reach: the `Oves Desert`|`Telemonia` reach of the chain whose
+ *    last two edges Gala built as `GALA_DESERT_STREAM`, which is the same river and now the same name.
  *
  * Everything else either country has is terrain: four cut channels with no water in any of them and
  * one reach of one of them that holds water below the gravel (`OVES_CHANNELS`, `OVES_DAMP` in
@@ -1029,7 +1082,13 @@ export const OVETH_UPPER = river('oveth-upper', 'The Oveth', atlasCourse('Oves D
   { halfWidth: 1.8, halfWidthEnd: 4.2, cut: 1.15, cutEnd: 1.55, bed: .8, fordUntil: .33 });
 
 /**
- * **The desert's southern border stream.** The atlas carries the chain Gala's `GALA_DESERT_STREAM`
+ * **The Caelin**, its upper reach, which the Oves built as "the southern border stream" before the chain
+ * had a name: it and `GALA_DESERT_STREAM` are two reaches of one watercourse and carry one name between
+ * them, as the Oveth's two reaches do. The name is Mittoli for "the flow" and the argument for it is at
+ * `GALA_DESERT_STREAM`; the short of it is that this country has no permanent water in it and this is the
+ * one thing on its edge that runs.
+ *
+ * The atlas carries the chain Gala's `GALA_DESERT_STREAM`
  * is the last two edges of on west, `small`, along five `Oves Desert`|`Telemonia` edges; Gala left it
  * unbuilt because neither of those countries was. One of them is now.
  *
@@ -1044,7 +1103,7 @@ export const OVETH_UPPER = river('oveth-upper', 'The Oveth', atlasCourse('Oves D
  * the one it runs into would be water flowing uphill, so this one ends a few centimetres above it and
  * the test says by how much.
  */
-export const OVES_BORDER_STREAM = river('oves-border-stream', 'The southern border stream',
+export const OVES_BORDER_STREAM = river('oves-border-stream', 'The Caelin',
   atlasCourse('Gala,Oves Desert,Telemonia').slice(0, 6), { halfWidth: 1.2, halfWidthEnd: 2, cut: .85, cutEnd: .95, bed: .35 });
 
 export const OVES_RIVERS = Object.freeze([OVES_BORDER_STREAM, OVETH_UPPER]);

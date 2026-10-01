@@ -2434,12 +2434,30 @@ function init() {
       return shot(from,bird,-.08,bird.y-world.heightAt(bird.x,bird.z),false,
         {x:bird.x+Math.sin(off)*34,z:bird.z+Math.cos(off)*34});
     }
+    if(view==='southwest-tortoise-shut'){
+      // **The one animal in the west a traveler can walk up to, photographed having been walked up to.**
+      // Its companion view `southwest-tortoise` shows it open, which is how it stands when nobody is near;
+      // this one runs its own band with somebody three metres off until it has shut, and then takes the
+      // picture from where that somebody is standing. What the frame should hold is a patterned stone.
+      let t=westLife.snapshot().creatures.find(a=>a.species==='canyon-tortoise');
+      if(!t)return null;
+      const at={x:t.x+2.3,z:t.z+1.7};
+      for(let step=0;step<240;step++){
+        westLife.update(1/30,at,true);
+        t=westLife.snapshot().creatures.find(a=>a.id===t.id);
+        if(t.action==='shut'&&step>30)break;
+      }
+      return shot(at,t,-.22,.34);
+    }
     const creature={'west-longhorn':'longhorn','west-hare':'upland-hare','west-sheep':'hill-sheep',
       'west-fox':'river-fox','west-otter':'otter','west-wader':'wading-bird',
       'south-egret':'egret','south-stilt':'stilt','south-duck':'duck','south-boar':'boar',
       'south-gull':'gull','south-dolphin':'dolphin',
       'south-reddeer':'red-deer','south-vulture':'turkey-vulture',
-      'south-nethrani':'nethrani-cattle'}[view];
+      'south-nethrani':'nethrani-cattle',
+      // The two animals the southwest's follow-up built: the ghubr on the Ganesh's northern pockets
+      // and the canyon tortoise in the Dinelv Highlands' north gap basin, open, with nobody near it.
+      'southwest-ghubr':'ghubr','southwest-tortoise':'canyon-tortoise'}[view];
     if(creature){
       let animal=westLife.snapshot().creatures.find(a=>a.species===creature);
       if(!animal)return null;
@@ -2456,7 +2474,9 @@ function init() {
         animal=westLife.snapshot().creatures.find(a=>a.id===animal.id);
       }
       const close=creature==='longhorn'||creature==='nethrani-cattle'?6:creature==='red-deer'?7:creature==='boar'?5:creature==='hill-sheep'?4.5:
-        creature==='wading-bird'||creature==='egret'?4.5:creature==='dolphin'?9:3.2;
+        creature==='wading-bird'||creature==='egret'?4.5:creature==='dolphin'?9:
+        // A bird a foot and a half tall and a tortoise half that need the camera in close or they are a speck.
+        creature==='ghubr'||creature==='canyon-tortoise'?2.4:3.2;
       /**
        * **Round to the front quarter of it, and to the side with room.** Sweeping the
        * circle from due north and taking the first standable bearing photographed half

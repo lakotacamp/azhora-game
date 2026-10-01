@@ -3,21 +3,22 @@
  * western wildlife rigs (`src/west-regions-life.js` draws them, instanced and distance-culled, and
  * they are ambient: nobody can attack, catch or speak to them).
  *
- * **Two jobs, two hundred and two hexes, twenty-four ranges, and five sixths of them in one eighth
- * of the ground.** Job 1's seventeen are below and job 2's seven are at the end of the list, and the
- * arithmetic between them is the whole argument of both: seven of job 1's are on the Vaellir or its
- * green mouth, and the four Meroshe deserts - ninety-five hexes, `BWh` on every one, no permanent
- * water and no green corner anywhere - carry **seven**, five of them birds in the air.
+ * **Two jobs, two hundred and two hexes, twenty-five ranges, and five sixths of them in one eighth
+ * of the ground.** Job 1's seventeen are below - with the **ghubr** added to them on 2026-10-01, which
+ * is the eighteenth - and job 2's seven are at the end of the list, and the arithmetic between them is
+ * the whole argument of both: seven of job 1's are on the Vaellir or its green mouth, and the four
+ * Meroshe deserts - ninety-five hexes, `BWh` on every one, no permanent water and no green corner
+ * anywhere - carry **seven**, five of them birds in the air.
  *
  * **One river, one wood, eight hollows, and a great deal of nothing.** Eighty-one of this block's
  * hundred and seven hexes read `BWh` - hot desert - on the World Builder map, which is a full
  * climate step drier than the Oves Desert's `BSh`, and the Oves's own report already argued that
  * emptiness is the honest reading of a dry country rather than a failure to fill it. So the
- * seventeen ranges below are not spread evenly: **seven of them are on the Vaellir or its green
+ * eighteen ranges below are not spread evenly: **seven of them are on the Vaellir or its green
  * mouth**, because the great river is the only permanent water in the southwest and everything that
  * needs water is on it; three are on Navarth's plateau and at the one hex of wood at its tip; four
  * are in the Ganesh Plain's depressions, which is where the grass goes in a drought phase; and
- * **the Ganesh Desert, which is the largest of the four countries at thirty-one hexes, has three**,
+ * **the Ganesh Desert, which is the largest of the four countries at thirty-one hexes, has four**,
  * two of them birds in the air. That is the truthful population of a country whose own lore says
  * "the Ganesh in a severe dry year presents a surface that appears essentially lifeless."
  *
@@ -44,9 +45,11 @@
  *    and the one river margin in Navarth is the Alezhor Water, which runs **on the border** with
  *    unbuilt country: measured, the widest clear run behind any point of its own bank is twelve
  *    metres, and a fox that never flees needs a hundred. There is nowhere in this block to put one.
- *  - the **Ganesh dustback** is named by `ganesh_desert.md` and is left out on purpose, in the
- *    report's open questions: the lore describes its behaviour and never its body, and the only
- *    dustback the rest of the lore describes is a domestic bovid, which is somebody's.
+ *  - the **Ganesh dustback** was left out on purpose by three jobs running, in each of their open
+ *    questions: the lore describes its behaviour and never its body, and the only dustback the rest of
+ *    the lore describes is a domestic bovid, which is somebody's. **It is built now** - the user's
+ *    answer on 2026-10-01 was that the behaviour is the description - and it is the **ghubr**, below.
+ *    The Moroshé bovid is still somebody's and is still not built.
  *
  * **Nothing domestic.** Navarth's whole export is the grey sheep, the Ganesh Plain's whole economy
  * is the pastoral herds that move by the drought cycle, and the caravan crossing runs on pack
@@ -103,6 +106,23 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
   zone('damp-reach-bone-bird', 'bone-bird', 'Ganesh Desert', .3, [-3591, -3431, 1487, 1647], [[-3511, 1567]],
     'A third bone-bird, and it is over the damp reach, because the overview says of them that "they are often the first indicator of water, since both potential death and potential life concentrate around it" - and the damp reach is the nearest thing to water in the Ganesh. A traveler who sees this bird from a mile off and walks to it finds green scrub in a dry bed and nothing to drink.',
     { air: 38 }),
+  /**
+   * **The ghubr, the Ganesh dustback, and it is the one animal this country's own lore names that the
+   * block had left unbuilt.** Three jobs held it out because they went looking for a body and the lore
+   * gives a behaviour; the user's answer (2026-10-01) was that the behaviour is the description. Every
+   * line of it is in `ganesh_desert.md` and in two language files, and the rig argues it at length
+   * (`src/west-regions-life.js`): small, dry, insectivorous, of the **northern desert margin**, with the
+   * **pale powdery ridge along the spine and shoulders** that is what the name means, moving at the
+   * surface and resting in shade. **That it is a bird rather than a small mammal is the builder's choice
+   * and is labelled as the builder's**, argued at the rig from the wind, the daylight and the lore's own
+   * insistence that this is not the bovid.
+   *
+   * **It is not domestic stock**, and the block's standing rule is untouched: the Moroshé dustback - the
+   * oasis houses' bovid, the thing their standing is counted in - is somebody's and stays unbuilt.
+   */
+  zone('ganesh-ghubr', 'ghubr', 'Ganesh Desert', .3, [-3569, -3448, 1258, 1409], [[-3507, 1338], [-3468, 1389], [-3549, 1278]],
+    '**The ghubr**, the Ganesh dustback, in the northern desert margin the lore puts it in - these three spots are on the Ganesh’s two northernmost rows of hexes. Each one is in a **sediment pocket**: `ganeshLie` reads .004, .014 and .018 where the country’s own average is about a half, which is the deepest-gathered fine sediment in the northern Ganesh and therefore where the perennial scrub stands, and the scrub is the only shade in a hundred and seven hexes. So its own rule has somewhere to be true: `shade` is how far that patch’s shadow reaches, and beyond it this bird never stands still - "the dustback does not stand still in conditions where the surface air is actively dangerous", and the game’s Ganesh is always that month. What a caravan guide sees is three birds working the open floor between the bushes, and one of them standing in one.',
+    { shade: 5 }),
   zone('damp-reach-hares', 'upland-hare', 'Ganesh Desert', .3, [-3575, -3417, 1521, 1603], [[-3535, 1561], [-3457, 1563]],
     '**The only animal on the ground in the whole Ganesh Desert**, and it is on the one green thing in it. The lore is explicit about the rest: "in a severe dry year, there is nothing to eat in the Ganesh and the pastoral communities do not attempt it", and "the perennial scrub retreats toward the water-concentration points". So the scrub is at the damp reach and so is this. Extension, at the animal’s absolute dry limit - one climate step past the Oves Desert, which is where the west’s hare was already said to be at its limit.'),
   // ---------------------------------------------------------------------
@@ -142,10 +162,13 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
    * atlas does not draw on these hexes; the **canyon tortoise** is named *and* described - "a large,
    * slow-moving grazer of desert seeps and seasonal wash vegetation" - and is the closest call in the
    * job, but it fails the west's own first law rather than the lore: nothing in the west can be walked
-   * down, and a tortoise is an animal whose whole character is that it can be. The desert vipers are
-   * "known by description" and by no more than that. And the **Meroshé dustback** is held out exactly
-   * where job 1 held it: the lore names it and never describes its body, the only dustback the lore
-   * does describe is a domestic bovid, and inventing a shape for a named animal is the user's decision.
+   * down, and a tortoise is an animal whose whole character is that it can be. **(Answered 2026-10-01:
+   * the law assumed every animal flees. The tortoise is built, in the Dinelv Highlands' basins, and it
+   * shuts instead of running.)** The desert vipers are "known by description" and by no more than that.
+   * And the **Moroshé dustback** is held out exactly where job 1 held it: the lore names it and never
+   * describes its body, the only dustback the lore does describe is a domestic bovid, and inventing a
+   * shape for somebody's stock is not a builder's decision. It is still not built; the *Ganesh* dustback,
+   * which is a different animal and nobody's, is.
    *
    * **Nothing domestic.** The dustback herds are what an oasis house's standing is measured in and the
    * caravans run on pack animals; every one of those belongs to somebody, and a herd with nobody near
@@ -170,14 +193,15 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
   zone('fog-margin-hares', 'upland-hare', 'South Meroshe Desert', .3, [-2720, -2600, 2700, 2840], [[-2640, 2760], [-2650, 2790], [-2680, 2780]],
     'Extension, and the strongest case for one anywhere in the Meroshe: the fog belt is the only ground in ninety-five hexes that is reliably damp. "Where desert air meets ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days", and what it leaves is lichen in the lee of every pebble and thorn standing close enough together to make a traveler walk round it - cover and something green, on a hex the atlas still calls hot desert. Trogo’s rainforest is half a mile east of here and none of its animals are built.'),
   // ---------------------------------------------------------------------
-  // Cape Heth, the Dinelv Highlands and Hama: thirteen ranges over seventy-three hexes
+  // Cape Heth, the Dinelv Highlands and Hama: fourteen ranges over seventy-three hexes
   // ---------------------------------------------------------------------
   /**
    * **Two jobs made this block emptier and this one stops it, and the arithmetic is the argument.**
    * Job 1 put seventeen ranges on a hundred and seven hexes (0.159 a hex), job 2 put seven on
    * ninety-five (**0.074**, a quarter sparser than the Ganesh, which was already the sparsest country in
    * the game), and this job puts **thirteen on seventy-three (0.178)** - the densest of the three. That
-   * is not a change of standard, it is the same standard applied to different ground:
+   * is not a change of standard, it is the same standard applied to different ground. (**The canyon
+   * tortoise was added to the plateau on 2026-10-01**, which makes it fourteen on seventy-three, 0.192.)
    *
    *  - **Cape Heth: four ranges over nineteen hexes (0.211), and three of the four are sea birds.** The
    *    land is `BWh` on eighteen of nineteen hexes and carries one range, in the drainage hollows, which
@@ -185,10 +209,10 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
    *    a cold-current coast against a desert is the most productive water there is - which is job 2's
    *    own argument for its dry-shore gulls, and this cape has twenty-one hex edges of it against the
    *    West Meroshe's ten.
-   *  - **Dinelv Highlands: four ranges over thirty-five hexes (0.114).** A desert plateau with no
-   *    permanent water, so two of the four are birds in the air over the escarpment and the tables, and
-   *    the two on the ground are both in basins, because the basins are the only ground on this plateau
-   *    with close cover or grass. Thirty-one of the thirty-five hexes carry nothing at all.
+   *  - **Dinelv Highlands: four ranges over thirty-five hexes (0.114), and five after the tortoise.** A
+   *    desert plateau with no permanent water, so two of them are birds in the air over the escarpment and
+   *    the tables, and the ones on the ground are all in basins, because the basins are the only ground on
+   *    this plateau with close cover or grass. Thirty-one of the thirty-five hexes carry nothing at all.
    *  - **Hama: five ranges over nineteen hexes (0.263), the densest country in nine.** Nine of its hexes
    *    are `Csb` Mediterranean grassland with ocean on two sides, and that is genuinely richer country
    *    than anything in the block except the Vaellir - whose own West Pyros carries 0.259 a hex. The
@@ -200,14 +224,17 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
    *
    *  - **the Ganesh dustback stays out, exactly where jobs 1 and 2 left it.** The lore names it and never
    *    describes its body, the only dustback the lore *does* describe is a domestic bovid, and inventing
-   *    a body for a named animal is the user's decision and not a builder's;
+   *    a body for a named animal is the user's decision and not a builder's. **(Answered 2026-10-01: it
+   *    is the ghubr, in job 1's Ganesh Desert above.)**
    *  - **the canyon tortoise got closer and still fails.** `dinelv_highlands.md` puts the highland
    *    communities' own trade with "the canyon peoples further interior", and the overview's tortoise is
    *    "a large, slow-moving grazer of desert seeps and seasonal wash vegetation" - which is precisely
    *    what `DINELV_BASINS` are, so this plateau is the best home the game has ever had for it. It still
    *    fails `tests/west-life.test.js`'s first law, that nothing in the west can be walked down, and an
    *    animal whose whole character is that it can be needs either a burrow to go into or an exemption in
-   *    the law. Both are design decisions.
+   *    the law. Both are design decisions. **(Answered 2026-10-01: neither. The law asked a question that
+   *    assumed flight; it now asks the right one, and the tortoise is in this plateau's north gap basin
+   *    above, which is exactly the home job 3 found for it.)**
    *
    * **Nothing domestic.** The plateau's pastoral communities move their herds between the water points
    * by season, the highland breeds' fibre is what the court cannot tax, and Hama's food comes in by sea;
@@ -230,6 +257,18 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
     { air: 40 }),
   zone('dinelv-basin-hares', 'upland-hare', 'Dinelv Highlands', .3, [-3473, -3374, 1914, 2038], [[-3414, 1980], [-3433, 1998], [-3417, 1954]],
     'Extension: hares in the eastern basins, which are the plateau’s water points and the only ground on it that is not bare between the plants - "the deeper-rooted plants occupying the water-concentration points that only become visible in wet years when they green faster than the surrounding ground". The scrub in a basin stands close enough to hide in and the plateau outside one does not, so the animals are in the basins for the same reason the routes and the herds are.'),
+  /**
+   * **The canyon tortoise, in the third of the plateau's four basins, and the law was changed rather
+   * than the animal.** Job 2 raised it, job 3 found its home and job 4 held it out for the same reason
+   * all three did: the west's first law is that nothing in it can be walked down, and a tortoise plainly
+   * can be. The user's answer (2026-10-01): **the law assumed every animal flees, and a tortoise does
+   * not - it stops and shuts.** So that is built as its actual behaviour (`SHUT` in
+   * `src/west-regions-life.js`), the law in `tests/west-life.test.js` now asks of an animal that shuts
+   * whether walking it down *got anybody anything*, and nothing is exempted: it is the one animal in the
+   * game that can be reached, and reaching it achieves nothing.
+   */
+  zone('dinelv-basin-tortoises', 'canyon-tortoise', 'Dinelv Highlands', .4, [-3486, -3414, 1814, 1880], [[-3450, 1847], [-3466, 1834], [-3434, 1860]],
+    'The fauna overview’s own animal in the lore’s own habitat: "the **canyon tortoise**, a large, slow-moving grazer of desert seeps and seasonal wash vegetation, may live as long as two centuries". The north gap basin is a desert seep in `dinelv_highlands.md`’s own words - "the water-concentration points that only become visible in wet years when they green faster than the surrounding ground" - and it is the third of the plateau’s four, the two hare bands having the other two and the rim gap having nothing. Three animals in seventy metres of basin floor, which is a tortoise’s whole world: the range is the smallest in the block because this animal does not go anywhere. Walked up to, it shuts, and that is the one thing in the west a traveler can reach.'),
   zone('dinelv-saddle-hares', 'upland-hare', 'Dinelv Highlands', .3, [-3700, -3594, 1914, 2020], [[-3634, 1980], [-3637, 1954], [-3660, 1977]],
     'Extension: the same animal in the wide western basin under the Middle Saddle, two hundred and twenty metres from the eastern ones with a ridge crest between. Two bands rather than one for the reason job 1 gave on the Ganesh Plain’s depressions: on this plateau the basins are the country and the ridges between them have nothing on them, so a band spread over both would be walking over bare rock for half its range.'),
   zone('hama-sward-hares', 'upland-hare', 'Hama', .3, [-3291, -3171, 2860, 2963], [[-3224, 2900], [-3251, 2906], [-3211, 2923]],
@@ -280,12 +319,15 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
    * a forest margin and for the ocean south of the map, and everything else is an extension of an animal
    * the game already has, argued one range at a time.
    *
-   * **Three refusals held for the fourth time.** The **Ganesh dustback** is named, given an economy and a
-   * social meaning, and never given a body; the only dustback the lore describes is a domestic bovid.
-   * The **canyon tortoise** is named *and* described and **this was the last country that could want it** -
-   * job 3 said so - and it still fails `tests/west-life.test.js`'s first law, that nothing in the west can
-   * be walked down. Solving that honestly means an exemption list or a burrow, and both are the user's
-   * decisions rather than a builder's. And **nothing domestic**: the caravan animals that cross Marosh's
+   * **Three refusals held for the fourth time, and two of them were overturned the next day.** The
+   * **Ganesh dustback** is named, given an economy and a social meaning, and never given a body; the only
+   * dustback the lore describes is a domestic bovid. The **canyon tortoise** is named *and* described and
+   * **this was the last country that could want it** - job 3 said so - and it still fails
+   * `tests/west-life.test.js`'s first law, that nothing in the west can be walked down. Solving that
+   * honestly means an exemption list or a burrow, and both are the user's decisions rather than a
+   * builder's. **(Both answered 2026-10-01: the dustback is the ghubr in the Ganesh Desert, the tortoise
+   * is in the Dinelv Highlands' north gap basin, and the law was changed to ask the right question rather
+   * than given an exemption.)** And **nothing domestic**: the caravan animals that cross Marosh's
    * water gap, the plots on its terrace, the estuary communities' boats and every beast in any of it
    * belongs to somebody.
    */
