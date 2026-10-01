@@ -103,6 +103,14 @@ const southMerosheAnchor = point(1122.368, 3328, -29, 138);
 const capeHethAnchor = point(775.959, 3064, -36, 127);
 const dinelvAnchor = point(942.236, 3112, -31, 129);
 const hamaAnchor = point(969.948, 3352, -35, 139);
+// Marosh and Trogo, one middle hex each. Marosh's anchor is deliberately a `hills` hex - (-26, 133),
+// the middle of the crest, clear of the water gap and of all four combes - because the ridge is what
+// this country is and a point on the terrace would say nothing about it. Trogo's is (-26, 140), a
+// `deep_forest` hex in the middle of the canopy, thirty-four metres clear of the nearest gully and
+// two hundred from the crest: **it is the one anchor in the game that stands in ground a traveler
+// cannot walk to**, which is the point of the country.
+const maroshAnchor = point(1136.225, 3208, -26, 133);
+const trogoAnchor = point(1233.220, 3376, -26, 140);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -155,6 +163,8 @@ const LOCALS = [
   [40, 'Cape Heth', 'cape-heth', 'Cape Heth', capeHethAnchor],
   [41, 'Dinelv Highlands', 'dinelv', 'Dinelv Highlands', dinelvAnchor],
   [42, 'Hama', 'hama', 'Hama', hamaAnchor],
+  [43, 'Marosh', 'marosh', 'Marosh', maroshAnchor],
+  [44, 'Trogo', 'trogo', 'Trogo', trogoAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

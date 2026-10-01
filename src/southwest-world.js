@@ -49,7 +49,7 @@
  * them, and every animal any of those people own.
  */
 import { terrainMix, hexOwnerAt, REGION_CELLS, REGION_TERRAIN, landDistance } from './region-world.js';
-import { VAELLIR, ALEZHOR_WATER, SOUTHWEST_RIVERS, courseDistance, coursePosition } from './west-regions.js';
+import { VAELLIR, ALEZHOR_WATER, MAROSH_NAHR, TROGORETH, SOUTHWEST_RIVERS, courseDistance, coursePosition } from './west-regions.js';
 
 const freeze = Object.freeze;
 const point = (x, z) => freeze({ x, z });
@@ -89,7 +89,30 @@ export const MEROSHE_REGIONS = freeze(['North Meroshe Desert', 'West Meroshe Des
  *    the two disagree.
  */
 export const WEST_EDGE_REGIONS = freeze(['Cape Heth', 'Dinelv Highlands', 'Hama']);
-export const SOUTHWEST_REGIONS = freeze([...SOUTHWEST_NORTH_REGIONS, ...MEROSHE_REGIONS, ...WEST_EDGE_REGIONS]);
+/**
+ * **The block's eastern edge, and the two countries that say why there is a desert behind them.**
+ * Job 4's two are their own list for the reason job 2's four and job 3's three are: their landforms
+ * are theirs, and neither a ridge crest nor a rainforest thicket belongs to a cape, a plateau or a
+ * dune field. What these two have in common is what nothing else in thirteen countries has -
+ * **not one `BWh` hex between them** - and fifty hex edges of open water on the far side of the
+ * peninsula from every other shore in the block.
+ *
+ *  - **Marosh** is the wall. Eighteen hexes in a strip two wide: eight `hills` hexes that are every one
+ *    of them `Csb` and **carry seventeen of the country's eighteen desert edges and none of its ocean
+ *    ones**, and ten `grassland` hexes that are every one of them `Csa` and carry all twenty of its
+ *    ocean edges and the eighteenth desert edge. The atlas states the same division three times over -
+ *    by terrain word, by climate code, and by which side of the country each half faces - and no hex
+ *    disagrees with any of the three.
+ *  - **Trogo** is the first rainforest in the game. Twenty-two `deep_forest` hexes, `Af` on every one -
+ *    the wettest code the atlas paints anywhere - and seven `Csa` `grassland` hexes along the exposed
+ *    southern shore where the forest stops, again with no hex where the two fields disagree. **This is
+ *    the first use of `deep_forest` anywhere in the game's world**: until now the word appeared only in
+ *    `campaign-world.js`'s labels and in the developer atlas's own height table, which puts it at
+ *    eighteen metres where `plains` is six - the map author's own hint that a deep forest stands over
+ *    the ground round it.
+ */
+export const EAST_EDGE_REGIONS = freeze(['Marosh', 'Trogo']);
+export const SOUTHWEST_REGIONS = freeze([...SOUTHWEST_NORTH_REGIONS, ...MEROSHE_REGIONS, ...WEST_EDGE_REGIONS, ...EAST_EDGE_REGIONS]);
 
 // ---------------------------------------------------------------------------
 // The climate, which for once is a gradient
@@ -269,17 +292,88 @@ export const HAMA_CLIMATE = freeze({
   '-34,141': 'Csb', '-33,141': 'Csb',
 });
 export const WEST_EDGE_CLIMATE = freeze({ ...CAPE_HETH_CLIMATE, ...DINELV_CLIMATE, ...HAMA_CLIMATE });
-export const SOUTHWEST_CLIMATE = freeze({
-  ...NAVARTH_CLIMATE, ...WEST_PYROS_CLIMATE, ...GANESH_DESERT_CLIMATE, ...GANESH_PLAIN_CLIMATE,
-  ...MEROSHE_CLIMATE, ...WEST_EDGE_CLIMATE,
+/**
+ * **Marosh: ten `Csa` and eight `Csb`, and the atlas draws the line with the terrain field as well.**
+ * Every `grassland` hex reads `Csa` and every `hills` hex reads `Csb`, on all eighteen, with no hex
+ * where the two disagree - which is the third country in a row where the map states its own division
+ * twice (job 1 found it on three odd hexes, job 3 on the whole of Hama).
+ *
+ * **What draws this line is height, and that is the answer to the question job 3 left.** Hama's wet/dry
+ * line is the ocean's: measured, it runs sixty-nine to a hundred and ten metres inland of the surf all
+ * the way round the corner of the continent. Marosh has no wet/dry line at all - both its halves are
+ * Mediterranean - and the line it does have is between the two forms of the same climate. `Csa` is the
+ * hot-summer form and `Csb` the warm-summer one, and the whole of what separates them in Koppen is
+ * whether the warmest month passes twenty-two degrees. **On a coastal strip two hexes wide nothing but
+ * altitude can decide that**, and the atlas obligingly writes `hills` on precisely the eight hexes it
+ * writes `Csb` on. So the `Csb` is the ridge, and the ridge is also why everything west of Marosh is a
+ * desert: it stands between twenty hex edges of open Iberos water and the Central Meroshe's sand sea,
+ * and what crosses its crest has had the rain taken out of it.
+ *
+ * `Csb` is the *wetter* of the two on `ARIDITY`'s scale, so **Marosh's inland half is the wettest
+ * ground in the block outside Trogo** - which reads backwards until the reason is stated, and the
+ * reason is that the wet side of a rain-shadow wall is the top of it.
+ */
+export const MAROSH_CLIMATE = freeze({
+  '-22,127': 'Csa',
+  '-23,128': 'Csb', '-22,128': 'Csa',
+  '-24,129': 'Csb', '-23,129': 'Csa', '-22,129': 'Csa',
+  '-25,130': 'Csb', '-24,130': 'Csa',
+  '-26,131': 'Csb', '-25,131': 'Csa',
+  '-26,132': 'Csb', '-25,132': 'Csa',
+  '-26,133': 'Csb', '-25,133': 'Csa',
+  '-26,134': 'Csb', '-25,134': 'Csa',
+  '-26,135': 'Csb', '-25,135': 'Csa',
 });
 /**
- * How dry a hex's code is, on one scale: 1 is hot desert, 0 is the Mediterranean corner. The two
- * `Cs` codes are held apart by a little, because `Csb` is the cooler wetter-summer form and is what
- * the Ibenwood margin reads, where `Csa` is the hot-summer form on the two hexes nearest the
- * southern sea.
+ * **Trogo: twenty-two `Af` and seven `Csa`, and `Af` is the wettest code on the map.** `Af` is tropical
+ * rainforest with no dry season - no month under sixty millimetres - and it is the biggest climate step
+ * this block has taken by a long way: job 1 found the first `BWh` in the game and this is the first
+ * `Af`, and the two of them stand **thirteen hex edges apart** along Trogo's own north-western margin.
+ * On `ARIDITY`'s scale that is 1.000 against 0.000 across a single hex edge, which is the whole range of
+ * the field in one step, and there is nothing else like it anywhere in Azhora.
+ *
+ * The terrain field draws the same line for the third country running: every `deep_forest` hex reads
+ * `Af` and every `grassland` hex reads `Csa`, on all twenty-nine, with no hex where the two disagree.
+ * **The seven `Csa` hexes are where the forest stops**, and the atlas puts every one of them on the
+ * *exposed* southern and south-eastern shore while it takes the `deep_forest` right down to the water
+ * on the sheltered north-eastern one. That is a real distinction and it is the lore's: "The coast is not
+ * extensively sheltered - no deep natural harbors on the scale of Hama." A tropical coast open to a
+ * southern ocean is salt-pruned and carries grass and scrub; a sheltered embayment in the same climate
+ * carries canopy to the tideline, which is what the lore's "mangrove and estuary ecology" is.
+ *
+ * And `Af` at this latitude on a slope is the lore's own explanation of itself: "where desert air meets
+ * ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days... it is
+ * warm and thick and close, and it waters the middle elevation forest through the dry months when the
+ * rainfall alone would not be enough." **The fog is why there is no dry season**, and the fog is the
+ * reason the code is `Af` and not `Am` or `Aw`.
  */
-export const ARIDITY = freeze({ BWh: 1, BSh: .58, Csa: .18, Csb: .08 });
+export const TROGO_CLIMATE = freeze({
+  '-25,136': 'Af',
+  '-26,137': 'Af', '-25,137': 'Af', '-24,137': 'Af', '-23,137': 'Af',
+  '-26,138': 'Af', '-25,138': 'Af', '-24,138': 'Af', '-23,138': 'Af',
+  '-27,139': 'Af', '-26,139': 'Af', '-25,139': 'Af', '-24,139': 'Af', '-23,139': 'Csa',
+  '-29,140': 'Af', '-28,140': 'Af', '-27,140': 'Af', '-26,140': 'Af', '-25,140': 'Af', '-24,140': 'Csa',
+  '-30,141': 'Af', '-29,141': 'Af', '-28,141': 'Af', '-27,141': 'Af', '-26,141': 'Csa', '-25,141': 'Csa',
+  '-29,142': 'Csa', '-28,142': 'Csa', '-27,142': 'Csa',
+});
+export const EAST_EDGE_CLIMATE = freeze({ ...MAROSH_CLIMATE, ...TROGO_CLIMATE });
+export const SOUTHWEST_CLIMATE = freeze({
+  ...NAVARTH_CLIMATE, ...WEST_PYROS_CLIMATE, ...GANESH_DESERT_CLIMATE, ...GANESH_PLAIN_CLIMATE,
+  ...MEROSHE_CLIMATE, ...WEST_EDGE_CLIMATE, ...EAST_EDGE_CLIMATE,
+});
+/**
+ * How dry a hex's code is, on one scale: 1 is hot desert, **0 is tropical rainforest**. The two
+ * `Cs` codes are held apart by a little, because `Csb` is the cooler wetter-summer form and is what
+ * the Ibenwood margin and Marosh's ridge read, where `Csa` is the hot-summer form on the hexes nearest
+ * the southern sea.
+ *
+ * **`Af` is the only zero on this scale and job 4 is where it arrives.** For three jobs the wet end of
+ * the field was `Csb` at 0.08 - a Mediterranean winter - and the whole block sat between that and 1.
+ * Trogo is `Af` on twenty-two hexes, which is rain in every month of the year, and it shares thirteen
+ * hex edges with a country that is `BWh` on all twenty-one of its own. So the field now spends its
+ * entire range inside this block, and it spends most of it across one hex edge.
+ */
+export const ARIDITY = freeze({ BWh: 1, BSh: .58, Csa: .18, Csb: .08, Af: 0 });
 /**
  * **A `coast` hex's code is the water's and not the air's, so it takes the desert's dryness.** The map
  * paints `Cfb` on all 1,332 of its `coast` hexes and on 13,619 of its 13,622 `ocean` ones, so the one
@@ -408,6 +502,16 @@ export function westEdgeShare(x, z, mix = null) {
   const weights = (mix ?? terrainMix(x, z)).weights;
   let own = 0;
   for (const name of WEST_EDGE_REGIONS) own += weights[name] ?? 0;
+  return smooth(.22, .70, own);
+}
+
+/** Marosh and Trogo together, for the tint and the one thing that crosses between them. */
+export const EAST_EDGE_BOX = boxOf(EAST_EDGE_REGIONS);
+export function eastEdgeShare(x, z, mix = null) {
+  if (!inBox(EAST_EDGE_BOX, x, z)) return 0;
+  const weights = (mix ?? terrainMix(x, z)).weights;
+  let own = 0;
+  for (const name of EAST_EDGE_REGIONS) own += weights[name] ?? 0;
   return smooth(.22, .70, own);
 }
 
@@ -1581,6 +1685,340 @@ export function inHamaBed(x, z) {
 // ---------------------------------------------------------------------------
 // The swale: a designed floor for two rivers drawn on unbuilt borders
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Marosh: one ridge, one gap in it, four dry combes and the one river the atlas draws
+// ---------------------------------------------------------------------------
+/**
+ * **The crest, and it is the wall the whole Meroshe stands behind.** The atlas gives Marosh eight
+ * `hills` hexes in an unbroken chain nine rows long and one hex wide, and it says three separate things
+ * about them: they are `hills` where the rest of the country is `grassland`, they are `Csb` where the
+ * rest is `Csa`, and **every one of them touches the desert and not one of them touches the sea** while
+ * every one of the ten `grassland` hexes touches the sea. Seventeen of Marosh's eighteen desert edges
+ * are on the hills and all twenty of its ocean edges are on the grass. Nothing in this block is stated
+ * that many times.
+ *
+ * So the crest is laid along those eight hex centres and nowhere else, and it is taken as a **maximum**
+ * over the line rather than a sum (`ovesRim`'s rule), because a ridge is a ridge and not a row of hills
+ * added together. Fifteen metres of crest on a base of 74 puts the top of it near ninety, which is the
+ * second highest ground in the game outside the two Lotharns, behind the Dinelv plateau.
+ *
+ * The line bends, and the bend is the atlas's: the chain runs south-west from (-23,128) to (-26,131) and
+ * then south-east again to (-26,135), so the ridge has an elbow at its western apex and the apex is
+ * where the water comes out of it.
+ */
+export const MAROSH_RIDGE = freeze({
+  lift: 15, half: 42, fade: 136,
+  line: freeze([[-2588, 1896], [-2600, 1934], [-2650, 2021], [-2700, 2107], [-2750, 2194],
+    [-2700, 2281], [-2650, 2367], [-2600, 2454], [-2550, 2540], [-2538, 2578]].map(([x, z]) => point(x, z))),
+});
+/**
+ * **The one gap, and the atlas put a river in it.** Marosh's crest is unbroken on the terrain field, so
+ * a gap through it cannot be read off the hex words the way the Dinelv plateau's four could. What can be
+ * read off the atlas is its water: the only three river edges it draws on this whole coast meet at one
+ * corner, the corner of (-25,131) - which is the seaward hex beside the ridge's own western apex. A
+ * river crossing a ridge line is a water gap, so the notch is there and its depth is measured against
+ * the crest either side of it.
+ *
+ * It is also the only place a loaded animal crosses this country, which is the whole of why Marosh
+ * exists as a kingdom: "The caravan routes across the Meroshe are Marosh's revenue base... They connect
+ * the Iberos Sea coast with the peninsula's western face." The road through the gap, the Route Registry
+ * that issues it and the waystation at the top are the Maroshi court's, and none of them is built.
+ */
+export const MAROSH_GAP = freeze({ id: 'marosh-water-gap', name: 'The Water Gap', x: -2716, z: 2152, half: 64, cut: .74 });
+/** How high the ridge stands at a point, and how near the crest it is: the scatter and the tint read both. */
+export function maroshRidgeAt(x, z) {
+  const line = MAROSH_RIDGE.line;
+  let near = Infinity;
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1], b = line[i];
+    const dx = b.x - a.x, dz = b.z - a.z, length = dx * dx + dz * dz;
+    const t = clamp(((x - a.x) * dx + (z - a.z) * dz) / (length || 1), 0, 1);
+    near = Math.min(near, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
+  }
+  const crest = 1 - smooth(MAROSH_RIDGE.half, MAROSH_RIDGE.fade, near);
+  const gap = 1 - smooth(0, MAROSH_GAP.half, Math.hypot(x - MAROSH_GAP.x, z - MAROSH_GAP.z));
+  return { lift: MAROSH_RIDGE.lift * crest * (1 - MAROSH_GAP.cut * gap), crest, gap };
+}
+export function maroshRidge(x, z, own = 0) {
+  return own > 0 ? maroshRidgeAt(x, z).lift * own : 0;
+}
+/** 1 on the ridge's own crest, 0 out on the terrace: the field Marosh's scatter and colour sort by. */
+export const maroshCrest = (x, z) => maroshRidgeAt(x, z).crest;
+/** 1 within thirty metres of the Iberos surf, 0 two hundred metres in. */
+export const maroshShore = (x, z) => 1 - smooth(30, 200, landDistance(x, z));
+
+/**
+ * **Four dry combes down the seaward face, and the reason they are dry is the reason the Nahr is not.**
+ * `Csa` means the rain comes in winter and the summer does not, and the atlas draws exactly one river on
+ * this coast - so the other drainages off the ridge carry water for a few weeks a year and are cut beds
+ * for the rest of it. It is Hama's winter beds one country east, on a face instead of a flat, and the
+ * greenest grass in Marosh stands in the floor of each.
+ */
+const maroshCombe = (id, name, cut, half, line) => freeze({ id, name, cut, half, line: freeze(line.map(([x, z]) => point(x, z))) });
+export const MAROSH_COMBES = freeze([
+  maroshCombe('north-combe', 'The north combe', 1.3, 8, [[-2596, 1948], [-2552, 1960], [-2508, 1972], [-2470, 1986]]),
+  maroshCombe('upper-combe', 'The upper combe', 1.25, 7.5, [[-2648, 2016], [-2608, 2023], [-2570, 2030], [-2534, 2037]]),
+  maroshCombe('middle-combe', 'The middle combe', 1.35, 8.5, [[-2694, 2296], [-2650, 2308], [-2606, 2320], [-2568, 2332]]),
+  maroshCombe('south-combe', 'The south combe', 1.3, 8, [[-2594, 2466], [-2550, 2478], [-2506, 2490], [-2468, 2502]]),
+]);
+export function nearestMaroshCombe(x, z, margin = 0) {
+  let best = null;
+  for (const combe of MAROSH_COMBES) {
+    const found = lineWalk(combe.line, x, z, combe.half * 3 + margin);
+    if (found && (!best || found.distance < best.distance)) best = { combe, ...found };
+  }
+  return best;
+}
+export function maroshCombeCut(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const found = nearestMaroshCombe(x, z);
+  if (!found) return 0;
+  const { combe, distance, along } = found;
+  const across = 1 - smooth(combe.half, combe.half * 2.6, distance);
+  const ends = smooth(0, .12, along) * (1 - smooth(.88, 1.02, along));
+  // The shore release, which is `merosheSkirt`'s lesson and Hama's after it: the coast field has
+  // already taken the last forty metres down to the water before `southwestGround` sees the ground,
+  // so a cut laid on top of that would put a combe's mouth under the Iberos.
+  return -combe.cut * across * ends * smooth(16, 48, landDistance(x, z)) * own;
+}
+/** How near a combe's damp floor a point is: the greenest grass in Marosh stands here. */
+export function inMaroshCombe(x, z) {
+  const found = nearestMaroshCombe(x, z);
+  if (!found) return 0;
+  const ends = smooth(0, .12, found.along) * (1 - smooth(.88, 1.02, found.along));
+  return ends * (1 - smooth(found.combe.half * .4, found.combe.half * 1.8, found.distance));
+}
+
+// ---------------------------------------------------------------------------
+// Trogo: the ridge that makes the rainforest, and the ways through it
+// ---------------------------------------------------------------------------
+/**
+ * **The crest, and it is the whole explanation of the country.** `trogo.md`, in one sentence: "a
+ * ridgeline that catches the southern moisture and drops a fog wall on its windward face while the
+ * leeward side stays desert." That sentence is the design, and the atlas says where the ridgeline runs:
+ * **the seven Trogo hexes that share an edge with the South Meroshe** - (-25,136), (-26,137), (-26,138),
+ * (-27,139), (-28,140), (-29,140) and (-30,141) - are its north-western margin, and they are read off the
+ * map rather than chosen. The crest is laid along them; everything south-east of it is the windward
+ * face, which is twenty-two hexes of `Af`; everything north-west of it is job 2's fog belt and then
+ * ninety-five hexes of hot desert.
+ *
+ * Seventeen metres of crest on a base of 52, against the South Meroshe's 14 across thirteen hex edges.
+ * The front that produces is the "wall of dark canopy" job 2's own landmark promised a job in advance,
+ * and **no landform is authored on that margin at all**: it is the hex blend carrying a base difference,
+ * which is the West Lotharn's and the Dinelv escarpment's contract - a front is what the atlas draws
+ * here, and the report measures it rather than lowering a base to hide it.
+ */
+export const TROGO_CREST = freeze({
+  lift: 26, half: 46, fade: 152,
+  line: freeze([[-2400, 2600], [-2418, 2660], [-2428, 2750], [-2424, 2840], [-2462, 2916],
+    [-2520, 2962], [-2600, 2978], [-2652, 3048], [-2660, 3080]].map(([x, z]) => point(x, z))),
+});
+export function trogoCrestAt(x, z) {
+  const line = TROGO_CREST.line;
+  let near = Infinity;
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1], b = line[i];
+    const dx = b.x - a.x, dz = b.z - a.z, length = dx * dx + dz * dz;
+    const t = clamp(((x - a.x) * dx + (z - a.z) * dz) / (length || 1), 0, 1);
+    near = Math.min(near, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
+  }
+  const crest = 1 - smooth(TROGO_CREST.half, TROGO_CREST.fade, near);
+  return { lift: TROGO_CREST.lift * crest, crest, off: near };
+}
+export function trogoCrest(x, z, own = 0) {
+  return own > 0 ? trogoCrestAt(x, z).lift * own : 0;
+}
+
+/**
+ * **Four gullies off the crest, and they are the country's own drainage.** The lore: "The land itself is
+ * steep. Trogo is not a lowland rainforest... it is a slope forest, on the descending face of the
+ * peninsula's interior plateau, and the terrain reflects this - rivers run fast, elevation changes
+ * quickly." Thirty-nine metres of fall from canopy to shore grass over a hex, with rain in every month
+ * of the year, cuts gullies; the atlas draws only the one of them that is big enough to be a river.
+ *
+ * So there is no water surface in any of these - `westWaterSurface` is null on every one of them, and
+ * the test asserts it - and what they are is a cut a traveler can walk down. **They are the second of
+ * `src/undergrowth.js`'s three kinds of way through**, and between them and the Trogoreth they are the
+ * only lines that cross this country from the desert margin to the sea.
+ *
+ * **Every one of them begins in a clearing on the crest rather than on the crest itself, and that is a
+ * measurement rather than a flourish.** The crest line is laid on the hexes the atlas puts against the
+ * desert, where the hex blend is pulling the base down toward the Meroshe's fourteen metres - so the
+ * highest ground is forty to fifty metres south-east of the divide, not on it, and a gully drawn from the
+ * line itself climbed six and a half metres before it began to fall. Each head now stands on its own
+ * local high point, and a clearing straddles the gap between it and the crest path, which is what the
+ * lore describes anyway: "gaps in the ridge where the desert air pushes through in the dry months,
+ * creating corridors of sparse growth cutting into the forest." The clearing is the gap and the gully is
+ * the corridor.
+ */
+const trogoGully = (id, name, cut, half, line) => freeze({ id, name, cut, half, line: freeze(line.map(([x, z]) => point(x, z))) });
+export const TROGO_GULLIES = freeze([
+  trogoGully('north-gully', 'The north gully', 2.1, 9,
+    [[-2424, 2702], [-2352, 2706], [-2312, 2709], [-2232, 2716], [-2164, 2724], [-2138, 2728]]),
+  trogoGully('middle-gully', 'The middle gully', 2.3, 9.5,
+    [[-2404, 2877], [-2362, 2880], [-2318, 2883], [-2272, 2886], [-2182, 2890], [-2104, 2892]]),
+  trogoGully('head-gully', 'The head gully', 1.9, 8,
+    [[-2424, 2920], [-2400, 2926], [-2360, 2932], [-2322, 2938], [-2262, 2944]]),
+  trogoGully('south-gully', 'The south gully', 2.2, 9,
+    [[-2510, 3008], [-2486, 3030], [-2458, 3054], [-2440, 3078], [-2422, 3102]]),
+]);
+export function nearestTrogoGully(x, z, margin = 0) {
+  let best = null;
+  for (const gully of TROGO_GULLIES) {
+    const found = lineWalk(gully.line, x, z, gully.half * 3 + margin);
+    if (found && (!best || found.distance < best.distance)) best = { gully, ...found };
+  }
+  return best;
+}
+export function trogoGullyCut(x, z, own = 0) {
+  if (own <= 0) return 0;
+  const found = nearestTrogoGully(x, z);
+  if (!found) return 0;
+  const { gully, distance, along } = found;
+  const across = 1 - smooth(gully.half, gully.half * 2.5, distance);
+  const ends = smooth(0, .09, along) * (1 - smooth(.91, 1.02, along));
+  return -gully.cut * across * ends * smooth(18, 54, landDistance(x, z)) * own;
+}
+/** True on a gully's own stony floor, where the canopy breaks and nothing large roots. */
+export function onTrogoGullyFloor(x, z, margin = 0) {
+  const found = nearestTrogoGully(x, z);
+  if (!found) return false;
+  return found.along > .05 && found.along < .95 && found.distance < found.gully.half * .62 + margin;
+}
+
+/**
+ * **The clearings, and the lore names them as a mechanism rather than as scenery.** "And then the
+ * reverse - gaps in the ridge where the desert air pushes through in the dry months, creating corridors
+ * of sparse growth cutting into the forest." Four of the six below are exactly that: openings on the
+ * crest, where the desert's own air comes over and the canopy does not close, and three of the four hold
+ * a gully's head as well. The other two are ordinary treefall gaps, which is what a closed-canopy forest
+ * has instead of fields.
+ *
+ * **Every one of them stands on a way**, and that is deliberate rather than tidy: a clearing surrounded
+ * by thicket is a clearing nobody can walk into, and six of those would be six pockets in a country with
+ * a movement gate in it.
+ */
+const clearing = (id, name, x, z, radius, kind) => freeze({ id, name, x, z, radius, kind });
+export const TROGO_CLEARINGS = freeze([
+  clearing('north-gap', 'The north gap', -2418, 2662, 33, 'desert-air'),
+  clearing('middle-gap', 'The middle gap', -2420, 2860, 32, 'desert-air'),
+  clearing('head-gap', 'The head gap', -2432, 2916, 30, 'desert-air'),
+  clearing('south-gap', 'The south gap', -2516, 2986, 34, 'desert-air'),
+  clearing('canopy-fall', 'The canopy fall', -2288, 2812, 25, 'treefall'),
+  clearing('river-head', 'The river head', -2264, 2942, 27, 'treefall'),
+]);
+/** 1 in the middle of a clearing, 0 under closed canopy. */
+export function inTrogoClearing(x, z) {
+  let most = 0;
+  for (const open of TROGO_CLEARINGS)
+    most = Math.max(most, 1 - smooth(open.radius * .55, open.radius, Math.hypot(x - open.x, z - open.z)));
+  return most;
+}
+
+/**
+ * **The animal paths, the third kind of way.** The lore gives the country three human populations and
+ * every one of them moves through it - "families who know both desert and forest and work seasonally
+ * between them, moving up with the dry season and down with the rains" - and it gives the carnivores
+ * that hunt both zones as the thing the communities study hardest. A path in a closed forest is worn by
+ * whatever walks it most, and none of these is anybody's: no cutting, no blaze, no bridge, no camp.
+ *
+ * Five of them, and what they do is join the gullies to each other so the network is a network: the
+ * crest path along the divide, two rungs between the north and middle gullies through the middle of the
+ * forest, a path just inside the north-eastern shore, and a link along the southern forest edge from the
+ * south gully's foot to the Trogoreth's own grass.
+ *
+ * **The second rung was put in by measurement rather than by eye.** With four ways and four paths, one
+ * hex of the country - (-24,138), the middle of the eastern canopy - had no open ground within fifty
+ * paces of its centre: it sat between the north link and the shore path with eighty metres of thicket to
+ * either. The invariant the test now holds is that **no hex of Trogo is more than fifty paces from
+ * something a traveler can walk on**, and the middle link is what makes it true.
+ */
+const trogoPath = (id, name, line) => freeze({ id, name, line: freeze(line.map(([x, z]) => point(x, z))) });
+export const TROGO_PATHS = freeze([
+  trogoPath('crest-path', 'The crest path', TROGO_CREST.line.map(p => [p.x, p.z])),
+  trogoPath('north-link', 'The north link', [[-2302, 2712], [-2290, 2778], [-2286, 2840], [-2294, 2884]]),
+  trogoPath('middle-link', 'The middle link', [[-2196, 2722], [-2206, 2790], [-2198, 2848], [-2192, 2888]]),
+  trogoPath('shore-path', 'The shore path', [[-2140, 2726], [-2118, 2782], [-2104, 2840], [-2098, 2888]]),
+  trogoPath('south-link', 'The south link', [[-2424, 3098], [-2358, 3072], [-2302, 3050], [-2258, 3040]]),
+]);
+
+/**
+ * **How much of a point is deep forest**, blended on the same falloff the climate field uses, so the
+ * thicket thins over a hex rather than at a hex edge. Read off Trogo's own twenty-nine cells: a
+ * `deep_forest` hex counts one and a `grassland` hex counts nothing, so the seven `Csa` hexes along the
+ * southern shore are open ground and the collar between them and the canopy is a walkable forest edge.
+ */
+const THICKET_CENTRES = freeze((REGION_CELLS.Trogo ?? []).map(cell =>
+  freeze({ x: cell.x, z: cell.z, thicket: cell.terrain === 'deep_forest' ? 1 : 0 })));
+export function trogoThicket(x, z) {
+  let total = 0, sum = 0;
+  for (const cell of THICKET_CENTRES) {
+    const weight = 1 - Math.hypot(x - cell.x, z - cell.z) / 128;
+    if (weight <= 0) continue;
+    total += weight; sum += cell.thicket * weight;
+  }
+  return total > 0 ? sum / total : 0;
+}
+
+/**
+ * **The ways through, as one field, and this is what `src/undergrowth.js` reads.**
+ *
+ * 1 is ground a traveler can walk and 0 is thicket they cannot push into. It is four things taken as a
+ * maximum, and no more:
+ *
+ *  - **anything that is not deep forest** - the seven `Csa` grassland hexes of the southern shore, and
+ *    the collar of forest edge that blends into them;
+ *  - **the watercourse**, the Trogoreth and its banks out to thirteen metres either side of the centre
+ *    line, which is the lore's own way in: "Follow the rivers down";
+ *  - **the gullies**, nine metres either side of each of the four;
+ *  - **the clearings** and **the animal paths**, four and a half metres either side of a path.
+ *
+ * Each of them feathers rather than stopping dead, so there is no hard edge anywhere in the field, and
+ * the rule that reads it takes a step as passable at half. **The widths are the whole safety margin of
+ * this country**: a way narrower than a few metres is a way the walking resolver, which moves X and Z
+ * separately, can fall off and then not get back on. `tests/trogo-undergrowth.test.js` floods the
+ * country both ways and proves it is crossable along these and not crossable without them.
+ */
+export const TROGO_WAY = freeze({ river: 13, gully: 9, path: 4.6, feather: 1.45, open: .5,
+  thicketFrom: .42, thicketTo: .78 });
+export function trogoWay(x, z) {
+  const thicket = trogoThicket(x, z);
+  let open = 1 - smooth(TROGO_WAY.thicketFrom, TROGO_WAY.thicketTo, thicket);
+  if (open >= 1) return 1;
+  const near = (distance, half) => 1 - smooth(half, half * TROGO_WAY.feather, distance);
+  const river = courseDistance(TROGORETH, x, z, TROGO_WAY.river * TROGO_WAY.feather + 2);
+  open = Math.max(open, near(river, TROGO_WAY.river));
+  if (open >= 1) return 1;
+  for (const gully of TROGO_GULLIES) {
+    const found = lineWalk(gully.line, x, z, TROGO_WAY.gully * TROGO_WAY.feather);
+    if (found) open = Math.max(open, near(found.distance, TROGO_WAY.gully));
+  }
+  if (open >= 1) return 1;
+  for (const path of TROGO_PATHS) {
+    const found = lineWalk(path.line, x, z, TROGO_WAY.path * TROGO_WAY.feather);
+    if (found) open = Math.max(open, near(found.distance, TROGO_WAY.path));
+  }
+  return Math.max(open, inTrogoClearing(x, z));
+}
+/**
+ * The altitude band a point stands in: 0 on the shore and 1 on the crest. **The lore sorts this country
+ * by height and by nothing else** - "Trogo's ecology is layered by altitude... The upper edge, where the
+ * canyon meets the fog zone, is adapted to intermittent moisture... The mid-slope forest is full
+ * tropical rainforest by the measures that matter... At the coast and along the lower river systems, the
+ * mangrove and estuary ecology takes over" - so the band is a function of the finished height and of
+ * nothing else, which is the Dinelv bedding's own argument and makes it impossible to lay crooked.
+ */
+export const trogoBand = (x, z) => smooth(17, 60, groundLevelFor(x, z));
+/**
+ * 1 where the fog sits: the upper slopes of the windward face, which is the lore's own fog-forest - "an
+ * intermediate world of mosses and cloud-dependent plants that exists only because two atmospheric
+ * systems are pressing against each other at this latitude". **The endpoints are measurements**: over
+ * Trogo's own hexes the band's mean is 0.650 in the forest and 0.827 on the crest, so 0.62 to 0.92 puts
+ * the fog on the crest and almost none of it on the mid-slope, where the first try (0.52 to 0.93) put it
+ * over forty-two per cent of the country and made the whole forest a cloud forest.
+ */
+export const trogoFogForest = (x, z) => smooth(.62, .92, trogoBand(x, z));
+
 /**
  * Both of this block's courses are drawn **on a border with a country nobody has built**, so up to
  * two thirds of the hex blend along them is `outland`, whose relief is six metres on a
@@ -1597,9 +2035,21 @@ export function inHamaBed(x, z) {
  * laid over that would draw the river's bed in the air above the beach.
  */
 export const SOUTHWEST_SWALE = freeze({ inner: 45, outer: 165, shoreFrom: 22, shoreTo: 72 });
+/**
+ * **Only the two courses that need one, and job 4 found out the hard way why that matters.** The swale
+ * exists because job 1's two rivers are drawn on a border with unbuilt country, so two thirds of the
+ * blend along them is `outland`'s six metres on a hundred-and-fifty-metre wave; there is nothing to
+ * flatten on a course whose own country is on both banks. Job 4's two are exactly that - the Nahr and
+ * the Trogoreth have Marosh and Trogo on both sides of every one of their seven atlas edges - and
+ * leaving them in this list **flattened the ridges they run off**: measured, the Trogoreth's own bank
+ * reaches within sixty-seven metres of the middle of Trogo's canopy, and the swale there ran at 0.91,
+ * which pulled thirteen of the crest's seventeen metres back down to the blend's own base and made the
+ * whole rainforest read as a flat shelf. The list is the two border courses and nothing else.
+ */
+export const SOUTHWEST_SWALE_RIVERS = freeze([VAELLIR, ALEZHOR_WATER]);
 export function nearestSouthwestRiver(x, z, limit = SOUTHWEST_SWALE.outer) {
   let best = null, distance = limit;
-  for (const course of SOUTHWEST_RIVERS) {
+  for (const course of SOUTHWEST_SWALE_RIVERS) {
     const d = courseDistance(course, x, z, distance);
     if (d < distance) { distance = d; best = course; }
   }
@@ -1646,6 +2096,8 @@ export function southwestGround(x, z, ground) {
   const cape = regionShare('Cape Heth', x, z, mix);
   const plateau = regionShare('Dinelv Highlands', x, z, mix);
   const hama = regionShare('Hama', x, z, mix);
+  const marosh = regionShare('Marosh', x, z, mix);
+  const trogo = regionShare('Trogo', x, z, mix);
   const tilt = southwestSlope(x, z) * bank
     + ganeshBasin(x, z, desert) + ganeshPlainFall(x, z, plain) + pyrosFall(x, z, pyros)
     + merosheSkirt(x, z, skirt) + merosheSink(x, z, erg);
@@ -1656,14 +2108,20 @@ export function southwestGround(x, z, ground) {
     // which is gated on the dry half of it by `hamaGreen`.
     + hethSpine(x, z, cape)
     + (plateau > 0 ? Math.max(dinelvRidgeAt(x, z).lift, dinelvMesaAt(x, z).lift) * plateau : 0)
-    + hamaBroken(x, z, hama, hamaGreen(x, z, mix));
+    + hamaBroken(x, z, hama, hamaGreen(x, z, mix))
+    // Job 4's two, and both are one crest apiece. Marosh's ridge is the wall the Meroshe stands behind,
+    // notched once at the water gap; Trogo's is the ridgeline the lore hangs the whole rainforest on,
+    // laid along the seven hexes the atlas puts against the desert. **Nothing is authored on either
+    // country's outward margin**: the front against the Meroshe is the hex blend carrying a base
+    // difference, which is the West Lotharn's contract and the Dinelv escarpment's.
+    + maroshRidge(x, z, marosh) + trogoCrest(x, z, trogo);
   const near = nearestSouthwestRiver(x, z);
   const swale = southwestSwaleWeight(x, z, bank, near);
   // The designed surface: the blend's own base, the tilt, and no relief at all.
   if (swale > 0) height = height + (mix.base + tilt - height) * swale;
   height += ganeshWashCut(x, z, desert) + ganeshPlainChannelCut(x, z, plain) + ganeshDepressionCut(x, z, plain)
     + hethHollows(x, z, cape) + dinelvBasins(x, z, plateau) + dinelvChannelCut(x, z, plateau)
-    + hamaBedCut(x, z, hama);
+    + hamaBedCut(x, z, hama) + maroshCombeCut(x, z, marosh) + trogoGullyCut(x, z, trogo);
   // **The salt pan is levelled, not cut**: a playa is flat to the centimetre over hundreds of metres.
   const salt = skirt > 0 ? onSaltPan(x, z) * skirt : 0;
   if (salt > 0) height = lerp(height, saltPanLevel(), salt);
@@ -1731,6 +2189,15 @@ export const SOUTHWEST_GROUND = freeze({
   capeRock: 0x47453a,  // Cape Heth's grey-brown marine sandstone, soft enough to cut with hand tools
   spray: 0x5c5a51,     // the weather face: salt-bleached bare rock where nothing roots
   meadow: 0x394d22,    // Hama's `Csb` half - the greenest ground in the southwest, and the only wet one
+  // Job 4's five, and one of them takes a record off job 2. **`canopy` is the darkest ground in the
+  // game**, darker than the reg's desert varnish, and it has to be: the floor of a closed tropical
+  // canopy gets a few per cent of the light that falls on the top of it, and job 1's arithmetic about
+  // the haze applies twice over here, because Trogo's haze is six times the density job 1 was measuring.
+  maquis: 0x2f3d1d,    // Marosh's ridge: holm oak and dense evergreen scrub on a `Csb` crest
+  terrace: 0x5d6331,   // Marosh's `Csa` terrace, bleached olive by the end of a hot dry summer
+  canopy: 0x1c2415,    // Trogo's forest floor under closed canopy - the darkest ground in the game
+  cloudFloor: 0x333f2d, // the fog forest's own floor: moss and wet leaf, greyer and lighter than the canopy
+  saltPruned: 0x54602d, // the coastal collar where the forest stops, salt-pruned and hot-summer dry
 });
 const SWATCHES = freeze(new Set(SOUTHWEST_REGIONS.flatMap(name => {
   const profile = REGION_TERRAIN[name];
@@ -1824,6 +2291,35 @@ export function southwestTint(x, z, ground) {
       colour = mixHex(colour, SOUTHWEST_GROUND.swept, hama * (1 - green) * hamaLie(x, z) * .34);
     }
   }
+  if (inBox(EAST_EDGE_BOX, x, z)) {
+    // **Marosh is coloured by how high on the ridge a point stands**, which is the same thing the climate
+    // field is coloured by: the eight `Csb` hexes are the eight `hills` hexes, so the crest is oak and
+    // maquis and the terrace below it is hot-summer grass. The four combes are the only damp ground.
+    const marosh = regionShare('Marosh', x, z, mix);
+    if (marosh > 0) {
+      const crest = maroshCrest(x, z);
+      colour = mixHex(colour, SOUTHWEST_GROUND.maquis, marosh * smooth(.12, .86, crest) * .78);
+      colour = mixHex(colour, SOUTHWEST_GROUND.terrace, marosh * (1 - smooth(.05, .62, crest)) * .56);
+      const combe = inMaroshCombe(x, z) * marosh;
+      if (combe > 0) colour = mixHex(colour, SOUTHWEST_GROUND.damp, smooth(.05, .8, combe) * .62);
+    }
+    // **Trogo is coloured by how much of a point is thicket and how high it stands**, in that order, and
+    // the two of them are the whole country: a closed canopy floor, a mossy cloud-forest floor on the
+    // crest, a lighter break wherever a way or a clearing opens the canopy, and the salt-pruned collar of
+    // the southern shore where the forest stops. The clearings and the ways are painted *lighter* than
+    // the floor between them, which is the reverse of everything else in this block and is the only way a
+    // corridor reads as a corridor from above: what a light gap in a rainforest is, is light.
+    const trogo = regionShare('Trogo', x, z, mix);
+    if (trogo > 0) {
+      const thicket = smooth(.28, .88, trogoThicket(x, z));
+      colour = mixHex(colour, SOUTHWEST_GROUND.canopy, trogo * thicket * .9);
+      colour = mixHex(colour, SOUTHWEST_GROUND.saltPruned, trogo * (1 - thicket) * .72);
+      const fog = trogoFogForest(x, z);
+      if (fog > 0) colour = mixHex(colour, SOUTHWEST_GROUND.cloudFloor, trogo * thicket * smooth(.1, .9, fog) * .64);
+      const open = Math.max(inTrogoClearing(x, z), smooth(TROGO_WAY.open, .95, trogoWay(x, z)) * thicket);
+      if (open > 0) colour = mixHex(colour, SOUTHWEST_GROUND.cloudFloor, trogo * open * .5);
+    }
+  }
   return colour === base ? null : colour;
 }
 /**
@@ -1834,11 +2330,17 @@ export function southwestTint(x, z, ground) {
  */
 function groundLevelFor(x, z) {
   const mix = terrainMix(x, z);
-  const plateau = regionShare('Dinelv Highlands', x, z, mix);
   const base = mix.base + southwestSlope(x, z) * smooth(.05, .30, southwestWeight(x, z, mix));
-  if (plateau <= 0) return base;
-  const lift = Math.max(dinelvRidgeAt(x, z).lift, dinelvMesaAt(x, z).lift) * plateau;
-  return base + lift + dinelvBasins(x, z, plateau);
+  const plateau = regionShare('Dinelv Highlands', x, z, mix);
+  const trogo = regionShare('Trogo', x, z, mix);
+  const marosh = regionShare('Marosh', x, z, mix);
+  if (plateau <= 0 && trogo <= 0 && marosh <= 0) return base;
+  // Job 4's two crests are here for `trogoBand`'s sake, which sorts the rainforest by altitude and is
+  // read by the tint and the scatter both. Without the crest in it the band would read the blend's own
+  // base and call the top of the ridge the middle of the slope.
+  const lift = plateau > 0 ? Math.max(dinelvRidgeAt(x, z).lift, dinelvMesaAt(x, z).lift) * plateau : 0;
+  return base + lift + (plateau > 0 ? dinelvBasins(x, z, plateau) : 0)
+    + trogoCrest(x, z, trogo) + maroshRidge(x, z, marosh);
 }
 
 // ---------------------------------------------------------------------------
@@ -1937,7 +2439,7 @@ export const SOUTHWEST_LANDMARKS = freeze([
   freeze({ id: 'meroshe-dust-line', name: 'The Dust Line', x: -2900, z: 1940,
     description: 'Where the Ganesh Plain stops. Walking south off the plain the pale clay thins over about two hundred paces, the grass tufts give out one by one, and then there is stone underfoot and nothing standing anywhere. There is no ridge, no river and no line on any map: the plain simply runs out of soil. It is the northern door of the whole Meroshe and there is nothing at it.' }),
   freeze({ id: 'meroshe-green-shoulder', name: 'The Green Shoulder', x: -2730, z: 1950,
-    description: 'The north-eastern corner, and on the atlas the one place in the Meroshe where a traveler could see green. Two hexes east the ground goes up into Marosh’s Mediterranean hills — grass, olive, oak scrub, winter rain — and from the last of the hamada it is a low green shoulder on the horizon with heat shimmer between. The distance is under a mile and the difference is a climate. **Marosh is not built**, so what stands on that horizon today is open country and not the hills; what is real here is the far side of the argument, which is hot desert to the last hex and a dry wind coming off it.' }),
+    description: 'The north-eastern corner, and on the atlas the one place in the Meroshe where a traveler could see green. Two hexes east the ground goes up into Marosh’s Mediterranean hills — grass, olive, oak scrub, winter rain — and from the last of the hamada it is a low green shoulder on the horizon with heat shimmer between. The distance is under a mile and the difference is a climate. **The promise this landmark was written as has come true.** Job 2 wrote it about unbuilt country and job 4 built Marosh: what stands on that horizon now is the ridge itself, seventy-four metres of base with holm oak and maquis on it, a hundred and thirty metres east of here — and the aridity under a traveler’s boots at this corner has gone from the flat 1.000 job 2 measured to 0.922, because a country with no desert hex in it is one hex away. The far side of the argument is still the real thing here: hot desert to the last hex and a dry wind coming off the crest.' }),
   // ----- The West Meroshe Desert: the fan skirt and the salt -----
   freeze({ id: 'meroshe-fan-skirt', name: 'The Fan Skirt', x: -3590, z: 2420,
     description: 'The apron below the Dinelv escarpment: three broad cones of gravel spread south-west out of the highland’s mouths and grown together into one skirt falling to the sea. What a traveler notices is the size of the stones. At the heads they are cobbles a hand across and the walking is bad; four hundred paces down the fan they are pebbles; at the toe they are dust deep enough to print. Water comes down these twice in a decade and the sorting is all it has left behind.' }),
@@ -1962,7 +2464,7 @@ export const SOUTHWEST_LANDMARKS = freeze([
   freeze({ id: 'meroshe-fog-margin', name: 'The Fog Margin', x: -2650, z: 2720,
     description: 'The strangest ground in the Meroshe: desert that gets wet without being rained on. The atlas gives this hex hot desert like all the rest, and the fog off the southern ocean and off Trogo’s ridge comes in over it and stays, sometimes for days — "warm and thick and close", the lore says, not the cold sea-fog of the northern coasts. What it leaves is a crust on the stone, lichen in the lee of every pebble, and thorn standing close enough together to make a traveler walk round it, which nothing else in this desert does.' }),
   freeze({ id: 'meroshe-forest-wall', name: 'The Forest Wall', x: -2560, z: 2640,
-    description: 'The eastern edge of the stone floor, and the sharpest boundary the atlas draws anywhere: thirteen hex edges of hot desert against tropical rainforest. Trogo begins at the next hex east and goes up in one wall of dark canopy with cloud sitting in it: "the desert’s last water meets the coast’s first moisture and produces a consequence that neither the desert peoples to the northwest nor the Maroshi kingdom to the north has entirely figured out what to do with: tropical rainforest." **Trogo is not built**, so there is no canopy on that horizon yet. What has already crossed the line is the fog, and this is where it stands thickest.' }),
+    description: 'The eastern edge of the stone floor, and the sharpest boundary the atlas draws anywhere: thirteen hex edges of hot desert against tropical rainforest. Trogo begins at the next hex east and goes up in one wall of dark canopy with cloud sitting in it: "the desert’s last water meets the coast’s first moisture and produces a consequence that neither the desert peoples to the northwest nor the Maroshi kingdom to the north has entirely figured out what to do with: tropical rainforest." **The canopy is on that horizon now.** Job 4 built Trogo, and from the last of the stone floor a traveler sees the forest standing some fifty metres over the desert with cloud in the top of it. The fog had already crossed the line before the forest did, and this is still where it stands thickest; what has changed is that the aridity on these hexes has gone from job 2’s flat 1.000 to between 0.646 and 0.913, which is the wettest code on the map pulling on the driest from one hex away.' }),
   freeze({ id: 'meroshe-south-shore', name: 'The Southern Shore', x: -2860, z: 3040,
     description: 'The bottom of the desert and the bottom of the continent’s southwest: the stone floor runs south until the pebbles turn to shingle and then to the southern ocean, with the whole Meroshe behind it and nothing but water in front. Four hex edges of it, and the fog comes ashore here first.' }),
   // ----- Cape Heth -----
@@ -2002,4 +2504,34 @@ export const SOUTHWEST_LANDMARKS = freeze([
     description: 'The bottom-left corner of the continent, where the western ocean and the southern ocean meet: "Hama sits at the southwestern tip of the Dinova Peninsula where the peninsula’s two coasts converge and the open-ocean approaches narrow toward the cape." Standing here the water runs away north on one hand and east on the other and there is nothing but ocean between the two. The grass comes down to within thirty paces of the water, which no other shore in the southwest does - the Ganesh’s gulf, the fan skirt’s dry shore and the Meroshe’s southern beach are all desert to the surf. Hama Harbour is somewhere on this corner and it is the Council of Merchant Houses’; it is not built.' }),
   freeze({ id: 'hama-winter-beds', name: 'The Winter Beds', x: -3271, z: 2881,
     description: 'Three shallow beds running off the stony rise, across the grass and into the two seas, and all three are dry. `Csb` means the rain comes in winter and the summer is not wet, and the atlas draws no river edge anywhere on Hama’s nineteen hexes, so there is no permanent water in this country at all - the lore says as much when it calls the seasonal supply "unreliable in dry years". What a traveler finds is a metre and a half of soft-banked cut with the greenest grass in the southwest standing in the floor of it, and nothing whatever to drink.' }),
+  // ----- Marosh -----
+  freeze({ id: 'marosh-ridge', name: 'The Marosh Ridge', x: -2650, z: 2367,
+    description: 'The wall the whole Meroshe stands behind, and the atlas says so three times over: eight `hills` hexes in an unbroken chain one hex wide, every one of them `Csb` where the rest of the country is `Csa`, and every one of them touching the desert while not one of them touches the sea. Seventy-four metres of base with fifteen of crest on top of it, holm oak and dense maquis over grey limestone, and from the top of it the Iberos on one hand three hundred metres below and the sand sea on the other. Sea air comes in off the east, this ridge takes the rain out of it, and what crosses the crest is the driest air in Azhora. It is the second highest ground in the game outside the two Lotharns and there is nothing on it.' }),
+  freeze({ id: 'marosh-water-gap', name: 'The Water Gap', x: -2716, z: 2152,
+    description: 'The one break in the ridge, and the atlas found it rather than a builder: the only three river edges the map draws on this whole coast meet at the corner of the hex beside the crest’s own western elbow, which is what a water gap is. Eleven metres of notch in fifteen of crest, sixty paces wide, with the Nahr running out of the bottom of it eastward to the sea. **This is where the caravan road crosses**, and the road is the whole reason Marosh is a kingdom - "the caravan routes across the Meroshe are Marosh’s revenue base, its military rationale, its diplomatic leverage, and its vulnerability". There is no road surface on it, no waystation, no gate and no toll: the gap is ground, and everything the Route Registry does with it is the Maroshi court’s.' }),
+  freeze({ id: 'marosh-water', name: 'The Nahr', ...onCourse(MAROSH_NAHR, .5, 22),
+    description: 'The only river the atlas draws on the eastern face of the peninsula, and it is small: three `small` edges out of the water gap, east-south-east across the terrace and into the Iberos in a hundred and seventy metres. `nahr` is simply the Maroshi for "river" (`maroshi.roots.river`), so the one river this coast has is called the river, the way job 1’s Vaellir is the Pyrosi word and job 2’s Malhat the Moreshi one. Waded anywhere along it. **It is also the first water the atlas draws inside a southwestern country rather than along its border** - a hundred and sixty-eight hexes of desert, cape and plateau have none at all.' }),
+  freeze({ id: 'marosh-terrace', name: 'The Seaward Terrace', x: -2550, z: 2367,
+    description: 'The seaward half: ten `grassland` hexes that are every one of them `Csa`, the hot-summer form, falling from the ridge’s foot to twenty hex edges of open water. Winter-rain grass with bare earth showing between the tufts by the end of a dry summer, aromatic scrub in the low places, and the olive-grey of a coast that gets four months of nothing. After two hundred and seventy-five hexes of desert it is ordinary Mediterranean country, and it is the most ordinary ground in the whole southwest - which is the point of it: this is what the Meroshe would be if the ridge were not there. The small agricultural plots the lore puts on this margin and the coastal towns they feed are the Maroshi court’s and are not built.' }),
+  freeze({ id: 'marosh-shore', name: 'The Iberos Shore', x: -2465, z: 2020,
+    description: 'The sheltered side of the peninsula, and the only shore in the block that is not exposed to an open ocean. Hama takes the western weather and Cape Heth takes it twice; this coast faces the Iberos Sea across a warm sheltered water, and what that does to the air is put more of it in: the haze here is the thickest Mediterranean air in the southwest. The grass comes down to within forty paces of the water with low turf and shingle for the last of it. Dinelv the capital sits somewhere on this shore - "at the junction of the overland road from the desert’s edge and the coastal trade lanes" - and it is a city and is not built.' }),
+  freeze({ id: 'marosh-dry-side', name: 'The Dry Side', x: -2742, z: 2194,
+    description: 'The western foot of the ridge, where the oak stops and the desert starts. Seventeen of Marosh’s eighteen hex edges against the Meroshe are on these eight `hills` hexes, and the aridity field crosses almost its whole range over them: `Csb` on this side of the crest and `BWh` one hex over, which is the second sharpest climate step in the block after Trogo’s. Standing here the scrub thins downhill over about two hundred paces, the ground turns to gravel, and the Central Meroshe’s sand sea begins. It is the same sentence Hama’s Line makes on the far side of the desert, four hundred metres of hot sand apart, and this side is the one with a hill on it.' }),
+  // ----- Trogo -----
+  freeze({ id: 'trogo-forest', name: 'The Trogo Forest', x: -2300, z: 2900,
+    description: '**The first rainforest in the game.** Twenty-two hexes of `deep_forest`, `Af` on every one - tropical, with no dry season, the wettest code the atlas paints anywhere on the map - and one hex west of them is hot desert on all twenty-one of its own. The lore explains both in a single sentence: "a ridgeline that catches the southern moisture and drops a fog wall on its windward face while the leeward side stays desert." Standing under it: tall emergents over a closed canopy over an understory of tree-fern and palm over a floor of leaf litter with nothing green on it, buttress roots a metre high, and a haze so thick that another traveler is half hidden at fifty-eight paces and gone at a hundred and twenty. Nothing can be seen far in it and nothing can be walked straight through it.' }),
+  freeze({ id: 'trogo-fog-ridge', name: 'The Fog Ridge', x: -2424, z: 2840,
+    description: 'The crest, and it is the reason the country exists. The atlas draws it: the seven Trogo hexes that share an edge with the South Meroshe are the north-western margin, the crest is laid along them, and everything south-east of the line is windward face. Fifty-four metres of it against the desert’s six, which is the "wall of dark canopy" the Meroshe’s own Forest Wall landmark promised a job in advance. On top, the lore’s fog forest - "an intermediate world of mosses and cloud-dependent plants that exists only because two atmospheric systems are pressing against each other at this latitude" - shorter, denser and greyer than the canopy below it, standing in cloud that does not lift. The fog job 2 built into the Meroshe’s stone floor comes off this crest, and from up here a traveler can see the desert it is going to.' }),
+  freeze({ id: 'trogoreth', name: 'The Trogoreth', ...onCourse(TROGORETH, .5, 18),
+    description: 'The only permanent water in the rainforest, and the lore names it itself: "the largest, which Maroshi records call the Trogoreth (‘the Trogo river,’ a construction that acknowledges they have no better name for it), has a wide delta mouth that has silted into a shallow estuary system." Four `small` atlas edges through the south-eastern corner, out of the canopy and across the coastal grass into the southern ocean. It is waded anywhere, deliberately: **this country already has one movement rule and a walled river inside it would be a second barrier crossing the first.** It is also the first of the three ways through - "follow the rivers down" - and a traveler who cannot push into the thicket can walk up the water.' }),
+  freeze({ id: 'trogo-animal-paths', name: 'The Animal Paths', x: -2290, z: 2778,
+    description: 'Five worn lines through a country with no roads in it: one along the crest, two rungs between the north and middle gullies, one just inside the north-eastern shore, and one along the southern forest edge. Nobody cut them and nobody maintains them - the lore’s three peoples move through this forest and so do the carnivores they study hardest, and a path in a closed canopy is worn by whatever walks it most. Four and a half metres of trodden ground with a wall of fern down both sides and nothing to see past it. **They are the third of the three kinds of way through, and what they do is join the other two to each other**: without them the gullies and the river would be five lines that do not meet.' }),
+  freeze({ id: 'trogo-clearings', name: 'The Dry Corridors', x: -2418, z: 2662,
+    description: 'The lore gives these as a mechanism rather than as scenery: "and then the reverse - gaps in the ridge where the desert air pushes through in the dry months, creating corridors of sparse growth cutting into the forest." Three of the five clearings are exactly that, openings on the crest where the Meroshe’s own air comes over the top and the canopy does not close; the other two are treefall gaps, which is what a forest like this has instead of fields. Light, grass, saplings and a sky, in a country that has none of those anywhere else - and every one of them stands on a way, because a clearing in a thicket that nobody can walk into is a picture of nothing.' }),
+  freeze({ id: 'trogo-thicket', name: 'The Thicket', x: -2250, z: 2830,
+    description: '**The ground the rule refuses.** Between the watercourse, the four gullies, the five paths and the five clearings there are four fifths of the canopy where a traveler cannot go: understory to the chest, rattan, tree-fern, buttress and litter, with a metre of visibility and no line of sight to steer by. It is not a wall and there is nothing solid in the way - measured, the thicket carries no collider of its own at all, which is why nobody can be shut inside it - it is simply ground that will not be pushed into. A body already in it is never held: the openness of the ground is a gradient and every step that makes it larger is allowed, so whoever is dropped in the middle of this walks out and the fence closes behind them.' }),
+  freeze({ id: 'trogo-forest-edge', name: 'The Forest Edge', x: -2320, z: 3105,
+    description: 'Where the forest stops, and the atlas draws the line twice: seven `grassland` hexes that are every one of them `Csa` against twenty-two `deep_forest` hexes that are every one of them `Af`, with no hex where the two fields disagree. And it puts every one of the seven on the **exposed** southern and south-eastern shore while taking the canopy right down to the water on the sheltered north-eastern one, which is the honest reading of "the coast is not extensively sheltered - no deep natural harbors on the scale of Hama": a tropical coast open to a southern ocean is salt-pruned, and the collar here is tussock, low scrub and wind, with a wall of canopy behind it that stands nearly forty metres over it.' }),
+  freeze({ id: 'trogo-estuary', name: 'The Estuary', x: -2130, z: 3010,
+    description: 'The Trogoreth’s mouth, and the one place in the southwest where a forest reaches the sea. "At the coast and along the lower river systems, the mangrove and estuary ecology takes over - brackish-adapted vegetation, root systems that make the river mouths look solid but are not, and the bird and fish populations that the estuary communities depend on." So the trees come down to the tideline on prop roots with the water between them, and the same thing happens again on the sheltered north-eastern shore where the atlas takes `deep_forest` to the waterline across ten hex edges. The fishing communities the lore puts on this estuary, and the small anchorages in the river mouths that Hama has been quietly buying timber through for a century, are theirs and are not built.' }),
 ]);

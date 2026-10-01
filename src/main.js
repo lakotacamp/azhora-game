@@ -217,6 +217,7 @@ import { createBatmanQuestHost, BATSMASHER_STAND, BATMAN_FIGHT } from './batman-
 import { createDeveloperBat } from './developer-bat.js';
 import { createDeveloperDragon } from './developer-dragon-model.js';
 import { createClimbing, canWalkSlope, CLIMBING } from './climbing.js';
+import { canPushThrough } from './undergrowth.js';
 import { createTerrainFall, shouldStartTerrainFall } from './terrain-fall.js';
 import { createLotharnCaveWalk } from './east-lotharn-cave-walk.js';
 import { nearestPlain as caveNearest } from './east-lotharn-caves.js';
@@ -227,7 +228,9 @@ import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BR
 import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS,
   MEROSHE_BENCHES as SOUTHWEST_BENCHES, MEROSHE_SALT as SOUTHWEST_SALT, MEROSHE_DUNES as SOUTHWEST_DUNES, MEROSHE_FANS as SOUTHWEST_FANS,
   HETH_SPINE as SOUTHWEST_SPINE, HETH_HOLLOWS as SOUTHWEST_HOLLOWS, DINELV_MESAS as SOUTHWEST_TABLES, DINELV_GAPS as SOUTHWEST_GAPS,
-  DINELV_ASCENT as SOUTHWEST_ASCENT, HAMA_BEDS as SOUTHWEST_HAMA_BEDS } from './southwest-world.js';
+  DINELV_ASCENT as SOUTHWEST_ASCENT, HAMA_BEDS as SOUTHWEST_HAMA_BEDS,
+  MAROSH_RIDGE as SOUTHWEST_MAROSH_RIDGE, MAROSH_GAP as SOUTHWEST_WATER_GAP, TROGO_CREST as SOUTHWEST_TROGO_CREST,
+  TROGO_GULLIES as SOUTHWEST_GULLIES, TROGO_CLEARINGS as SOUTHWEST_CLEARINGS } from './southwest-world.js';
 import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
@@ -2146,6 +2149,52 @@ function init() {
       // shore release has taken the cut back out again, so a view from there has no bed in it.
       if(view==='southwest-hama-bed'){const bed=SOUTHWEST_HAMA_BEDS[1],a=bed.line[0],c=bed.line[2];
         return shot({x:a.x,z:a.z},{x:c.x,z:c.z},.05,1.4);}
+      // ----- Marosh and Trogo -----
+      // **The wall, from the top of it looking west into the desert.** The crest's own line and the dry
+      // side's landmark, so the camera stands on the ridge and looks down its own western fall.
+      if(view==='southwest-marosh-crest'){const l=SOUTHWEST_MAROSH_RIDGE.line,a=l[6],m=mark('marosh-dry-side');
+        return shot({x:a.x,z:a.z},{x:m.x-120,z:m.z+40},-.02,3.2);}
+      // The water gap from the terrace below it, looking up through the notch: the crest stands ten metres
+      // over the gap on either hand and the Nahr runs out of the bottom of it.
+      if(view==='southwest-marosh-gap'){const g=SOUTHWEST_WATER_GAP;
+        return shot({x:g.x+96,z:g.z+26},{x:g.x,z:g.z},.04,2.2);}
+      // The terrace with the Iberos beyond it: ordinary Mediterranean country, which nothing else in
+      // thirteen countries is. Aimed at the shore's own landmark from up the slope.
+      if(view==='southwest-marosh-terrace'){const m=mark('marosh-shore');
+        return shot({x:m.x-125,z:m.z+34},{x:m.x,z:m.z},.02,1.9);}
+      // **Inside the thicket**, which is the picture the whole job is for: a hundred and twenty paces of
+      // sight and a canopy over it. Standing in the trogo-forest landmark's own hex and looking at nothing
+      // in particular, because there is nothing in particular to look at and that is the point.
+      // **Twenty-two metres and no more.** The first round looked a hundred and six and came back a black
+      // wall: the review camera backs off from its target until something stops it, and in a closed canopy
+      // the thing that stops it is a crown. At .0144 a hundred metres is nine tenths haze anyway.
+      if(view==='southwest-trogo-canopy'){const m=mark('trogo-forest');
+        return shot({x:m.x+3,z:m.z+22},{x:m.x,z:m.z},.02,1.6);}
+      // **A way through**, along the middle gully: a corridor with a wall of fern down both sides. Looked
+      // along its own line from a fifth of the way up it, so the camera is in the cut and not above it.
+      if(view==='southwest-trogo-way'){const l=SOUTHWEST_GULLIES[1].line,a=l[3],c=l[1];
+        return shot({x:a.x,z:a.z},{x:c.x,z:c.z},.03,1.6);}
+      // The forest wall from the desert side: the thing job 2's own Forest Wall landmark promised a job in
+      // advance, and the steepest climate step on the atlas drawn as a picture.
+      // **Stood in the desert and not in the forest.** The first round put the camera inside Trogo and the
+      // harness could only back it three metres off its own target before a trunk stopped it; from the
+      // Meroshe's own floor there is nothing between the camera and the wall for two hundred metres.
+      // **Both the camera and the thing it looks at stand in the desert**, which took three tries. The
+      // review camera backs off from its target until a collider stops it, so a target inside the forest
+      // puts the camera against the first trunk west of it; the wall is the background of this frame
+      // rather than its subject, a hundred and thirty metres beyond a point of open Meroshe.
+      if(view==='southwest-trogo-wall'){const c=SOUTHWEST_TROGO_CREST.line[3];
+        return shot({x:c.x-262,z:c.z+6},{x:c.x-142,z:c.z+6},-.07,34);}
+      // A dry corridor on the crest: light, grass and a sky, in the only country that has none of those.
+      if(view==='southwest-trogo-clearing'){const o=SOUTHWEST_CLEARINGS[1];
+        return shot({x:o.x+o.radius+16,z:o.z+12},{x:o.x-14,z:o.z},.03,1.8);}
+      // Where the forest stops, from the coastal grass looking into it: a wall of canopy standing nearly
+      // forty metres over salt-pruned tussock, which is what the atlas puts on the exposed shore.
+      if(view==='southwest-trogo-edge'){const m=mark('trogo-forest-edge');
+        return shot({x:m.x+34,z:m.z+74},{x:m.x-10,z:m.z-56},.10,2.6);}
+      // The estuary: prop roots down to the tideline and the southern ocean behind them.
+      if(view==='southwest-trogo-estuary'){const m=mark('trogo-estuary');
+        return shot({x:m.x-62,z:m.z-46},{x:m.x+30,z:m.z+34},.02,1.8);}
     }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
@@ -2703,7 +2752,12 @@ function init() {
   // One cave controller over both halves of the Lotharn: the caves' own ids are distinct, and a
   // saved walk names the cave it is in, so a save made in either range restores in the right one.
   lotharnCave=createLotharnCaveWalk({caves:[...world.lotharnCaves,...world.westLotharnCaves],ground:world.groundHeight});
-  const walkingSlope=(x,z,nextX,nextZ)=>canWalkSlope(x,z,nextX,nextZ,climbWorld);
+  // Two movement rules now, and one hook. `canWalkSlope` refuses an ascent too steep to walk in the
+  // climbing countries (src/climbing.js); `canPushThrough` refuses a step off a way into a deep
+  // forest's thicket in the undergrowth countries (src/undergrowth.js). Neither owns input,
+  // rendering or saved state, both are region-gated, and both go through `moveCharacter`'s own
+  // `canTraverse` - so a country with neither is exactly as walkable as it was.
+  const walkingSlope=(x,z,nextX,nextZ)=>canWalkSlope(x,z,nextX,nextZ,climbWorld)&&canPushThrough(x,z,nextX,nextZ,climbWorld);
   function canGrabRock(){return mode==='playing'&&!lotharnCave.active&&!suspended()&&!riding.mounted&&!raceHost?.mounted&&!inWater
     &&living?.recall().status!=='passenger'&&combat.state.player.hp>0&&combat.state.player.action==='idle';}
   function tryClimbing(){

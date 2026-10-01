@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35, 'North Meroshe Desert': 36, 'West Meroshe Desert': 37, 'Central Meroshe Desert': 38, 'South Meroshe Desert': 39, 'Cape Heth': 40, 'Dinelv Highlands': 41, Hama: 42 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, Navarth: 32, 'West Pyros': 33, 'Ganesh Desert': 34, 'Ganesh Plain': 35, 'North Meroshe Desert': 36, 'West Meroshe Desert': 37, 'Central Meroshe Desert': 38, 'South Meroshe Desert': 39, 'Cape Heth': 40, 'Dinelv Highlands': 41, Hama: 42, Marosh: 43, Trogo: 44 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -550,6 +550,39 @@ export const REGION_TERRAIN = Object.freeze({
   }) }),
   Hama: Object.freeze({ base: 28, amp: 1.6, wave: 320, ground: REGION_BIOMES.Hama.ground, byTerrain: Object.freeze({
     grassland: Object.freeze({ base: 15, amp: .9, wave: 320, ground: '#44532f' }),
+  }) }),
+  // ---------------------------------------------------------------------------
+  // Marosh and Trogo (src/southwest-world.js): the block's eastern edge, and the two countries whose
+  // bases say why the Meroshe is a desert. Both are on wavelength 320, which is now the whole block
+  // and thirteen countries; between them they share seven hex edges with the four Meroshe quarters
+  // and one with each other, and a country on another wave would shift the phase of every sine
+  // within reach of those borders.
+  //
+  // **Marosh is a ridge and a terrace, and the ridge is the wall.** `hills` at 74 is the second
+  // highest base in the game outside the two Lotharns, behind the Dinelv plateau's 96 and thirty-six
+  // metres over Navarth's 58 - and it is a *coastal* ridge, one hex wide, standing between twenty hex
+  // edges of open Iberos water on the east and the Central Meroshe's sand at 16 on the west. That is
+  // the whole reason there is a desert behind it: the sea air comes in off the Iberos, the ridge
+  // wrings it out, and what gets over the top is dry. The atlas says so twice - `hills` reads `Csb`,
+  // the cooler-summer Mediterranean form that on a strip two hexes wide can only be altitude, and
+  // `grassland` reads `Csa`, the hot-summer one. `grassland` at 17 is the seaward terrace, two metres
+  // over Hama's sward because it has a ridge behind it rather than an ocean on two sides.
+  //
+  // **Trogo is the ridge that makes the rainforest.** `deep_forest` at 52 - **the first use of that
+  // terrain word anywhere in the game's world** - against the South Meroshe's 14 across thirteen hex
+  // edges, which is the "wall of dark canopy" job 2's own landmark promised and the reason the atlas's
+  // own developer heights put `deep_forest` at 18 where `plains` is 6. The lore's sentence is the
+  // design: "a ridgeline that catches the southern moisture and drops a fog wall on its windward face
+  // while the leeward side stays desert." The ridge is these twenty-two hexes; the leeward side is job
+  // 2's fog belt and then its stone floor. `grassland` at 13 is the coastal flat where the forest
+  // stops - "the coastal strip, where the rivers slow and the land flattens near the southern sea, is
+  // the most hospitable section" - so the fall from canopy to shore grass is thirty-nine metres over a
+  // hex, which is what the lore means by "rivers run fast, elevation changes quickly".
+  Marosh: Object.freeze({ base: 17, amp: .9, wave: 320, ground: REGION_BIOMES.Marosh.ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 74, amp: 2.6, wave: 320, ground: '#3c4a2a' }),
+  }) }),
+  Trogo: Object.freeze({ base: 52, amp: 2.4, wave: 320, ground: REGION_BIOMES.Trogo.ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 13, amp: .8, wave: 320, ground: '#57642f' }),
   }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
@@ -1338,7 +1371,7 @@ const REGION_TEXT = {
     palette: { ground: '#736a4e', accent: '#b0a684', fog: '#a09980', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
     npcIds: [], landmarks: ['meroshe-sand-sea', 'meroshe-corridors', 'meroshe-sink', 'meroshe-sand-edge'] },
   'South Meroshe Desert': { subtitle: 'The stone floor under the fog', spawn: point(-2800, 2800),
-    description: 'The bottom of the desert, and the one part of it that gets wet. The ground is reg — a pavement of pebbles packed edge to edge over the whole country, flat enough to see twenty miles over and varnished so dark by iron and manganese that it looks wet from a distance and holds a footprint for a year. Thirteen of its hex edges are Trogo’s tropical rainforest and four are the southern ocean, and what crosses the line between the two is fog: warm, thick, close, standing for days at a time, watering a surface the atlas still calls hot desert. So the southern third of this country carries a crust, lichen in the lee of every pebble, and thorn scrub standing close enough together to walk round — none of which the rest of the Meroshe can manage — and the north-western third, against the sand sea, is as bare as anything in Azhora. On the atlas a rainforest stands half a mile off the eastern edge with cloud sitting in it; Trogo is not built, so what is there today is the fog and not the canopy. The canyon communities the lore puts south of here, and everything they own, are not built.',
+    description: 'The bottom of the desert, and the one part of it that gets wet. The ground is reg — a pavement of pebbles packed edge to edge over the whole country, flat enough to see twenty miles over and varnished so dark by iron and manganese that it looks wet from a distance and holds a footprint for a year. Thirteen of its hex edges are Trogo’s tropical rainforest and four are the southern ocean, and what crosses the line between the two is fog: warm, thick, close, standing for days at a time, watering a surface the atlas still calls hot desert. So the southern third of this country carries a crust, lichen in the lee of every pebble, and thorn scrub standing close enough together to walk round — none of which the rest of the Meroshe can manage — and the north-western third, against the sand sea, is as bare as anything in Azhora. A rainforest stands half a mile off the eastern edge with cloud sitting in it, and since job 4 it is built: twenty-two hexes of `Af`, standing fifty metres over this floor, and the twenty hexes of the Meroshe whose aridity is no longer a flat 1.000 are almost all of them looking at it or at Marosh. The canyon communities the lore puts south of here, and everything they own, are not built.',
     palette: { ground: '#3d3427', accent: '#847a64', fog: '#7c735e', sky: 0xbec9c3, haze: 0xc0bcab, hazeDensity: .0046 },
     npcIds: [], landmarks: ['meroshe-stone-floor', 'meroshe-fog-margin', 'meroshe-forest-wall', 'meroshe-south-shore'] },
   // Cape Heth, the Dinelv Highlands and Hama (src/southwest-world.js): the block's western edge, and
@@ -1370,6 +1403,35 @@ const REGION_TEXT = {
     description: 'The corner of the continent, with ocean on the west and ocean on the south, and the only place in the southwest where the desert ends in something green instead of in water or in more desert. The atlas draws the line twice and in the same place: nine `grassland` hexes that are every one of them `Csb`, and ten `plains` hexes that are every one of them `BWh`, with no hex where the two fields disagree. So the seaward two hexes are real Mediterranean country - winter-rain grass thick enough to walk through, low evergreen scrub in the hollows, a few wind-shaped trees leaning inland - and the inland half is a stony broken rise between that and the Meroshe, which the lore calls "rough without being impassable: enough friction to make overland access from the desert difficult". Between them, over about two hundred paces, the grass thins to tussocks and then to nothing and the ground turns to gravel, and that two hundred paces is the country. The winter watercourses that carry the rain down to the sea are dry, as they are in the dry years the lore says Hama cannot rely on. Hama Harbour, the Council of Merchant Houses, the seven families and every plot on the coastal margin are somebody’s and none of them is built.',
     palette: { ground: '#475433', accent: '#8b9a6c', fog: '#828e72', sky: 0xb4c8d2, haze: 0xb9bdb0, hazeDensity: .0052 },
     npcIds: [], landmarks: ['hama-green-line', 'hama-grass', 'hama-broken-ground', 'hama-corner', 'hama-winter-beds'] },
+  // Marosh and Trogo (src/southwest-world.js): the block's eastern edge, and **two skies, one of which
+  // is the whole point of the job.**
+  //
+  //  - **Marosh** has not one `BWh` hex - the first country in thirteen that can say so - and twenty
+  //    hex edges of open Iberos water, one more than Hama. So .0055, a shade thicker than Hama's .0052,
+  //    which was the block's record: eight `Csb` hexes on a ridge that is wringing the sea out, over a
+  //    terrace that is `Csa`, under an easterly sky that is properly blue rather than bleached. It is
+  //    the sheltered coast of the peninsula where Hama is the exposed one, and a sheltered warm sea
+  //    puts more water in the air than an open cold one does.
+  //  - **Trogo is `.0144`, which is nearly two and a third times the game's own default and nearly
+  //    seven times the clearest air in it.** It is the first half of the user's decision of 30
+  //    September 2026 about what a deep forest is: *a country you cannot see far in and cannot go
+  //    straight through*. `FogExp2` hides a fraction `1 - exp(-(density x depth)^2)` of a surface, so
+  //    at .0144 a traveler is **half hidden at 58 metres, nine tenths gone at 105 and invisible at
+  //    120** - where the game's default .0062 takes 279 metres to do the same and job 2's erg, the
+  //    shortest sight line in the game until now, blocks the view at 140 with a six-metre dune. This
+  //    blocks it at 120 with cloud, and there are trees in the way as well. The colour is the second
+  //    half of the argument and was the harder half: job 1 found that a near-white haze is over half of
+  //    every pixel past a hundred and fifty metres, so a haze this thick has to be **dark**, and what
+  //    it actually is here is the lore's own fog - "not the cold sea-fog of Bouen's coast. It is warm
+  //    and thick and close" - cloud sitting inside a canopy, which is grey-green and not white.
+  Marosh: { subtitle: 'The ridge the desert is behind', spawn: point(-2520, 2367),
+    description: 'Eighteen hexes in a strip two wide down the Iberos face of the peninsula, and the only country in the southwest with no hot desert on it at all. The atlas draws its line twice over and in the same place: eight `hills` hexes that are every one of them `Csb`, the cooler-summer Mediterranean form, and ten `grassland` hexes that are every one of them `Csa`, the hot-summer one, with no hex where the two fields disagree. On a coastal strip two hexes wide the only thing that makes a summer cooler is height, so the line is drawn by the ridge - and the ridge is why everything west of here is a desert. Sea air comes in off the Iberos, seventy-four metres of oak and maquis wrings it out, and what crosses the crest has the rain already taken out of it: the Central Meroshe\u2019s sand sea begins on the far side of this one hill. East of the crest the ground falls three hundred metres to twenty hex edges of open water through grass, aromatic scrub and the low olive-grey of a hot-summer terrace. One gap breaks the ridge, and the atlas puts the only river it draws on this whole coast in the bottom of it. Dinelv the capital, the Route Registry, the Tariff Table, the caravan road that crosses the gap and every plot on the terrace are the Maroshi court\u2019s and none of them is built.',
+    palette: { ground: '#4d5c33', accent: '#9aa872', fog: '#8a9670', sky: 0xa8c6d4, haze: 0xb7c3b4, hazeDensity: .0055 },
+    npcIds: [], landmarks: ['marosh-ridge', 'marosh-water-gap', 'marosh-water', 'marosh-terrace', 'marosh-shore', 'marosh-dry-side'] },
+  Trogo: { subtitle: 'The first rainforest', spawn: point(-2300, 2887),
+    description: 'Twenty-two hexes of `deep_forest`, every one of them `Af` - tropical rainforest with no dry season, the wettest code the atlas paints anywhere on the map - with seven `Csa` `grassland` hexes along the southern shore where the forest stops, and no hex where the two fields disagree. One hex west is the South Meroshe, which is hot desert on all twenty-one of its own, and the thirteen hex edges between them are the sharpest boundary the atlas draws anywhere. The lore explains both in one sentence: "a ridgeline that catches the southern moisture and drops a fog wall on its windward face while the leeward side stays desert." This is the ridgeline. It stands fifty metres over the desert behind it, takes the whole southern ocean on its face, and the fog job 2 built into the Meroshe\u2019s stone floor comes off this crest. **Two rules belong to this country and to nowhere else yet.** The air is so thick that a traveler is half hidden at fifty-eight paces and gone at a hundred and twenty - the shortest sight line in the game by a factor of two. And the ground can be walked along the watercourses, the animal paths and the clearings, and not through the thicket between them: a country you cannot see far in and cannot go straight through. The three peoples of the ecotone, their fog-conditional verb aspect, the estuary fishing villages, the timber Hama has been quietly buying for a century and the resin the Maroshi court taxes without understanding are all somebody\u2019s, and none of them is built.',
+    palette: { ground: '#2c3a24', accent: '#5d7350', fog: '#4e6247', sky: 0x8e9d92, haze: 0x6d7d6b, hazeDensity: .0144 },
+    npcIds: [], landmarks: ['trogo-forest', 'trogo-fog-ridge', 'trogoreth', 'trogo-animal-paths', 'trogo-clearings', 'trogo-thicket', 'trogo-forest-edge', 'trogo-estuary'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

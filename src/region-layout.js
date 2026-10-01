@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -269,6 +269,17 @@ export const REGION_BIOMES = Object.freeze({
   Hama: Object.freeze({ id: 'hama-corner', name: 'The Hama corner', ground: '#475433', canopy: '#3c5030', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'rank-grass', ownScatter: true,
     relief: { amplitude: 1.1, wavelength: 320 }, clearings: ['hama-green-line'],
     note: 'Where the desert stops. Hama holds the corner of the continent - ocean on the west and ocean on the south - and the atlas splits it in half twice over: nine `grassland` hexes that are all `Csb` on the seaward side, ten `plains` hexes that are all `BWh` inland, and no hex where the two fields disagree. So the green is real winter-rain Mediterranean grass two hexes deep along the surf, the dry half is a stony broken rise between it and the Meroshe - "rough without being impassable" - and the line between them is the only place in the southwest where the aridity gradient reaches a green country from the dry side.' }),
+  // ---------------------------------------------------------------------------
+  // Marosh and Trogo (src/southwest-world.js): the block's eastern edge, and the last two countries
+  // of the southwest quarter. **Neither has a single `BWh` hex**, which nothing else in thirteen
+  // countries can say, and between them they hold fifty hex edges of open ocean on the Iberos side
+  // of the peninsula - the side the whole Meroshe is in the lee of.
+  Marosh: Object.freeze({ id: 'marosh-ridge', name: 'The Marosh ridge', ground: '#4d5c33', canopy: '#3a4f2c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
+    relief: { amplitude: 2.6, wavelength: 320 }, clearings: ['marosh-water-gap'],
+    note: 'The wall the Meroshe is behind. Eighteen hexes in a strip two wide down the peninsula\u2019s Iberos face, and the atlas draws the same line twice over: eight `hills` hexes that are every one of them `Csb` on the inland side, ten `grassland` hexes that are every one of them `Csa` on the seaward side, and no hex where the two fields disagree. So the inland half is a single oak-and-maquis ridge at seventy-four metres, catching the sea air and wringing it out, and the seaward half is a hot-summer Mediterranean terrace of grass and aromatic scrub falling to twenty hex edges of open water. One gap through the ridge, where the atlas draws the only river it gives this coast.' }),
+  Trogo: Object.freeze({ id: 'trogo-rainforest', name: 'The Trogo rainforest', ground: '#2c3a24', canopy: '#24361f', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'dense', ownScatter: true,
+    relief: { amplitude: 2.4, wavelength: 320 }, clearings: ['trogo-fog-ridge'],
+    note: 'The first rainforest in the game: twenty-two `deep_forest` hexes that are every one of them `Af` - tropical, with no dry season, the wettest code the atlas paints anywhere - with seven `Csa` `grassland` hexes along the southern shore where the forest stops, and no hex where the two fields disagree. A slope forest on the ridge that makes it: the ridge catches the southern ocean\u2019s moisture, drops a fog wall on its windward face and leaves the Meroshe in its lee, which is why there is a desert one hex west of a rainforest. **Two rules of its own**: a haze so thick that a traveler is half hidden at fifty-eight paces, and an undergrowth that can be walked along the watercourses, the animal paths and the clearings and not through the thicket between them.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

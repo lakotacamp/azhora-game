@@ -244,4 +244,91 @@ export const SOUTHWEST_WILDLIFE_ZONES = freeze([
   zone('hama-line-bone-bird', 'bone-bird', 'Hama', .3, [-3054, -2974, 2860, 2940], [[-3014, 2900]],
     '**The last bone-bird, and the point of it is where it stops.** Job 2 put one in each of the four Meroshe quarters and called them what the lore calls them, "the most visible large animals of the Moroshé"; this one works Hama’s stony inland half, which is hot desert like all of it, and does not cross the line. Two hundred paces south-west of the end of its range the ground is Mediterranean grass with a harrier over it. The bird is the desert’s and the desert ends here.',
     { air: 38 }),
+  // ---------------------------------------------------------------------
+  // Marosh and Trogo: seventeen ranges over forty-seven hexes, and the densest country in the game
+  // ---------------------------------------------------------------------
+  /**
+   * **The block stops being a desert and the arithmetic says so.** Job 1 put seventeen ranges on a
+   * hundred and seven hexes (0.159 a hex), job 2 seven on ninety-five (**0.074**, the emptiest country
+   * in Azhora), job 3 thirteen on seventy-three (0.178), and job 4 puts **seventeen on forty-seven
+   * (0.362)** - twice job 3's and nearly five times job 2's:
+   *
+   *  - **Trogo: eleven ranges over twenty-nine hexes (0.379), the densest country in the game.** That is
+   *    what `Af` means. Twenty-two hexes of closed tropical canopy with rain in every month of the year,
+   *    a permanent river through them, an estuary at the mouth of it and thirty hex edges of productive
+   *    warm ocean is the richest ground the atlas draws anywhere, and drawing it as sparse as the Meroshe
+   *    would be the same lie in the opposite direction. The comparison worth making is the one across
+   *    thirteen hex edges: **the South Meroshe carries two ranges over twenty-one hexes and Trogo eleven
+   *    over twenty-nine**, and a traveler can walk from one to the other in four hundred paces.
+   *  - **Marosh: six ranges over eighteen hexes (0.333), the second densest.** An oak ridge over a
+   *    Mediterranean terrace with twenty hex edges of sheltered sea, which is better country than Hama's
+   *    0.263 by exactly the amount that a wood is better than a sward.
+   *
+   * **Two new rigs, which is the most any job in this block has spent**, and the brief allowed them for a
+   * reason worth repeating: a rainforest with none of its own animals in it is a worse lie than an empty
+   * desert. They are the **forest edge-cat** and the **Iberos albatross**, both named and both described
+   * in `fauna/azhoran_fauna_overview.md`, and both argued at their rigs in `src/west-regions-life.js`.
+   *
+   * **What the lore does not give, and it is the finding of the job's wildlife:** `trogo.md` spends a
+   * paragraph on this country's fauna and **names not one animal**. "The transition zone supports animals
+   * from both the desert and the forest at its edges. Meroshe species that follow the canyon rivers down
+   * encounter the forest edge and some go no further; some have adapted to the wet over generations and
+   * are now found in both zones... Tropical species from the forest proper come to the desert edge for
+   * specific resources... The carnivores that hunt both zones are the most studied by the communities
+   * here." Every one of those sentences is a placement rule and none of them is a species. So there is no
+   * monkey, no hornbill, no tapir and no tree-frog here: the two rigs are the two the overview names for
+   * a forest margin and for the ocean south of the map, and everything else is an extension of an animal
+   * the game already has, argued one range at a time.
+   *
+   * **Three refusals held for the fourth time.** The **Ganesh dustback** is named, given an economy and a
+   * social meaning, and never given a body; the only dustback the lore describes is a domestic bovid.
+   * The **canyon tortoise** is named *and* described and **this was the last country that could want it** -
+   * job 3 said so - and it still fails `tests/west-life.test.js`'s first law, that nothing in the west can
+   * be walked down. Solving that honestly means an exemption list or a burrow, and both are the user's
+   * decisions rather than a builder's. And **nothing domestic**: the caravan animals that cross Marosh's
+   * water gap, the plots on its terrace, the estuary communities' boats and every beast in any of it
+   * belongs to somebody.
+   */
+  zone('marosh-ridge-deer', 'red-deer', 'Marosh', .55, [-2724, -2578, 2296, 2444], [[-2660, 2352], [-2638, 2392], [-2682, 2330]],
+    'Extension: red deer on the oak ridge, which is **the first real wood in the southwest outside the Vaellir\u2019s gallery and Navarth\u2019s one forest hex**. The atlas gives Marosh eight `hills` hexes and `Csb` on every one of them - the cooler-summer Mediterranean form - and what a cooler summer buys on this coast is holm oak and maquis instead of grass. A deer is seen where a wood has open ground beside it, and here the open ground is the whole terrace below. It is the same animal Navarth keeps at its one wood and Isareos on its grass hills, on much better ground than either.',
+    { hornless: false }),
+  zone('marosh-maquis-boar', 'boar', 'Marosh', .7, [-2680, -2552, 2394, 2522], [[-2602, 2452], [-2616, 2469], [-2625, 2447]],
+    'Extension, and the same argument Eer\u2019s boar got: "this is the ordinary pig of a Mediterranean farmland, and it is here because the scrub is". The maquis on this ridge is the densest scrub in thirteen countries - evergreen, waist high, standing close enough to root under - with acorns under the oak above it. The lore\u2019s "river boar" is a semi-aquatic animal of the Mittoli wetlands and a different beast.'),
+  zone('marosh-terrace-hares', 'upland-hare', 'Marosh', .3, [-2652, -2532, 2236, 2352], [[-2592, 2292]],
+    'Extension: the west\u2019s hare on the `Csa` terrace, which is hot-summer Mediterranean grass with bare earth between the tufts by the end of a dry summer - the same ground it keeps in Gala\u2019s green south and on the Ascarth peninsula. It is the wettest ground the animal holds anywhere in this block and it is two hundred paces from the driest.'),
+  zone('marosh-harrier', 'harrier', 'Marosh', .3, [-2646, -2546, 2066, 2166], [[-2596, 2116]],
+    'Extension: a harrier quartering the terrace. No lore file for this coast names a raptor, and three hundred metres of grass between an oak ridge and an ocean is a harrier\u2019s whole living - it beats low and follows the ground rather than soaring, the way the ones on West Pyros\u2019s plain, over the Ganesh Plain\u2019s hollows and on Hama\u2019s sward do.',
+    { air: 9, circle: 32, period: 18, quarter: 66, bob: 1.5, follow: true }),
+  zone('marosh-shore-gulls', 'gull', 'Marosh', .3, [-2536, -2410, 1958, 2074], [[-2461, 2020], [-2484, 2025], [-2475, 2003]],
+    'Gulls on the Iberos shore, and this is **the one shore in the whole block that is not exposed to an open ocean**: Hama takes the western weather, Cape Heth takes it on three sides and the fan skirt\u2019s dry shore takes it straight off the western sea, and this coast faces a warm sheltered water with a continental shelf under it. The overview calls the Iberos "one of the most biologically productive bodies of water bordering the known world" and catalogues its colonies on the far side of the continent; this is the near side. Extension.'),
+  zone('marosh-rim-hawk', 'plateau-hawk', 'Marosh', .3, [-2792, -2692, 2144, 2244], [[-2742, 2194]],
+    'The overview\u2019s dry-plateau hawk, which "hunts the upland grasslands" of rain-shadow country - and **this ridge is the wall that makes the rain shadow**, which is the strongest case for the bird anywhere on the atlas. From the western crest here it has thirty metres of fall under it and then the Central Meroshe\u2019s sand sea to the horizon. Job 1 put the same bird on Navarth\u2019s western rim and job 3 on the Dinelv escarpment; this is the third rim and the only one with a wood behind it.',
+    { air: 33 }),
+  zone('trogo-crest-bone-bird', 'bone-bird', 'Trogo', .3, [-2458, -2378, 2622, 2702], [[-2418, 2662]],
+    '**The desert\u2019s own bird at the edge of a rainforest, and the point of it is that it stops.** The lore\u2019s rule for this margin is "Meroshe species that follow the canyon rivers down encounter the forest edge and some go no further", and the bone-bird is the one the overview calls "the most visible large animals of the Moroshe from caravan routes". It works the dry corridors on the crest - the gaps where the desert\u2019s air pushes over the top and the canopy does not close - and it does not go south-east of them, because a bird with two and a half metres of wing has nowhere to put them over a closed canopy. It is the tenth and last bone-bird in the block.',
+    { air: 40 }),
+  zone('trogo-edge-cats', 'forest-cat', 'Trogo', .42, [-2492, -2360, 2768, 2900], [[-2424, 2840], [-2442, 2802], [-2408, 2872]],
+    '**The forest edge-cat, and Trogo\u2019s own lore asks for it in so many words**: "The carnivores that hunt both zones are the most studied by the communities here, because they present the most immediate practical interest." The overview\u2019s only forest-margin predator is this one - "smaller than its highland relative, more arboreal, and has been observed hunting birds at the canopy level of the forest edge trees as readily as small mammals on the ground" - and the atlas draws the sharpest forest margin anywhere on it right here, thirteen hex edges of `Af` against `BWh`. On the crest it has the desert\u2019s animals on one side of it and the canopy\u2019s on the other, which is exactly the two zones the sentence is about. **Its own home on the Ibenale and Alezhor margin is not built**, and whoever builds it inherits this rig.'),
+  zone('trogo-gap-cats', 'forest-cat', 'Trogo', .42, [-2344, -2236, 2758, 2866], [[-2288, 2812], [-2302, 2788], [-2272, 2834]],
+    'A second band at the canopy fall, which is a treefall gap on one of the animal paths - and it is the other half of the same sentence: an arboreal cat hunts "birds at the canopy level of the forest edge trees", and a light gap in a closed forest is where the canopy has an edge in the middle of itself. Two bands rather than one wide one for the reason job 1 gave on the Ganesh Plain\u2019s depressions and job 3 on the Dinelv basins: between the crest and this gap there is a hundred and forty metres of thicket with nothing in it that a cat can move through at speed.'),
+  zone('trogo-floor-boar', 'boar', 'Trogo', .7, [-2344, -2214, 2842, 2942], [[-2274, 2888], [-2300, 2900], [-2252, 2900]],
+    'Extension, and the one large animal on the ground of a rainforest that this bestiary can honestly supply: a pig roots, and the floor of a closed canopy is leaf litter over a metre of root mat with fallen fruit in it. It is the same rig Eer keeps in its cushion scrub, in the country where a pig does best of anywhere on the atlas. The lore names no tropical mammal at all for Trogo - it names placement rules and no species - so this is argued from the ground rather than from a sentence.'),
+  zone('trogo-gully-boar', 'boar', 'Trogo', .7, [-2566, -2430, 2960, 3092], [[-2486, 3030], [-2509, 3035], [-2500, 3013]],
+    'A second band in the south gully, two hundred and forty metres from the first with a ridge of thicket between them. Two bands rather than one for the same reason the cats get two: a gully floor is scoured stone with fallen fruit washed into it and the canopy above it is open, and the thicket between the two is ground a heavy animal crosses slowly. The gully is also one of the ways through, so this is the one range in Trogo a traveler can walk straight to.'),
+  zone('trogoreth-otters', 'otter', 'Trogo', .35, [-2300, -2130, 2940, 3060], [[-2270, 2961], [-2173, 3025], [-2142, 3027]],
+    '**The great river otter, and the overview names both the animal and the habitat**: "River otters and their larger relatives occupy the rivers from the Oremindi meltwater sources through the forest-margin watercourses of Alezhor. The largest form, the **great river otter**, is substantially more capable of taking fish than its smaller cousins." A forest-margin watercourse is exactly what the Trogoreth is, and it is the only permanent water in the rainforest. Built as the west\u2019s otter at a third again the size, which is the difference the overview draws, the way Isareos\u2019s are drawn larger than the Carica\u2019s.',
+    { scale: 1.32 }),
+  zone('trogo-estuary-waders', 'wading-bird', 'Trogo', .4, [-2212, -2090, 2952, 3072], [[-2140, 3001], [-2140, 3025], [-2161, 3017]],
+    'Waders on the Trogoreth\u2019s delta, which the lore builds a human economy on: "a wide delta mouth that has silted into a shallow estuary system. Fishing communities live on the estuary... the mangrove and estuary ecology takes over - brackish-adapted vegetation, root systems that make the river mouths look solid but are not, and the bird and fish populations that the estuary communities depend on." The birds are named as a population there and this is them. Extension: the overview\u2019s wading assemblage is catalogued on the Lizeem.'),
+  zone('trogo-estuary-egrets', 'egret', 'Trogo', .4, [-2196, -2070, 2700, 2830], [[-2126, 2771], [-2141, 2753], [-2120, 2793]],
+    'Egrets on the sheltered north-eastern shore, where the atlas takes `deep_forest` right down to the waterline across ten hex edges and the lore\u2019s mangrove ecology takes over. It is the only sheltered water Trogo has - "the coast is not extensively sheltered - no deep natural harbors on the scale of Hama" - and standing water under a canopy edge is an egret\u2019s whole living. Extension: the game\u2019s egret is Eer\u2019s, on the Lizeem\u2019s last channels.',
+    { scale: .86 }),
+  zone('trogo-shore-gulls', 'gull', 'Trogo', .3, [-2470, -2336, 3096, 3186], [[-2396, 3152], [-2419, 3147], [-2376, 3138]],
+    'Gulls on the exposed southern shore, which is the bottom of the continent: the atlas puts every one of Trogo\u2019s seven `grassland` hexes on this side and takes the canopy to the water on the other, which is what an open southern ocean does to a tropical coast. Salt-pruned tussock, shingle and surf, with nearly forty metres of canopy standing behind it. Extension, as every gull in this block is.'),
+  zone('trogo-southern-albatross', 'albatross', 'Trogo', .3, [-2446, -2346, 3102, 3202], [[-2396, 3152]],
+    '**The Iberos albatross, and this is the one place in Azhora it can be put.** The overview: "a large, slow-breeding oceanic species, appears over the coast in winter and is understood by Azhoran sailors to spend its summers somewhere beyond the horizon south of Azhora - beyond what Azhoran geography extends to. Where it breeds is not established from an Azhoran perspective." Trogo\u2019s row 142 is the southernmost ground in the game - it is what `WORLD_BOUNDS.maxZ` is made of - and off this shore are the Azhor Stones and then nothing the atlas draws. So the bird that goes south of the map is over the only coast that looks at where it goes. Two metres of wing held flatter and stiller than anything else in this sky.',
+    { air: 44, circle: 58, period: 26 }),
+  zone('trogo-delta-dolphins', 'dolphin', 'Trogo', 0, [-2108, -2018, 3040, 3132], [[-2062, 3086], [-2042, 3110]],
+    'Grey dolphins off the delta mouth, and the overview puts them in precisely this situation on the other side of the continent: "documented in the Lizeem estuary at Nylon during upriver fish migrations; the Nylon fishing community considers them neither good nor bad omen but monitors their behaviour as an indicator of shoal location". Trogo has an estuary, a year-round river carrying substantial volume, and fishing communities on the mouth of it. Out past the surf, seen from the shore and not reachable from it.',
+    { sea: true }),
 ]);

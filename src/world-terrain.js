@@ -269,6 +269,43 @@ export function groundBeforeFeradom(x, z) {
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
+/**
+ * **The countries whose ground colour their region's swatch cannot carry, as a table walked in order.**
+ *
+ * This was an `if/else` chain that grew one branch per country, and it failed silently twice. Job 2 of
+ * the southwest found that `southwestTint` had been computed and then dropped on the floor since the day
+ * the block was built - so the Ganesh's swept floor and sediment pockets, the Ganesh Plain's green
+ * depressions, the damp reach and both wet corners had all been drawn as the flat biome swatch, and
+ * nobody could have noticed until a job arrived whose countries could only be told apart by their
+ * colour. Job 3 met the same failure mode one level down, inside `southwestTint`, where an early
+ * `return` would have thrown the Dinelv plateau's colours away on the three hundred metres its box
+ * overlaps the Meroshe's. **Both reports asked for this chain to become a list of pairs walked in
+ * order**; this is that, and it is the last job of the southwestern programme, so it is done here.
+ *
+ * The order is the chain's own and it matters: Gala first, because it matches on one swatch and one box;
+ * then the Oves, the Mithala and the southwest, each of which answers `null` everywhere it has no
+ * opinion. The first family with an opinion paints, exactly as the first true branch did, and a family
+ * that has none costs one call. Nothing about the colour of any ground in Azhora changes.
+ *
+ * `tests/southwest-world.test.js` holds the guard the silent failures wanted: **every family in this
+ * table must move the colour of the screen somewhere in its own country.** Adding a sixth is one row
+ * here and one row there, and forgetting the second turns the test red with the family's own name in it.
+ */
+const GROUND_TINTS = Object.freeze([
+  Object.freeze({ id: 'gala',
+    tint: (x, z, ground) => (inGalaBox(x, z) && ground === REGION_TERRAIN.Gala.ground ? galaGroundColour(x, z) : null) }),
+  Object.freeze({ id: 'oves', tint: ovesTint }),
+  Object.freeze({ id: 'mithala', tint: mithalaTint }),
+  Object.freeze({ id: 'southwest', tint: southwestTint }),
+]);
+/**
+ * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
+ * list is exactly the four it knows about and that every one of them moves the colour of the ground
+ * somewhere in its own country - so a fifth family added here turns the test red with its own id in the
+ * message, and a family that quietly stops painting turns it red with the same.
+ */
+export const GROUND_TINT_FAMILIES = Object.freeze(GROUND_TINTS.map(family => family.id));
+
 export function groundTint(color, x, z, THREE) {
   const mix = terrainMix(x, z), distance = landDistance(x, z);
   const target = new THREE.Color(0, 0, 0);
@@ -292,23 +329,11 @@ export function groundTint(color, x, z, THREE) {
   // stone (which changes over forty metres in the Ganesh), whether a point is in one of the Ganesh
   // Plain's depressions, which is where all the grass on that plain is, and whether it is on the
   // damp reach, which is the only green in the desert (`southwestTint`, src/southwest-world.js).
-  const gala = inGalaBox(x, z) ? REGION_TERRAIN.Gala.ground : null;
   for (const [ground, weight] of Object.entries(mix.grounds ?? {})) {
     if (!weight) continue;
-    const oves = ovesTint(x, z, ground), mithala = oves === null ? mithalaTint(x, z, ground) : null;
-    const southwest = oves === null && mithala === null ? southwestTint(x, z, ground) : null;
-    if (ground === gala) swatch.set(galaGroundColour(x, z));
-    else if (oves !== null) swatch.set(oves);
-    else if (mithala !== null) swatch.set(mithala);
-    // **This branch was missing.** `southwest` was computed on the line above and then dropped on the
-    // floor, so from the day the southwestern block was built until the day the Meroshe deserts were
-    // added to it, `southwestTint` ran on every ground sample in the block and its answer was thrown
-    // away: the swept floor and the sediment pocket in the Ganesh, the green of the Ganesh Plain's
-    // depressions, the damp reach and the two wet corners were all drawn as the flat biome swatch.
-    // Job 2 found it when its four desert surfaces - rock, sand, varnished pavement and salt - came
-    // back on the screen as one shade of tan. Everything else in this chain is unchanged.
-    else if (southwest !== null) swatch.set(southwest);
-    else swatch.set(ground);
+    let painted = null;
+    for (const family of GROUND_TINTS) { painted = family.tint(x, z, ground); if (painted != null) break; }
+    swatch.set(painted ?? ground);
     target.r += swatch.r * weight; target.g += swatch.g * weight; target.b += swatch.b * weight; total += weight;
   }
   if (total) { target.r /= total; target.g /= total; target.b /= total; }

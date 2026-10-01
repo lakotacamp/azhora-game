@@ -129,9 +129,10 @@ test('the survey window reaches exactly as far south as the coast lattice does, 
   const lastZ = minZ + (Math.ceil((WORLD_BOUNDS.maxZ + margin - minZ) / cell)) * cell;
   let deepest = -Infinity;
   for (let x = minX; x <= WORLD_BOUNDS.maxX + margin + cell; x += cell) deepest = Math.max(deepest, hexAt(x, lastZ).r, hexAt(x, lastZ - cell).r);
-  // 135 when the Ascarth tip set the edge; 144 since the South Meroshe Desert took the world south
+  // 135 when the Ascarth tip set the edge; 144 since the South Meroshe Desert took the world south, and 145
+  // since Trogo took it south again (docs/southwest-4-report.md);
   // to z = 3177.824 (docs/southwest-2-report.md). The measurement is the rule and the number follows it.
-  assert.equal(deepest, 144, `the lattice reaches row ${deepest}`);
+  assert.equal(deepest, 145, `the lattice reaches row ${deepest}`);
   assert.equal(WINDOW.maxR, deepest, 'the window stops at the last row the lattice reaches: no slack, and nothing left out');
   const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
   for (const hex of ['-9,134', '-8,134', '-7,134', '-9,135', '-8,135', '-7,135']) assert.ok(land.has(hex), `Selemi’s ${hex} is land`);
@@ -146,12 +147,15 @@ test('the survey window reaches exactly as far south as the coast lattice does, 
   // to **53.450**. So what this holds now is three facts: the world's edge is seven hundred and
   // eighty metres past this peninsula's tip, the tip is still comfortably inside it, and the edge the
   // tip did set is still the edge of the tip's own ground.
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3177.823940164498) < 1e-6, `the southern edge is ${WORLD_BOUNDS.maxZ}`);
+  // Trogo then carried it south again, from 3177.824 to **3264.4264805429416** and the height from 53.450 hexes to **54.316** (docs/southwest-4-report.md): its three southernmost hexes
+  // are on row 142, their lower vertices a circumradius past centres at z = 3146.69. The peninsula has not
+  // set the southern edge since job 2 and sets it less now; what it still sets is nothing at all here.
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `the southern edge is ${WORLD_BOUNDS.maxZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  assert.ok(Math.abs(tall - 53.450) < .002, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 54.316) < .002, `north to south is ${tall.toFixed(3)} hexes`);
   assert.ok(WORLD_BOUNDS.maxZ > hexCentre(-6, 132).z + 57.7 + 59);
   assert.ok(WORLD_BOUNDS.maxZ - (hexCentre(-6, 132).z + 57.7) > 700, 'the peninsula no longer sets the edge');
-  // And the window still stops where the lattice does at both ends: 79 in the north now, 135 here.
+  // And the window still stops where the lattice does at both ends: 79 in the north now, 145 here.
   assert.equal(WINDOW.minR, 79, 'the Mithala plain carried the window north with the world');
 });
 

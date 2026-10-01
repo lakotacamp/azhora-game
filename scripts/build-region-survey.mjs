@@ -21,7 +21,8 @@ export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West S
   'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
   'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
   'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert',
-  'Cape Heth', 'Dinelv Highlands', 'Hama'];
+  'Cape Heth', 'Dinelv Highlands', 'Hama',
+  'Marosh', 'Trogo'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -182,8 +183,37 @@ export const ENCLOSED_HEXES = Object.freeze({
  * that matters. The South Meroshe Desert's twenty-one hexes, eight of the Central's and four of the
  * West's all lay south of row 135: without this they would have been open water in the middle of a
  * playable country. LAND_HEXES goes from 1,935 to **2,078**.
+ *
+ * Then `maxR` was 144 and `minQ` -49, and **Trogo moved both of them, one by reaching and one by
+ * arithmetic.** Trogo's southernmost hexes are (-29,142), (-28,142) and (-27,142), their centres at
+ * z = 3146.69 and their lower vertices a circumradius (57.735 m) past that at 3204.43, so
+ * `WORLD_BOUNDS.maxZ` goes from 3177.824 to **3264.4264805429416** and the world from 53.450 hexes
+ * tall to **54.316**. Nothing else in the box moves: Trogo reaches x = -2050 and Marosh x = -2750,
+ * where Cape Heth's western edge stands at -4360.002, and Marosh's own northernmost row is 127.
+ *
+ * The coast lattice is laid COAST_MARGIN (96 m) beyond that and snapped to its own fixed phase, so
+ * its last row now stands at z = **3361.65** (it was 3275.65) and the lattice is 1,292 x 1,408 =
+ * 1,819,136 points. Sampling all of them and collecting every hex any sample falls in gives
+ * q **-50**...34, r 79...**145**. So maxR is 145 and minQ is -50: the last row and the last column the
+ * lattice reaches, and no slack in either.
+ *
+ * **`minQ` moved again without anything reaching west, which is now the second time and the reason
+ * job 3's report gives for not predicting the box from the window.** x = W(q + r/2), so a lattice one
+ * row deeper in the south reaches half a column further west at the same world x; the column q = -50
+ * is reached only on rows 144 and 145, in the far south-western corner of the sheet, where the map is
+ * open ocean. Job 2 found the same thing when it grew the world south by nine rows and gained four
+ * columns; this is one row and half a column, rounded out to one.
+ *
+ * What the widening pulls in: **exactly one hex, and it is the one Trogo's own lore looks at.** The
+ * five columns -50...-46 hold no claimed hex anywhere in rows 79-145 - west of Cape Heth the map is
+ * open ocean to the edge of the sheet - and row 145 holds one, **(1,145), an Azhor Stones hex, and its
+ * terrain word is `deep_forest` like Trogo's own**. `trogo.md`: "The southeastern coast of Trogo faces
+ * the southern ocean and the Azhor Stones, which are visible from the higher coastal headlands on
+ * clear days." It stands at x = 650, z = 3406 - two thousand eight hundred metres out from Trogo's
+ * nearest hex and past `WORLD_BOUNDS.maxX`, so it is horizon and nothing else. LAND_HEXES goes from
+ * 2,078 to **2,079**, which is the smallest widening this window has ever had.
  */
-export const WINDOW = { minQ: -49, maxQ: 34, minR: 79, maxR: 144 };
+export const WINDOW = { minQ: -50, maxQ: 34, minR: 79, maxR: 145 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

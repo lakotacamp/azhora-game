@@ -4,6 +4,78 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-30 — What a deep forest is, and the southwest finished (job 4: Marosh and Trogo)
+
+**The user's decision, asked directly and answered in one sentence:** a deep forest in Azhora is
+**a country you cannot see far in *and* cannot go straight through**. Built to
+`docs/southwest-4-brief.md`; the whole account is `docs/southwest-4-report.md`. Terrain, climate,
+water, scenery and wildlife only, and nothing that belongs to anybody. **Job 4 of four**, which
+finishes the southwest quarter: thirteen countries, three hundred and twenty-two hexes.
+
+- **A deep forest is two rules and they are independent.** The first is **haze**: Trogo's
+  `palette.hazeDensity` is **`.0144`**, which is nearly two and a third times the game's own default
+  and hides a traveler **half at fifty-eight metres, nine tenths at a hundred and five and entirely
+  at a hundred and twenty**. The shortest sight line in Azhora before this was Nethereum's `.0071`
+  at two hundred and forty-four metres. The haze colour has to be **dark** — `0x6d7d6b`, the
+  darkest in the game — because job 1 measured that a near-white haze is over half of every pixel
+  past a hundred and fifty metres, and what this actually is, is the lore's own fog: "warm and thick
+  and close", cloud sitting inside a canopy.
+- **The second is `src/undergrowth.js`, shaped exactly like `src/climbing.js`.** It owns no input, no
+  rendering and no saved state; it gates movement through the `canTraverse` hook `moveCharacter`
+  already takes; it is composed with `canWalkSlope` in one line of `src/main.js`; and **it applies
+  only inside a named region set**, because the rest of Azhora has thicket sitting on the autoplays'
+  roads. A forest country hands it a region set and one field, `open(x, z)` — nothing else. The
+  Ibenwoods are one row in its table and one field in their own world module.
+- **The rule refuses exactly one thing: a step that leaves a way and enters the thicket.** A step on
+  to open ground is always allowed and **a step out of the thicket is never refused**, so nobody can
+  be sealed in however they got there — the same asymmetry `canWalkSlope` makes when it allows a
+  descent and refuses an ascent. The thicket carries **no collider at all**: the emergents and the
+  canopy trees are ordinary tree colliders kept off the ways, and the understory that actually stops
+  a body is a rule rather than three thousand rocks. That is why `tests/nobody-sealed-in.test.js` is
+  untouched by this country.
+- **Three kinds of way through, and the measurement is the design**: the watercourse (the Trogoreth,
+  thirteen metres either side), four stream gullies (nine), five animal paths (four and a half) and
+  six clearings. **Forty-four per cent of the country can be walked and twenty-three per cent of the
+  closed canopy** — so four fifths of the forest proper is refused.
+  `tests/trogo-undergrowth.test.js` floods the country both ways: from the desert margin it reaches
+  both shores, the river's mouth and **every walkable cell**; from the southern shore it reaches
+  every point of the crest; and with the ways shut it reaches **nothing**.
+- **`deep_forest` had no meaning in the game's world before this.** It is `REGION_TERRAIN`'s first
+  profile for the word: base 52 against the South Meroshe's 14 across thirteen hex edges, which is
+  the "wall of dark canopy" job 2's own landmark promised a job in advance.
+- **Marosh's line is drawn by height, not by the ocean**, which is the answer to the question job 3
+  left. Hama's wet/dry line runs sixty-nine to a hundred and ten metres inland of the surf; Marosh
+  has no wet/dry line at all, because **it has no desert hex**. The line it does have is `Csa`
+  against `Csb` — the hot-summer and warm-summer forms of the same climate — and on a coastal
+  strip two hexes wide only altitude can decide that. The atlas writes `hills` on precisely the eight
+  hexes it writes `Csb` on, and **every one of those eight touches the desert and none of them
+  touches the sea** while all twenty ocean edges are on the grass. Three statements, one line.
+- **Marosh is the reason the Meroshe is a desert**, and that is a build decision taken from the
+  atlas: a single oak-and-maquis crest at base 74 between twenty hex edges of Iberos water and the
+  Central Meroshe's sand sea. One gap breaks it, and **the atlas found the gap rather than a
+  builder**: the only three river edges the map draws on that whole coast meet at one hex corner
+  beside the ridge's elbow, which is what a water gap is, and it is where the caravan road crosses.
+- **Two new rigs, which is the most any job in the block has spent**, both named and described by the
+  fauna overview: the **forest edge-cat**, which `trogo.md` asks for in so many words ("the carnivores
+  that hunt both zones are the most studied by the communities here"), and the **Iberos albatross**,
+  which the overview says summers "somewhere beyond the horizon south of Azhora" — and Trogo's
+  shore is the southernmost ground in the game. **The three standing refusals are held for the
+  fourth time**: the Ganesh dustback, the canyon tortoise (Trogo was the last country that could want
+  it, and it still fails the west's first law) and all domestic stock.
+- **The rainforest is the densest country in the game**, at 0.379 ranges a hex against job 2's desert
+  at 0.074 — and the two share thirteen hex edges.
+- **`groundTint` is a table now**, which job 2 and job 3 both asked for after it failed silently
+  twice, and `tests/southwest-world.test.js` carries the permanent guard: every family in the table
+  must move the colour of the ground somewhere in its own country.
+- **The world box moved south a fourth time**, to `maxZ` 3264.4264805429416 and 54.316 hexes tall —
+  job 2's arithmetic predicted 3264.4 a job and a half in advance — **and the survey window moved
+  west again without anything reaching west**, `minQ` −49 to −50, because one row deeper in the
+  south is half a column further west at the same world x. It buys one hex: (1,145), an Azhor Stones
+  hex whose terrain word is `deep_forest`, and `trogo.md` says its own coast looks at it.
+- The lore was adjusted in place on **twelve claims** across `marosh.md` and `trogo.md`. The largest
+  is that Trogo's descent runs the other way at its desert margin: the forest stands fifty metres
+  **above** the Meroshe, which is why there is a rainforest there at all.
+
 ## 2026-09-30 — The southwest, job 3: Cape Heth, the Dinelv Highlands and Hama
 
 Built to `docs/southwest-3-brief.md`; the whole account is `docs/southwest-3-report.md`. Terrain,

@@ -9,6 +9,9 @@ import {
   southwestAridity, southwestClear, ganeshLie, ganeshDamp, inDepression, nearestWash,
   merosheBench, merosheFan, merosheCorridor, merosheErg, merosheFog, merosheVarnish, duneProfile, onSaltPan, regionShare,
   hethSpray, inHethHollow, dinelvRidgeAt, dinelvMesaAt, inDinelvBasin, nearestDinelvChannel, hamaGreen, hamaLie, inHamaBed,
+  EAST_EDGE_REGIONS, MAROSH_COMBES, TROGO_GULLIES, TROGO_CLEARINGS,
+  maroshCrest, maroshShore, inMaroshCombe, trogoBand, trogoFogForest, trogoWay, trogoThicket, inTrogoClearing,
+  onTrogoGullyFloor, TROGO_WAY,
 } from './southwest-world.js';
 
 /**
@@ -61,7 +64,9 @@ export function createSouthwestScenery(kit) {
   const smooth = (a, b, x) => { const v = Math.max(0, Math.min(1, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
   const metrics = { water: 0, blockers: 0, reeds: 0, gravel: 0, boulders: 0, pavement: 0, stones: 0, tufts: 0, scrub: 0, stubble: 0, trees: 0, wood: 0,
     rock: 0, cobble: 0, sand: 0, reg: 0, salt: 0, lichen: 0, thorn: 0, shingle: 0,
-    capeRock: 0, capeSalt: 0, plateauRock: 0, blocks: 0, rubble: 0, hamaStone: 0, edgeTrees: 0 };
+    capeRock: 0, capeSalt: 0, plateauRock: 0, blocks: 0, rubble: 0, hamaStone: 0, edgeTrees: 0,
+    maquis: 0, maroshStone: 0, oaks: 0, emergents: 0, canopy: 0, fogTrees: 0, understory: 0, litter: 0,
+    buttress: 0, ferns: 0, mangrove: 0 };
   const gy = (x, z) => groundHeight(x, z);
   const OWN = new Set(SOUTHWEST_REGIONS);
   const own = (x, z) => OWN.has(hexOwnerAt(x, z));
@@ -1011,6 +1016,247 @@ export function createSouthwestScenery(kit) {
   metrics.tufts += 0;                                    // tuftBatch counts its own
   metrics.shingle += capeShingle.length;
   metrics.edgeTrees = basinTrees.length + hamaTrees.length;
+
+  // -------------------------------------------------------------------------
+  // Marosh and Trogo: a fourth pass, and the first forest the southwest has had
+  // -------------------------------------------------------------------------
+  /**
+   * **Three jobs of desert and then this.** Job 1 laid 119 trees in one `forest` hex and 181 along a
+   * river; job 2 laid seventy-one thorns growing out of cracks in rock; job 3 laid thirty-seven. This
+   * pass lays several thousand, and it has to, because the atlas writes `deep_forest` on twenty-two
+   * hexes and `Af` on every one of them and there is no honest way to draw that thin.
+   *
+   * **Marosh is sorted by height on the ridge and by nothing else** (`maroshCrest`), which is the same
+   * argument the climate field makes: the eight `Csb` hexes are the eight `hills` hexes, and what a
+   * cooler summer buys on a Mediterranean coast is oak instead of grass. So the crest carries holm oak
+   * and dense maquis - **the first real wood in the southwest outside the Vaellir's gallery and
+   * Navarth's one forest hex** - and the terrace carries hot-summer `Csa` grass, aromatic scrub and the
+   * olive-grey of a coast that is dry for four months. The four combes are greener than either.
+   *
+   * **Trogo is sorted by altitude** (`trogoBand`), which is the lore's own division and it names all
+   * three bands: "The upper edge, where the canyon meets the fog zone, is adapted to intermittent
+   * moisture... The mid-slope forest is full tropical rainforest by the measures that matter - closed
+   * canopy, high humidity year-round, the layer structure of tall emergents over a canopy over
+   * understory over ground... At the coast and along the lower river systems, the mangrove and estuary
+   * ecology takes over." All three are drawn, in that order, and the fourth thing drawn is the ways.
+   *
+   * **The thicket is a rule and not three thousand colliders**, which is the most important sentence in
+   * this pass. The emergents and the canopy carry colliders as any tree does; the understory - the
+   * tree-ferns, the palms, the rattan, which is what actually stops a body in a rainforest - carries
+   * none at all, because what stops a body there is `src/undergrowth.js`. That is why
+   * `tests/nobody-sealed-in.test.js` is untouched by this country: `canStand` never asks the
+   * undergrowth rule anything, and the rule adds nothing `canStand` can see.
+   *
+   * **And nothing stands on a way.** No emergent, no canopy tree, no understory clump is placed where
+   * `trogoWay` is above its own threshold, so the watercourse, the four gullies, the five paths and the
+   * five clearings read as open corridors with walls of fern down both sides - which is what the
+   * movement rule says they are, drawn.
+   */
+  const eastCells = EAST_EDGE_REGIONS.flatMap(name => REGION_CELLS[name] ?? []).sort((a, b) => a.z - b.z || a.x - b.x);
+  const maquis = [], maroshOaks = [], terraceGrass = [], aromatics = [], combeGrass = [], maroshStone = [], maroshTurf = [], maroshShingle = [];
+  const emergents = [], canopyTrees = [], fogTrees = [], understory = [], litter = [], buttress = [], wayFerns = [];
+  const clearingSaplings = [], clearingGrass = [], gullyStones = [], mangroves = [], shoreTussock = [], shoreScrub = [];
+  for (const cell of eastCells) {
+    const here = where(cell.x, cell.z);
+    const sample = (count, work) => {
+      for (let i = 0; i < count; i++) {
+        const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
+        if (where(x, z) !== here) continue;
+        work(x, z);
+      }
+    };
+    if (here === 'Marosh') {
+      // The crest: holm oak and maquis, and the maquis is the densest scrub in thirteen countries.
+      sample(150, (x, z) => {
+        if (!plantable(x, z, 1.8)) return;
+        const crest = maroshCrest(x, z);
+        if (random() > crest * .62) return;
+        if (maroshOaks.some(t => Math.hypot(t.x - x, t.z - z) < 7.5)) return;
+        maroshOaks.push({ x, z, s: range(.9, 1.3), h: range(6.5, 10.5), rot: random() * 6.28,
+          girth: 1.05, bole: .4, top: .74, spread: .3, wide: .38, deep: .26, crest });
+      });
+      sample(260, (x, z) => {
+        if (!plantable(x, z, .9)) return;
+        const crest = maroshCrest(x, z);
+        if (random() > .12 + crest * .62) return;
+        if (maquis.some(b => Math.hypot(b.x - x, b.z - z) < 2.1)) return;
+        maquis.push({ x, z, s: range(.32, .72), h: range(.9, 1.5), rot: random() * 6.28, crest });
+      });
+      // The terrace: `Csa` grass that is thick in winter and bleached by the end of a hot summer, with
+      // aromatic scrub in it - which is the biome word and the lore's own "scrub... sustained by
+      // enough seasonal rain" on a coastal margin.
+      // **Six hundred and fifty a cell and not three hundred**, which is job 3's lesson about Hama's sward
+      // met a second time: a quarter of a thousand tufts a hex is not grass at a low angle across a wide
+      // view, it is a mown lawn with stones on it. The first review round photographed exactly that.
+      sample(650, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        const crest = maroshCrest(x, z), shore = maroshShore(x, z), combe = inMaroshCombe(x, z);
+        if (random() > (1 - crest * .72) * (1 - shore * .4)) return;
+        (combe > .35 ? combeGrass : terraceGrass).push({ x, z, s: range(.62, 1.25), rot: random() * 6.28,
+          wide: range(.9, 1.45), combe, crest });
+      });
+      sample(280, (x, z) => {
+        if (!plantable(x, z, 1.1)) return;
+        if (random() > (1 - maroshCrest(x, z)) * .4) return;
+        if (aromatics.some(b => Math.hypot(b.x - x, b.z - z) < 2.8)) return;
+        aromatics.push({ x, z, s: range(.26, .56), h: range(.55, .95), rot: random() * 6.28 });
+      });
+      // Grey limestone showing along the crest, and shingle and sea turf on the Iberos shore.
+      sample(180, (x, z) => {
+        if (!plantable(x, z, .3)) return;
+        if (random() > maroshCrest(x, z) * .34) return;
+        maroshStone.push({ x, z, s: range(.2, .7), rot: random() * 6.28, flat: range(.1, .24) });
+      });
+      sample(140, (x, z) => {
+        const shore = maroshShore(x, z);
+        if (shore < .35 || !own(x, z) || westWaterSurface(x, z) !== null) return;
+        if (westBareGround(x, z, .3)) { if (random() < shore * .5) maroshShingle.push({ x, z, s: range(.12, .34), rot: random() * 6.28, flat: range(.12, .3) }); return; }
+        if (random() > shore * .6) return;
+        maroshTurf.push({ x, z, s: range(.3, .62), rot: random() * 6.28, wide: range(.9, 1.4) });
+      });
+      continue;
+    }
+    // ----- Trogo -----
+    // The canopy, in the lore's own three layers, and none of it on a way.
+    sample(150, (x, z) => {
+      if (!plantable(x, z, 2.6) || trogoWay(x, z) >= TROGO_WAY.open) return;
+      const band = trogoBand(x, z), fog = trogoFogForest(x, z);
+      if (trogoThicket(x, z) < .5) return;
+      if (random() > (1 - fog) * .34) return;
+      if (emergents.some(t => Math.hypot(t.x - x, t.z - z) < 15)) return;
+      // The lore's "tall emergents": the trees that stand out of the canopy, buttressed at the foot and
+      // narrow-crowned, and they are the tallest thing the game has ever grown.
+      emergents.push({ x, z, s: range(1, 1.35), h: range(26, 38), rot: random() * 6.28,
+        girth: .78, bole: .68, top: .82, spread: .1, wide: .2, deep: .34, band });
+    });
+    sample(850, (x, z) => {
+      if (!plantable(x, z, 1.6) || trogoWay(x, z) >= TROGO_WAY.open) return;
+      if (trogoThicket(x, z) < .5) return;
+      const fog = trogoFogForest(x, z), open = inTrogoClearing(x, z);
+      if (open > .3) return;
+      if (random() > .62 - fog * .2) return;
+      if (canopyTrees.some(t => Math.hypot(t.x - x, t.z - z) < 4.3)) return;
+      if (fog > .55 && random() < .7) {
+        // The fog forest, which the lore calls "its own ecosystem, distinct from the canyon desert
+        // above and the full tropical canopy below - an intermediate world of mosses and
+        // cloud-dependent plants". Shorter, denser, greyer, and standing in cloud.
+        fogTrees.push({ x, z, s: range(.9, 1.2), h: range(9, 15), rot: random() * 6.28,
+          girth: 1.15, bole: .44, top: .72, spread: .34, wide: .42, deep: .3, fog });
+        return;
+      }
+      canopyTrees.push({ x, z, s: range(.95, 1.3), h: range(15, 25), rot: random() * 6.28,
+        girth: .92, bole: .58, top: .78, spread: .22, wide: .32, deep: .3, fog });
+    });
+    // The understory, which is the thicket itself: tree-ferns, palms and rattan, no colliders at all,
+    // because what stops a body in this country is `src/undergrowth.js` and not three thousand rocks.
+    sample(820, (x, z) => {
+      if (!plantable(x, z, .5)) return;
+      const thicket = trogoThicket(x, z), way = trogoWay(x, z);
+      if (thicket < .45) return;
+      if (way >= TROGO_WAY.open) {
+        // Fern down both sides of a way, so a corridor reads as a corridor.
+        if (random() > .16) return;
+        wayFerns.push({ x, z, s: range(.4, .82), h: range(1, 1.8), rot: random() * 6.28 });
+        return;
+      }
+      if (random() > .58) return;
+      understory.push({ x, z, s: range(.45, 1.05), h: range(1.2, 2.6), rot: random() * 6.28,
+        palm: random() < .38, band: trogoBand(x, z) });
+    });
+    // The floor: leaf litter and buttress roots, and nothing green, because nothing grows in that light.
+    sample(380, (x, z) => {
+      if (!own(x, z) || westWaterSurface(x, z) !== null || westBareGround(x, z, .3)) return;
+      if (trogoThicket(x, z) < .5) return;
+      if (random() > .52) return;
+      litter.push({ x, z, s: range(.18, .55), rot: random() * 6.28, flat: range(.03, .08) });
+    });
+    sample(110, (x, z) => {
+      if (!own(x, z) || westWaterSurface(x, z) !== null || westBareGround(x, z, .4)) return;
+      if (trogoThicket(x, z) < .55 || trogoWay(x, z) >= TROGO_WAY.open) return;
+      if (random() > .3) return;
+      buttress.push({ x, z, s: range(.5, 1.5), rot: random() * 6.28, flat: range(.3, .7) });
+    });
+    // The clearings: light-gap saplings and the only grass under the canopy.
+    sample(160, (x, z) => {
+      if (!plantable(x, z, .6)) return;
+      const open = inTrogoClearing(x, z);
+      if (open < .25) return;
+      if (random() > open * .7) return;
+      if (random() < .42) clearingSaplings.push({ x, z, s: range(.4, .9), h: range(1.6, 3.4), rot: random() * 6.28 });
+      else clearingGrass.push({ x, z, s: range(.5, 1), rot: random() * 6.28, wide: range(.9, 1.4) });
+    });
+    // The gully floors: stone, because a gully in a rainforest is scoured to rock every month.
+    sample(180, (x, z) => {
+      if (!own(x, z) || westWaterSurface(x, z) !== null) return;
+      if (!onTrogoGullyFloor(x, z, 1)) return;
+      if (random() > .5) return;
+      gullyStones.push({ x, z, s: range(.15, .62), rot: random() * 6.28, flat: range(.2, .45) });
+    });
+    // The coast, in the two forms the atlas draws: canopy to the waterline where the shore is sheltered,
+    // and a salt-pruned collar of tussock and scrub where it faces the southern ocean.
+    sample(200, (x, z) => {
+      if (!plantable(x, z, .4)) return;
+      const thicket = trogoThicket(x, z), land = landDistance(x, z);
+      if (thicket >= .55) {
+        if (land > 46 || random() > .34) return;
+        if (mangroves.some(t => Math.hypot(t.x - x, t.z - z) < 4.2)) return;
+        mangroves.push({ x, z, s: range(.8, 1.15), h: range(5, 9), rot: random() * 6.28,
+          girth: 1.4, bole: .32, top: .7, spread: .42, wide: .42, deep: .24 });
+        return;
+      }
+      if (random() > .74 - Math.max(0, 1 - land / 60) * .3) return;
+      if (random() < .26) {
+        if (shoreScrub.some(b => Math.hypot(b.x - x, b.z - z) < 3)) return;
+        shoreScrub.push({ x, z, s: range(.3, .68), h: range(.7, 1.3), rot: random() * 6.28 });
+      } else shoreTussock.push({ x, z, s: range(.55, 1.15), rot: random() * 6.28, wide: range(.85, 1.35) });
+    });
+  }
+  // Marosh, in the order a traveler crossing from the Iberos meets it.
+  stoneBatch(maroshStone, 'Marosh crest limestone', () => color.set('#5b5a4c').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .1);
+  stoneBatch(maroshShingle, 'Marosh shore shingle', () => color.set('#63604f').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .08);
+  bushBatch(maquis, 'Marosh maquis', bush => color.setHSL(.248 + bush.crest * .014 + range(-.012, .012),
+    .24 + bush.crest * .10 + range(-.03, .03), .13 + range(-.02, .025)), .32);
+  bushBatch(aromatics, 'Marosh aromatic scrub', () => color.setHSL(.176 + range(-.014, .014),
+    .16 + range(-.03, .03), .23 + range(-.025, .025)));
+  treeBatch(maroshOaks, 'Marosh holm oak', tree => color.set('#2d4020').offsetHSL(range(-.015, .015), range(-.04, .05), range(-.03, .05) - tree.crest * .015), 'southwest-tree');
+  tuftBatch(terraceGrass, 'Marosh terrace grass', tuft => color.setHSL(.148 + range(-.014, .014),
+    .20 + range(-.03, .03), .27 + range(-.03, .03)));
+  tuftBatch(combeGrass, 'Marosh combe grass', tuft => color.setHSL(.246 + range(-.010, .010),
+    .30 + range(-.03, .03), .20 + range(-.02, .02)));
+  tuftBatch(maroshTurf, 'Marosh sea turf', () => color.setHSL(.224 + range(-.012, .012),
+    .22 + range(-.03, .03), .21 + range(-.025, .025)));
+  // Trogo, from the floor up.
+  stoneBatch(litter, 'Trogo leaf litter', () => color.set('#332c1d').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.035, .045)), .03);
+  stoneBatch(buttress, 'Trogo buttress roots', () => color.set('#3a3226').offsetHSL(0, range(-.02, .03), range(-.04, .05)), .22);
+  stoneBatch(gullyStones, 'Trogo gully stones', () => color.set('#4a4a3e').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .12);
+  // **The first review round came back with the understory as pale mint boulders**, which is job 1's
+  // haze lesson and job 3's renderer lesson met for the third time: a bush on the floor of a closed
+  // canopy gets a few per cent of the light that falls on the top of it, and the renderer reads an
+  // authored colour as linear and lifts it a long way. Everything on this floor went about forty per
+  // cent down.
+  bushBatch(understory, 'Trogo understory', bush => color.setHSL(bush.palm ? .268 : .288 + range(-.014, .014),
+    .34 + range(-.04, .04), .062 + (1 - bush.band) * .028 + range(-.012, .015)));
+  bushBatch(wayFerns, 'Trogo way ferns', () => color.setHSL(.296 + range(-.012, .012),
+    .36 + range(-.04, .04), .085 + range(-.012, .018)));
+  bushBatch(clearingSaplings, 'Trogo clearing saplings', () => color.setHSL(.258 + range(-.014, .014),
+    .34 + range(-.04, .04), .125 + range(-.018, .022)));
+  bushBatch(shoreScrub, 'Trogo shore scrub', () => color.setHSL(.212 + range(-.014, .014),
+    .24 + range(-.03, .03), .145 + range(-.02, .02)));
+  treeBatch(canopyTrees, 'Trogo canopy', tree => color.set('#1e3318').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.025, .045) - tree.fog * .01), 'southwest-tree');
+  treeBatch(emergents, 'Trogo emergents', () => color.set('#20381a').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.02, .05)), 'southwest-tree');
+  treeBatch(fogTrees, 'Trogo fog forest', () => color.set('#31422c').offsetHSL(range(-.012, .012), range(-.05, .04), range(-.02, .05)), 'southwest-tree');
+  treeBatch(mangroves, 'Trogo mangrove', () => color.set('#253a22').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.02, .05)), 'southwest-tree');
+  tuftBatch(clearingGrass, 'Trogo clearing grass', () => color.setHSL(.252 + range(-.012, .012),
+    .30 + range(-.03, .03), .21 + range(-.025, .025)));
+  tuftBatch(shoreTussock, 'Trogo shore tussock', () => color.setHSL(.176 + range(-.014, .014),
+    .21 + range(-.03, .03), .25 + range(-.03, .03)));
+  metrics.maquis = maquis.length; metrics.maroshStone = maroshStone.length + maroshShingle.length;
+  metrics.oaks = maroshOaks.length;
+  metrics.emergents = emergents.length; metrics.canopy = canopyTrees.length; metrics.fogTrees = fogTrees.length;
+  metrics.understory = understory.length; metrics.litter = litter.length + gullyStones.length;
+  metrics.buttress = buttress.length; metrics.ferns = wayFerns.length; metrics.mangrove = mangroves.length;
+  metrics.scrub += aromatics.length + clearingSaplings.length + shoreScrub.length;
+  metrics.shingle += maroshShingle.length;
 
   return {
     group, metrics,

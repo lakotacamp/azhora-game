@@ -341,7 +341,8 @@ test('every hex of Nethereum is honest ground, and nobody is sealed in', () => {
   // the world north to the Acor Wetlands. Nethereum touched none of it.
   // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
   // (docs/southwest-2-report.md), which this country is nowhere near either.
-  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(2)} hexes`);
+  // ...and 54.316 since Trogo carried it south again to z = 3264.426 (docs/southwest-4-report.md).
+  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(2)} hexes`);
   assert.ok(Math.abs(Math.min(...cells.map(cell => cell.x)) - -2900) < 1,
     'and the hex that spends it is the one `plains` corner at x = -2900');
 });

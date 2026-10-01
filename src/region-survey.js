@@ -345,6 +345,22 @@ export const PLAYABLE_SURVEY = Object.freeze({
         {q:-36,r:139,terrain:'grassland'},{q:-35,r:139,terrain:'grassland'},{q:-34,r:139,terrain:'plains'},{q:-33,r:139,terrain:'plains'},{q:-32,r:139,
         terrain:'plains'},{q:-35,r:140,terrain:'grassland'},{q:-34,r:140,terrain:'grassland'},{q:-33,r:140,terrain:'plains'},{q:-34,r:141,
         terrain:'grassland'},{q:-33,r:141,terrain:'grassland'}]) }),
+    Object.freeze({ id: "Marosh", name: "Marosh",
+      bounds: Object.freeze({"x":1094.657,"y":3048,"width":110.851,"height":224}), centerX: 1153.161, centerY: 3162.667,
+      cells: Object.freeze([{q:-22,r:127,terrain:'grassland'},{q:-23,r:128,terrain:'hills'},{q:-22,r:128,terrain:'grassland'},{q:-24,r:129,terrain:'hills'},{q:-23,r:129,
+        terrain:'grassland'},{q:-22,r:129,terrain:'grassland'},{q:-25,r:130,terrain:'hills'},{q:-24,r:130,terrain:'grassland'},{q:-26,r:131,terrain:'hills'},
+        {q:-25,r:131,terrain:'grassland'},{q:-26,r:132,terrain:'hills'},{q:-25,r:132,terrain:'grassland'},{q:-26,r:133,terrain:'hills'},{q:-25,r:133,
+        terrain:'grassland'},{q:-26,r:134,terrain:'hills'},{q:-25,r:134,terrain:'grassland'},{q:-26,r:135,terrain:'hills'},{q:-25,r:135,terrain:'grassland'}]) }),
+    Object.freeze({ id: "Trogo", name: "Trogo",
+      bounds: Object.freeze({"x":1122.369,"y":3264,"width":193.99,"height":176}), centerX: 1225.097, centerY: 3361.931,
+      cells: Object.freeze([{q:-25,r:136,terrain:'deep_forest'},{q:-26,r:137,terrain:'deep_forest'},{q:-25,r:137,terrain:'deep_forest'},{q:-24,r:137,terrain:'deep_forest'},
+        {q:-23,r:137,terrain:'deep_forest'},{q:-26,r:138,terrain:'deep_forest'},{q:-25,r:138,terrain:'deep_forest'},{q:-24,r:138,terrain:'deep_forest'},
+        {q:-23,r:138,terrain:'deep_forest'},{q:-27,r:139,terrain:'deep_forest'},{q:-26,r:139,terrain:'deep_forest'},{q:-25,r:139,terrain:'deep_forest'},
+        {q:-24,r:139,terrain:'deep_forest'},{q:-23,r:139,terrain:'grassland'},{q:-29,r:140,terrain:'deep_forest'},{q:-28,r:140,terrain:'deep_forest'},{q:-27,
+        r:140,terrain:'deep_forest'},{q:-26,r:140,terrain:'deep_forest'},{q:-25,r:140,terrain:'deep_forest'},{q:-24,r:140,terrain:'grassland'},{q:-30,r:141,
+        terrain:'deep_forest'},{q:-29,r:141,terrain:'deep_forest'},{q:-28,r:141,terrain:'deep_forest'},{q:-27,r:141,terrain:'deep_forest'},{q:-26,r:141,
+        terrain:'grassland'},{q:-25,r:141,terrain:'grassland'},{q:-29,r:142,terrain:'grassland'},{q:-28,r:142,terrain:'grassland'},{q:-27,r:142,
+        terrain:'grassland'}]) }),
   ]),
 });
 
@@ -478,5 +494,6 @@ export const LAND_HEXES = Object.freeze([
   [-29,140],[-28,140],[-27,140],[-26,140],[-25,140],[-24,140],[-22,140],[-21,140],[-20,140],[-19,140],[-18,140],[-17,140],[-16,140],[-34,141],[-33,141],
   [-32,141],[-31,141],[-30,141],[-29,141],[-28,141],[-27,141],[-26,141],[-25,141],[-23,141],[-22,141],[-21,141],[-20,141],[-19,141],[-18,141],[-17,141],
   [0,141],[1,141],[-29,142],[-28,142],[-27,142],[-24,142],[-23,142],[-22,142],[-21,142],[-20,142],[-19,142],[-18,142],[0,142],[1,142],[-25,143],[-24,
-  143],[-23,143],[-22,143],[-21,143],[-20,143],[-19,143],[-18,143],[0,143],[1,143],[-24,144],[-23,144],[-22,144],[-21,144],[-20,144],[-19,144],[2,144]
+  143],[-23,143],[-22,143],[-21,143],[-20,143],[-19,143],[-18,143],[0,143],[1,143],[-24,144],[-23,144],[-22,144],[-21,144],[-20,144],[-19,144],[2,144],
+  [1,145]
 ]);

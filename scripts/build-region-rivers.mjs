@@ -50,7 +50,17 @@ export const RIVER_REGIONS = ['Pueth', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   // would chop both into pieces at a border and then silently re-join them. Measured before they
   // were added: no chain that already existed loses its key, changes a point or gains a
   // confluence - the nearest built water is the Oveth, a thousand metres east of West Pyros.
-  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain'];
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  // Marosh and Trogo, and **these are the first river edges the atlas draws inside a southwestern
+  // country rather than along its border.** Job 1's twenty-eight all run on a border with unbuilt
+  // country and jobs 2 and 3 have none at all - ninety-five hexes of Meroshe and seventy-three of the
+  // western edge with not one river edge on any of them. There are seven here: three small edges round
+  // the corner of Marosh's (-25,131), which is the water gap through its ridge, and four round
+  // Trogo's (-25,140) and (-25,141), which is the Trogoreth. Both chains have the same country on both
+  // banks, so neither can chop or re-join anything that already exists; measured before they were
+  // added, no existing chain loses its key, changes a point or gains a confluence, and the nearest
+  // built water is the Vaellir, six hundred metres north-west of Marosh's northern tip.
+  'Marosh', 'Trogo'];
 const NEIGHBORS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const SIZES = new Set(['small', 'medium', 'large']);
 

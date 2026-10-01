@@ -168,7 +168,8 @@ test('the world grows north, and it is the biggest structural change any region 
   // 45.656 when this plain set the northern edge; 53.450 since the South Meroshe Desert carried the
   // southern one from 2398.401 to 3177.824. What the plain set is the *northern* edge, and that is
   // the number to hold here rather than the height it happened to make at the time.
-  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  // ...and 54.316 since Trogo carried the southern edge to 3264.426 (docs/southwest-4-report.md).
+  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // East to west the plain took nothing, and the number below has moved twice for other people since
   // this test was written: to 45.70 for the Ganesh Desert and to **49.700** for Cape Heth, whose one
   // `coast` hex reaches four hundred metres further west again. What this plain is held to is unchanged:
@@ -184,7 +185,7 @@ test('the world grows north, and it is the biggest structural change any region 
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6);
   // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
   // (docs/southwest-2-report.md), which the plain also spent nothing of.
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3177.823940164498) < 1e-6);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6);
   // North Mithala alone spends it: row 82 against the East Lotharn's 92.
   assert.equal(Math.min(...CELLS['North Mithala'].map(cell => cell.r)), 82);
   assert.ok(Math.min(...CELLS['North Mithala'].map(cell => cell.z)) < Math.min(...CELLS['East Mithala'].map(cell => cell.z)));
@@ -195,7 +196,8 @@ test('the world grows north, and it is the biggest structural change any region 
   // (centres -2309.3) come down to -2251.6 and are the last the lattice can land in.
   assert.equal(WINDOW.minR, 79);
   // 135 when the Ascarth tip set it; 144 since the South Meroshe Desert carried the world south.
-  assert.equal(WINDOW.maxR, 144);
+  // 145 since Trogo's row 142: one row deeper, measured off the lattice (docs/southwest-4-report.md).
+  assert.equal(WINDOW.maxR, 145);
   assert.equal(WINDOW.maxQ, 34);
   const COAST_CELL = 4, COAST_MARGIN = 96, PHASE = -704.3502691896258;
   const latticeMinZ = PHASE + Math.floor((WORLD_BOUNDS.minZ - COAST_MARGIN - PHASE) / COAST_CELL + 1e-9) * COAST_CELL;

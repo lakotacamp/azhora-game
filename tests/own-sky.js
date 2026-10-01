@@ -29,4 +29,8 @@ export const OWN_SKY = new Set([
   // Job 3: sea air over the block's most maritime country, the clearest air in Azhora over the plateau
   // (altitude and not dryness), and the block's only properly wet air over Hama's `Csb` half.
   'Cape Heth', 'Dinelv Highlands', 'Hama',
+  // Job 4: the wettest Mediterranean air in the block over Marosh's ridge and terrace, and **Trogo's
+  // `.0144`, which is nearly two and a third times the game's own default** - the first half of what a
+  // deep forest is, and the shortest sight line in Azhora by a factor of two.
+  'Marosh', 'Trogo',
 ]);

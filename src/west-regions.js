@@ -1154,8 +1154,42 @@ export const VAELLIR = river('vaellir', 'The Vaellir', shoreward(atlasCourse('Ea
 export const ALEZHOR_WATER = river('alezhor-water', 'The Alezhor Water',
   shoreward(atlasCourse('Alezhor,Ganesh Desert,Navarth')),
   { halfWidth: 2, halfWidthEnd: 3.2, cut: 1, cutEnd: 1.35, bed: .5 });
+/**
+ * **The Nahr and the Trogoreth, and they are the first water the atlas draws *inside* a southwestern
+ * country.** Job 1's two both run on a border with unbuilt country for the whole of their length and
+ * jobs 2 and 3 have nothing at all - a hundred and sixty-eight hexes of Meroshe desert, cape, plateau
+ * and Mediterranean corner without one river edge on any of them. These two have the same country on
+ * both banks, and both reach the sea: measured on the atlas's own chains, the Nahr's last point stands
+ * four metres from the waterline and the Trogoreth's one metre, before `shoreward` trims each back to
+ * forty-two.
+ *
+ *  - **The Nahr**, three `small` edges round the corner of Marosh's (-25,131), which is where its
+ *    ridge is broken. The Maroshi for "river" is `nahr` (`src/languages.js`, `maroshi.roots.river`),
+ *    so the one river the atlas gives this whole coast is called the river, the way job 1's Vaellir is
+ *    the Pyrosi for a river and job 2's Malhat is the Moreshi for salt. Nothing is coined. It rises on
+ *    the seaward face of the ridge, runs east-south-east through the gap and reaches the Iberos in a
+ *    hundred and seventy metres.
+ *  - **The Trogoreth**, four `small` edges through Trogo's south-eastern corner, and the lore names it
+ *    itself: "The largest, which Maroshi records call the Trogoreth ('the Trogo river,' a construction
+ *    that acknowledges they have no better name for it), has a wide delta mouth that has silted into a
+ *    shallow estuary system." **It is the only permanent water in the first rainforest in the game**,
+ *    and it is one of `src/undergrowth.js`'s ways through: a traveler who cannot push into the thicket
+ *    can walk up the watercourse.
+ *
+ * **Both are waded anywhere, and that is deliberate rather than lazy.** The atlas draws `small` on all
+ * seven edges, and `small` is waded everywhere else in the game; the lore's navigable delta and its
+ * "canyon narrowing that stops boat traffic" are at a scale the atlas does not draw here. It also
+ * matters for the country: Trogo is the first country in the game with a movement rule of its own that
+ * is not the climbing one, and **a walled river inside it would be a second barrier crossing the
+ * first**, which is exactly how a traveler gets sealed into a corner. One gate in this country, and it
+ * is the undergrowth.
+ */
+export const MAROSH_NAHR = river('marosh-nahr', 'The Nahr', shoreward(atlasCourse('Marosh')),
+  { halfWidth: 1.8, halfWidthEnd: 3, cut: .9, cutEnd: 1.25, bed: .5 });
+export const TROGORETH = river('trogoreth', 'The Trogoreth', shoreward(atlasCourse('Trogo')),
+  { halfWidth: 3.2, halfWidthEnd: 6.4, cut: 1.3, cutEnd: 2, bed: .8 });
 /** Every course of the southwestern block. */
-export const SOUTHWEST_RIVERS = Object.freeze([VAELLIR, ALEZHOR_WATER]);
+export const SOUTHWEST_RIVERS = Object.freeze([VAELLIR, ALEZHOR_WATER, MAROSH_NAHR, TROGORETH]);
 
 // ---------------------------------------------------------------------------
 // Every piece of western water, and the questions the rest of the game asks of it
@@ -1180,7 +1214,7 @@ export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', '
   'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
   'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
   'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert',
-  'Cape Heth', 'Dinelv Highlands', 'Hama']);
+  'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

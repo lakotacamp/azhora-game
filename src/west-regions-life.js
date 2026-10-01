@@ -557,6 +557,91 @@ function models() {
     },
 
     /**
+     * **The forest edge-cat**, and it is one of job 4's two new rigs. The fauna overview names it and
+     * describes it: "The **forest edge-cat** - different from both the terrace leopard of Pyros and
+     * whatever occupies the Ibenwood interior - is the medium predator of the Ibenale and Alezhor forest
+     * margin. It is smaller than its highland relative, more arboreal, and has been observed hunting
+     * birds at the canopy level of the forest edge trees as readily as small mammals on the ground."
+     *
+     * **It is built here because Trogo's own lore asks for it in so many words**: "The carnivores that
+     * hunt both zones are the most studied by the communities here, because they present the most
+     * immediate practical interest." The overview's only forest-margin predator is this one, and the
+     * atlas draws the sharpest forest margin anywhere on it along Trogo's north-western side - thirteen
+     * hex edges of `Af` rainforest against `BWh` hot desert. Extending it a quarter of a continent south
+     * is the sea-plunger's own argument (job 3, Legemum to Cape Heth: "this is the other exposed headland
+     * on the atlas"), and **the Ibenale and Alezhor margin is the animal's own home and is not built**, so
+     * whoever builds it inherits this rig rather than a stand-in.
+     *
+     * **What is the lore's and what is the build's**, stated plainly, because that line is the difference
+     * between this and the Ganesh dustback: the lore gives the animal, its habitat, its size relative to
+     * a leopard, its arboreal habit and its two hunting grounds. The build gives it a cat's body, which is
+     * what "cat" is, at about two thirds of a leopard - a long low trunk, a heavy round head, short heavy
+     * legs and a tail as long as the back, which is what an arboreal cat has and what a plains cat does
+     * not. Nothing about the *dustback* is available in that way, which is why it is still not built.
+     *
+     * Drawn to read in the dimmest light in the game: dark olive-brown broken with darker rosettes, a
+     * pale throat and a pale tail tip. Under a closed canopy a uniform animal is a hole in the ground.
+     */
+    'forest-cat': {
+      body: geometry([
+        S(0x4c4433, [0, .40, -.02], [.155, .165, .42]),
+        S(0x3d3728, [0, .38, .24], [.135, .145, .15]),
+        S(0xb4a98c, [0, .295, .04], [.125, .085, .33]),
+        // Rosettes: two on each flank, and they are the only thing that tells this animal from a shadow.
+        ...both(side => S(0x2b2619, [side * .135, .455, .10], [.055, .045, .085])),
+        ...both(side => S(0x2b2619, [side * .13, .43, -.16], [.05, .042, .075])),
+        S(0x443c2c, [0, .42, -.40], [.095, .098, .15]),
+        S(0x4c4433, [0, .45, -.60], [.07, .072, .20], [.16, 0, 0]),
+        S(0x2b2619, [0, .49, -.78], [.058, .060, .12], [.16, 0, 0]),
+        S(0xc2b797, [0, .52, -.90], [.05, .05, .07], [.16, 0, 0]),
+      ]),
+      head: geometry([
+        S(0x4c4433, [0, .02, .04], [.115, .112, .125]),
+        S(0x3d3728, [0, -.03, .135], [.072, .062, .07]),
+        S(0x1b1814, [0, -.05, .195], [.024, .020, .022]),
+        ...both(side => C(0x3d3728, [side * .072, .105, .01], [.05, .075, .034], [-.08, 0, side * .2])),
+        ...both(side => S(0xd8cf36, [side * .058, .032, .088], [.024, .024, .018])),
+        ...both(side => S(0xb4a98c, [side * .045, -.058, .115], [.032, .026, .03])),
+      ]),
+      leg: geometry([Y(0x443c2c, [0, -.095, 0], [.038, .195, .039]), B(0x1b1814, [0, -.195, .015], [.07, .045, .09])]),
+    },
+
+    /**
+     * **The Iberos albatross**, job 4's second new rig, and the fauna overview puts it exactly where this
+     * country is: "The **Iberos albatross**, a large, slow-breeding oceanic species, appears over the coast
+     * in winter and is understood by Azhoran sailors to spend its summers somewhere beyond the horizon
+     * south of Azhora - beyond what Azhoran geography extends to. Where it breeds is not established from
+     * an Azhoran perspective."
+     *
+     * **Trogo's southern shore is the most southerly coast in the game** - `WORLD_BOUNDS.maxZ` is Trogo's
+     * own row 142 - and it looks out at the Azhor Stones and then at nothing the atlas draws. So the one
+     * place in Azhora where a traveler can stand and watch the bird that goes south of the map go south is
+     * here, and that is the whole argument for spending a rig on it.
+     *
+     * The longest wing in the game: 2.0 against the bone-bird's 1.72 and the sea-plunger's 1.02, and held
+     * flatter and stiller than either (`SOAR`: rock .04, dihedral .02, against the bone-bird's .07 and
+     * .11). An albatross on a sea wind does not flap and barely rocks, and at this scale that stillness is
+     * the identification: everything else in this sky works at staying up. White body, dark upper wings
+     * with a white inner third, and a heavy pale bill.
+     */
+    albatross: {
+      body: geometry([
+        S(0xf6f5f1, [0, 0, -.02], [.125, .120, .40]),
+        S(0xeceae2, [0, -.035, .06], [.105, .078, .28]),
+        S(0xf1efe7, [0, .006, -.40], [.06, .028, .17], [.04, 0, 0]),
+        S(0x3c3b38, [0, .008, -.55], [.036, .018, .07], [.04, 0, 0]),
+        S(0xf6f5f1, [0, .04, .30], [.070, .068, .09]),
+        C(0xd8cfae, [0, .028, .44], [.030, .155, .026], [Math.PI / 2 + .03, 0, 0]),
+        ...both(side => S(0x16150f, [side * .046, .062, .33], [.013, .014, .012])),
+      ]),
+      wing: geometry([
+        S(0xf3f2ec, [.36, 0, .01], [.42, .020, .112]),
+        S(0x4a4a48, [.94, -.004, -.03], [.50, .016, .084]),
+        S(0x25252a, [1.56, -.009, -.08], [.34, .013, .058]),
+      ]),
+    },
+
+    /**
      * **The Great White Sea-plunger**, the gannet-relative the fauna overview catalogues on "certain
      * rocky headlands and offshore islands - particularly along the Svaleen coast and the exposed
      * Legemum headlands", "whose vertical dives from height into the Iberos shoals are one of the more
@@ -1090,6 +1175,10 @@ const SOAR = Object.freeze({
   // steadier for it: the least rock of any of them and almost no dihedral. A bird with two and a
   // half metres of wing over a desert with no cover on it does not have to work at staying up.
   'bone-bird': { slow: .22, rock: .07, dihedral: .11 },
+  // And the albatross is stiller again, which is the whole of how it is told from the bone-bird at any
+  // distance: the longest wing in the game, held almost dead flat and almost dead still. A bird that
+  // crosses an ocean without flapping does not rock.
+  albatross: { slow: .18, rock: .04, dihedral: .02 },
 });
 const SOARERS = new Set(Object.keys(SOAR));
 
@@ -1317,11 +1406,15 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * keeps them from being chased to the horizon. The fox still never flees.
    */
   const FLEE_AT = { longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
-    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14, frostback: 9.5, 'bone-bird': 13 };
+    egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14, frostback: 9.5, 'bone-bird': 13,
+    // A cat goes before anything else here does and it goes up: the first law of the west is that
+    // nothing in it can be walked down, and an arboreal predator is the least walkable thing there is.
+    'forest-cat': 16, albatross: 12 };
   const WALK = { longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
-    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5, frostback: .40, 'bone-bird': .5 };
+    egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5, frostback: .40, 'bone-bird': .5,
+    'forest-cat': 1.05, albatross: .4 };
   const RUN = { 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
-    egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6 };
+    egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6, 'forest-cat': 12.5 };
   /**
    * Cattle, whatever breed. They do not bolt: they put their heads up, turn to face whoever
    * it is, and give ground at a shade over a walking pace. This used to be a test on the
@@ -1344,7 +1437,8 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   const FOX = Object.freeze({ floor: 1, cap: 6.6, lead: 1.06, arm: 2.8, notice: 10 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
   const RETURN = { longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
-    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4, frostback: 1.4, 'bone-bird': 1.4 };
+    egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4, frostback: 1.4, 'bone-bird': 1.4,
+    'forest-cat': 2.6, albatross: 1.4 };
   const HOME = 16, SETTLED = 6;
   const BACK = [0, .35, -.35, .7, -.7], ALONG = [1.05, -1.05, 1.4, -1.4, 1.75, -1.75, 2.1, -2.1];
 

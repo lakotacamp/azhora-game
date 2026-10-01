@@ -259,7 +259,7 @@ export const LANGUAGES = freeze({
     where: 'the Marosh fens and the coast beyond them, and inland to the canyon country',
     sound: 'Long vowels and hissing consonants on compact endings: maan, nur, qad, sax, waa, rih, closing -ah, -at, -iim, -ub.',
     from: 'the world-builder profile `moreshi`',
-    dialects: ['ganesh', 'plateau', 'haman'],
+    dialects: ['ganesh', 'plateau', 'haman', 'fogspeech'],
     note: 'A separate lineage, older than the western families and possibly older than their common ancestor, and of no practical use to anyone trying to get directions in the Moroshe. The court form is a dialect of Coastal Trade Moreshi; the deep-desert forms are the conservative ones. There is a ritual register nobody has been able to analyse, and the desert peoples do not discuss it in terms that help.',
     onsets: ['al', 'ar', 'bar', 'ghay', 'ha', 'kal', 'maan', 'mar', 'naj', 'nur', 'qad', 'rih', 'sab', 'sar', 'sax', 'waa', 'zar'],
     middles: ['a', 'aa', 'i', 'ii', 'u', 'uu'],
@@ -636,6 +636,30 @@ export const DIALECTS = freeze({
   haman: dialect('haman', 'the Haman merchant speech', 'maroshi',
     'Coastal Trade Moreshi pushed further than the coast has pushed it, and pushed in one direction only: the derived stem forms that let a Moreshi contract say exactly which obligation falls when have been extended here into compound roots and reflexive constructions that no other Moreshi correspondence uses, and the Dinelv court has kept specialist translators for Haman documents since the early archives. Outside a contract it is ordinary enough - the words for the two winds, the words for the state of the sward in a dry winter, and a whole vocabulary for weather that arrives having crossed an ocean. The seven houses whose registers made it what it is, and every treaty in it, are theirs.',
     word => word.replace(/at$/, 'aat').replace(/ii/, 'i')),
+  // **The transition zone's contact register, and it has a grammatical category no other language in
+  // Azhora has.** `trogo.md`: "One feature of the transition language that has drawn attention: it has a
+  // grammatical category that neither Moreshi nor any Azhoran mainland language possesses - a verb aspect
+  // marking actions that are conditional on the current state of the fog. Whether the fog is present or
+  // not changes the form of certain verbs describing movement, visibility, and resource access. The
+  // category is semantically precise and grammatically regular, which means it was not invented recently.
+  // It names a distinction that is genuinely important to people whose decisions depend on whether the fog
+  // wall is up. The canyon Moreshi find it unnecessary. The coastal forest people find it imprecise."
+  //
+  // **It is filed as a dialect of Maroshi and that is a compromise the comment has to own.** Half of what
+  // this register is made of is canyon Moreshi and the other half is the forest language of the mid-slope
+  // and the coast, "whose ancestry does not trace to the Moreshi tradition and whose language belongs to
+  // neither the Moreshi family nor any Azhoran mainland family that has been classified". That second half
+  // is not in `LANGUAGES` and inventing a tongue for it is not a builder's decision - so this entry is
+  // the half that has a parent, the way Cape Heth carries plain Maroshi as a stand-in (job 3), and the
+  // forest peoples' own tongue is an open question for whoever builds them. Filing it under Moreshi is
+  // exactly the Maroshi court's own mistake, which the lore is dry about, and it is named here so that
+  // nobody mistakes it for a finding.
+  //
+  // The transform is the fog aspect itself, made audible on one class of verb: a movement word takes a
+  // -zh when the fog is up. Nothing in the game asks yet.
+  fogspeech: dialect('fogspeech', 'the fog speech', 'maroshi',
+    'The register of the people who live where the desert stops and the forest starts, and it is made of both: canyon Moreshi roots on a grammar that has taken enough from the forest language below it to have a shape of its own. What it has that nothing else in Azhora has is an aspect for the fog - every verb of going, seeing or fetching takes one form while the fog wall is up and another while it is down, and the distinction is regular, old and not optional. The canyon speakers upriver call it unnecessary and the forest speakers downslope call it imprecise, and the people who use it find both complaints unsurprising. What it is rich in is the state of a way: which gullies are walkable this week, how far a thing can be seen, which resin is running. The three peoples whose arrangements it carries, and every one of those arrangements, are theirs.',
+    word => word.replace(/([aeiou])n$/, '$1zh').replace(/uu/, 'u')),
 });
 
 export const DIALECT_IDS = freeze(Object.keys(DIALECTS));
@@ -794,6 +818,21 @@ export const REGION_LANGUAGE = freeze({
   'Cape Heth': spoken('maroshi'),
   'Dinelv Highlands': spoken('maroshi', 'plateau'),
   Hama: spoken('maroshi', 'haman'),
+  //  - **Marosh gets plain `maroshi`, and for once that is the reading and not the stand-in.** Every other
+  //    Moreshi-speaking country in this block carries a dialect because it is a margin of the language;
+  //    this one is the centre of it. `marosh.md`: "The court language is Maroshi, a dialect of Coastal
+  //    Trade Moreshi - the triconsonantal-root language family that descends from the older Moreshi spoken
+  //    across the desert interior... Maroshi is its eastern-coast peninsular form." Marosh *is* the
+  //    eastern coast of the peninsula: twenty of its hex edges are the Iberos and the lore puts the court
+  //    at Dinelv on this shore. A dialect marks a deviation from a centre and there is no deviation to
+  //    mark. It is the argument job 2 gave the Meroshe for speaking the tongue with no twist on it, run
+  //    from the other end of the same language.
+  //  - **Trogo gets `fogspeech`**, the transition zone's contact register, whose fog-conditional verb
+  //    aspect is the single best piece of language in the archive. It is filed under Moreshi because half
+  //    of it is Moreshi and the other half has no tongue in this file; the dialect's own comment says so,
+  //    and the forest peoples' unclassified language is an open question rather than a gap.
+  Marosh: spoken('maroshi'),
+  Trogo: spoken('maroshi', 'fogspeech'),
 });
 
 /**

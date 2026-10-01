@@ -114,7 +114,8 @@ test('Isareos is the country that spent most of the hex budget', () => {
   // row 82 (region-layout.test.js). Isareos touched none of it; what it spends is the western x.
   // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
   // (docs/southwest-2-report.md), which this country is nowhere near either.
-  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
+  // ...and 54.316 since Trogo carried it south again to z = 3264.426 (docs/southwest-4-report.md).
+  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
 });
 
 test('low hills, not quite highlands, blurring into the two countries either side of them', () => {

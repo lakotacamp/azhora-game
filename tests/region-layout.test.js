@@ -169,6 +169,15 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * Dinelv Highlands reach -3900, Hama -3500, and Hama's southernmost row ties the South Meroshe's to the
    * millimetre without passing it. The world is **49.700 by 53.450**.
    *
+   * Then **Trogo carried the southern edge once more** (docs/southwest-4-report.md), which is the fourth
+   * time this guard has moved and the last time the southwest quarter can move it: Trogo's three
+   * southernmost hexes are (-29,142), (-28,142) and (-27,142), their centres at z = 3146.69 and their
+   * lower vertices a circumradius (57.735 m) past that at 3204.43, so the southern edge goes from
+   * 3177.824 to **3264.4264805429416** and the height from 53.450 hexes to **54.316**. Each one's own
+   * case again: Marosh's southernmost row is 135 and is nowhere near it, and nothing in job 4 reaches
+   * within eleven hundred metres of Cape Heth's western edge. So the north-south guard goes to 55 and its
+   * floor to 54.2, and the world is **49.700 by 54.316**.
+   *
    * `WINDOW.minQ` -45 -> **-49** with it, measured off the lattice, and **that widening pulls in nothing
    * at all**: the four columns q -49...-46 hold no claimed hex anywhere on the atlas in rows 79-144,
    * because west of Cape Heth the map is open ocean to the edge of the sheet. LAND_HEXES stays at 2,078
@@ -184,11 +193,11 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * have been open water in the middle of a playable country.
    */
   assert.ok(bounds.maxX - bounds.minX < 50 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
-  assert.ok(bounds.maxZ - bounds.minZ < 54 * METRES_PER_HEX, 'and north to south');
+  assert.ok(bounds.maxZ - bounds.minZ < 55 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 49.6 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
-  assert.ok(bounds.maxZ - bounds.minZ > 53.4 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 54.2 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 
 /**

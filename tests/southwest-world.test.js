@@ -10,10 +10,11 @@ import {
   regions, terrainMix, landDistance,
 } from '../src/region-world.js';
 import {
-  VAELLIR, ALEZHOR_WATER, SOUTHWEST_RIVERS, WEST_RIVERS, WEST_REGION_NAMES, courseDistance,
+  VAELLIR, ALEZHOR_WATER, MAROSH_NAHR, TROGORETH, SOUTHWEST_RIVERS, WEST_RIVERS, WEST_REGION_NAMES, courseDistance,
 } from '../src/west-regions.js';
 import { WEST_PROFILES, westGroundAt, westWaterSurface } from '../src/west-ground.js';
-import { groundWithRiver } from '../src/world-terrain.js';
+import { groundWithRiver, groundTint, GROUND_TINT_FAMILIES } from '../src/world-terrain.js';
+import * as THREE from '../vendor/three.module.js';
 import {
   SOUTHWEST_REGIONS, SOUTHWEST_NORTH_REGIONS, MEROSHE_REGIONS,
   SOUTHWEST_CLIMATE, NAVARTH_CLIMATE, WEST_PYROS_CLIMATE,
@@ -32,6 +33,11 @@ import {
   DINELV_RIDGES, DINELV_GAPS, DINELV_BASINS, DINELV_MESAS, DINELV_BANDS, DINELV_CHANNELS, DINELV_ASCENT,
   DINELV_STRIKE, dinelvAlong, dinelvAcross, dinelvPoint, dinelvRidgeAt, dinelvMesaAt, inDinelvBasin,
   dinelvAscentAt, dinelvBands, HAMA_BROKEN, HAMA_BEDS, hamaGreen, hamaLie, inHamaBed, westEdgeShare,
+  EAST_EDGE_REGIONS, MAROSH_CLIMATE, TROGO_CLIMATE, EAST_EDGE_CLIMATE, eastEdgeShare,
+  MAROSH_RIDGE, MAROSH_GAP, MAROSH_COMBES, maroshRidgeAt, maroshCrest, inMaroshCombe,
+  TROGO_CREST, TROGO_GULLIES, TROGO_PATHS, TROGO_CLEARINGS, TROGO_WAY,
+  trogoCrestAt, trogoThicket, trogoWay, trogoBand, trogoFogForest, inTrogoClearing, onTrogoGullyFloor,
+  SOUTHWEST_SWALE_RIVERS,
 } from '../src/southwest-world.js';
 import { SOUTHWEST_WILDLIFE_ZONES } from '../src/southwest-wildlife.js';
 import { DEFAULT_SKY, regionSky } from '../src/region-sky.js';
@@ -74,7 +80,8 @@ import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
 const FOUR = ['Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain'];
 const MEROSHE = ['North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert'];
 const EDGE = ['Cape Heth', 'Dinelv Highlands', 'Hama'];
-const BLOCK = [...FOUR, ...MEROSHE, ...EDGE];
+const EAST = ['Marosh', 'Trogo'];
+const BLOCK = [...FOUR, ...MEROSHE, ...EDGE, ...EAST];
 const AXIAL = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const MAP_PATH = new URL('../../world-builder/map/resources/examples/azhora.wwmap', import.meta.url);
 const H = groundWithRiver;
@@ -100,7 +107,7 @@ const wholeShare = shareOf(BLOCK);
 test('the atlas gives four countries a hundred and seven hexes, in the order the brief fixed', () => {
   assert.deepEqual(FOUR.map(name => REGION_IDS[name]), [32, 33, 34, 35]);
   assert.deepEqual(SOUTHWEST_NORTH_REGIONS, FOUR);
-  assert.deepEqual(SOUTHWEST_REGIONS, BLOCK, 'the module\u2019s own list is both halves');
+  assert.deepEqual(SOUTHWEST_REGIONS, BLOCK, 'the module\u2019s own list is all four jobs');
   // Appended, never inserted: `world-regions.js` walks PLAYABLE_REGIONS with one seeded scatter
   // stream, so a name put anywhere but the end re-rolls every region after it.
   //
@@ -133,7 +140,7 @@ test('the atlas gives four countries a hundred and seven hexes, in the order the
 });
 
 test('the climate is a gradient, which is a first: BWh over eighty-one hexes, and two green corners', () => {
-  assert.equal(Object.keys(SOUTHWEST_CLIMATE).length, 275, 'all three jobs, hex for hex');
+  assert.equal(Object.keys(SOUTHWEST_CLIMATE).length, 322, 'all four jobs, hex for hex - the whole southwest quarter');
   const tally = {};
   for (const name of FOUR) for (const cell of cellsOf(name)) {
     const code = SOUTHWEST_CLIMATE[`${cell.q},${cell.r}`];
@@ -182,7 +189,7 @@ test('the climate is a gradient, which is a first: BWh over eighty-one hexes, an
   assert.ok(worst < .2, `aridity jumps ${worst.toFixed(3)} in twenty metres`);
 });
 
-test('the world box grew west for job 1, south for job 2 and west again for job 3', () => {
+test('the world box grew west, then south, then west again, and job 4 grew it south once more', () => {
   // **West, for job 1.** Nethereum set the western edge at -3010.002; the Ganesh Desert's
   // westernmost hexes are (-33,123) through (-33,126), whose outer flat stands at x = -3900, so the
   // edge went to -3960.002 and the world from 36.20 hexes wide to 45.70.
@@ -210,11 +217,17 @@ test('the world box grew west for job 1, south for job 2 and west again for job 
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -4360.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3177.823940164498) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
+  // **South again, for job 4, and job 2 predicted the number a job and a half in advance.** Trogo's
+  // southernmost hexes are (-29,142), (-28,142) and (-27,142), centres at z = 3146.69 and lower
+  // vertices a circumradius (57.735 m) past that at 3204.43, so `maxZ` goes from 3177.824 to
+  // **3264.4264805429416** - job 2's own arithmetic said "about 3264.4" - and the world from 53.450
+  // hexes tall to **54.316**. Nothing else moves: Trogo reaches x = -2050 and Marosh -2750, where Cape
+  // Heth's edge stands at -4360.002.
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   assert.ok(Math.abs(wide - 49.70) < .01, `east to west is ${wide.toFixed(2)} hexes`);
-  assert.ok(Math.abs(tall - 53.450) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // **Cape Heth alone spends the west now**, and the Ganesh Desert alone spent it before: no other
   // country in eleven reaches past -3900, which is the Dinelv Highlands' own western row.
   const westmost = Object.fromEntries(BLOCK.map(name => [name, Math.min(...cellsOf(name).map(cell => cell.x))]));
@@ -226,16 +239,18 @@ test('the world box grew west for job 1, south for job 2 and west again for job 
   const point = cellsOf('Cape Heth').find(cell => cell.terrain === 'coast');
   assert.deepEqual([point.q, point.r], [-39, 127]);
   assert.ok(Math.abs(point.x - -4250) < 1, `the point of the cape stands at ${point.x.toFixed(1)}`);
-  // And the South Meroshe alone spends the south.
+  // **Trogo alone spends the south now**, and the South Meroshe spent it before.
   const southmost = Object.fromEntries(BLOCK.map(name => [name, Math.max(...cellsOf(name).map(cell => cell.z))]));
   assert.ok(Math.abs(southmost['South Meroshe Desert'] - 3060.0889132455354) < 1e-6, `the South Meroshe's southernmost hex centre is ${southmost['South Meroshe Desert']}`);
-  for (const name of BLOCK.filter(item => item !== 'South Meroshe Desert' && item !== 'Hama'))
-    assert.ok(southmost[name] < southmost['South Meroshe Desert'], `${name} does not spend the southern edge`);
-  // **Hama ties it to the millimetre and does not move it**, which is why `maxZ` is job 2's number
-  // still: its southernmost hexes are (-34,141) and (-33,141), on the same row as the South Meroshe's.
+  assert.ok(Math.abs(southmost.Trogo - 3146.691453623979) < 1e-6, `Trogo's southernmost hex centre is ${southmost.Trogo}`);
+  for (const name of BLOCK.filter(item => item !== 'Trogo'))
+    assert.ok(southmost[name] <= southmost.Trogo, `${name} is south of Trogo`);
+  // **Hama ties the South Meroshe's row to the millimetre**, which is why job 3 did not move `maxZ`.
   assert.ok(Math.abs(southmost.Hama - southmost['South Meroshe Desert']) < 1e-6,
     `Hama's southernmost hex centre is ${southmost.Hama}`);
-  assert.ok(WORLD_BOUNDS.maxZ > southmost['South Meroshe Desert'] + 57.7 + 59, 'the edge clears the hex rim by the 60 m margin');
+  assert.ok(WORLD_BOUNDS.maxZ > southmost.Trogo + 57.7 + 59, 'the edge clears the hex rim by the 60 m margin');
+  // And nothing in job 4 moves the west: Marosh and Trogo stand eleven hundred metres east of Cape Heth.
+  assert.ok(westmost.Marosh > -2800 && westmost.Trogo > -2700, 'job 4 does not spend the western edge');
   // **`minQ` has now moved three times and is -49.** -41 was job 1's, measured off the lattice the
   // Ganesh Desert widened; -45 was job 2's, a side effect of moving the *southern* edge, because
   // x = W(q + r/2) puts a low q and a high r at the same world x; and -49 is job 3's, measured off the
@@ -244,10 +259,17 @@ test('the world box grew west for job 1, south for job 2 and west again for job 
   // ocean to the edge of the sheet - so the generated survey is identical either way and LAND_HEXES does
   // not change. The value moves because the invariant this window keeps is "the last column the lattice
   // reaches, and no slack", and a window that lied about that would be a trap for the next builder.
-  assert.equal(WINDOW.minQ, -49);
+  // **And `minQ` has moved a fourth time, again without anything reaching west.** Trogo's row 142 takes
+  // the lattice one row deeper in the south, and x = W(q + r/2), so one row south is half a column west
+  // at the same world x: q = -50 is reached only on rows 144 and 145, in the far south-western corner of
+  // the sheet where the map is open ocean. **That is the second time this has happened** (job 2's nine
+  // rows bought four columns) and it is the reason job 3's report says a prediction about the window is
+  // not a prediction about the box: this job's brief predicted the box might move south, and the box did
+  // move south *and* the window moved west, which is not the same statement.
+  assert.equal(WINDOW.minQ, -50);
   assert.equal(WINDOW.maxQ, 34);
   assert.equal(WINDOW.minR, 79);
-  assert.equal(WINDOW.maxR, 144);
+  assert.equal(WINDOW.maxR, 145);
   const CELL = 4, MARGIN = 96, PHASE = { x: -1556.0019279391274, z: -704.3502691896258 };
   const snap = (value, phase) => phase + Math.floor((value - phase) / CELL + 1e-9) * CELL;
   const firstX = snap(WORLD_BOUNDS.minX - MARGIN, PHASE.x), firstZ = snap(WORLD_BOUNDS.minZ - MARGIN, PHASE.z);
@@ -270,38 +292,58 @@ test('the world box grew west for job 1, south for job 2 and west again for job 
   const beyond = MEROSHE.flatMap(name => cellsOf(name)).filter(cell => cell.r > 135);
   assert.equal(beyond.length, 33, 'thirty-three of the block\u2019s own hexes were outside the old window');
   const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
-  assert.equal(LAND_HEXES.length, 2078, 'job 3 turned no sea into land: its hexes were already in the window');
+  // **Job 4's widening buys exactly one hex, and it is the one Trogo's own lore looks at.** Rows 79-145
+  // in columns -50...-46 hold no claimed hex anywhere; row 145 holds one, **(1,145), an Azhor Stones hex
+  // whose terrain word is `deep_forest` like Trogo's own**. `trogo.md`: "The southeastern coast of Trogo
+  // faces the southern ocean and the Azhor Stones, which are visible from the higher coastal headlands on
+  // clear days." It stands at x = 650, z = 3406 - two thousand eight hundred metres out from Trogo's
+  // nearest hex and past `maxX` - so it is horizon and nothing else. That is the smallest widening this
+  // window has ever had: job 1's bought 71 hexes, job 2's 143, job 3's none and job 4's one.
+  assert.equal(LAND_HEXES.length, 2079, 'job 4 turns one hex of sea into land, and it is the Azhor Stones');
+  assert.ok(land.has('1,145'), 'the Azhor Stones hex row 145 is the one the widening bought');
+  assert.equal(hexCentre(1, 145).x > 600 && hexCentre(1, 145).z > 3400, true, 'and it is out past the eastern edge');
   for (const name of EDGE) for (const cell of cellsOf(name))
     assert.ok(cell.q >= -45 && cell.r <= 144, `(${cell.q},${cell.r}) was outside job 2's window`);
+  // Job 4's own hexes were all inside job 3's window except the three on row 142.
+  const pastJob3 = EAST.flatMap(name => cellsOf(name)).filter(cell => cell.r > 141);
+  assert.equal(pastJob3.length, 3, 'three of Trogo\u2019s hexes are south of everything job 3 built');
   for (const name of BLOCK) for (const cell of cellsOf(name)) assert.ok(land.has(`${cell.q},${cell.r}`), `(${cell.q},${cell.r}) is not land`);
 });
 
 test('the block still touches no built country outside itself, and is one island of ground', () => {
   const built = new Set(PLAYABLE_REGIONS);
   const neighbours = {};
-  let internal = 0, job1 = 0, job2 = 0, job3 = 0, across = 0;
+  let internal = 0, job1 = 0, job2 = 0, job3 = 0, job4 = 0, across = 0;
   for (const name of BLOCK) for (const cell of cellsOf(name)) for (const [dq, dr] of AXIAL) {
     const other = owner.get(`${cell.q + dq},${cell.r + dr}`);
     if (!other || other === name) continue;
     if (BLOCK.includes(other)) {
       internal++;
-      const group = who => (FOUR.includes(who) ? 1 : MEROSHE.includes(who) ? 2 : 3);
+      const group = who => (FOUR.includes(who) ? 1 : MEROSHE.includes(who) ? 2 : EDGE.includes(who) ? 3 : 4);
       const a = group(name), t = group(other);
-      if (a !== t) across++; else if (a === 1) job1++; else if (a === 2) job2++; else job3++;
+      if (a !== t) across++; else if (a === 1) job1++; else if (a === 2) job2++; else if (a === 3) job3++; else job4++;
       continue;
     }
     neighbours[other] = (neighbours[other] ?? 0) + 1;
   }
-  // **The whole point of the block's shape, and job 2 does not change it.** Nothing in either half
-  // shares an edge with a built country outside the block: the built frontier in the west is
+  // **The whole point of the block's shape, and four jobs have not changed it.** Nothing in any of the
+  // thirteen shares an edge with a built country outside the block: the built frontier in the west is
   // Nethereum and Isareos, which border the unbuilt Ibenwoods. So the whole southwest is reached by
-  // F8 travel and by nothing else until the forest belt lands, and jobs 3 and 4 inherit that.
+  // F8 travel and by nothing else until the forest belt lands - **and the programme is finished, so the
+  // Ibenwoods are the only thing that can ever change it.** The unbuilt neighbours left on these
+  // margins are Alezhor, Ibenale, the three Ibenwoods, East Pyros, the Nether Desert, Babon and the
+  // Azhor Stones, and nothing in the southwest quarter itself is unbuilt any more.
   for (const other of Object.keys(neighbours)) assert.ok(!built.has(other), `${other} is built and shares an edge with this block`);
   assert.equal(job1 / 2, 46, 'forty-six internal hex edges among job 1\u2019s four');
   assert.equal(job2 / 2, 30, 'thirty among job 2\u2019s four');
   assert.equal(job3 / 2, 8, 'eight among job 3\u2019s three, all of them Cape Heth | Dinelv');
-  assert.equal(across / 2, 66, 'and sixty-six between the three jobs');
-  assert.equal(internal / 2, 150);
+  // **One hex edge between Marosh and Trogo**, and it is the whole of what joins job 4's two: Marosh's
+  // southernmost `grassland` hex (-25,135) against Trogo's northernmost `deep_forest` hex (-25,136). A
+  // Mediterranean terrace and a tropical rainforest, one hex edge apart, which is the second most
+  // abrupt thing on the atlas after Trogo's own desert margin.
+  assert.equal(job4 / 2, 1, 'one hex edge between Marosh and Trogo');
+  assert.equal(across / 2, 100, 'and a hundred between the four jobs');
+  assert.equal(internal / 2, 185);
   // **Job 3's three are not one piece**, which is worth stating: Cape Heth and the Dinelv Highlands
   // share eight hex edges and Hama touches neither of them. Hama's only neighbours in eleven
   // countries are the three Meroshe quarters, nineteen edges in all, so the way from the plateau to
@@ -322,7 +364,7 @@ test('the block still touches no built country outside itself, and is one island
   assert.equal(pair, 10);
 });
 
-test('one wavelength over all eight, and the internal seams have nothing in them', () => {
+test('one wavelength over all thirteen, and the internal seams have nothing in them', () => {
   for (const name of BLOCK) {
     const profile = REGION_TERRAIN[name];
     for (const entry of [profile, ...Object.values(profile.byTerrain ?? {})])
@@ -343,8 +385,13 @@ test('one wavelength over all eight, and the internal seams have nothing in them
       pairs.set(key, Math.max(pairs.get(key), step(x, z)));
     }
   }
-  // Nineteen seams now: job 1's five, job 2's four, job 3's one, and nine between the three jobs.
-  assert.equal(pairs.size, 19, 'nineteen internal seams');
+  // Twenty-five seams now: job 1's five, job 2's four, job 3's one, job 4's one, and fourteen between
+  // the four jobs. **The flattest of all twenty-five is Marosh | Trogo**, which is the one edge between
+  // job 4's two countries: a `Csa` Mediterranean terrace at base 17 against `Af` rainforest at 52 ought
+  // to be the steepest thing in the block, and the hex blend crosses thirty-five metres of base over a
+  // hex and a quarter without a step in it, because that is what a base does and a crest is not authored
+  // within reach of that edge.
+  assert.equal(pairs.size, 25, 'twenty-five internal seams');
   // **Fourteen of the nineteen are under five metres, which was the bound for all ten of job 2's, and
   // the five that are not are the Dinelv escarpment - one to each of its five built neighbours.** That is not a defect and it is not hidden: it
   // is `hills` at base 96 meeting the Ganesh Plain's 22, the Ganesh Desert's 20, Cape Heth's 13 and
@@ -412,7 +459,7 @@ test('Navarth is the block’s high ground, the Ganesh its lowest, and the groun
   assert.ok(SOUTHWEST_TILT.perEast > 0 && SOUTHWEST_TILT.perNorth > 0, 'the block tilts toward the Vaellir’s mouth');
 });
 
-test('two courses, both on a border, both reaching the sea, and both falling the whole way', () => {
+test('four courses now, two on a border and two inside a country, and every one reaches the sea', () => {
   // Twenty-eight authored edges in two chains, and not one of them inside any of the four: what a
   // desert quarter has is somebody else's rain going past its edge.
   const mine = RIVER_EDGES.filter(edge => edge.regions.some(region => FOUR.includes(region)));
@@ -423,7 +470,26 @@ test('two courses, both on a border, both reaching the sea, and both falling the
   const sizes = vaellirEdges.reduce((tally, edge) => { tally[edge.size] = (tally[edge.size] ?? 0) + 1; return tally; }, {});
   assert.deepEqual(sizes, { small: 5, medium: 11, large: 4 });
   // `large` is drawn three times on the whole atlas: the Lizeem through Caricas and Eer, and this.
-  assert.equal(SOUTHWEST_RIVERS.length, 2);
+  // **Job 4 doubles the block's water and changes its character.** Job 1's twenty-eight river edges all
+  // run on a border with unbuilt country and jobs 2 and 3 have none at all - a hundred and sixty-eight
+  // hexes of desert, cape, plateau and Mediterranean corner without one. Job 4 has seven, and **every
+  // one of them has the same country on both banks**: three small edges round the corner of Marosh's
+  // (-25,131), which is the water gap through its ridge, and four round Trogo's (-25,140) and (-25,141),
+  // which is the Trogoreth. Both chains reach the sea.
+  assert.equal(SOUTHWEST_RIVERS.length, 4);
+  const inside = RIVER_EDGES.filter(edge => edge.regions.every(name => EAST.includes(name)));
+  assert.equal(inside.length, 7, 'seven river edges inside job 4\u2019s two countries');
+  assert.equal(inside.filter(edge => edge.regions[0] === edge.regions[1]).length, 7,
+    'and every one has the same country on both banks');
+  assert.deepEqual([...new Set(inside.map(edge => edge.size))], ['small'], 'all seven are small on the atlas');
+  // **Both are waded anywhere, and that is deliberate.** Trogo already carries one movement rule
+  // (`src/undergrowth.js`) and a walled river inside it would be a second barrier crossing the first.
+  for (const course of [MAROSH_NAHR, TROGORETH]) assert.equal(course.fordUntil, 1, `${course.id} is walled somewhere`);
+  // The swale is for the two courses drawn on an unbuilt border and for nothing else. **Leaving job 4's
+  // two in that list flattened the ridges they run off**: measured, the Trogoreth's bank comes within
+  // sixty-seven metres of the middle of Trogo's canopy and the swale ran at 0.91 there, which pulled
+  // thirteen of the crest's seventeen metres back down to the blend's own base.
+  assert.deepEqual(SOUTHWEST_SWALE_RIVERS.map(course => course.id), ['vaellir', 'alezhor-water']);
   for (const course of SOUTHWEST_RIVERS) {
     assert.ok(WEST_RIVERS.includes(course), `${course.id} is not in WEST_RIVERS`);
     const profile = WEST_PROFILES.get(course.id);
@@ -537,7 +603,21 @@ test('the ribs against the outland are measured and left alone, and the block is
     if (shareOf(['Dinelv Highlands'])(x, z) > .02) continue;
     flat.push(step(x, z));
   }
-  assert.ok(p95(flat) < 1.2, `outside the plateau the 95th percentile step is ${p95(flat).toFixed(2)} m`);
+  // **Job 4 put a second and a third escarpment in the block**, so the bound moves: Marosh's ridge at
+  // base 74 and Trogo's crest at 52 plus twenty-six both stand over a desert at 14, which is the same
+  // contract the Dinelv escarpment has - a front is what the atlas draws here, and it is measured rather
+  // than lowered to hide it. With all three of the block's high countries left out, the p95 inside the
+  // other ten is still under job 3's own 1.2.
+  assert.ok(p95(flat) < 2.4, `outside the plateau the 95th percentile step is ${p95(flat).toFixed(2)} m`);
+  const level = [];
+  for (const name of BLOCK.filter(item => !['Dinelv Highlands', 'Marosh', 'Trogo'].includes(item)))
+    for (const cell of cellsOf(name)) for (let i = 0; i < 12; i++) {
+      const x = cell.x + ((i % 4) - 1.5) * 34, z = cell.z + (Math.floor(i / 4) - 1) * 40;
+      if (landDistance(x, z) < 30 || wholeShare(x, z) <= .95) continue;
+      if (shareOf(['Dinelv Highlands', 'Marosh', 'Trogo'])(x, z) > .02) continue;
+      level.push(step(x, z));
+    }
+  assert.ok(p95(level) < 1.2, `the block’s ten flat countries step ${p95(level).toFixed(2)} m at p95`);
   // **The margin is no longer the steepest thing in the block, and that is a first.** Every country
   // built before this one could say "the worst step inside is smaller than the worst step at the
   // outland margin", because nothing inside any of them was steep. The Dinelv escarpment, the three
@@ -545,8 +625,8 @@ test('the ribs against the outland are measured and left alone, and the block is
   // at the margin. So what this holds is the thing that still means something - **the flat ten
   // countries are quieter inside than the margin is**, which is the original claim with the one
   // country that has a cliff in it taken out.
-  assert.ok(Math.max(...margin) > Math.max(...flat) * 3,
-    `the margin (${Math.max(...margin).toFixed(2)} m) is not the noisy place it has always been (${Math.max(...flat).toFixed(2)} m inside the flat countries)`);
+  assert.ok(Math.max(...margin) > Math.max(...level) * 2.5,
+    `the margin (${Math.max(...margin).toFixed(2)} m) is not the noisy place it has always been (${Math.max(...level).toFixed(2)} m inside the flat countries)`);
   // And the whole block is one walkable piece: a flood fill on an eight-metre lattice from West
   // Pyros's own spawn reaches **all eight** countries, round the Vaellir rather than over it, over
   // the Ganesh Plain's divide, across the hamada's benches, along the sand sea's corridors and out
@@ -587,10 +667,11 @@ test('nothing of this block is written outside its own hexes, and nobody else’
 });
 
 test('every animal stands on this block’s own ground, and the desert is nearly empty on purpose', () => {
-  assert.equal(SOUTHWEST_WILDLIFE_ZONES.length, 37);
+  assert.equal(SOUTHWEST_WILDLIFE_ZONES.length, 54);
   const byRegion = {};
   for (const zone of SOUTHWEST_WILDLIFE_ZONES) byRegion[zone.region] = (byRegion[zone.region] ?? 0) + 1;
   assert.deepEqual(byRegion, { Navarth: 3, 'West Pyros': 7, 'Ganesh Desert': 3, 'Ganesh Plain': 4,
+    Marosh: 6, Trogo: 11,
     'North Meroshe Desert': 2, 'West Meroshe Desert': 2, 'Central Meroshe Desert': 1, 'South Meroshe Desert': 2,
     'Cape Heth': 4, 'Dinelv Highlands': 4, Hama: 5 });
   // Thirty-one hexes and three ranges, two of them birds in the air: the honest dry-year reading,
@@ -604,8 +685,12 @@ test('every animal stands on this block’s own ground, and the desert is nearly
     assert.ok(Math.hypot(zone.maxX - zone.minX, zone.maxZ - zone.minZ) / 2 < 130, `${zone.id}'s range is wider than it is run from`);
     for (const [x, z] of zone.sites) {
       assert.ok(x >= zone.minX && x <= zone.maxX && z >= zone.minZ && z <= zone.maxZ, `${zone.id}'s home is outside its range`);
-      if (!zone.float) assert.equal(hexOwnerAt(x, z), zone.region, `${zone.id}'s home at (${x}, ${z}) is on ${hexOwnerAt(x, z)}'s hex`);
+      if (!zone.float && !zone.sea) assert.equal(hexOwnerAt(x, z), zone.region, `${zone.id}'s home at (${x}, ${z}) is on ${hexOwnerAt(x, z)}'s hex`);
       if (zone.air) continue;
+      // **A sea range is out past the surf and is checked for being there**, which the loop used to miss:
+      // job 4's dolphins are the block's first, and `inRange` is the only thing the life system asks of
+      // an `air` or a `sea` zone, so nothing else here applies to one.
+      if (zone.sea) { assert.ok(landDistance(x, z) < 0, `${zone.id} swims on dry land`); continue; }
       // A raft sits on a river the atlas draws on a hex edge, so what is under it is water and the
       // hex either side of the line; the ground checks below are for the ranges that stand on ground.
       if (zone.float) { assert.ok(westWaterSurface(x, z) !== null, `${zone.id} floats on dry land`); continue; }
@@ -618,7 +703,7 @@ test('every animal stands on this block’s own ground, and the desert is nearly
   // The one new rig, and it is where the lore puts it: the desert margins. Job 1 spent it on three
   // zones and job 2 added one in each of the four Meroshe quarters without spending another rig.
   const boneBirds = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.species === 'bone-bird');
-  assert.equal(boneBirds.length, 9, 'job 3 added one over the tables and one over Hama\u2019s dry half');
+  assert.equal(boneBirds.length, 10, 'job 4 added a tenth over Trogo\u2019s crest, and it is the last');
   for (const name of MEROSHE)
     assert.equal(boneBirds.filter(zone => zone.region === name).length, 1, `${name} has no bone-bird`);
   for (const zone of boneBirds) assert.ok(zone.air >= 38, `${zone.id} flies too low for a bird with two and a half metres of wing`);
@@ -669,7 +754,7 @@ test('the four are charted, levelled, spoken for and listed, and nothing is buil
   // for ground that turned out to be somebody else's.
   for (const place of SOUTHWEST_LANDMARKS)
     assert.ok(BLOCK.includes(hexOwnerAt(place.x, place.z)), `${place.id} stands on ${hexOwnerAt(place.x, place.z)}`);
-  assert.equal(SOUTHWEST_LANDMARKS.length, 53, 'job 1\u2019s nineteen, job 2\u2019s seventeen and job 3\u2019s seventeen');
+  assert.equal(SOUTHWEST_LANDMARKS.length, 67, 'job 1\u2019s nineteen, job 2\u2019s seventeen, job 3\u2019s seventeen and job 4\u2019s fourteen');
 });
 
 // ---------------------------------------------------------------------------
@@ -717,26 +802,36 @@ test('the atlas gives four more countries ninety-five hexes, one terrain word an
   // the Ganesh Plain's `Csb` row - so even the single exception was the blend telling the truth about a
   // neighbour rather than a gradient inside this half.
   //
-  // **Job 3 made it five, and the four new ones are all Hama's.** Hama is nine `Csb` hexes on the
-  // Meroshe's south-western margin, so the two West Meroshe hexes and the two South Meroshe hexes
-  // nearest it are pulled to 0.893-0.913 and everything else in ninety-five still reads 1.000. Every
-  // exception in the list is on the outer edge of one of these four countries and none is inside one,
-  // which is the same finding twice: **this half has no gradient of its own and every departure from
-  // 1.000 in it is a neighbour's.**
+  // **Job 3 made it five, job 4 made it twenty, and every one of the twenty is still a neighbour's.**
+  // Job 3's report predicted that building Marosh would turn the four exceptions into "eight or ten";
+  // it is nineteen plus job 2's one, which is a bigger answer than the question expected and for a
+  // plain reason: `Af` is zero on this scale where `Csb` is 0.08, so Trogo pulls three times as hard as
+  // Hama does. Nine of the twenty are Marosh's doing, seven Trogo's, four Hama's, and the deepest of
+  // them, **(-26,136) at 0.646, touches Trogo and Marosh both** - a desert hex a third of the way to a
+  // rainforest, where job 2 measured 1.000 on ninety-four of ninety-five hexes. Not one exception is in
+  // the interior: **this half still has no gradient of its own and every departure from 1.000 in it is
+  // somebody else's climate arriving.**
   const exceptions = [];
   for (const name of MEROSHE) for (const cell of cellsOf(name)) {
     assert.equal(southwestKoppen(cell.x, cell.z), 'BWh');
     const dry = southwestAridity(cell.x, cell.z);
     if (dry > .995) continue;
     exceptions.push(`${cell.q},${cell.r}`);
-    assert.ok(dry > .85, `${name} at (${cell.q},${cell.r}) reads ${dry.toFixed(3)}`);
-    // Each one touches a country outside the Meroshe: the plain for the first, Hama for the other four.
+    assert.ok(dry > .6, `${name} at (${cell.q},${cell.r}) reads ${dry.toFixed(3)}`);
+    // Each one touches a country outside the Meroshe: the Ganesh Plain, Marosh, Hama or Trogo.
     const neighbours = AXIAL.map(([dq, dr]) => owner.get(`${cell.q + dq},${cell.r + dr}`));
     assert.ok(neighbours.some(other => other && !MEROSHE.includes(other)),
       `(${cell.q},${cell.r}) is off 1.000 with no wet neighbour`);
   }
-  assert.deepEqual(exceptions.sort(), ['-24,128', '-32,140', '-32,141', '-35,136', '-36,136'],
-    'five hexes of ninety-five are pulled off 1.00: one by the Ganesh Plain and four by Hama');
+  assert.deepEqual(exceptions.sort(), [
+    '-24,128', '-25,129', '-26,130', '-26,136', '-27,131', '-27,132', '-27,133', '-27,134', '-27,135',
+    '-27,136', '-27,137', '-27,138', '-28,139', '-29,139', '-30,140', '-31,141', '-32,140', '-32,141',
+    '-35,136', '-36,136',
+  ], 'twenty hexes of ninety-five are pulled off 1.00, and every one of them touches a greener country');
+  // The deepest of the twenty is the hex that touches both of job 4's countries at once.
+  const deepest = cellsOf('South Meroshe Desert').find(cell => cell.q === -26 && cell.r === 136);
+  assert.ok(Math.abs(southwestAridity(deepest.x, deepest.z) - .646) < .01,
+    `(-26,136) reads ${southwestAridity(deepest.x, deepest.z).toFixed(3)} against Trogo and Marosh both`);
 });
 
 test('the west and south edges are the sea, and the atlas draws no water in the Meroshe at all', () => {
@@ -788,20 +883,22 @@ test('the west and south edges are the sea, and the atlas draws no water in the 
   for (const cell of cellsOf('South Meroshe Desert')) if (landDistance(cell.x, cell.z) < 120) southShore.push(cell);
   assert.ok(westShore.length >= 4, `${westShore.length} West Meroshe hexes within 120 m of the water`);
   assert.ok(southShore.length >= 2, `${southShore.length} South Meroshe hexes within 120 m of the water`);
-  // **The shore is as arid as the interior on every hex of it but three**, and the three are Hama's:
-  // (-36,136) on the western shore and (-32,140) and (-32,141) on the southern one all stand within a
-  // hex of Hama's `Csb` grassland and read 0.89-0.91 instead of 1.000. Job 2 measured all eleven at
-  // 1.000 and could, because Hama was not built; the three that moved are the wet edge of the desert
-  // arriving, and it arrives on the coast rather than inland, which is what an ocean does.
+  // **The shore is as arid as the interior on every hex of it but five.** Job 2 measured all eleven at
+  // 1.000 and could, because nothing green was built beside them; job 3 moved three of them with Hama
+  // and job 4 moves two more with Trogo. (-36,136) is Hama's on the western shore, (-32,140) and
+  // (-32,141) Hama's on the southern one, and **(-30,140) at 0.811 and (-31,141) at 0.883 are Trogo's** -
+  // the two southern-shore hexes nearest the rainforest, and the furthest off the driest value any
+  // shore hex in the Meroshe gets. It is still the wet edge arriving on the coast rather than inland,
+  // which is what an ocean does, except that this time the ocean has a forest on it.
   const wetted = [];
   for (const cell of [...westShore, ...southShore]) {
     const dry = southwestAridity(cell.x, cell.z);
     if (dry > .995) continue;
     wetted.push(`${cell.q},${cell.r}`);
-    assert.ok(dry > .85, `(${cell.q},${cell.r}) reads ${dry.toFixed(3)} on a desert shore`);
+    assert.ok(dry > .75, `(${cell.q},${cell.r}) reads ${dry.toFixed(3)} on a desert shore`);
   }
-  assert.deepEqual(wetted.sort(), ['-32,140', '-32,141', '-36,136'],
-    'only the three shore hexes nearest Hama are off the driest value');
+  assert.deepEqual(wetted.sort(), ['-30,140', '-31,141', '-32,140', '-32,141', '-36,136'],
+    'only the five shore hexes nearest Hama and Trogo are off the driest value');
   // The skirt lets go at the shore, so the West Meroshe's own hexes are not under the sea: measured,
   // 0 m at the waterline, 2.6 at twenty metres in and 10.4 at a hundred and thirty.
   for (const cell of cellsOf('West Meroshe Desert')) if (landDistance(cell.x, cell.z) > 12)
@@ -918,19 +1015,28 @@ test('the Ganesh Plain seam is the flattest in the block, and its divide did not
   // whether the divide moved. Measured against the same ground built without the Meroshe at all
   // (`git archive` of the base commit, run side by side):
   //
-  //  - the three channels fall **1.60 m, 3.00 m and 4.07 m** head to mouth, to the centimetre the
-  //    same as before, and all three still run downhill the way they ran;
+  //  - the three channels fall **1.60 m, 3.00 m and 3.63 m** head to mouth. **The third one changed in
+  //    job 4, and job 1 asked for exactly this to be watched.** Job 1's open question 8: "The Ganesh
+  //    Plain's third channel runs the wrong way on purpose... If job 2's Meroshe deserts change the
+  //    blend along that margin, the divide will move, and the three channels should be re-measured
+  //    then." Job 2 did not move it (4.07 to the centimetre) and **Marosh did**: the sea channel's mouth
+  //    is on the plain's south-eastern corner, which borders Marosh across three hex edges, and the
+  //    ridge at base 74 lifted the mouth by 0.44 m where `outland` at 11.5 had left it. The channel
+  //    still falls the whole way and still runs east to the sea;
   //  - the divide's crest stands at **x = -2800** along z = 1790 and **x = -2735** along z = 1730,
   //    the same two points. **The divide did not move.**
-  //  - what did move is the plain's own southern margin, and upward: its hex-centre mean goes from
-  //    18.670 m to **18.971**, because the row of hexes south of it stopped being `outland` at base
-  //    11.5 and became the hamada at 21. That is the rib at that margin disappearing, which is what
-  //    building a neighbour is for.
+  //  - **the divide itself still did not move**, in either job: the crest stands at x = -2800 along
+  //    z = 1790 and x = -2735 along z = 1730, which are job 2's own two points.
+  //  - and the plain's own margins keep rising as its neighbours are built: its hex-centre mean went
+  //    from 18.670 m with no Meroshe to **18.971** with it (job 2) and to **20.308** now, because the
+  //    hexes south of it stopped being `outland` at base 11.5 and became the hamada at 21, and the hexes
+  //    east of it stopped being `outland` and became Marosh's ridge at 74. That is the rib at a margin
+  //    disappearing, which is what building a neighbour is for.
   const falls = GANESH_PLAIN_CHANNELS.map(channel => {
     const a = channel.line[0], b = channel.line.at(-1);
     return +(H(a.x, a.z) - H(b.x, b.z)).toFixed(2);
   });
-  assert.deepEqual(falls, [1.60, 3.00, 4.07], 'the three channels fall exactly as they did');
+  assert.deepEqual(falls, [1.60, 3.00, 3.63], 'the first two fall as they did and the sea channel is 0.44 m shallower');
   const crestAt = z => {
     let best = -99, at = 0;
     for (let x = -2900; x <= -2600; x += 5) { const h = H(x, z); if (h > best) { best = h; at = x; } }
@@ -940,17 +1046,19 @@ test('the Ganesh Plain seam is the flattest in the block, and its divide did not
   assert.equal(crestAt(1730), -2735, 'nor along z = 1730');
   const plain = cellsOf('Ganesh Plain').map(cell => H(cell.x, cell.z));
   const mean = plain.reduce((a, b) => a + b, 0) / plain.length;
-  // **The plain's own mean has now risen twice for the same reason and it is the right reason.** It was
-  // 18.670 m with nothing south of it, 18.971 once job 2 put the hamada at base 21 against it, and it is
-  // **20.131** now that job 3 has put the Dinelv Highlands at base 96 across four hex edges of its
-  // south-western corner. Each step is a rib at a margin disappearing, which is what building a
-  // neighbour is for; the channels and the divide below are unmoved through all three.
-  assert.ok(Math.abs(mean - 20.131) < .01, `the plain means ${mean.toFixed(3)} m`);
+  // **The plain's own mean has now risen three times for the same reason and it is the right reason.** It
+  // was 18.670 m with nothing south of it, 18.971 once job 2 put the hamada at base 21 against it,
+  // 20.131 once job 3 put the Dinelv Highlands at base 96 across four hex edges of its south-western
+  // corner, and **20.308** now that job 4 has put Marosh's ridge at base 74 against three hex edges of
+  // its south-eastern one. Each step is a rib at a margin disappearing, which is what building a
+  // neighbour is for; **the divide is unmoved through all four** and only the sea channel's own mouth has
+  // changed, which job 1 asked to have watched.
+  assert.ok(Math.abs(mean - 20.308) < .01, `the plain means ${mean.toFixed(3)} m`);
   // And the seam is walked over without noticing: the plain at 22 against the rock floor at 21, on
   // the same wavelength, with the block's own tilt running through both.
   assert.ok(Math.abs(REGION_TERRAIN['Ganesh Plain'].base - REGION_TERRAIN['North Meroshe Desert'].base) <= 1);
   let worst = 0, clear = 0;
-  const plateauShare = shareOf(['Dinelv Highlands']);
+  const plateauShare = shareOf(['Dinelv Highlands', 'Marosh']);
   for (const cell of cellsOf('North Meroshe Desert')) for (const [dq, dr] of AXIAL) {
     if (owner.get(`${cell.q + dq},${cell.r + dr}`) !== 'Ganesh Plain') continue;
     const mate = cellsOf('Ganesh Plain').find(o => o.q === cell.q + dq && o.r === cell.r + dr);
@@ -964,9 +1072,12 @@ test('the Ganesh Plain seam is the flattest in the block, and its divide did not
   // **The seam itself has not changed and the measurement of it has.** Job 2 measured 0.27 m over all
   // ten edges; the worst reading now is 2.19 m, and every metre of the difference is at the seam's
   // *western* end, where the Dinelv Highlands' escarpment blend reaches the last two edges of it -
-  // the plateau shares four hex edges with the Ganesh Plain a hex south-west of here. Measured on the
-  // points where the blend holds no Dinelv at all, the two halves still meet at **0.27 m**, which is
-  // job 2's figure to the centimetre.
+  // the plateau shares four hex edges with the Ganesh Plain a hex south-west of here - **and job 4 put
+  // Marosh's ridge on the other end of the same seam**, three hex edges against the plain's own
+  // south-eastern corner, which is the second thing now reaching into it. Measured on the points where
+  // the blend holds neither the plateau nor the ridge, the two halves still meet at **0.27 m**, which is
+  // job 2's figure to the centimetre: the seam itself has never moved, and three jobs in a row have had
+  // to narrow the window it is measured in.
   assert.ok(worst < 2.4, `the halves meet with ${worst.toFixed(2)} m`);
   assert.ok(clear < .4, `clear of the escarpment the halves meet with ${clear.toFixed(2)} m`);
 });
@@ -1538,5 +1649,357 @@ test('the three are charted, levelled, spoken for and listed, and nothing is bui
   // The whole block is one field: the three share `southwestAridity`, `SOUTHWEST_TILT` and one tint.
   assert.ok(westEdgeShare(-3450, 2021) > .9, 'the plateau is not its own share');
   assert.equal(westEdgeShare(-2930, 1620), 0, 'the western edge reaches the Ganesh Plain');
-  assert.equal(SOUTHWEST_REGIONS.length, 11);
+  assert.equal(SOUTHWEST_REGIONS.length, 13);
+});
+// ---------------------------------------------------------------------------
+// Job 4: Marosh and Trogo, the last two countries of the southwest quarter
+// ---------------------------------------------------------------------------
+/**
+ * **Marosh and Trogo** (docs/southwest-4-brief.md, 30 September 2026), and with them the programme is
+ * finished: thirteen countries and three hundred and twenty-two hexes, the whole southwest quarter of
+ * Azhora, built as terrain, climate, water, scenery and wildlife and nothing that belongs to anybody.
+ *
+ * Both are firsts and both are the atlas stating a division twice. **Marosh is the wall the Meroshe
+ * stands behind**: eight `hills` hexes that are every one of them `Csb`, ten `grassland` hexes that are
+ * every one of them `Csa`, and - measured here - every one of the hills touching the desert and not one
+ * of them touching the sea while every one of the grassland hexes touches the sea. **Trogo is the first
+ * rainforest in the game**: twenty-two `deep_forest` hexes that are every one of them `Af`, the wettest
+ * code the atlas paints anywhere, thirteen hex edges from a country that is `BWh` on all twenty-one of
+ * its own. `tests/trogo-undergrowth.test.js` holds the two rules the user's decision of that day asked
+ * for; what is below is the ground, the climate, the water, the colour and the animals.
+ */
+test('the atlas gives two more countries forty-seven hexes, and neither has a desert hex on it', () => {
+  assert.deepEqual(EAST.map(name => REGION_IDS[name]), [43, 44]);
+  assert.deepEqual(EAST_EDGE_REGIONS, EAST);
+  const at = PLAYABLE_REGIONS.indexOf('Marosh');
+  assert.deepEqual(PLAYABLE_REGIONS.slice(at, at + 2), EAST);
+  assert.equal(at + 2, PLAYABLE_REGIONS.length, 'job 4 is the end of the list and of the programme');
+  for (const name of EAST) assert.ok(PLAYABLE.includes(name), `${name} is in the survey`);
+  assert.deepEqual(EAST.map(name => cellsOf(name).length), [18, 29]);
+  assert.deepEqual(terrainCount('Marosh'), { grassland: 10, hills: 8 });
+  assert.deepEqual(terrainCount('Trogo'), { deep_forest: 22, grassland: 7 });
+  // **`deep_forest`'s first use anywhere in the game's world.** Until now the word appeared only in
+  // `campaign-world.js`'s labels and in the developer atlas's own height table (which puts it at
+  // eighteen metres where `plains` is six - the map author's own hint that a deep forest stands over the
+  // ground round it). `REGION_TERRAIN` has never carried a profile for it before.
+  assert.ok(REGION_TERRAIN.Trogo.base === 52 && REGION_TERRAIN.Trogo.byTerrain.grassland.base === 13);
+  const everyTerrain = new Set(Object.keys(REGION_CELLS).flatMap(name => cellsOf(name).map(cell => cell.terrain)));
+  assert.ok(everyTerrain.has('deep_forest'));
+  assert.deepEqual(Object.keys(REGION_TERRAIN).filter(name => REGION_TERRAIN[name].byTerrain?.deep_forest), [],
+    'nothing refines `deep_forest` by terrain: in Trogo it is the country\u2019s own profile');
+  // **The climate, hex for hex, and the terrain field draws the same line in both countries.**
+  assert.equal(Object.keys(MAROSH_CLIMATE).length, 18);
+  assert.equal(Object.keys(TROGO_CLIMATE).length, 29);
+  assert.equal(Object.keys(EAST_EDGE_CLIMATE).length, 47);
+  const codes = name => cellsOf(name).reduce((tally, cell) => {
+    const code = SOUTHWEST_CLIMATE[`${cell.q},${cell.r}`];
+    tally[code] = (tally[code] ?? 0) + 1;
+    return tally;
+  }, {});
+  assert.deepEqual(codes('Marosh'), { Csa: 10, Csb: 8 });
+  assert.deepEqual(codes('Trogo'), { Af: 22, Csa: 7 });
+  for (const cell of cellsOf('Marosh'))
+    assert.equal(SOUTHWEST_CLIMATE[`${cell.q},${cell.r}`], cell.terrain === 'hills' ? 'Csb' : 'Csa',
+      `Marosh's (${cell.q},${cell.r}) disagrees with itself`);
+  for (const cell of cellsOf('Trogo'))
+    assert.equal(SOUTHWEST_CLIMATE[`${cell.q},${cell.r}`], cell.terrain === 'deep_forest' ? 'Af' : 'Csa',
+      `Trogo's (${cell.q},${cell.r}) disagrees with itself`);
+  if (existsSync(MAP_PATH)) {
+    const map = JSON.parse(readFileSync(MAP_PATH, 'utf8').replace(/^\ufeff/, ''));
+    for (const [key, code] of Object.entries(EAST_EDGE_CLIMATE))
+      assert.equal(map.hexes[key]?.climate, code, `${key} reads ${map.hexes[key]?.climate} on the map`);
+  }
+  // **`Af` is the only zero on the aridity scale and this is where it arrives.** For three jobs the wet
+  // end of the field was `Csb` at 0.08; the whole range of it is now spent inside this block, and most
+  // of it across one hex edge.
+  assert.equal(ARIDITY.Af, 0);
+  assert.equal(Math.min(...Object.values(ARIDITY)), 0);
+  assert.ok(southwestAridity(-2300, 2900) < .01, 'the middle of the rainforest is as wet as the scale goes');
+  assert.equal(southwestKoppen(-2300, 2900), 'Af');
+  // **Not one `BWh` hex between the two of them**, which nothing else in thirteen countries can say.
+  for (const name of EAST) for (const cell of cellsOf(name))
+    assert.notEqual(SOUTHWEST_CLIMATE[`${cell.q},${cell.r}`], 'BWh', `${name} has a desert hex`);
+});
+
+test('Marosh is a wall, and the atlas says so three times over', () => {
+  // **The third statement is the one no other country in the block makes**: which side each half faces.
+  // Seventeen of Marosh's eighteen desert edges are on the eight `hills` hexes and all twenty of its
+  // ocean edges are on the ten `grassland` ones, so the terrain word, the climate code and the geography
+  // all divide the country in the same place. That is why the ridge is laid on the hills and nowhere else.
+  const claimed = new Set();
+  for (const name of Object.keys(REGION_CELLS)) for (const cell of cellsOf(name)) claimed.add(`${cell.q},${cell.r}`);
+  let hillDesert = 0, hillSea = 0, grassSea = 0, grassDesert = 0;
+  for (const cell of cellsOf('Marosh')) for (const [dq, dr] of AXIAL) {
+    const key = `${cell.q + dq},${cell.r + dr}`, other = owner.get(key);
+    const desert = other && MEROSHE.includes(other), sea = !claimed.has(key);
+    if (cell.terrain === 'hills') { if (desert) hillDesert++; if (sea) hillSea++; }
+    else { if (desert) grassDesert++; if (sea) grassSea++; }
+  }
+  assert.deepEqual([hillDesert, hillSea], [17, 0], 'the hills face the desert and never the sea');
+  assert.deepEqual([grassSea, grassDesert], [20, 1], 'the grass faces the sea');
+  // **Twenty hex edges of open water makes Marosh the second most maritime country in the block**, one
+  // ahead of Hama, which is the opposite of what job 3's report expected - it called Marosh inland.
+  assert.ok(grassSea > 19, `${grassSea} ocean edges`);
+  // The ridge: eight hex centres, a maximum over the line rather than a sum, and the second highest
+  // base in the game outside the two Lotharns.
+  assert.equal(MAROSH_RIDGE.lift, 15);
+  assert.equal(REGION_TERRAIN.Marosh.byTerrain.hills.base, 74);
+  assert.ok(REGION_TERRAIN.Marosh.byTerrain.hills.base > REGION_TERRAIN.Navarth.byTerrain.hills.base + 15);
+  assert.ok(REGION_TERRAIN.Marosh.byTerrain.hills.base < REGION_TERRAIN['Dinelv Highlands'].base);
+  for (const point of MAROSH_RIDGE.line.slice(1, -1))
+    assert.equal(hexOwnerAt(point.x, point.z), 'Marosh', `the crest leaves the country at ${point.x}, ${point.z}`);
+  const hills = cellsOf('Marosh').filter(cell => cell.terrain === 'hills');
+  for (const cell of hills) assert.ok(maroshCrest(cell.x, cell.z) > .55, `(${cell.q},${cell.r}) is a hills hex off the crest`);
+  const hillMean = hills.reduce((sum, cell) => sum + H(cell.x, cell.z), 0) / hills.length;
+  const grass = cellsOf('Marosh').filter(cell => cell.terrain === 'grassland');
+  const grassMean = grass.reduce((sum, cell) => sum + H(cell.x, cell.z), 0) / grass.length;
+  assert.ok(Math.abs(hillMean - 60.84) < .5, `the ridge means ${hillMean.toFixed(2)} m`);
+  assert.ok(Math.abs(grassMean - 26.63) < .5, `the terrace means ${grassMean.toFixed(2)} m`);
+  assert.ok(hillMean - grassMean > 30, 'the ridge does not stand over its own terrace');
+  // **The water gap, and the atlas found it rather than a builder.** The three river edges the map draws
+  // on this coast all meet at the corner of (-25,131), beside the crest's own western elbow; the notch is
+  // there and the crest either side of it stands over it.
+  assert.equal(MAROSH_GAP.id, 'marosh-water-gap');
+  assert.equal(hexOwnerAt(MAROSH_GAP.x, MAROSH_GAP.z), 'Marosh');
+  const atGap = maroshRidgeAt(MAROSH_GAP.x, MAROSH_GAP.z);
+  assert.ok(atGap.gap > .99 && atGap.lift < MAROSH_RIDGE.lift * .3,
+    `the gap keeps ${atGap.lift.toFixed(2)} m of the crest's ${MAROSH_RIDGE.lift}`);
+  const beside = [maroshRidgeAt(-2700, 2107), maroshRidgeAt(-2750, 2194)];
+  for (const spot of beside) assert.ok(spot.lift > atGap.lift + 8, 'the crest beside the gap is not above it');
+  assert.ok(courseDistance(MAROSH_NAHR, MAROSH_GAP.x, MAROSH_GAP.z, 200) < 90, 'the Nahr does not run through the gap');
+  // Four dry combes down the seaward face, all of them falling the whole way and all of them clear of
+  // the surf - which is `merosheSkirt`'s lesson and Hama's winter beds' after it.
+  assert.equal(MAROSH_COMBES.length, 4);
+  for (const combe of MAROSH_COMBES) {
+    for (const point of combe.line) assert.equal(hexOwnerAt(point.x, point.z), 'Marosh', `${combe.id} leaves the country`);
+    const heights = combe.line.map(point => H(point.x, point.z));
+    for (let i = 1; i < heights.length; i++)
+      assert.ok(heights[i] < heights[i - 1], `${combe.id} climbs at point ${i}`);
+    assert.ok(heights[0] - heights.at(-1) > 25, `${combe.id} falls only ${(heights[0] - heights.at(-1)).toFixed(1)} m`);
+    assert.ok(heights.at(-1) > 5, `${combe.id} ends ${heights.at(-1).toFixed(1)} m above the sea`);
+    assert.ok(landDistance(combe.line.at(-1).x, combe.line.at(-1).z) > 20, `${combe.id} runs into the surf`);
+    const mid = combe.line[1];
+    assert.ok(inMaroshCombe(mid.x, mid.z) > .3, `${combe.id} has no floor at its second point`);
+    assert.equal(westWaterSurface(mid.x, mid.z), null, `${combe.id} has water in it`);
+  }
+  // And nothing is authored on the western margin: the front against the Meroshe is the hex blend
+  // carrying a base difference, which is the Dinelv escarpment's contract and the West Lotharn's.
+  assert.equal(maroshRidgeAt(-2900, 2200).lift, 0, 'the crest reaches into the desert');
+});
+
+test('Trogo is the ridgeline that makes the rainforest, and the forest stops where the atlas says', () => {
+  // **The crest is read off the atlas and not chosen.** The lore gives the country in one sentence - "a
+  // ridgeline that catches the southern moisture and drops a fog wall on its windward face while the
+  // leeward side stays desert" - and the atlas says where the line runs: the seven Trogo hexes that share
+  // an edge with the South Meroshe are its north-western margin, and the crest is laid along those.
+  const margin = cellsOf('Trogo').filter(cell => AXIAL.some(([dq, dr]) =>
+    owner.get(`${cell.q + dq},${cell.r + dr}`) === 'South Meroshe Desert'));
+  assert.equal(margin.length, 7, 'seven hexes of Trogo touch the desert');
+  assert.ok(margin.every(cell => cell.terrain === 'deep_forest'), 'and every one of them is deep forest');
+  for (const cell of margin) assert.ok(trogoCrestAt(cell.x, cell.z).crest > .4,
+    `the margin hex (${cell.q},${cell.r}) is off the crest`);
+  assert.equal(TROGO_CREST.lift, 26);
+  for (const point of TROGO_CREST.line.slice(1, -1))
+    assert.equal(hexOwnerAt(point.x, point.z), 'Trogo', `the crest leaves the country at ${point.x}, ${point.z}`);
+  // The ridge stands over its own canopy and the canopy over its own shore.
+  const forest = cellsOf('Trogo').filter(cell => cell.terrain === 'deep_forest');
+  const shore = cellsOf('Trogo').filter(cell => cell.terrain === 'grassland');
+  const mean = list => list.reduce((sum, cell) => sum + H(cell.x, cell.z), 0) / list.length;
+  assert.ok(Math.abs(mean(forest) - 46.89) < .6, `the canopy means ${mean(forest).toFixed(2)} m`);
+  assert.ok(Math.abs(mean(shore) - 9.33) < .6, `the shore grass means ${mean(shore).toFixed(2)} m`);
+  assert.ok(mean(forest) - mean(shore) > 30, 'the forest does not stand over its own coast');
+  assert.ok(H(-2424, 2840) > mean(forest) + 10, 'the crest does not stand over the mid-slope');
+  // **The forest wall**: thirteen hex edges of `Af` against `BWh`, and no landform authored on any of
+  // them. It is the hex blend carrying a base difference, which is what job 2's own Forest Wall landmark
+  // promised a job in advance - "Trogo begins at the next hex east and goes up in one wall of dark
+  // canopy with cloud sitting in it."
+  let edges = 0, worstFront = 0;
+  for (const cell of forest) for (const [dq, dr] of AXIAL) {
+    if (owner.get(`${cell.q + dq},${cell.r + dr}`) !== 'South Meroshe Desert') continue;
+    edges++;
+    const mate = cellsOf('South Meroshe Desert').find(one => one.q === cell.q + dq && one.r === cell.r + dr);
+    worstFront = Math.max(worstFront, H(cell.x, cell.z) - H(mate.x, mate.z));
+  }
+  assert.equal(edges, 13, 'thirteen hex edges of rainforest against hot desert');
+  assert.ok(worstFront > 35, `the wall stands only ${worstFront.toFixed(1)} m over the desert`);
+  // **Where the forest stops**: every one of the seven `grassland` hexes is on the exposed southern or
+  // south-eastern shore, and the `deep_forest` goes to the waterline on the sheltered north-eastern one.
+  // Measured against `LAND_HEXES`, which holds every claimed hex in the window and not only the playable
+  // ones: an edge is open water when the hex across it is claimed by nobody at all.
+  const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
+  const seaEdges = list => list.reduce((sum, cell) =>
+    sum + AXIAL.filter(([dq, dr]) => !land.has(`${cell.q + dq},${cell.r + dr}`)).length, 0);
+  assert.equal(seaEdges(shore) + seaEdges(forest), 30, 'thirty hex edges of open water in all');
+  assert.equal(seaEdges(shore), 17, 'the coastal grass carries seventeen of the thirty ocean edges');
+  assert.equal(seaEdges(forest), 13, 'and the canopy carries thirteen, which is the sheltered shore and the corner');
+  // **The forest reaches the water down the north-eastern shore and the grass from row 139 southward**,
+  // which is the atlas drawing the distinction the lore states: "the coast is not extensively sheltered -
+  // no deep natural harbors on the scale of Hama". A tropical coast open to a southern ocean is
+  // salt-pruned and carries tussock and scrub; a sheltered embayment in the same climate carries canopy
+  // to the tideline, which is the lore's "mangrove and estuary ecology". Ten of the canopy's thirteen are
+  // on the north-eastern shore above row 139 and the other three are the far south-western corner, where
+  // Trogo, the Meroshe and the southern ocean meet.
+  assert.ok(shore.every(cell => cell.r >= 139), 'every grassland hex is on the southern half of the country');
+  let northEast = 0, corner = 0;
+  for (const cell of forest) for (const [dq, dr] of AXIAL) {
+    if (land.has(`${cell.q + dq},${cell.r + dr}`)) continue;
+    if (cell.r <= 138) northEast++; else corner++;
+  }
+  assert.deepEqual([northEast, corner], [10, 3], 'the canopy meets the water in two places and no more');
+  // The altitude band, which is the field the whole country is sorted by, and it is a function of the
+  // finished height and of nothing else - the Dinelv bedding's own argument.
+  assert.ok(trogoBand(-2400, 3147) < .05, 'the shore grass is at the bottom of the band');
+  assert.ok(trogoBand(-2424, 2840) > .85, 'the crest is at the top of it');
+  assert.ok(trogoBand(-2300, 2900) > .5 && trogoBand(-2300, 2900) < .8, 'and the mid-slope is in the middle');
+  assert.ok(trogoFogForest(-2424, 2840) > .9, 'the fog forest is not on the crest');
+  assert.ok(trogoFogForest(-2300, 2900) < .2, 'and it is on the mid-slope, where it should not be');
+  // Four gullies, every one of them dry and every one of them falling the whole way. The atlas draws one
+  // river on these twenty-nine hexes and these are the drainage it does not draw.
+  assert.equal(TROGO_GULLIES.length, 4);
+  for (const gully of TROGO_GULLIES) {
+    for (const point of gully.line) {
+      assert.equal(hexOwnerAt(point.x, point.z), 'Trogo', `${gully.id} leaves the country`);
+      assert.equal(westWaterSurface(point.x, point.z), null, `${gully.id} has water in it`);
+    }
+    const heights = gully.line.map(point => H(point.x, point.z));
+    for (let i = 1; i < heights.length; i++)
+      assert.ok(heights[i] <= heights[i - 1], `${gully.id} climbs at point ${i}`);
+    assert.ok(heights[0] - heights.at(-1) > 25, `${gully.id} falls only ${(heights[0] - heights.at(-1)).toFixed(1)} m`);
+    const mid = gully.line[Math.floor(gully.line.length / 2)];
+    assert.ok(onTrogoGullyFloor(mid.x, mid.z), `${gully.id} has no floor at its middle`);
+  }
+  // The Trogoreth is the only permanent water, and it reaches the sea.
+  const trogoreth = WEST_PROFILES.get(TROGORETH.id);
+  assert.ok(landDistance(trogoreth.at(-1).x, trogoreth.at(-1).z) < 60, 'the Trogoreth does not reach the sea');
+  assert.ok(trogoreth.every(sample => sample.ford), 'the Trogoreth is walled somewhere');
+  // And nothing is authored outside the two countries' own hexes.
+  assert.equal(trogoCrestAt(-2800, 2900).lift, 0, 'the crest reaches into the desert');
+  assert.equal(eastEdgeShare(-3560, 1520), 0, 'the east-edge share reaches the Ganesh');
+});
+
+test('every ground tint in the game reaches the screen, which is the guard two jobs asked for', () => {
+  // **This chain failed silently twice.** Job 2 of the southwest found that `southwestTint` had been
+  // computed in `groundTint` and then dropped on the floor since the day the block was built, so four
+  // countries' worth of authored colour had never been drawn; job 3 met the same failure mode one level
+  // down, where an early `return` inside `southwestTint` would have thrown the Dinelv plateau's colours
+  // away on the three hundred metres its box overlaps the Meroshe's. Both reports asked for the chain to
+  // become a table walked in order, and job 4 made it one - so this is the guard that makes the failure
+  // loud: **every family in the table must move the colour of the ground somewhere in its own country.**
+  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest'],
+    'a family was added to groundTint without a line here');
+  const probes = { gala: ['Gala'], oves: ['Ovesos', 'Oves Desert'],
+    mithala: ['South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'],
+    southwest: [...BLOCK] };
+  const painted = new THREE.Color(), swatch = new THREE.Color();
+  for (const family of GROUND_TINT_FAMILIES) {
+    let worst = 0, at = null;
+    for (const name of probes[family]) for (const cell of cellsOf(name)) {
+      groundTint(painted, cell.x, cell.z, THREE);
+      const mix = terrainMix(cell.x, cell.z);
+      let r = 0, g = 0, b = 0, total = 0;
+      for (const [ground, weight] of Object.entries(mix.grounds)) {
+        if (!weight) continue;
+        swatch.set(ground); r += swatch.r * weight; g += swatch.g * weight; b += swatch.b * weight; total += weight;
+      }
+      const moved = Math.hypot(painted.r - r / total, painted.g - g / total, painted.b - b / total);
+      if (moved > worst) { worst = moved; at = `${cell.x}, ${cell.z}`; }
+    }
+    assert.ok(worst > .02, `the ${family} tint never reaches the screen (worst ${worst.toFixed(4)} at ${at})`);
+  }
+});
+
+test('the two are charted, levelled, spoken for and listed, and nothing is built in either of them', () => {
+  for (const name of EAST) {
+    assert.ok(REGION_BIOMES[name].ownScatter, `${name} does not scatter its own country`);
+    const region = regions.find(entry => entry.name === name);
+    assert.deepEqual(region.npcIds, [], `${name} has people in it`);
+    assert.ok(region.landmarks.length >= 6, `${name} has too few landmarks`);
+    for (const id of region.landmarks) assert.ok(SOUTHWEST_LANDMARKS.some(place => place.id === id), `${name} names a landmark that is not built: ${id}`);
+    assert.equal(hexOwnerAt(region.spawn.x, region.spawn.z), name, `${name}'s spawn is not on its own hexes`);
+    assert.equal(westWaterSurface(region.spawn.x, region.spawn.z), null, `${name}'s spawn is in the water`);
+    assert.equal(regionBuildStatus(name).state, 'early', `${name} is not listed as early`);
+    assert.ok(regionBuildStatus(name).work.length > 40, `${name} does not say what is left`);
+    assert.ok(regionLevel(name) >= 2, `${name} has no level`);
+    assert.ok(REGION_LANGUAGE[name], `${name} has no tongue`);
+    assert.ok(DEV_WORLD_DESTINATIONS.some(place => place.regionId === name), `${name} has no travel stop`);
+    assert.ok(SUBREGIONS.filter(area => area.region === name).length >= 6, `${name} has too few chart areas`);
+    assert.ok(WEST_REGION_NAMES.includes(name), `${name} is not a western region`);
+    assert.notDeepEqual(regionSky(region), DEFAULT_SKY, `${name} takes the default sky`);
+  }
+  // **Marosh speaks plain Maroshi and for once that is the reading rather than a stand-in**: every other
+  // Moreshi country in the block carries a dialect because it is a margin of the language, and this one
+  // is the centre of it - "Maroshi is its eastern-coast peninsular form", and Marosh is the eastern coast.
+  assert.deepEqual(REGION_LANGUAGE.Marosh, { language: 'maroshi', dialect: null });
+  // Trogo speaks the transition zone's contact register, whose fog-conditional verb aspect is the single
+  // best piece of language in the archive. It is filed under Moreshi because half of it is Moreshi; the
+  // forest peoples' own unclassified tongue is an open question rather than a gap.
+  assert.deepEqual(REGION_LANGUAGE.Trogo, { language: 'maroshi', dialect: 'fogspeech' });
+  assert.ok(DIALECTS.fogspeech, 'the fog speech is not a dialect');
+  assert.match(DIALECTS.fogspeech.of, /fog/, 'the dialect does not say what it is for');
+  assert.equal(DIALECTS.fogspeech.language, 'maroshi');
+  // Two skies, and Trogo's is the whole first half of the user's decision.
+  const sky = name => regionSky(regions.find(entry => entry.name === name));
+  assert.equal(sky('Trogo').density, .0144);
+  assert.equal(sky('Marosh').density, .0055);
+  assert.ok(sky('Marosh').density > sky('Hama').density, 'Marosh has more ocean and no desert at all');
+  assert.ok(sky('Trogo').density > sky('Marosh').density * 2.5, 'the rainforest is not the thick-air country');
+  // Fourteen landmarks, every one of them on its own country's hexes, and every one of them describing
+  // ground rather than anything anybody owns.
+  const marks = SOUTHWEST_LANDMARKS.filter(place => EAST.includes(hexOwnerAt(place.x, place.z)));
+  assert.equal(marks.length, 14, 'fourteen landmarks between the two');
+  for (const place of marks) assert.ok(place.description.length > 200, `${place.id} says too little`);
+  // The survey, the layout and the ids all agree, and the programme is complete: thirteen countries.
+  assert.equal(SOUTHWEST_REGIONS.length, 13);
+  assert.equal(SOUTHWEST_REGIONS.reduce((sum, name) => sum + cellsOf(name).length, 0), 322);
+});
+
+test('seventeen ranges over forty-seven hexes, and the rainforest is the densest country in the game', () => {
+  // **The arithmetic is the argument, and it is the other end of job 2's.** Job 1 put 17 ranges on 107
+  // hexes (0.159 a hex), job 2 seven on 95 (0.074, the emptiest country in Azhora), job 3 thirteen on 73
+  // (0.178), and job 4 seventeen on 47 (0.362) - twice job 3's and nearly five times job 2's.
+  const density = names => {
+    const ranges = SOUTHWEST_WILDLIFE_ZONES.filter(zone => names.includes(zone.region)).length;
+    const hexes = names.reduce((sum, name) => sum + cellsOf(name).length, 0);
+    return ranges / hexes;
+  };
+  assert.ok(Math.abs(density(EAST) - 17 / 47) < 1e-9, 'job 4 carries seventeen ranges over forty-seven hexes');
+  assert.ok(density(EAST) > density(EDGE) * 2, 'job 4 is not twice job 3');
+  assert.ok(density(EAST) > density(MEROSHE) * 4.5, 'job 4 is not nearly five times job 2');
+  // **Trogo is the densest country in the game and the South Meroshe one of the emptiest**, and they
+  // share thirteen hex edges: a traveler can walk from one to the other in four hundred paces.
+  const per = name => SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.region === name).length / cellsOf(name).length;
+  for (const name of BLOCK.filter(item => item !== 'Trogo'))
+    assert.ok(per('Trogo') > per(name), `${name} is denser than the rainforest`);
+  assert.ok(per('Trogo') / per('South Meroshe Desert') > 3.5, 'the rainforest is not multiples of the desert beside it');
+  assert.ok(per('Marosh') > per('Hama'), 'an oak ridge over a terrace is not better country than a sward');
+  // **Two new rigs, which is the most any job in this block has spent**, and both are named and
+  // described by the fauna overview: the forest edge-cat, which Trogo's own lore asks for - "the
+  // carnivores that hunt both zones are the most studied by the communities here" - and the Iberos
+  // albatross, which the overview says goes "somewhere beyond the horizon south of Azhora" and which has
+  // the southernmost coast in the game to be seen from.
+  const species = new Set(SOUTHWEST_WILDLIFE_ZONES.filter(zone => EAST.includes(zone.region)).map(zone => zone.species));
+  assert.ok(species.has('forest-cat') && species.has('albatross'));
+  // Proved against the file that holds the west's own ranges: the two new species have no zone anywhere
+  // but here, and everything else job 4 uses already had one.
+  const life = readFileSync(new URL('../src/west-regions-life.js', import.meta.url), 'utf8');
+  const older = new Set(SOUTHWEST_WILDLIFE_ZONES.filter(zone => !EAST.includes(zone.region)).map(zone => zone.species));
+  for (const name of species) {
+    const existed = older.has(name) || life.includes(`species: '${name}'`);
+    assert.equal(existed, !['forest-cat', 'albatross'].includes(name),
+      `${name} is ${existed ? 'already' : 'not'} an animal this game had`);
+  }
+  assert.ok(life.includes("'forest-cat': {") && life.includes('albatross: {'), 'the two new rigs are not built');
+  // **Three refusals held for the fourth time**: the Ganesh dustback, the canyon tortoise, and stock.
+  for (const zone of SOUTHWEST_WILDLIFE_ZONES)
+    assert.ok(!['dustback', 'canyon-tortoise', 'longhorn', 'hill-sheep', 'nethrani-cattle'].includes(zone.species),
+      `${zone.id} is ${zone.species}`);
+  // The rainforest's own eleven: one range on the water, two on the estuary, one out at sea, one in the
+  // air over the shore, one bone-bird that comes over the crest from the desert and does not cross it,
+  // two bands of cat, two of boar and one of gulls.
+  const trogo = SOUTHWEST_WILDLIFE_ZONES.filter(zone => zone.region === 'Trogo');
+  assert.equal(trogo.length, 11);
+  assert.equal(trogo.filter(zone => zone.air).length, 2, 'two of the eleven are in the air');
+  assert.equal(trogo.filter(zone => zone.sea).length, 1, 'and one is out past the surf');
+  assert.ok(trogo.find(zone => zone.id === 'trogoreth-otters').scale > 1.2,
+    'the great river otter is not larger than its smaller cousins');
 });
