@@ -154,7 +154,7 @@ export function createGalaScenery(kit) {
 
   /**
    * The Oveth's ford is rock: "below the Sorten it narrows, drops through a rocky lower section".
-   * Stone in the shallows and on both banks over the ford, and gravel along the desert stream,
+   * Stone in the shallows and on both banks over the ford, and gravel along the Caelin,
    * which runs over the same stuff off the same margin.
    */
   const fordRock = [], streamGravel = [];
@@ -225,7 +225,7 @@ export function createGalaScenery(kit) {
   // The Lizeem's western bank, the whole of Gala's side of it: the reed bank.
   waterline(WEST_PROFILES.get(LIZEEM.id), 1, 3, 6, reeds, [1.1, 1.9]);
   waterline(WEST_PROFILES.get(LIZEEM_REACH.id), 1, 4, 7, reeds, [1.1, 2]);
-  // The plain's own water: thick on the distributary and its braids, thinner up the border streams.
+  // The plain's own water: thick on the distributary and its braids, thinner up the Caelin and the Treloss.
   waterline(WEST_PROFILES.get(GALA_CHANNEL.id), 1, 2, 3.2, reeds, [.9, 1.7]);
   threads.forEach(thread => thread.forEach((point, index) => {
     if (index % 2) return;

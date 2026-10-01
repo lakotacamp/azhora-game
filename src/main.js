@@ -228,12 +228,22 @@ import { createBatmanQuestHost, BATSMASHER_STAND, BATMAN_FIGHT } from './batman-
 import { createDeveloperBat } from './developer-bat.js';
 import { createDeveloperDragon } from './developer-dragon-model.js';
 import { createClimbing, canWalkSlope, CLIMBING } from './climbing.js';
+import { canPushThrough } from './undergrowth.js';
 import { createTerrainFall, shouldStartTerrainFall } from './terrain-fall.js';
 import { WALK_STEP, colliderOverlapsHeight, restoreWalkPosition } from './walk-surfaces.js';
 import { createLotharnCaveWalk } from './east-lotharn-cave-walk.js';
 import { nearestPlain as caveNearest } from './east-lotharn-caves.js';
 import { inLotharnBox } from './east-lotharn-world.js';
 import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY as WEST_LONG_VALLEY, NORTH_VALLEY as WEST_NORTH_VALLEY, NOTCH as WEST_LOTHARN_NOTCH, COL as WEST_LOTHARN_COL, pointOn as westLotharnPointOn } from './west-lotharn-world.js';
+import { MITHALA_SUMMER_CHANNELS as MITHALA_SUMMER, MITHALA_LANDMARKS as MITHALA_MARKS } from './mithala-world.js';
+import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BRAID, MITHALA_WEST_ARM as MITHALA_ARM } from './west-regions.js';
+import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS,
+  MEROSHE_BENCHES as SOUTHWEST_BENCHES, MEROSHE_SALT as SOUTHWEST_SALT, MEROSHE_DUNES as SOUTHWEST_DUNES, MEROSHE_FANS as SOUTHWEST_FANS,
+  HETH_SPINE as SOUTHWEST_SPINE, HETH_HOLLOWS as SOUTHWEST_HOLLOWS, DINELV_MESAS as SOUTHWEST_TABLES, DINELV_GAPS as SOUTHWEST_GAPS,
+  DINELV_ASCENT as SOUTHWEST_ASCENT, HAMA_BEDS as SOUTHWEST_HAMA_BEDS,
+  MAROSH_RIDGE as SOUTHWEST_MAROSH_RIDGE, MAROSH_GAP as SOUTHWEST_WATER_GAP, TROGO_CREST as SOUTHWEST_TROGO_CREST,
+  TROGO_GULLIES as SOUTHWEST_GULLIES, TROGO_CLEARINGS as SOUTHWEST_CLEARINGS } from './southwest-world.js';
+import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -2028,6 +2038,206 @@ function init() {
       return shot({x:p.x+9,z:p.z},{x:q.x,z:q.z},.09,6);}
     if(view==='west-lotharn-north-valley'){const p=westLotharnPointOn(WEST_NORTH_VALLEY.line,24),q=westLotharnPointOn(WEST_NORTH_VALLEY.line,170);
       return shot({x:p.x,z:p.z},{x:q.x,z:q.z},.06,10);}
+    // The Mithala plain. Worked out from the country's own numbers - the channels' own sample lines
+    // and the landmark points - so a view cannot drift off the thing it shows when a course moves.
+    // `along` is a point on a course's centre line and `beside` steps off it by its own normal.
+    if(view.startsWith('mithala-')){
+      const along=(course,t)=>{const s=course.samples,i=Math.max(0,Math.min(s.length-1,Math.round((s.length-1)*t)));return s[i];};
+      const beside=(sample,out)=>({x:sample.x+sample.nx*out,z:sample.z+sample.nz*out});
+      const mark=id=>MITHALA_MARKS.find(one=>one.id===id);
+      // Standing on the levee of the main channel's braided reach, looking down it: the country.
+      // Across the braided reach, from above the levee: two threads, a bar between them and the far
+      // bank's gallery. This one took three tries and the two failures are both facts about the
+      // country. Looking *along* the channel put the camera on the water and filled the frame with
+      // it; and standing on the levee at eye height showed no river at all, because a levee stands a
+      // pace and a half over a channel cut a metre into a plain with no relief in it - which is why
+      // the lore's villages are on the banks and why the gallery is how a traveler finds the water.
+      if(view==='mithala-main-channel'){const a=along(MITHALA_MAIN_CHANNEL,.52);
+        return shot(beside(a,44),beside(a,-14),.30,1);}
+      // The gallery from out on the grass: the dark line with nothing behind it that finds the river.
+      if(view==='mithala-gallery'){const a=along(MITHALA_MAIN_CHANNEL,.62);
+        return shot(beside(a,-165),{x:a.x,z:a.z},.05,10);}
+      // The meeting of the arms, from the dry ground inside the fork.
+      if(view==='mithala-meeting'){const m=mark('mithala-meeting');
+        return shot({x:m.x+110,z:m.z+70},{x:m.x,z:m.z},.05,2);}
+      // The round horizon: the middle of the upper grass, looking west at nothing at all.
+      if(view==='mithala-horizon'){const m=mark('round-horizon');
+        return shot({x:m.x,z:m.z},{x:m.x-400,z:m.z-40},.02,4);}
+      // The apron, the only rise on the plain, seen from the flood plain below it.
+      if(view==='mithala-apron'){const m=mark('south-mithala-apron');
+        return shot({x:m.x+40,z:m.z+190},{x:m.x,z:m.z},.05,6);}
+      // A summer channel: a cut bed with nothing in it, walked down the middle.
+      if(view==='mithala-summer-channel'){const c=MITHALA_SUMMER[0],a=c.points[1],b=c.points[3];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.06,1.4);}
+      // The fen margin going north into the Acor Wetlands, with no line anywhere to mark it.
+      if(view==='mithala-fen'){const m=mark('north-mithala-fen');
+        return shot({x:m.x+30,z:m.z+190},{x:m.x,z:m.z-90},.03,5);}
+      // The north braid coming down off the shelf, from its own bank.
+      if(view==='mithala-braid'){const a=along(MITHALA_BRAID,.58),b=along(MITHALA_BRAID,.80);
+        return shot(beside(a,26),{x:b.x,z:b.z},.05,3);}
+    }
+    // The southwestern block. Worked out from the country's own numbers - the Vaellir's own sample
+    // line, the washes' and the depressions' own points, and the landmarks - so a view cannot drift
+    // off the thing it shows when a course or a landform moves.
+    if(view.startsWith('southwest-')){
+      const along=(course,t)=>{const s=course.samples,i=Math.max(0,Math.min(s.length-1,Math.round((s.length-1)*t)));return s[i];};
+      const beside=(sample,out)=>({x:sample.x+sample.nx*out,z:sample.z+sample.nz*out});
+      const mark=id=>SOUTHWEST_MARKS.find(one=>one.id===id);
+      // The Ganesh: standing on the desert floor looking west along the wind grain at nothing at all.
+      if(view==='southwest-ganesh'){const m=mark('ganesh-floor');
+        return shot({x:m.x+60,z:m.z+40},{x:m.x-420,z:m.z-120},.02,5);}
+      // The western rim of the Navarth plateau, from the desert below it: thirty metres of fall and
+      // then a horizon with nothing on it.
+      if(view==='southwest-rim'){const m=mark('navarth-west-rim');
+        return shot({x:m.x-230,z:m.z+120},{x:m.x,z:m.z},.06,8);}
+      // The plateau itself, from one swell looking across the sweeps to the next.
+      if(view==='southwest-plateau'){const a=SOUTHWEST_CRESTS[5],b=SOUTHWEST_CRESTS[6];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.04,4);}
+      // The Vaellir from its own bank, below the ford, where it is a wall of deep water. Two tries
+      // were wrong and both are the same mistake: at +34 the camera stood in the middle of the
+      // river, and at -62 it stood in East Pyros, which is not built and takes the default sky. The
+      // West Pyros bank is the **positive** side of this course's normal, measured; the camera
+      // stands sixty metres back on it and looks across.
+      if(view==='southwest-vaellir'){const a=along(SOUTHWEST_VAELLIR,.55);
+        return shot(beside(a,62),beside(a,-26),.06,4);}
+      // The gallery from out on the plain: the dark line with nothing behind it that finds the river.
+      if(view==='southwest-gallery'){const a=along(SOUTHWEST_VAELLIR,.62);
+        return shot(beside(a,175),{x:a.x,z:a.z},.05,10);}
+      // A wash: a cut bed with nothing in it, walked down the middle out of the wind.
+      if(view==='southwest-wash'){const w=SOUTHWEST_WASHES[1],a=w.line[1],b=w.line[3];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.06,1.4);}
+      // A depression on the Ganesh Plain, from the bare clay outside it: the only green there is.
+      if(view==='southwest-depression'){const pan=SOUTHWEST_PANS[2];
+        return shot({x:pan.x+pan.radius+90,z:pan.z+40},{x:pan.x,z:pan.z},.05,2.5);}
+      // The gulf shore: a desert running out at the sea.
+      if(view==='southwest-shore'){const m=mark('ganesh-shore');
+        return shot({x:m.x+150,z:m.z+90},{x:m.x-90,z:m.z-60},.04,4);}
+      // ----- The four Meroshe deserts. Each view shows one country's one surface, worked out from
+      // that surface's own numbers - a bench's own line, the dune field's own bearing, the salt pan's
+      // own ellipse, a fan's own down-slope - so none of them can drift off the thing it is for.
+      // The hamada: crossing two bench risers, with the thorn in the joints and bare rock between.
+      if(view==='southwest-hamada'){const b=SOUTHWEST_BENCHES[2];
+        return shot({x:b.x+62,z:b.z-80},{x:b.x-46,z:b.z-215},.05,2.2);}
+      // A corridor in the sand sea, looking along it: the only fast ground there is, and it runs
+      // north-west to south-east because the ridges do. The bearing is the dune field's own.
+      if(view==='southwest-erg'){const m=mark('meroshe-corridors');
+        const a=SOUTHWEST_DUNES.bearing+Math.PI/2, dx=Math.cos(a), dz=Math.sin(a);
+        return shot({x:m.x-dx*70,z:m.z-dz*70},{x:m.x+dx*260,z:m.z+dz*260},.04,1.8);}
+      // From the crest of a ridge, across the grain: a dozen more of them and no horizon at all.
+      if(view==='southwest-erg-crest'){const m=mark('meroshe-sand-sea');
+        // South-west across the grain, not north-east: the first try looked out of the sand sea
+        // altogether and photographed the hamada's thorn trees on the horizon.
+        // Two hundred metres across the grain and no more: the crest under the camera, the corridor
+        // below it and the next crest beyond. At three hundred and twenty it looked clean out of the
+        // sand sea, over Hama, and photographed the ocean.
+        const c=Math.cos(SOUTHWEST_DUNES.bearing), s=Math.sin(SOUTHWEST_DUNES.bearing);
+        return shot({x:m.x,z:m.z},{x:m.x+c*200,z:m.z+s*200},.03,2.6);}
+      // The Malhat from its own rim: three hundred paces of white floor, flat to the centimetre.
+      if(view==='southwest-malhat'){
+        // On the rim and no further: at two hundred and fifty metres through the coast's own haze the
+        // crust washed out and the first photograph was of the sea beyond it.
+        return shot({x:SOUTHWEST_SALT.x+SOUTHWEST_SALT.radiusX+22,z:SOUTHWEST_SALT.z+12},{x:SOUTHWEST_SALT.x-SOUTHWEST_SALT.radiusX*.6,z:SOUTHWEST_SALT.z},.03,2.1);}
+      // The fan heads, looking down the skirt: cobbles under the camera, dust four hundred paces off.
+      if(view==='southwest-fans'){const f=SOUTHWEST_FANS[1];
+        return shot({x:f.x-f.bearingX*24,z:f.z-f.bearingZ*24},{x:f.x+f.bearingX*300,z:f.z+f.bearingZ*300},.04,3);}
+      // The western shore: a desert running out at an open ocean, with the weather of half a world on it.
+      if(view==='southwest-dry-shore'){const m=mark('meroshe-dry-shore');
+        // Straight out to sea, low, and close enough that the fan skirt's own swell is behind the
+        // camera rather than in front of it. Two tries stood fifty and a hundred metres inland and
+        // photographed the swell; the shore is thirty-five metres from here.
+        return shot({x:m.x-32,z:m.z+8},{x:m.x-170,z:m.z+8},.02,2.2);}
+      // The reg under the fog: dark pavement, lichen in the lee of every pebble, and the only thorn
+      // in the Meroshe standing close enough together to walk round.
+      if(view==='southwest-reg'){const m=mark('meroshe-fog-margin');
+        return shot({x:m.x-96,z:m.z+52},{x:m.x+150,z:m.z-40},.04,1.9);}
+      // ----- Cape Heth, the Dinelv Highlands and Hama. Every one is worked out from its own
+      // landform's numbers - the spine's own axis, a hollow's own centre, a table's own reach, a gap's
+      // own point, the ascent's own line, a bed's own points - so none can drift off its subject.
+      // The point of the cape: the westernmost ground in Azhora, with water on three sides of it.
+      // **Across the point from the north-east**, so the water is on both hands. The first try aimed
+      // a hundred and twenty metres past the headland and the coast field's own beach filled three
+      // quarters of the frame with the point itself somewhere in the middle of it.
+      if(view==='southwest-heth-point'){const m=mark('heth-point');
+        return shot({x:m.x+74,z:m.z-58},{x:m.x-30,z:m.z+34},.03,2.6);}
+      // The weather face, looking out: bare bedding, salt crust, and the open western ocean.
+      if(view==='southwest-heth-weather'){const m=mark('heth-weather-face');
+        return shot({x:m.x+38,z:m.z+18},{x:m.x-160,z:m.z-30},.02,2.0);}
+      // A drainage hollow on the lee flank: the only soil on the cape, from the open rock beside it.
+      if(view==='southwest-heth-hollow'){const h=SOUTHWEST_HOLLOWS[2];
+        return shot({x:h.x+h.radius+34,z:h.z+22},{x:h.x,z:h.z},.03,1.9);}
+      // The escarpment from below, on the plateau's own foot: eighty metres of banded rock going up.
+      if(view==='southwest-dinelv-scarp'){const m=mark('dinelv-escarpment');
+        return shot({x:m.x-24,z:m.z+120},{x:m.x+150,z:m.z-40},.02,4);}
+      // The tables, from the gap below them: flat tops, cliff sides, blocks at the foot.
+      if(view==='southwest-dinelv-tables'){const t=SOUTHWEST_TABLES[0],m=mark('dinelv-massifs');
+        return shot({x:m.x,z:m.z},{x:t.x,z:t.z},.05,3);}
+      // Along the grain of the plateau: a ridge crest under the camera and the next swale beyond it.
+      if(view==='southwest-dinelv-ridges'){const m=mark('dinelv-ridges'),g=SOUTHWEST_GAPS[3];
+        return shot({x:m.x,z:m.z},{x:g.x,z:g.z},.04,3.4);}
+      // The one way up, looking up it: the ascent's own line, from its foot to its head.
+      if(view==='southwest-dinelv-pass'){const l=SOUTHWEST_ASCENT.line,a=l[1],b2=l[l.length-1];
+        return shot({x:a.x,z:a.z},{x:b2.x,z:b2.z},.05,2.6);}
+      // **The line**, from the dry side looking into the green: the picture of the whole job.
+      // The first try looked three hundred metres past the line and photographed the open ocean with a
+      // strip of grass in the corner: measured, the shore is only eighty metres beyond the line here.
+      if(view==='southwest-hama-line'){const m=mark('hama-green-line');
+        return shot({x:m.x+110,z:m.z-34},{x:m.x-55,z:m.z+22},.03,2.0);}
+      // The seaward grass with the ocean behind it: the only green shore in the southwest.
+      // Aimed at the corner itself rather than past it: the first try focused a hundred metres out to sea.
+      if(view==='southwest-hama-grass'){const m=mark('hama-corner');
+        return shot({x:m.x+95,z:m.z-58},{x:m.x,z:m.z},.03,2.2);}
+      // A winter bed: a metre and a half of soft-banked cut with the greenest grass in the block in it.
+      // Up-bed, where the cut is at its full metre and a half: the last point of every bed is where the
+      // shore release has taken the cut back out again, so a view from there has no bed in it.
+      if(view==='southwest-hama-bed'){const bed=SOUTHWEST_HAMA_BEDS[1],a=bed.line[0],c=bed.line[2];
+        return shot({x:a.x,z:a.z},{x:c.x,z:c.z},.05,1.4);}
+      // ----- Marosh and Trogo -----
+      // **The wall, from the top of it looking west into the desert.** The crest's own line and the dry
+      // side's landmark, so the camera stands on the ridge and looks down its own western fall.
+      if(view==='southwest-marosh-crest'){const l=SOUTHWEST_MAROSH_RIDGE.line,a=l[6],m=mark('marosh-dry-side');
+        return shot({x:a.x,z:a.z},{x:m.x-120,z:m.z+40},-.02,3.2);}
+      // The water gap from the terrace below it, looking up through the notch: the crest stands ten metres
+      // over the gap on either hand and the Nahr runs out of the bottom of it.
+      if(view==='southwest-marosh-gap'){const g=SOUTHWEST_WATER_GAP;
+        return shot({x:g.x+96,z:g.z+26},{x:g.x,z:g.z},.04,2.2);}
+      // The terrace with the Iberos beyond it: ordinary Mediterranean country, which nothing else in
+      // thirteen countries is. Aimed at the shore's own landmark from up the slope.
+      if(view==='southwest-marosh-terrace'){const m=mark('marosh-shore');
+        return shot({x:m.x-125,z:m.z+34},{x:m.x,z:m.z},.02,1.9);}
+      // **Inside the thicket**, which is the picture the whole job is for: a hundred and twenty paces of
+      // sight and a canopy over it. Standing in the trogo-forest landmark's own hex and looking at nothing
+      // in particular, because there is nothing in particular to look at and that is the point.
+      // **Twenty-two metres and no more.** The first round looked a hundred and six and came back a black
+      // wall: the review camera backs off from its target until something stops it, and in a closed canopy
+      // the thing that stops it is a crown. At .0144 a hundred metres is nine tenths haze anyway.
+      if(view==='southwest-trogo-canopy'){const m=mark('trogo-forest');
+        return shot({x:m.x+3,z:m.z+22},{x:m.x,z:m.z},.02,1.6);}
+      // **A way through**, along the middle gully: a corridor with a wall of fern down both sides. Looked
+      // along its own line from a fifth of the way up it, so the camera is in the cut and not above it.
+      if(view==='southwest-trogo-way'){const l=SOUTHWEST_GULLIES[1].line,a=l[3],c=l[1];
+        return shot({x:a.x,z:a.z},{x:c.x,z:c.z},.03,1.6);}
+      // The forest wall from the desert side: the thing job 2's own Forest Wall landmark promised a job in
+      // advance, and the steepest climate step on the atlas drawn as a picture.
+      // **Stood in the desert and not in the forest.** The first round put the camera inside Trogo and the
+      // harness could only back it three metres off its own target before a trunk stopped it; from the
+      // Meroshe's own floor there is nothing between the camera and the wall for two hundred metres.
+      // **Both the camera and the thing it looks at stand in the desert**, which took three tries. The
+      // review camera backs off from its target until a collider stops it, so a target inside the forest
+      // puts the camera against the first trunk west of it; the wall is the background of this frame
+      // rather than its subject, a hundred and thirty metres beyond a point of open Meroshe.
+      if(view==='southwest-trogo-wall'){const c=SOUTHWEST_TROGO_CREST.line[3];
+        return shot({x:c.x-262,z:c.z+6},{x:c.x-142,z:c.z+6},-.07,34);}
+      // A dry corridor on the crest: light, grass and a sky, in the only country that has none of those.
+      if(view==='southwest-trogo-clearing'){const o=SOUTHWEST_CLEARINGS[1];
+        return shot({x:o.x+o.radius+16,z:o.z+12},{x:o.x-14,z:o.z},.03,1.8);}
+      // Where the forest stops, from the coastal grass looking into it: a wall of canopy standing nearly
+      // forty metres over salt-pruned tussock, which is what the atlas puts on the exposed shore.
+      if(view==='southwest-trogo-edge'){const m=mark('trogo-forest-edge');
+        return shot({x:m.x+34,z:m.z+74},{x:m.x-10,z:m.z-56},.10,2.6);}
+      // The estuary: prop roots down to the tideline and the southern ocean behind them.
+      if(view==='southwest-trogo-estuary'){const m=mark('trogo-estuary');
+        return shot({x:m.x-62,z:m.z-46},{x:m.x+30,z:m.z+34},.02,1.8);}
+    }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
       const pan=VASTOS_PANS[2];
@@ -2266,12 +2476,30 @@ function init() {
       return shot(from,bird,-.08,bird.y-world.heightAt(bird.x,bird.z),false,
         {x:bird.x+Math.sin(off)*34,z:bird.z+Math.cos(off)*34});
     }
+    if(view==='southwest-tortoise-shut'){
+      // **The one animal in the west a traveler can walk up to, photographed having been walked up to.**
+      // Its companion view `southwest-tortoise` shows it open, which is how it stands when nobody is near;
+      // this one runs its own band with somebody three metres off until it has shut, and then takes the
+      // picture from where that somebody is standing. What the frame should hold is a patterned stone.
+      let t=westLife.snapshot().creatures.find(a=>a.species==='canyon-tortoise');
+      if(!t)return null;
+      const at={x:t.x+2.3,z:t.z+1.7};
+      for(let step=0;step<240;step++){
+        westLife.update(1/30,at,true);
+        t=westLife.snapshot().creatures.find(a=>a.id===t.id);
+        if(t.action==='shut'&&step>30)break;
+      }
+      return shot(at,t,-.22,.34);
+    }
     const creature={'west-longhorn':'longhorn','west-hare':'upland-hare','west-sheep':'hill-sheep',
       'west-fox':'river-fox','west-otter':'otter','west-wader':'wading-bird',
       'south-egret':'egret','south-stilt':'stilt','south-duck':'duck','south-boar':'boar',
       'south-gull':'gull','south-dolphin':'dolphin',
       'south-reddeer':'red-deer','south-vulture':'turkey-vulture',
-      'south-nethrani':'nethrani-cattle'}[view];
+      'south-nethrani':'nethrani-cattle',
+      // The two animals the southwest's follow-up built: the ghubr on the Ganesh's northern pockets
+      // and the canyon tortoise in the Dinelv Highlands' north gap basin, open, with nobody near it.
+      'southwest-ghubr':'ghubr','southwest-tortoise':'canyon-tortoise'}[view];
     if(creature){
       let animal=westLife.snapshot().creatures.find(a=>a.species===creature);
       if(!animal)return null;
@@ -2288,7 +2516,9 @@ function init() {
         animal=westLife.snapshot().creatures.find(a=>a.id===animal.id);
       }
       const close=creature==='longhorn'||creature==='nethrani-cattle'?6:creature==='red-deer'?7:creature==='boar'?5:creature==='hill-sheep'?4.5:
-        creature==='wading-bird'||creature==='egret'?4.5:creature==='dolphin'?9:3.2;
+        creature==='wading-bird'||creature==='egret'?4.5:creature==='dolphin'?9:
+        // A bird a foot and a half tall and a tortoise half that need the camera in close or they are a speck.
+        creature==='ghubr'||creature==='canyon-tortoise'?2.4:3.2;
       /**
        * **Round to the front quarter of it, and to the side with room.** Sweeping the
        * circle from due north and taking the first standable bearing photographed half
@@ -2585,7 +2815,12 @@ function init() {
   // One controller walks both halves of the Lotharn. Cave checkpoints retain the safe
   // entrance, so loading in either range recovers outdoors with underground support cleared.
   lotharnCave=createLotharnCaveWalk({caves:[...world.lotharnCaves,...world.westLotharnCaves],ground:world.groundHeight});
-  const walkingSlope=(x,z,nextX,nextZ)=>canWalkSlope(x,z,nextX,nextZ,climbWorld);
+  // Two movement rules now, and one hook. `canWalkSlope` refuses an ascent too steep to walk in the
+  // climbing countries (src/climbing.js); `canPushThrough` refuses a step off a way into a deep
+  // forest's thicket in the undergrowth countries (src/undergrowth.js). Neither owns input,
+  // rendering or saved state, both are region-gated, and both go through `moveCharacter`'s own
+  // `canTraverse` - so a country with neither is exactly as walkable as it was.
+  const walkingSlope=(x,z,nextX,nextZ)=>canWalkSlope(x,z,nextX,nextZ,climbWorld)&&canPushThrough(x,z,nextX,nextZ,climbWorld);
   function canGrabRock(){return mode==='playing'&&!lotharnCave.active&&!suspended()&&!riding.mounted&&!raceHost?.mounted&&!inWater
     &&living?.recall().status!=='passenger'&&combat.state.player.hp>0&&combat.state.player.action==='idle';}
   function tryClimbing(){
@@ -10321,7 +10556,7 @@ function init() {
         // are worked out by the same function. The spots come from the regions' own numbers
         // rather than typed in, so a view cannot drift off the thing it is meant to show
         // when the ground under it is adjusted.
-        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')){
+        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')||view.startsWith('southwest-')){
           questStage=QUEST_DONE;combat.finishPractice();player.setArmed(true);
           const spot=westReviewSpot(view);
           if(spot){

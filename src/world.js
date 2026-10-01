@@ -112,7 +112,11 @@ import { createWestScenery } from './west-regions-scenery.js';
 import { createGalaScenery } from './gala-scenery.js';
 import { GALA_LANDMARKS } from './gala-world.js';
 import { createOvesScenery } from './oves-scenery.js';
+import { createMithalaScenery } from './mithala-scenery.js';
+import { createSouthwestScenery } from './southwest-scenery.js';
 import { OVES_LANDMARKS } from './oves-world.js';
+import { MITHALA_LANDMARKS } from './mithala-world.js';
+import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
@@ -1423,6 +1427,18 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // channels of gravel, the steppe's grass and scrub, and the desert's stone. Its own seeded stream,
   // after Gala's, so nothing already built moves for it. Nobody's.
   const ovesScenery = createOvesScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
+  // The Mithala plain (src/mithala-scenery.js): eight channels with their reed and their gallery of
+  // willow, poplar and alder, two braided reaches with silt bars between the threads, the tall
+  // warm-season prairie grass and the forbs in it, the sedge of the fen margin going north, and the
+  // Acorwood thickening over the north-eastern horizon. Its own seeded stream, after the Oves's, so
+  // nothing already built moves for it. Nobody's.
+  const mithalaScenery = createMithalaScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
+  // The southwestern block (src/southwest-scenery.js): the Vaellir's gallery and its reed, two dry
+  // washes and three shallow channels with nothing in any of them, the desert pavement the wind
+  // has swept, the grass that has contracted into the Ganesh Plain's depressions, and one hex of
+  // oak and pine at Navarth's tip. Its own seeded stream, after the Mithala's, so nothing already
+  // built moves for it. Nobody's.
+  const southwestScenery = createSouthwestScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   const stakedProps = [];
   buildMorosWorks({ parent: world, heightAt: groundHeight, colliders, signs, movingGroups, stakedProps, roadDistance });
@@ -2065,6 +2081,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     iscareMetrics: iscare.metrics,
     galaMetrics: galaScenery.metrics,
     ovesMetrics: ovesScenery.metrics,
+    mithalaMetrics: mithalaScenery.metrics,
+    southwestMetrics: southwestScenery.metrics,
     ascarthMetrics: ascarth.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
@@ -2225,6 +2243,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...WEST_REGION_LANDMARKS,
       ...GALA_LANDMARKS,
       ...OVES_LANDMARKS,
+      ...MITHALA_LANDMARKS,
+      ...SOUTHWEST_LANDMARKS,
     ],
     paths,
     update(time, dt) {
@@ -2244,6 +2264,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       southOremindi.update(time);
       galaScenery.update(time);
       ovesScenery.update(time);
+      mithalaScenery.update(time);
+      southwestScenery.update(time);
       regionScenery.millSails.rotation.z = time * .115;
       for (const [i, camp] of [...campfires.values()].entries()) if (camp.fire.lit) {
         camp.flames.scale.set(1 + Math.sin(time * 8 + i) * .04, .94 + Math.sin(time * 11 + i) * .10, 1);

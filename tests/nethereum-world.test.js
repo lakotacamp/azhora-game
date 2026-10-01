@@ -329,10 +329,20 @@ test('every hex of Nethereum is honest ground, and nobody is sealed in', () => {
   // spends: 36.20 hexes east to west against 35.70, and nothing at all north to south.
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  assert.ok(wide > 36 && wide < 37, `the world is ${wide.toFixed(2)} hexes wide`);
-  // North to south: 30.93 hexes then, untouched by Nethereum; 35.26 since the East Lotharn, and
-  // 37.00 (36.996) since the Ascarth Peninsula's tip.
-  assert.ok(Math.abs(tall - 37.00) < .05, `north to south is ${tall.toFixed(2)} hexes`);
+  // Cape Heth then took it from 45.70 to 49.70, reaching four hundred metres further west again on its
+  // one `coast` hex - the only one the atlas puts inside any country - because x = W(q + r/2) puts a low
+  // q and a high r at the same world x and Cape Heth's rows are the higher.
+  // Before that, the southwestern block took it from 36.20 to 45.70, because the Ganesh Desert reaches
+  // x = -3900 and the world's western edge -3960.002, nine hundred and fifty metres past the
+  // corner this country set. Nethereum is still what set the edge it had; it does not set this one.
+  assert.ok(wide > 49.6 && wide < 50, `the world is ${wide.toFixed(2)} hexes wide`);
+  // North to south: 30.93 hexes then, untouched by Nethereum; 35.26 since the East Lotharn, 37.00
+  // (36.996) since the Ascarth Peninsula's tip, and 45.656 since the four Mithala countries carried
+  // the world north to the Acor Wetlands. Nethereum touched none of it.
+  // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
+  // (docs/southwest-2-report.md), which this country is nowhere near either.
+  // ...and 54.316 since Trogo carried it south again to z = 3264.426 (docs/southwest-4-report.md).
+  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(2)} hexes`);
   assert.ok(Math.abs(Math.min(...cells.map(cell => cell.x)) - -2900) < 1,
     'and the hex that spends it is the one `plains` corner at x = -2900');
 });

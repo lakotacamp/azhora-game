@@ -5,6 +5,8 @@ import {
   createAtlasTransform, LEGACY_ROAD_TRANSFORM, HEX_WORLD_TRANSFORM, TIDEHAVEN_ATLAS, METRES_PER_HEX, ATLAS_HEX_WIDTH, PLAYABLE_REGIONS, REGION_BIOMES,
   regionCells, regionOutline, pointInPolygon, regionAtWorld, cellAtWorld, worldBoundsFor, borderMidpoint, routeAnchors, compassHeading, findRegion,
 } from '../src/region-layout.js';
+import { REGION_IDS } from '../src/region-world.js';
+import { PLAYABLE } from '../scripts/build-region-survey.mjs';
 
 const survey = JSON.parse(readFileSync(new URL('../assets/azhora-dev-regions.json', import.meta.url), 'utf8'));
 const close = (a, b, tolerance = 1e-6) => Math.abs(a - b) <= tolerance;
@@ -107,12 +109,140 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * west: the peninsula lies inside the box Nethereum and Drent already made. So the north-south guard
    * goes to 37 and no further, with four-tenths of a metre to spare, and it gets a floor of its own.
    */
-  assert.ok(bounds.maxX - bounds.minX < 52.3 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 37 * METRES_PER_HEX, 'the playable regions fit a walkable world');
-  // Five Ibenwood regions extend the west edge by 1600m; north/south stay fixed.
+  /*
+   * **The four Mithala countries spend eight hexes and two thirds of one north to south, which is
+   * more than any country has spent in one direction, and they state their case.** The East Lotharn
+   * set the northern edge at its own northern row, -1301; the plain that range is the southern wall
+   * of runs on north of it to the Acor Wetlands, and North Mithala's northernmost hex is the atlas's
+   * row 82, centred at z = -2049.5 with its top corner at -2107.2, so the edge goes to **-2167.196**
+   * and the height from 36.996 hexes to **45.656** - measured, not estimated. That is four whole
+   * countries and 116 hexes, more than double any previous job, and they take nothing east or west:
+   * the plain lies inside the box Nethereum and Drent already made (x -2400…-950 against -3010…610).
+   * Each one's own case: South Mithala reaches row 89 and would have spent nothing on its own, since
+   * the East Lotharn already stood at 92; West Mithala reaches 87; East Mithala 86; and **North
+   * Mithala alone spends the last four rows**, 85 down to 82. So the north-south guard goes to 46
+   * and no further, with three and a half hexes to spare, and its floor goes with it.
+   *
+   * The survey window moved with the world: `WINDOW.minR` from 90 to 79, measured off the coast
+   * lattice (scripts/build-region-survey.mjs), which turned 329 claimed hexes in seventeen countries
+   * from sea into land along the whole northern horizon.
+   */
+  /*
+   * **The four southwestern countries spend nine hexes and a half east to west, which is more than
+   * anything has spent in that direction, and they state their case.** Nethereum set the western
+   * edge at its own north-western hex, -3010.002; the driest quarter of the continent runs on west
+   * of it past the unbuilt Ibenwood belt, and **the Ganesh Desert alone spends it**: its westernmost
+   * hexes are (-33,123) through (-33,126), whose outer flat stands at x = -3900, so the edge goes to
+   * **-3960.002** and the width from 36.20 hexes to **45.70** - measured, not estimated. Each one's
+   * own case: Navarth reaches x = -3600 and would have spent six hexes on its own; West Pyros
+   * reaches -3200 and the Ganesh Plain -3250, and neither would have spent anything the other three
+   * did not; **the Ganesh Desert alone spends the last three columns**. North to south they take
+   * nothing at all: the whole block lies between z = 837 and z = 1905, inside the box the East
+   * Lotharn, the Mithala plain and the two Ascarths already made. So the east-west guard goes to 46
+   * and no further, and its floor goes with it, and the world is now very nearly square: 45.70 by
+   * 45.656.
+   *
+   * The survey window moved with the world again: `WINDOW.minQ` from -33 to **-41**, measured off
+   * the coast lattice, which turned 71 claimed hexes in six countries from sea into land along the
+   * block's western horizon - Cape Heth 19, the Dinelv Highlands 14, South Ibenal 14, the West
+   * Meroshe Desert 13, Alezhor 7 and West Ibenwood 4. None of the 71 is the block's own.
+   *
+   * **Then the four Meroshe deserts took the south, and that one nobody saw coming.** Their brief
+   * predicted no movement at all, and it was right about the west: the westernmost Meroshe hex is
+   * the West Meroshe's (-37,133) at x = -3750, a hundred and fifty metres inside the edge the Ganesh
+   * Desert set, so `minX` does not move. What moves is the other axis. The South Meroshe Desert's
+   * southernmost hexes are (-32,141) and (-31,141), centres at z = 3060.089 and lower vertices a
+   * circumradius past that at 3117.824, so the southern edge goes from 2398.401 to **3177.824** and
+   * the height from 45.656 hexes to **53.450** - measured, not estimated. Each one's own case: the
+   * North Meroshe reaches z = 2281 and the West 2627, inside the Ascarth tip's own box; the Central
+   * reaches 2714 and would have spent four rows on its own; **the South Meroshe alone spends the last
+   * three.** So the north-south guard goes to 54 and its floor to 53.4, and the world is no longer
+   * square: **45.70 by 53.450**, taller than it is wide for the first time since the Ascarths, and
+   * there is no direction left that a playable country has not spent.
+   *
+   * Then **Cape Heth widened it west again**, from 45.70 to **49.700**, and that move is worth reading
+   * twice because job 2's report predicted it would not happen. The prediction was that job 3's three
+   * countries lie inside the survey *window*, which is true; the box is a different thing. `x = W(q + r/2)`,
+   * so Cape Heth's q -39 at row 127 stands four hundred metres west of the Ganesh Desert's q -33 at row
+   * 123. Its westernmost hex is the one `coast` hex the atlas puts inside any country, (-39,127), centre
+   * x = -4250, outer flat -4300, margin 60 -> `minX` **-4360.001927939127**. Nothing else moves: the
+   * Dinelv Highlands reach -3900, Hama -3500, and Hama's southernmost row ties the South Meroshe's to the
+   * millimetre without passing it. The world is **49.700 by 53.450**.
+   *
+   * Then **Trogo carried the southern edge once more** (docs/southwest-4-report.md), which is the fourth
+   * time this guard has moved and the last time the southwest quarter can move it: Trogo's three
+   * southernmost hexes are (-29,142), (-28,142) and (-27,142), their centres at z = 3146.69 and their
+   * lower vertices a circumradius (57.735 m) past that at 3204.43, so the southern edge goes from
+   * 3177.824 to **3264.4264805429416** and the height from 53.450 hexes to **54.316**. Each one's own
+   * case again: Marosh's southernmost row is 135 and is nowhere near it, and nothing in job 4 reaches
+   * within eleven hundred metres of Cape Heth's western edge. So the north-south guard goes to 55 and its
+   * floor to 54.2, and the world is **49.700 by 54.316**.
+   *
+   * `WINDOW.minQ` -45 -> **-49** with it, measured off the lattice, and **that widening pulls in nothing
+   * at all**: the four columns q -49...-46 hold no claimed hex anywhere on the atlas in rows 79-144,
+   * because west of Cape Heth the map is open ocean to the edge of the sheet. LAND_HEXES stays at 2,078
+   * and the generated survey is identical either way; the window moves because the invariant it keeps is
+   * "the last column the lattice reaches, and no slack".
+   *
+   * The window moved in **both** axes for it, which is new: `maxR` 135 -> 144 is the lattice's own
+   * last row, and `minQ` -41 -> -45 came with it for free, because x = W(q + r/2) puts a low q and a
+   * high r at the same world x - a lattice nine rows further south reaches four columns further west
+   * without any country reaching an inch in that direction. 143 more claimed hexes turn from sea into
+   * land: Babon 50, Trogo 29, Hama 19, the Azhor Stones 12 - and **thirty-three of the block's own**,
+   * which job 1's 71 did not include one of. Without it the whole of the South Meroshe Desert would
+   * have been open water in the middle of a playable country.
+   */
+  /**
+   * **The merge with the Ibenwood belt took the western edge, and nothing else.** Landing the
+   * seventeen southwestern countries on top of Codex's five Ibenwoods, the South Oremindi Mountains
+   * and Yunethre is the first time two blocks of country have been measured against this guard at
+   * once, and the result is cleaner than it had any right to be: **each axis is owned outright by
+   * one side**. West Ibenwood's rim stands at x = -4550, two hundred and fifty metres west of Cape
+   * Heth's -4300, so the **width is theirs** - 52.200 hexes - and the thirteen southwestern
+   * countries did not widen it by a millimetre. The **height is ours** - 54.316 hexes, North
+   * Mithala's row 82 to Trogo's row 142 - and their seven did not touch it; the Ibenwood belt on its
+   * own stood 36.996 hexes tall, which is where the Ascarth Peninsula had left it. So the merged box
+   * is max() per axis with no interaction term, and 52.3 is **Codex's own ceiling**, kept as they
+   * wrote it rather than recomputed.
+   */
+  assert.ok(bounds.maxX - bounds.minX < 52.3 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
+  assert.ok(bounds.maxZ - bounds.minZ < 55 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 52.1 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
-  assert.ok(bounds.maxZ - bounds.minZ > 36.9 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 54.2 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+});
+
+/**
+ * **The permanent guard the fourth generation of one mistake earned.**
+ *
+ * Four separate test files have now written "these are the last N regions in the list" when what
+ * they meant was "these come after everything that was there before", and every one of them broke
+ * the next time somebody appended a country: the West Lotharn builder rewrote it in
+ * `tests/oves-world.test.js`, the Mithala builder in `tests/west-lotharn-world.test.js`, the
+ * southwest's job 1 in `tests/mithala-world.test.js` twice over, and job 2 in
+ * `tests/southwest-world.test.js`. The idiom is the bug, not the number in it.
+ *
+ * So this is the invariant the idiom was always reaching for, stated once, for every country, with no
+ * count in it at all: **`PLAYABLE_REGIONS` is in strictly increasing `REGION_IDS` order, the ids run
+ * 1..n with no gaps, and the survey script's own `PLAYABLE` is the same list in the same order.** A
+ * country appended at the end passes it; a country inserted anywhere else fails it, which is exactly
+ * what the scatter stream needs (`world-regions.js` walks this list with one seeded stream, so a name
+ * put anywhere but the end re-rolls every region after it). Nobody needs to write "last N" again.
+ */
+test('the region order is the id order, with no gaps and nothing inserted', () => {
+  const ids = PLAYABLE_REGIONS.map(name => REGION_IDS[name]);
+  for (const [index, name] of PLAYABLE_REGIONS.entries())
+    assert.ok(Number.isInteger(ids[index]), `${name} has no region id`);
+  for (let i = 1; i < ids.length; i++)
+    assert.ok(ids[i] > ids[i - 1], `${PLAYABLE_REGIONS[i]} (${ids[i]}) comes after ${PLAYABLE_REGIONS[i - 1]} (${ids[i - 1]})`);
+  assert.deepEqual(ids, Object.keys(REGION_IDS).map((_, i) => i + 1), 'the ids are 1..n with no gaps');
+  assert.equal(Object.keys(REGION_IDS).length, PLAYABLE_REGIONS.length, 'every id is a playable region and back');
+  // The survey script's own PLAYABLE is the same *set* and deliberately not the same order: it was
+  // written in build order and `PLAYABLE_REGIONS` in scatter order, and the two diverged long before
+  // this guard (Eer and Gala sit in different places in each). What has to hold is that neither list
+  // has a country the other has not.
+  assert.deepEqual([...PLAYABLE].sort(), [...PLAYABLE_REGIONS].sort(), 'the survey script builds the same countries');
 });
 
 test('route anchors follow the brief: Tidehaven on the coast, the Caloss on the Luscia border, the Moros west, Elod north-east', () => {

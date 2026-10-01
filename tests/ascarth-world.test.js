@@ -129,17 +129,34 @@ test('the survey window reaches exactly as far south as the coast lattice does, 
   const lastZ = minZ + (Math.ceil((WORLD_BOUNDS.maxZ + margin - minZ) / cell)) * cell;
   let deepest = -Infinity;
   for (let x = minX; x <= WORLD_BOUNDS.maxX + margin + cell; x += cell) deepest = Math.max(deepest, hexAt(x, lastZ).r, hexAt(x, lastZ - cell).r);
-  assert.equal(deepest, 135, `the lattice reaches row ${deepest}`);
+  // 135 when the Ascarth tip set the edge; 144 since the South Meroshe Desert took the world south, and 145
+  // since Trogo took it south again (docs/southwest-4-report.md);
+  // to z = 3177.824 (docs/southwest-2-report.md). The measurement is the rule and the number follows it.
+  assert.equal(deepest, 145, `the lattice reaches row ${deepest}`);
   assert.equal(WINDOW.maxR, deepest, 'the window stops at the last row the lattice reaches: no slack, and nothing left out');
   const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
   for (const hex of ['-9,134', '-8,134', '-7,134', '-9,135', '-8,135', '-7,135']) assert.ok(land.has(hex), `Selemi’s ${hex} is land`);
   // Selemi's shore is across the channel from the tip, and is ground, not the sea.
   const selemi = hexCentre(-7, 134);
   assert.ok(landDistance(selemi.x, selemi.z) > 20, 'Selemi reads as land');
-  // The world's southern edge is the tip's, and it spends the last of the north-south budget.
+  // **The world's southern edge is no longer the tip's**, and this is the guard that had to say so.
+  // It was the tip's: Southern Ascarth spent the last of the north-south budget as the budget then
+  // stood, 2225.2 -> 2398.401. The budget has been raised twice since - the four Mithala countries
+  // carried the world north from -1301.17 to -2167.196 and its height from 36.996 hexes to 45.656,
+  // and the South Meroshe Desert then carried it south from 2398.401 to **3177.824** and its height
+  // to **53.450**. So what this holds now is three facts: the world's edge is seven hundred and
+  // eighty metres past this peninsula's tip, the tip is still comfortably inside it, and the edge the
+  // tip did set is still the edge of the tip's own ground.
+  // Trogo then carried it south again, from 3177.824 to **3264.4264805429416** and the height from 53.450 hexes to **54.316** (docs/southwest-4-report.md): its three southernmost hexes
+  // are on row 142, their lower vertices a circumradius past centres at z = 3146.69. The peninsula has not
+  // set the southern edge since job 2 and sets it less now; what it still sets is nothing at all here.
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `the southern edge is ${WORLD_BOUNDS.maxZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  assert.ok(Math.abs(tall - 36.996) < .002, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 54.316) < .002, `north to south is ${tall.toFixed(3)} hexes`);
   assert.ok(WORLD_BOUNDS.maxZ > hexCentre(-6, 132).z + 57.7 + 59);
+  assert.ok(WORLD_BOUNDS.maxZ - (hexCentre(-6, 132).z + 57.7) > 700, 'the peninsula no longer sets the edge');
+  // And the window still stops where the lattice does at both ends: 79 in the north now, 145 here.
+  assert.equal(WINDOW.minR, 79, 'the Mithala plain carried the window north with the world');
 });
 
 /**

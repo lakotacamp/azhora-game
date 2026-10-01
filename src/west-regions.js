@@ -92,14 +92,33 @@ function resample(points, spacing) {
  * chains became five, so `joinAtlas` below puts the Lizeem back together. Every
  * point of it is the same point it was; `tests/west-rivers.test.js` holds it.
  */
+const ATLAS_CHAINS = Object.freeze(riverCourses(PLAYABLE_SURVEY, RIVER_EDGES, undefined, { soften: 0 })
+  .map(course => Object.freeze({ points: Object.freeze(course.points.map(p => point(p.x, p.z))), edges: course.edges })));
 const ATLAS_COURSES = (() => {
   const courses = new Map();
-  for (const course of riverCourses(PLAYABLE_SURVEY, RIVER_EDGES, undefined, { soften: 0 })) {
+  for (const course of ATLAS_CHAINS) {
     const key = [...new Set(course.edges.flatMap(edge => edge.regions))].sort().join(',');
-    courses.set(key, Object.freeze({ points: course.points.map(p => point(p.x, p.z)), edges: course.edges }));
+    courses.set(key, course);
   }
   return courses;
 })();
+/**
+ * A chain named by **where it is** rather than by whose border it is on, oriented from the first
+ * point given to the second. The Mithala needs it and nothing before the Mithala did: on a braided
+ * plain several chains share one pair of region names — three of the west arm's run between North
+ * Celder and West Mithala, three of the north braid's have North Mithala on both banks — so the
+ * region key that answers for every other river in the west answers for a set here. Ends match to
+ * the metre, which is a tenth of the shortest chain on the map.
+ */
+function chainBetween(ax, az, bx, bz) {
+  const near = (p, x, z) => Math.abs(p.x - x) < 1 && Math.abs(p.z - z) < 1;
+  for (const chain of ATLAS_CHAINS) {
+    const first = chain.points[0], last = chain.points.at(-1);
+    if (near(first, ax, az) && near(last, bx, bz)) return [...chain.points];
+    if (near(last, ax, az) && near(first, bx, bz)) return [...chain.points].reverse();
+  }
+  throw new Error(`The atlas draws no river chain from (${ax}, ${az}) to (${bx}, ${bz}). Is src/region-rivers.js stale?`);
+}
 
 function atlasChain(key) {
   const chain = ATLAS_COURSES.get(key);
@@ -698,7 +717,7 @@ export const NETHEREUM_STREAMS = Object.freeze([
 ]);
 
 // ---------------------------------------------------------------------------
-// Gala: the Oveth's last reach, the two border streams, and the plain's own water
+// Gala: the Oveth's last reach, the Caelin, the Treloss, and the plain's own water
 // ---------------------------------------------------------------------------
 /**
  * Gala's water, and every metre of it is the atlas's or the ground's (docs/gala-brief.md).
@@ -707,14 +726,23 @@ export const NETHEREUM_STREAMS = Object.freeze([
  * whole Nesdor and Eer side is already built (`LIZEEM`, `LIZEEM_REACH`) and is not touched
  * here. The other three are built here, each only where it has Gala on one bank:
  *
- *  - **the desert border stream**, the two `medium` edges between Gala and the Oves Desert. The
+ *  - **the Caelin**, the two `medium` edges between Gala and the Oves Desert. The
  *    atlas carries it on west, `small`, between the Oves Desert and Telemonia; neither of those
  *    is built, so neither is that. It runs north along Gala's north-western corner to the Oveth.
  *  - **the Oveth**, its last reach: three `medium` edges between Gala and Ovesos, from the corner
- *    where the desert stream and the Oveth's own upper course (Ovesos's, unbuilt) come together,
+ *    where the Caelin and the Oveth's own upper course (Ovesos's, unbuilt) come together,
  *    east to the Lizeem.
- *  - **the Telemonia border stream**, `small`, down the whole western side to the sea, its last
- *    edge between Gala and Legemum. Unnamed in the lore and the atlas, and left so.
+ *  - **the Treloss**, `small`, down the whole western side to the sea, its last
+ *    edge between Gala and Legemum.
+ *
+ * **The two border streams were named on 2026-10-01 and the names are the Mittoli lexicon's own
+ * words**, in the way job 1 of the southwest named the Vaellir: `mittoli.roots.border` is *trelith*
+ * and `mittoli.roots.flow` is *caelin* (src/languages.js, from the `mittoli` profile in
+ * `world-builder/azhoran_language_profiles.py` - `lexical_roots.border` is `["trel", "dor"]`,
+ * `lexical_roots.river` is `["cael", "nil"]`, and `-oss`, `-ith` and `-in` are all in the profile's
+ * own suffix list). *Treloss* is **trel-** with the **-oss** the tongue puts on a watercourse
+ * (*caeloss* is "river"), and it is one of the eight names the profile's own `candidate_pool` emits.
+ * *Caelin* is taken whole. Why these two and not the distributary is at `GALA_CHANNEL`.
  *
  * And one course that is the ground's, not the atlas's, which is what the lore's "network of
  * small rivers" and its "Lizeem's distributaries" come to on a map that draws no river inside
@@ -770,14 +798,30 @@ function shortOf(points, parent, reach) {
 }
 
 /**
- * **The desert border stream.** Shallow over gravel the whole of its Gala reach and a step
+ * **The Caelin**, its lower reach, which Gala built as "the desert border stream" and which is the
+ * same watercourse as the Oves Desert's `OVES_BORDER_STREAM` - one chain on the atlas
+ * (`Gala,Oves Desert,Telemonia`), handed over at (-1850, 1039) and carried on north to the Oveth.
+ * **It was two names for one river until 2026-10-01 and is now one**, which is the arrangement the
+ * Oveth's two reaches have had since Gala was built: `OVETH_UPPER` and `OVETH_REACH` are both "The
+ * Oveth" and this is both "The Caelin".
+ *
+ * **The name is Mittoli for "the flow"** (`mittoli.roots.flow` = *caelin*, src/languages.js; the
+ * profile's own `cael` river root with its own `-in` suffix), taken whole as a name the way job 1 took
+ * *vaellir* for the Vaellir and job 2 took *malhat* for the Malhat. It earns it: the Oves Desert has
+ * **no permanent water inside it at all** and this is the one thing on its edge that runs, which is why
+ * the Ovesos Water Council's dispute with Telemonia - the one `oves_desert.md` spends a paragraph on -
+ * is a dispute about this line. The Council speaks inner-branch Mittoli (`ovesos.md`) and the desert has
+ * no speech of its own and takes Ovesos's (docs/oves-report.md), so the tongue that has a use for this
+ * water is the tongue that names it.
+ *
+ * Shallow over gravel the whole of its Gala reach and a step
  * across, which is what a stream off the rain-shadow margin is in any month but the wet ones.
  * It is also half of how the dry country reaches Gala on foot: the Oves Desert shares two edges
  * with Gala and both of them are this stream, so a stream built deep would have walled the
  * desert out of the country beside it. `medium` on the atlas and narrow here, because the
  * atlas's medium begins on these two edges and nowhere upstream of them.
  */
-export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The desert border stream',
+export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The Caelin',
   galaTail('Gala,Oves Desert,Telemonia', 3), { halfWidth: 2.4, halfWidthEnd: 3, cut: 1.1, cutEnd: 1.3, bed: .45 });
 
 /**
@@ -792,19 +836,34 @@ export const GALA_DESERT_STREAM = river('gala-desert-stream', 'The desert border
  *
  * It drops as it goes: the cut deepens from a metre and a third to three and a half, which is
  * the "rocky lower section" and is also what brings its water down toward the Lizeem's, three
- * metres cut into its own bed where they meet. It takes its first level from the desert stream
+ * metres cut into its own bed where they meet. It takes its first level from the Caelin
  * (`headOf`), because a river cannot stand above the water that runs into it.
  */
 export const OVETH_REACH = river('oveth-reach', 'The Oveth', shortOf(atlasCourse('Gala,Ovesos'), LIZEEM, 25),
   { halfWidth: 3, halfWidthEnd: 5.4, cut: 1.3, cutEnd: 3.5, bed: .85, fordUntil: .4, headOf: 'gala-desert-stream' });
 
 /**
- * **The Telemonia border stream**: small on the atlas, a step across here, running south
- * down Gala's whole western side and out to the sea at its south-western corner. It has no
- * name in the lore and none in the atlas, and it is listed for the user rather than given one.
+ * **The Treloss**: small on the atlas, a step across here, running south
+ * down Gala's whole western side and out to the sea at its south-western corner.
  * It tapers out onto the beach (`shoreward`, `taper`), the way a stream reaching sand does.
+ *
+ * **Mittoli for "the border river", and both halves of it are the profile's**: the `mittoli` profile's
+ * `lexical_roots.border` is `["trel", "dor"]` and its suffix list carries `-oss`, which is the ending
+ * this tongue puts on a watercourse - `mittoli.roots.river` is *caeloss* and `roots.border` is *trelith*
+ * (src/languages.js). *Treloss* is the border root with the river ending, and the form is not even a
+ * coinage: it is one of the eight names in the profile's own `candidate_pool`. What it names is what this
+ * stream is and all it is - Gala's whole western side is the Telemonian border and this is the line of it,
+ * for every edge the atlas draws.
+ *
+ * Two things were checked and rejected. **Kellith**, Telemonia's own tongue, whose river root and border
+ * root are the *same* root (`lexical_roots.river` and `.border` both carry `ver`), is the profile a name
+ * for this border could have come from - but `gala.md` makes Gala Mittoli-speaking, Gala's builder said so
+ * at `GALA_LANDMARKS`, and the two forms the root yields, *Verath* and *Verith*, are both taken: the Verath
+ * is the Oremindi sacred system, with a lore file of its own. And *trelith* itself is a person in this
+ * game (Captain Nessa Trelith, src/batman.js), which is no reason to refuse a word but is a reason to take
+ * the other ending the profile offers.
  */
-export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Telemonia border stream',
+export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Treloss',
   shoreward(atlasCourse('Gala,Legemum,Telemonia')), { halfWidth: 1.5, halfWidthEnd: 2.2, cut: 1, cutEnd: .75, bed: .35, taper: 30 });
 
 /**
@@ -828,6 +887,19 @@ export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Telemon
  * (tests/gala-world.test.js measures it). That is why it bends west as it nears the sea: Gala's
  * south narrows to a single hex between Telemonia and Northern Ascarth, and the channel goes down
  * the western side of it.
+ *
+ * **It stays "the distributary", and that is an answer rather than a gap.** The two border streams were
+ * named from the Mittoli lexicon on 2026-10-01 and this one was looked at with them and left alone, on
+ * `gala.md`'s own sentence: "A layer of pre-Mittoli terms persists in the names of geographical features
+ * - **the small rivers**, the coastal inlets, the specific soils of the agricultural plain - in the way
+ * that the names of things that were there before the current speakers arrived tend to persist… The name
+ * *Gala* itself is from this older layer. What it meant to whoever named the place before the current
+ * population arrived is not established." So the lore does not say this water has no name; it says it has
+ * one, in a language that is in no profile and that nobody in the game can gloss. A border is named by
+ * whoever argues over it and both of Gala's are; a stream that rises inside the country and runs to its
+ * own shore is named by the country, and that name is the old layer's. This is the refusal job 1 made for
+ * the Ganesh, on the same kind of sentence, and the lore's own words for it are already used here: "the
+ * Lizeem's distributaries, as the Galans call it".
  */
 export const GALA_CHANNEL = river('gala-channel', 'The distributary', shoreward([
   point(-1535, 1078), point(-1572, 1116), point(-1610, 1153), point(-1650, 1191), point(-1691, 1231),
@@ -835,6 +907,110 @@ export const GALA_CHANNEL = river('gala-channel', 'The distributary', shoreward(
 ]), { halfWidth: 2.2, halfWidthEnd: 4.6, cut: 1.3, cutEnd: .8, bed: .5 });
 
 export const GALA_RIVERS = Object.freeze([GALA_DESERT_STREAM, OVETH_REACH, GALA_TELEMONIA_STREAM, GALA_CHANNEL]);
+
+// ---------------------------------------------------------------------------
+// The Mithala plain: the channels, which are the country
+// ---------------------------------------------------------------------------
+/**
+ * **The river is the whole of what the Mithala is** — "The Lizeem makes the Mithala. This is not a
+ * metaphor: the soil of the plain is river deposit" — and the atlas draws it, sixty-one new edges
+ * across the four countries, in thirteen chains that make one branching system with a single outlet.
+ * It is by a distance the largest piece of authored water in the game after the Lizeem itself.
+ *
+ * This section stands here, out of build order, because `WEST_BRAIDS` immediately below names two
+ * of these courses and a `const` cannot be read before it is written.
+ *
+ * **The shape, read off the atlas rather than decided:** two arms come in, one from the west along
+ * the Celder margin and one from the north out of the wetland country, they meet at (-1700, -1414)
+ * at South Mithala's north-western corner, and one channel goes on east from there to the sea at
+ * (-1000, -1414), where the hexes beyond are unclaimed water. Every chain either runs to that
+ * meeting or hangs off one that does. That is the lore's own account of the plain read backwards:
+ * "Below Minora, where the river first forks, the branches multiply... The Lizeem's channels
+ * eventually gather again as they approach the sea", and this ground is where they gather.
+ *
+ * **It is not called the Lizeem**, and that is deliberate. The atlas draws these edges `medium`
+ * where it draws the Lizeem `large` through Caricas and Eer, and the lore is plain that the river
+ * below Minora is not one river but a set of channels each of which a farmer "knows by name and
+ * behavior" — so the biggest of them is what the lore itself calls it, **the main channel**, and the
+ * great river's name stays on the great river. The one name taken from the lore is **the north
+ * braid**, which it gives as an example of what a village says it is on ("a village describes itself
+ * as being on the North Braid or the Third Olveth Arm"). Everything else is plain English, because
+ * `world-builder/azhoran_language_profiles.py` has no Mithali profile and the lore says the name
+ * Mithala itself "does not decompose cleanly in any Mittoli root system".
+ *
+ * **Sizes follow the house rule.** The main channel is medium, so it is waded over the gravel of its
+ * first third and deep below, exactly as the Isa and the Carica are (`ISAREOS_RIVER`); everything
+ * else the atlas draws small, and a small river on a plain is waded anywhere. So the four countries
+ * are connected on foot all round the plain, and the one place a traveler is stopped is the lower
+ * two-thirds of the main channel — which is the border between South and East Mithala for sixteen
+ * hex edges, and is why those two are different places.
+ */
+const MITHALA_MEET = Object.freeze({ x: -1700, z: -1414 });
+/** The main channel, from the meeting of the arms east to the sea, cut off where the beach starts. */
+export const MITHALA_MAIN = river('mithala-main-channel', 'The Main Channel',
+  shoreward(chainBetween(MITHALA_MEET.x, MITHALA_MEET.z, -1000, -1414)),
+  { halfWidth: 5, halfWidthEnd: 11, cut: 1.9, cutEnd: 2.5, bed: .9, fordUntil: .30, headOf: 'mithala-west-arm' });
+/**
+ * **The west arm**, four atlas chains end to end: down the Celder margin from the plain's
+ * north-western corner, south-east to the junction at (-1950, -1155) where the Celder water comes
+ * in, then north-east to the meeting. The longest course on the plain.
+ */
+export const MITHALA_WEST_ARM = river('mithala-west-arm', 'The West Arm', [
+  ...chainBetween(-2350, -1386, -2300, -1299),
+  ...chainBetween(-2300, -1299, -2200, -1241).slice(1),
+  ...chainBetween(-2200, -1241, -1950, -1155).slice(1),
+  ...chainBetween(-1950, -1155, MITHALA_MEET.x, MITHALA_MEET.z).slice(1),
+], { halfWidth: 3, halfWidthEnd: 5, cut: 1.4, cutEnd: 1.1, bed: .5 });
+/**
+ * **The Celder water**, off the three-country corner where South Mithala, North Celder and the West
+ * Lotharn meet, north-east to the west arm's junction. It is the only water that comes onto the
+ * plain from the hill country to the south-west, and it stops at the arm's bank rather than in the
+ * middle of it (`shortOf`), as the Oveth stops at the Lizeem's.
+ */
+export const MITHALA_CELDER_WATER = river('mithala-celder-water', 'The Celder Water',
+  shortOf(chainBetween(-2150, -981, -1950, -1155), MITHALA_WEST_ARM, 9),
+  { halfWidth: 2.2, halfWidthEnd: 3, cut: 1.1, cutEnd: .9, bed: .4 });
+/**
+ * **The north braid**, the lore's own name: three chains from a head on the damp northern shelf,
+ * south past the cross braid's junction and then south-east to the meeting.
+ */
+export const MITHALA_NORTH_BRAID = river('mithala-north-braid', 'The North Braid', [
+  ...chainBetween(-2000, -1819, -1950, -1732),
+  ...chainBetween(-1950, -1732, -1950, -1674).slice(1),
+  ...chainBetween(-1950, -1674, MITHALA_MEET.x, MITHALA_MEET.z).slice(1),
+], { halfWidth: 2.6, halfWidthEnd: 4.4, cut: 1.2, cutEnd: 1, bed: .45 });
+/** The braid's second head, a hundred metres east of the first, joining it at its own bank. */
+export const MITHALA_EAST_HEAD = river('mithala-east-head', 'The East Head',
+  shortOf(chainBetween(-1900, -1819, -1950, -1732), MITHALA_NORTH_BRAID, 7),
+  { halfWidth: 1.6, halfWidthEnd: 2.2, cut: .9, cutEnd: .8, bed: .35 });
+/** **The cross braid**, running east along the North Mithala | West Mithala border into the braid. */
+export const MITHALA_CROSS_BRAID = river('mithala-cross-braid', 'The Cross Braid',
+  shortOf(chainBetween(-2150, -1674, -1950, -1674), MITHALA_NORTH_BRAID, 8),
+  { halfWidth: 2, halfWidthEnd: 3, cut: 1, cutEnd: .9, bed: .4 });
+/**
+ * **The fan**: two short channels leaving the west arm on its northern side and giving out on the
+ * grass within a few hundred paces. They are distributaries and not tributaries — the atlas hangs
+ * them off the arm and the ground falls away from it — so each is tapered rather than run to a
+ * mouth, which is what a channel that spreads and sinks does. Between them they are what West
+ * Mithala has instead of braiding: "first two main arms, then distributaries from each".
+ */
+export const MITHALA_FAN = Object.freeze([
+  river('mithala-fan-north', 'The Upper Fan', chainBetween(-2200, -1299, -2200, -1241),
+    { halfWidth: 1.6, halfWidthEnd: 2.4, cut: .9, cutEnd: .7, bed: .35, taper: 26 }),
+  river('mithala-fan-west', 'The Lower Fan', chainBetween(-2300, -1299, -2250, -1386),
+    { halfWidth: 1.6, halfWidthEnd: 2.4, cut: .9, cutEnd: .7, bed: .35, taper: 34 }),
+]);
+/**
+ * Every channel on the plain. **The two arms come before the main channel**, because the main
+ * channel takes its first water level from the west arm's last (`headOf`) and `west-ground.js`
+ * builds the profiles down this list: the arms arrive at the meeting from a thousand metres of
+ * border where two thirds of the hex blend is unbuilt outland, and whatever level they get there is
+ * the level the river below them has to start at, or the plain has water running uphill into its
+ * own main channel. Measured: the west arm arrives at 10.40 m and the main channel now starts there
+ * to the digit, with the north braid coming in a metre above both.
+ */
+export const MITHALA_RIVERS = Object.freeze([MITHALA_WEST_ARM, MITHALA_NORTH_BRAID, MITHALA_MAIN,
+  MITHALA_CELDER_WATER, MITHALA_EAST_HEAD, MITHALA_CROSS_BRAID, ...MITHALA_FAN]);
 
 /**
  * The braided reaches. A braid is what a river does when it has more bed than
@@ -854,11 +1030,19 @@ export const WEST_BRAIDS = Object.freeze([
   Object.freeze({ id: 'eer-south', course: EER_CHANNELS[1], from: .60, to: .95, offset: 13, half: 1.6, cut: .65, lift: .12 }),
   // Gala's mouths: the distributary's last third, on the only ground Gala has at the sea.
   Object.freeze({ id: 'gala-mouths', course: GALA_CHANNEL, from: .64, to: .97, offset: 10, half: 1.5, cut: .6, lift: .1 }),
+  // **The Mithala's two, and they are what the plain is famous for.** "The channels themselves are
+  // many and braided... first two main arms, then distributaries from each, then smaller branches."
+  // The main channel braids over the whole of its middle and lower reach - the widest offset in the
+  // game, because this is the flattest ground in the game and the bars between the threads are what
+  // the lore's villages are built on - and the north braid over its lower half, where it comes off
+  // the damp shelf onto the flat.
+  Object.freeze({ id: 'mithala-main', course: MITHALA_MAIN, from: .30, to: .93, offset: 26, half: 3.2, cut: 1.05, lift: .2 }),
+  Object.freeze({ id: 'mithala-north-braid', course: MITHALA_NORTH_BRAID, from: .48, to: .94, offset: 17, half: 2.1, cut: .8, lift: .15 }),
 ]);
 
 
 // ---------------------------------------------------------------------------
-// Ovesos and the Oves Desert: the Oveth's upper course and the desert's southern border stream
+// Ovesos and the Oves Desert: the Oveth's upper course and the Caelin's upper reach
 // ---------------------------------------------------------------------------
 /**
  * The water of the two dry countries, and there is very little of it (docs/oves-brief.md).
@@ -871,8 +1055,8 @@ export const WEST_BRAIDS = Object.freeze([
  *
  *  - **the Oveth's upper course**, seven `Oves Desert`|`Ovesos` edges from (-2050, 751) down to the
  *    corner at (-1800, 953) where Ovesos, the Oves Desert and Gala meet;
- *  - **the desert's southern border stream**, the `Oves Desert`|`Telemonia` reach of the chain whose
- *    last two edges Gala built as `GALA_DESERT_STREAM`.
+ *  - **the Caelin**, its upper reach: the `Oves Desert`|`Telemonia` reach of the chain whose
+ *    last two edges Gala built as `GALA_DESERT_STREAM`, which is the same river and now the same name.
  *
  * Everything else either country has is terrain: four cut channels with no water in any of them and
  * one reach of one of them that holds water below the gravel (`OVES_CHANNELS`, `OVES_DAMP` in
@@ -898,7 +1082,13 @@ export const OVETH_UPPER = river('oveth-upper', 'The Oveth', atlasCourse('Oves D
   { halfWidth: 1.8, halfWidthEnd: 4.2, cut: 1.15, cutEnd: 1.55, bed: .8, fordUntil: .33 });
 
 /**
- * **The desert's southern border stream.** The atlas carries the chain Gala's `GALA_DESERT_STREAM`
+ * **The Caelin**, its upper reach, which the Oves built as "the southern border stream" before the chain
+ * had a name: it and `GALA_DESERT_STREAM` are two reaches of one watercourse and carry one name between
+ * them, as the Oveth's two reaches do. The name is Mittoli for "the flow" and the argument for it is at
+ * `GALA_DESERT_STREAM`; the short of it is that this country has no permanent water in it and this is the
+ * one thing on its edge that runs.
+ *
+ * The atlas carries the chain Gala's `GALA_DESERT_STREAM`
  * is the last two edges of on west, `small`, along five `Oves Desert`|`Telemonia` edges; Gala left it
  * unbuilt because neither of those countries was. One of them is now.
  *
@@ -913,7 +1103,7 @@ export const OVETH_UPPER = river('oveth-upper', 'The Oveth', atlasCourse('Oves D
  * the one it runs into would be water flowing uphill, so this one ends a few centimetres above it and
  * the test says by how much.
  */
-export const OVES_BORDER_STREAM = river('oves-border-stream', 'The southern border stream',
+export const OVES_BORDER_STREAM = river('oves-border-stream', 'The Caelin',
   atlasCourse('Gala,Oves Desert,Telemonia').slice(0, 6), { halfWidth: 1.2, halfWidthEnd: 2, cut: .85, cutEnd: .95, bed: .35 });
 
 export const OVES_RIVERS = Object.freeze([OVES_BORDER_STREAM, OVETH_UPPER]);
@@ -980,6 +1170,87 @@ export const LONG_VALLEY_WEST_BECK = river('long-valley-west-beck', 'The west be
 export const WEST_LOTHARN_WATERS = Object.freeze([KEMRATH_REACH, WEST_LOTHARN_NORTH_BECK, LONG_VALLEY_EAST_BECK, LONG_VALLEY_WEST_BECK]);
 
 // ---------------------------------------------------------------------------
+// The southwest: the Vaellir and the Alezhor water, and they are the only water in a desert
+// ---------------------------------------------------------------------------
+/**
+ * **Two courses over a hundred and seven hexes, both of them on a border, and both of them
+ * reaching the sea.** The atlas draws twenty-eight river edges on the four southwestern countries
+ * and not one of them is inside any of them: everything this quarter has runs along its edge, which
+ * is what a desert's water does - it is somebody else's rain passing through.
+ *
+ *  - **The Vaellir**, twenty edges down the whole of West Pyros's eastern border, growing from
+ *    `small` at its head through `medium` to **`large`** at its mouth. The atlas draws `large`
+ *    three times in the whole world: through Caricas and Eer, which is the Lizeem, and here. So
+ *    this is the second great river in the game, and after the Lizeem the largest water in it.
+ *  - **The Alezhor water**, eight `small` edges running west-south-west along Navarth's northern
+ *    border and then the Ganesh Desert's north-eastern one, out of the wet `Csb` grassland of
+ *    Alezhor and down to the gulf. It is an exogenous river - it rises in green country and
+ *    crosses a desert without gaining anything - and it is the only running water the Ganesh
+ *    Desert ever sees.
+ *
+ * **The names.** `world-builder/azhoran_language_profiles.py` *does* have a `pyrosi` profile - the
+ * first country in the west whose people's tongue is in it - and `src/languages.js` carries it with
+ * its lexicon, in which `vaellir` is simply the word for "river". So the great river of West Pyros
+ * is **the Vaellir**, which is the Pyrosi for the river, the way an Avon is a river: nothing is
+ * coined, the tongue's own word is used. The other is named for the country it comes out of, which
+ * is what `MITHALA_CELDER_WATER` did one quarter of the continent away. The Ganesh's own name is
+ * left alone entirely: `ganesh_desert.md` is emphatic that it is pre-Moreshi and that "whoever
+ * named this desert named it in a way that no current language on the peninsula can explain".
+ *
+ * **The Vaellir is a wall below its first quarter**, which is the house rule for a big river (the
+ * Lizeem is `fordUntil: 0` and the Isa and the Carica are walled below their gravel heads). Its
+ * five `small` edges at the head are waded over gravel; from the first `medium` edge down there is
+ * no way across it on foot, and there is nothing to cross to, because East Pyros is not built.
+ */
+export const VAELLIR = river('vaellir', 'The Vaellir', shoreward(atlasCourse('East Pyros,West Pyros')),
+  { halfWidth: 3, halfWidthEnd: 14, cut: 1.5, cutEnd: 3.1, bed: 1.6, fordUntil: .24 });
+/**
+ * The Alezhor water, out of the green country on the north and away west to the gulf. Small on the
+ * atlas over all eight of its edges and small here: two metres of water either side at the head and
+ * three at the mouth, waded anywhere along it, which is the only reason the Ganesh Desert and
+ * Navarth are connected to each other at all round the north.
+ */
+export const ALEZHOR_WATER = river('alezhor-water', 'The Alezhor Water',
+  shoreward(atlasCourse('Alezhor,Ganesh Desert,Navarth')),
+  { halfWidth: 2, halfWidthEnd: 3.2, cut: 1, cutEnd: 1.35, bed: .5 });
+/**
+ * **The Nahr and the Trogoreth, and they are the first water the atlas draws *inside* a southwestern
+ * country.** Job 1's two both run on a border with unbuilt country for the whole of their length and
+ * jobs 2 and 3 have nothing at all - a hundred and sixty-eight hexes of Meroshe desert, cape, plateau
+ * and Mediterranean corner without one river edge on any of them. These two have the same country on
+ * both banks, and both reach the sea: measured on the atlas's own chains, the Nahr's last point stands
+ * four metres from the waterline and the Trogoreth's one metre, before `shoreward` trims each back to
+ * forty-two.
+ *
+ *  - **The Nahr**, three `small` edges round the corner of Marosh's (-25,131), which is where its
+ *    ridge is broken. The Maroshi for "river" is `nahr` (`src/languages.js`, `maroshi.roots.river`),
+ *    so the one river the atlas gives this whole coast is called the river, the way job 1's Vaellir is
+ *    the Pyrosi for a river and job 2's Malhat is the Moreshi for salt. Nothing is coined. It rises on
+ *    the seaward face of the ridge, runs east-south-east through the gap and reaches the Iberos in a
+ *    hundred and seventy metres.
+ *  - **The Trogoreth**, four `small` edges through Trogo's south-eastern corner, and the lore names it
+ *    itself: "The largest, which Maroshi records call the Trogoreth ('the Trogo river,' a construction
+ *    that acknowledges they have no better name for it), has a wide delta mouth that has silted into a
+ *    shallow estuary system." **It is the only permanent water in the first rainforest in the game**,
+ *    and it is one of `src/undergrowth.js`'s ways through: a traveler who cannot push into the thicket
+ *    can walk up the watercourse.
+ *
+ * **Both are waded anywhere, and that is deliberate rather than lazy.** The atlas draws `small` on all
+ * seven edges, and `small` is waded everywhere else in the game; the lore's navigable delta and its
+ * "canyon narrowing that stops boat traffic" are at a scale the atlas does not draw here. It also
+ * matters for the country: Trogo is the first country in the game with a movement rule of its own that
+ * is not the climbing one, and **a walled river inside it would be a second barrier crossing the
+ * first**, which is exactly how a traveler gets sealed into a corner. One gate in this country, and it
+ * is the undergrowth.
+ */
+export const MAROSH_NAHR = river('marosh-nahr', 'The Nahr', shoreward(atlasCourse('Marosh')),
+  { halfWidth: 1.8, halfWidthEnd: 3, cut: .9, cutEnd: 1.25, bed: .5 });
+export const TROGORETH = river('trogoreth', 'The Trogoreth', shoreward(atlasCourse('Trogo')),
+  { halfWidth: 3.2, halfWidthEnd: 6.4, cut: 1.3, cutEnd: 2, bed: .8 });
+/** Every course of the southwestern block. */
+export const SOUTHWEST_RIVERS = Object.freeze([VAELLIR, ALEZHOR_WATER, MAROSH_NAHR, TROGORETH]);
+
+// ---------------------------------------------------------------------------
 // Every piece of western water, and the questions the rest of the game asks of it
 // ---------------------------------------------------------------------------
 /**
@@ -990,7 +1261,7 @@ export const WEST_LOTHARN_WATERS = Object.freeze([KEMRATH_REACH, WEST_LOTHARN_NO
  */
 export const WEST_RIVERS = Object.freeze([VASTOS_RIVER, VASTOS_BECK, ...MENETH_BECKS, LIZEEM, CARICA,
   ELA_SOUTH_REACH, NESDOR_BECK, LIZEEM_REACH, ...EER_CHANNELS, ISAREOS_RIVER, ...ISAREOS_BECKS,
-  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS]);
+  NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS, ...LOTHARN_WATERS, ...WEST_LOTHARN_WATERS, ...OVES_RIVERS, ...GALA_RIVERS, ...MITHALA_RIVERS, ...SOUTHWEST_RIVERS]);
 /** Standing water: pans, basins and the warm pool, as circles with their own depth. */
 export const WEST_POOLS = Object.freeze([
   ...VASTOS_PANS, ...VASTOS_BASINS,
@@ -998,7 +1269,11 @@ export const WEST_POOLS = Object.freeze([
 ]);
 
 /** The regions this module shapes, in the order they were built. */
-export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains']);
+export const WEST_REGION_NAMES = Object.freeze(['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'East Lotharn Mountains', 'Gala', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains',
+  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert',
+  'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo']);
 
 const boxOf = () => ({ minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity });
 const grow = (box, x, z, reach) => {

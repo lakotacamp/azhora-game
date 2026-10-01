@@ -12,7 +12,7 @@ import { DEFAULT_SKY, regionSky } from '../src/region-sky.js';
 import { regionLevel } from '../src/region-levels.js';
 import { regionBuildStatus } from '../src/build-status.js';
 import { SUBREGIONS } from '../src/map-fog.js';
-import { ENCLOSED_LAKES } from '../scripts/build-region-survey.mjs';
+import { ENCLOSED_HEXES } from '../scripts/build-region-survey.mjs';
 import {
   STILLWATER, STILLWATER_HEX, IMLAMDRIS_HEX, STILLWATER_SURFACE, STILLWATER_SHORE, SOUTH_SUVAL_CLIMATE,
   stillwaterDistance, TERRACES, STAIRS, cityPoint, cityLocal, cityLevel, hexInset, FACING_LAKE, CITY_FEATHER,
@@ -68,7 +68,7 @@ test('the atlas: fifteen hexes of hill, ridge and grass round one lake, and thre
   const cells = REGION_CELLS['South Suval'], tally = {};
   for (const cell of cells) tally[cell.terrain] = (tally[cell.terrain] ?? 0) + 1;
   assert.deepEqual(tally, { hills: 7, mountain: 4, grassland: 4, lake: 1 });
-  assert.deepEqual([...ENCLOSED_LAKES['South Suval'][0]], [...STILLWATER_HEX], 'the Stillwater is the region’s own lake cell');
+  assert.deepEqual([...ENCLOSED_HEXES['South Suval'][0]], [...STILLWATER_HEX, 'lake'], 'the Stillwater is the region’s own lake cell');
   // The atlas's own climates, and they are the lore's story: dry Mediterranean hills, a cold-summer
   // ridge, and a cooler lake country.
   const climates = {};

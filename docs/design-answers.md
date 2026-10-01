@@ -4,6 +4,391 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-10-01 — Four decisions on the finished southwest: the ghubr, the tortoise, five names, a table
+
+**Four open questions the southwestern programme had left, answered in one sitting.** Built to
+`docs/southwest-finish-brief.md`; the whole account is `docs/southwest-finish-report.md`. No new region.
+
+- **The Ganesh dustback: "just come up with what you think it should be based on the lore."** Three
+  builders had refused it because they were looking for a body description; the description is
+  behavioural and it exists. It is the **ghubr** (`ganesh_desert.md`, `culture/azhoran_livestock.md`,
+  `peoples/languages/moreshi.md`): small, dry, insectivorous, of the northern desert margin, with a pale
+  powdery ridge along the spine and shoulders, moving at the surface and resting in shade. **Whether it
+  is a bird or a small mammal the lore does not say; the build chose a bird and says so** - the guides
+  read wind direction off it, it is watched standing in daylight where the desert's mammals are
+  nocturnal, and a four-legged build would be the confusion the lore's own second sentence exists to
+  prevent. It is **not** the Moroshé bovid, which is somebody's stock and stays unbuilt.
+- **The canyon tortoise: build it, and let it withdraw.** The blocker was the west's first law, that
+  nothing in it can be walked down. The decision: **the law assumed every animal flees, and a tortoise
+  does not - it stops and shuts.** So the behaviour is built (`SHUT`, `src/west-regions-life.js`) and
+  **the law was changed to ask the right question** rather than exempting the animal with a flag, which
+  the user explicitly rejected: `tests/west-life.test.js` now asks of an animal that shuts whether
+  walking it down *got anybody anything*, and chooses that half by what the animal did in the chase
+  itself. Its home is the Dinelv Highlands' north gap basin, which the lore calls a desert seep.
+- **Five watercourses: derive the names from the language profiles.** Three were named and two were
+  not, and both outcomes are the lore's. Gala's Telemonia border stream is **the Treloss** and the one
+  chain that Gala and the Oves Desert each built a reach of is **the Caelin**, both from the `mittoli`
+  profile's own roots and endings (`src/languages.js`: `roots.border` *trelith*, `roots.flow` *caelin*,
+  `roots.river` *caeloss*). **Gala's distributary and Ovesos's Dry Gully stay descriptive**: `gala.md`
+  says the names of Gala's small rivers are from a pre-Mittoli layer nobody can gloss, and a dry cut
+  with no water in it has no word in a water-administration vocabulary. A name that cannot be derived
+  honestly is left undrawn.
+- **`groundTint` should be a table.** It already was at the top level (job 4 did it); the level below,
+  `southwestTint`, was still a chain of three boxes with a branch per country nested in each, which is
+  the shape job 3 nearly lost the Dinelv plateau's colours to. It is now **thirteen rows walked in
+  order**, each naming the country it speaks for, and the guard asserts both that every row paints
+  somewhere on its own hexes and that **every one of the thirteen countries comes out tinted**.
+  Behaviour is identical: 362,894 answers compared against the base commit, none different.
+
+## 2026-09-30 — What a deep forest is, and the southwest finished (job 4: Marosh and Trogo)
+
+**The user's decision, asked directly and answered in one sentence:** a deep forest in Azhora is
+**a country you cannot see far in *and* cannot go straight through**. Built to
+`docs/southwest-4-brief.md`; the whole account is `docs/southwest-4-report.md`. Terrain, climate,
+water, scenery and wildlife only, and nothing that belongs to anybody. **Job 4 of four**, which
+finishes the southwest quarter: thirteen countries, three hundred and twenty-two hexes.
+
+- **A deep forest is two rules and they are independent.** The first is **haze**: Trogo's
+  `palette.hazeDensity` is **`.0144`**, which is nearly two and a third times the game's own default
+  and hides a traveler **half at fifty-eight metres, nine tenths at a hundred and five and entirely
+  at a hundred and twenty**. The shortest sight line in Azhora before this was Nethereum's `.0071`
+  at two hundred and forty-four metres. The haze colour has to be **dark** — `0x6d7d6b`, the
+  darkest in the game — because job 1 measured that a near-white haze is over half of every pixel
+  past a hundred and fifty metres, and what this actually is, is the lore's own fog: "warm and thick
+  and close", cloud sitting inside a canopy.
+- **The second is `src/undergrowth.js`, shaped exactly like `src/climbing.js`.** It owns no input, no
+  rendering and no saved state; it gates movement through the `canTraverse` hook `moveCharacter`
+  already takes; it is composed with `canWalkSlope` in one line of `src/main.js`; and **it applies
+  only inside a named region set**, because the rest of Azhora has thicket sitting on the autoplays'
+  roads. A forest country hands it a region set and one field, `open(x, z)` — nothing else. The
+  Ibenwoods are one row in its table and one field in their own world module.
+- **The rule refuses exactly one thing: a step that leaves a way and enters the thicket.** A step on
+  to open ground is always allowed and **a step out of the thicket is never refused**, so nobody can
+  be sealed in however they got there — the same asymmetry `canWalkSlope` makes when it allows a
+  descent and refuses an ascent. The thicket carries **no collider at all**: the emergents and the
+  canopy trees are ordinary tree colliders kept off the ways, and the understory that actually stops
+  a body is a rule rather than three thousand rocks. That is why `tests/nobody-sealed-in.test.js` is
+  untouched by this country.
+- **Three kinds of way through, and the measurement is the design**: the watercourse (the Trogoreth,
+  thirteen metres either side), four stream gullies (nine), five animal paths (four and a half) and
+  six clearings. **Forty-four per cent of the country can be walked and twenty-three per cent of the
+  closed canopy** — so four fifths of the forest proper is refused.
+  `tests/trogo-undergrowth.test.js` floods the country both ways: from the desert margin it reaches
+  both shores, the river's mouth and **every walkable cell**; from the southern shore it reaches
+  every point of the crest; and with the ways shut it reaches **nothing**.
+- **`deep_forest` had no meaning in the game's world before this.** It is `REGION_TERRAIN`'s first
+  profile for the word: base 52 against the South Meroshe's 14 across thirteen hex edges, which is
+  the "wall of dark canopy" job 2's own landmark promised a job in advance.
+- **Marosh's line is drawn by height, not by the ocean**, which is the answer to the question job 3
+  left. Hama's wet/dry line runs sixty-nine to a hundred and ten metres inland of the surf; Marosh
+  has no wet/dry line at all, because **it has no desert hex**. The line it does have is `Csa`
+  against `Csb` — the hot-summer and warm-summer forms of the same climate — and on a coastal
+  strip two hexes wide only altitude can decide that. The atlas writes `hills` on precisely the eight
+  hexes it writes `Csb` on, and **every one of those eight touches the desert and none of them
+  touches the sea** while all twenty ocean edges are on the grass. Three statements, one line.
+- **Marosh is the reason the Meroshe is a desert**, and that is a build decision taken from the
+  atlas: a single oak-and-maquis crest at base 74 between twenty hex edges of Iberos water and the
+  Central Meroshe's sand sea. One gap breaks it, and **the atlas found the gap rather than a
+  builder**: the only three river edges the map draws on that whole coast meet at one hex corner
+  beside the ridge's elbow, which is what a water gap is, and it is where the caravan road crosses.
+- **Two new rigs, which is the most any job in the block has spent**, both named and described by the
+  fauna overview: the **forest edge-cat**, which `trogo.md` asks for in so many words ("the carnivores
+  that hunt both zones are the most studied by the communities here"), and the **Iberos albatross**,
+  which the overview says summers "somewhere beyond the horizon south of Azhora" — and Trogo's
+  shore is the southernmost ground in the game. **The three standing refusals are held for the
+  fourth time**: the Ganesh dustback, the canyon tortoise (Trogo was the last country that could want
+  it, and it still fails the west's first law) and all domestic stock.
+- **The rainforest is the densest country in the game**, at 0.379 ranges a hex against job 2's desert
+  at 0.074 — and the two share thirteen hex edges.
+- **`groundTint` is a table now**, which job 2 and job 3 both asked for after it failed silently
+  twice, and `tests/southwest-world.test.js` carries the permanent guard: every family in the table
+  must move the colour of the ground somewhere in its own country.
+- **The world box moved south a fourth time**, to `maxZ` 3264.4264805429416 and 54.316 hexes tall —
+  job 2's arithmetic predicted 3264.4 a job and a half in advance — **and the survey window moved
+  west again without anything reaching west**, `minQ` −49 to −50, because one row deeper in the
+  south is half a column further west at the same world x. It buys one hex: (1,145), an Azhor Stones
+  hex whose terrain word is `deep_forest`, and `trogo.md` says its own coast looks at it.
+- The lore was adjusted in place on **twelve claims** across `marosh.md` and `trogo.md`. The largest
+  is that Trogo's descent runs the other way at its desert margin: the forest stands fifty metres
+  **above** the Meroshe, which is why there is a rainforest there at all.
+
+## 2026-09-30 — The southwest, job 3: Cape Heth, the Dinelv Highlands and Hama
+
+Built to `docs/southwest-3-brief.md`; the whole account is `docs/southwest-3-report.md`. Terrain,
+climate, water, scenery and wildlife only, and nothing that belongs to anybody. **Job 3 of the
+four-job programme** covering Azhora's southwest, on a branch cut from job 2's. Seventy-three hexes,
+and each of the three countries is a first.
+
+- **Cape Heth holds the only `coast` hex any country on the atlas holds.** The map paints 1,332 of
+  them round the continent and exactly one falls inside somebody's outline: (−39,127), the point of
+  this cape, with four of its six neighbours open water. **Its `Cfb` is the sea's code and not the
+  air's** — measured, all 1,332 `coast` hexes and 13,619 of 13,622 `ocean` hexes read `Cfb` — so the
+  point takes the desert's own dryness and the cape is eighteen `BWh` hexes with the sea on three
+  sides of it. Twenty-one hex edges of open water, the most maritime country in the block.
+- **The Dinelv Highlands are the first desert highland in the game**: `BWh` on all thirty-five hexes
+  with twenty-six `hills`, six `plains` and three `mountain` — and across the whole map `mountain`
+  reads `BWh` exactly three times, all three here. That code decides what they can be, because a
+  summit high enough to be a mountain in the Lotharn sense would carry snow; **they are flat-topped
+  residual tables** sixty and seventy metres over the plateau with sides too steep to walk.
+- **The bedding is a function of height and nothing else**, `h + A sin(2πh/P)`, which makes it
+  horizontal by construction and impossible to lay crooked; with `A < P/2π` it stays single-valued so
+  nothing overhangs. It draws treads and risers up every steep face in the country without changing
+  the total fall by a centimetre, and it is the cheapest landform in the block.
+- **The ridge systems are the atlas's own rows.** Read in the frame the lore's own sentence names —
+  the peninsula's long axis, measured at thirty degrees west of due south — every hex but one falls on
+  a row of constant cross-strike coordinate, and **the six `plains` hexes are the gaps in those rows**.
+  So the lore's passes and its water-concentration points are the same four places, which is the one
+  thing it says twice without joining up, and which is why the court's cisterns are at the passes.
+- **The plateau can be walked up in exactly one place** — the lore's northern plateau pass, a graded
+  ramp laid along the grain, 29 m to 85 m over 293 with a worst grade of 0.53 — and the tables cannot
+  be walked at all. A flood fill at a 0.45 grade reaches 117.6 m and stops well under their 164.7.
+- **Hama is the wet edge of the desert, and the atlas draws the line twice**: nine `grassland` hexes
+  that are every one `Csb`, ten `plains` hexes that are every one `BWh`, and no hex where the two
+  fields disagree. Measured on the ground, the line lies **sixty-nine to a hundred and ten metres
+  inland of the surf** all the way round the corner of the continent — the ocean draws it and the
+  Meroshe does not — and it explains job 2's South Meroshe fog belt: one ocean, rain on the exposed
+  western face and fog on the sheltered southern one.
+- **The world box moved again and job 2's brief had predicted it would not.** `minX` −3960.002 →
+  **−4360.002**, the world 45.700 hexes wide → **49.700**, all of it Cape Heth's one `coast` hex,
+  because `x = W(q + r/2)` and its rows are four higher than the Ganesh Desert's. **The lesson is that
+  a prediction about the survey window is not a prediction about the world box**; three briefs in a
+  row have made that substitution and two of them were wrong. `WINDOW.minQ` −45 → −49 with it, and
+  that widening is the first that pulls in nothing at all: there is no claimed hex west of Cape Heth.
+- **The Meroshe fan heads lifted with nothing changed**, which is what job 2 predicted when it wrote
+  `merosheSkirt` as a one-sided ramp: the three apexes went from 9.28, 11.66 and 15.63 m to 38.73,
+  33.54 and 33.95, and every metre came through the hex blend's own base.
+- **Thirteen ranges over seventy-three hexes (0.178 a hex), and the block stops getting emptier.**
+  Job 1 was 0.159 and job 2 was 0.074; Hama's nine `Csb` hexes carry **0.263 a hex**, the densest
+  country in eleven, and Cape Heth's 0.211 is three sea birds and one hare. **No new rig**: the
+  Ganesh dustback is held out for the third time (named, never described — the user's decision), and
+  the canyon tortoise now has its perfect home in the Dinelv basins and still fails the west's first
+  law that nothing can be walked down.
+- **Two new dialects, both the lore's own**: `plateau` for the Dinelv highland Moreshi, which the lore
+  describes down to a named phonemic contrast, and `haman` for Hama's merchant dialect. **Cape Heth
+  speaks plain Maroshi as a marked stand-in**, because its own file names the Alezhor coast and
+  Ibenale as its kin and spends four paragraphs ruling out the Boueni, and none of those is built.
+- **`OWN_SKY` is one list now** (`tests/own-sky.js`), which is the permanent guard job 2 asked for
+  after five builders found and extended the same two copies.
+- **Eight files and ten stale assertions were moved**, six of them the world-box width; and two
+  landmarks had to move a metre or four because growing the box shifts every vertex of the renderer's
+  coarse band — job 1's Alezhor Water and Amod's Dromel Gate label (the gate itself is untouched).
+- The lore was adjusted in place on nine claims across `cape_heth.md` (the cape runs into desert and
+  not forest; the bight is north; there are no trees), `dinelv_highlands.md` (the coast is west; the
+  escarpment's south-western corner is a sea cliff; the ridges' bearing; the three tables, which the
+  lore does not mention) and `hama.md` (the two converging coasts are both open ocean; the green is
+  nearly half the country).
+
+## 2026-09-30 — The southwest, job 2: the four Meroshe deserts
+
+Built to `docs/southwest-2-brief.md`; the whole account is `docs/southwest-2-report.md`. Terrain,
+climate, water, scenery and wildlife only, and nothing that belongs to anybody. **Job 2 of the
+four-job programme** covering Azhora's southwest, on a branch cut from job 1's.
+
+- **The design question the brief set, answered: ninety-five hexes of `plains` and `BWh` are made
+  worth crossing by the surface underfoot, not by relief.** Erg, reg, hamada and sabkha — sand sea,
+  stone pavement, bare rock, salt pan — are four real and distinct desert surfaces and the game had
+  drawn none of them at scale. One to each quarter, which is also the lore's own division of the
+  Moroshe ("the rocky hammada of the northern transition zone… through the great sand seas of the
+  central interior, to the canyon country of the south"). What changes between the four is **how far
+  you can see** (to the horizon on the hamada, two hundred paces in the erg, twenty miles on the reg,
+  six hundred metres in the fog), **how you navigate** (the hamada's rock benches strike north and
+  south, the sand sea's ridges north-west to south-east on the wind, so the ground itself is the
+  compass), and **which single edge of the desert each one faces** — the Ganesh Plain and Marosh's
+  Mediterranean corner from the North, the Dinelv escarpment and the open ocean from the West, a
+  rainforest and the southern ocean from the South, and **nothing at all** from inside the Central,
+  which is why it is the largest of the four and carries one range of animals.
+- **The climate is flat and that is the finding.** All ninety-five hexes are `BWh`; measured,
+  `southwestAridity` reads 1.000 on ninety-four of them and 0.893 on the ninety-fifth, which is the
+  one hex that stands beside the Ganesh Plain's `Csb` row. Job 1's half is sorted by a climate
+  gradient and this half cannot be, so the scatter needed a second pass of its own.
+- **Every hot-desert hex on the claimed atlas is in this one quarter of the continent** — 245 of
+  them, of which these four are 95. There is no other desert in Azhora.
+- **The world box grew, and south.** `minX` did not move, as the brief predicted; `maxZ` went from
+  2398.401 to **3177.824** and the world from 45.656 hexes tall to **53.450**, because the South
+  Meroshe reaches row 141. The survey window moved in **both** axes for it — `maxR` 135 → 144 and
+  `minQ` −41 → −45, the second without anything reaching west at all, because x = W(q + r/2). Nine
+  world-box guards in eight files were moved for it, and **a third of the 143 hexes the widening
+  turned from sea into land are the block's own**: without it the whole South Meroshe would have been
+  open water in the middle of a playable country.
+- **The west and south edges are sea**, measured on the World Builder map: the West Meroshe's ten sea
+  edges are six `coast` hexes and the South Meroshe's four are three, with `ocean` beyond both. So
+  the driest ground in Azhora runs out at an **open** ocean twice more, and is as arid a hundred
+  paces inland of the surf as twenty miles in.
+- **No water at all.** The atlas draws 572 river edges and not one touches the ninety-five. The
+  Malhat, the salt pan at the fan skirt's dead end, is a **crust and not a water surface** — the one
+  place in the desert where water can be seen and not drunk.
+- **The Ganesh Plain seam did not move anything.** Measured against the same ground built without the
+  Meroshe: the plain's three channels fall 1.60, 3.00 and 4.07 m exactly as before and **the divide's
+  crest is at the same two points**. What did move is the plain's southern margin, up 0.30 m, because
+  the row south of it stopped being `outland` and became the hamada — the rib there disappearing.
+- **Seven ranges over ninety-five hexes, five of them birds in the air**: 0.074 a hex against the
+  Ganesh Desert's 0.097, so sparser per hex than the sparsest country in the game. The largest of the
+  four carries **one**, fifty-two metres up. A bone-bird in each quarter and nothing else in more
+  than one, because the lore's one direct statement is that they are "the most visible large animals
+  of the Moroshé". **No new rig was spent**: the sand-cat still needs a night, the spine lizard a
+  gait, and the **canyon tortoise** — which the lore does describe — fails the west's own law that
+  nothing can be walked down. **The dustback is held exactly where job 1 held it**: named, never
+  described, and inventing a shape for it is the user's decision.
+- **Three skies over four countries**, all argued from the atlas: the two interior quarters take job
+  1's desert sky at .0024, the West Meroshe .0032 for ten hex edges of open ocean, and the South
+  Meroshe **.0046** for the fog — the one `BWh` country in the game whose air is thicker rather than
+  thinner, and the only desert a traveler cannot see across.
+- **Plain Maroshi and no dialect**, because the desert peoples' speech is the centre of that family
+  and both dialects the game has are margins of it. **One name taken and nothing coined**: the salt
+  pan is the **Malhat**, the tongue's own word for salt, the way job 1 took *vaellir* for the river.
+- **The spelling: follow the atlas, *Meroshe*.** Both forms are in the archive and both are correct;
+  a closing note was added to `moroshe_desert.md` saying which to use where, and the file was **not**
+  renamed.
+- The lore was adjusted in place on eight claims, the largest being that the desert is on the
+  continent's south-west rather than its eastern face, that it **does** reach the coast on the west
+  and the south, and that the fourth surface — the fan skirt and its salt pan — was missing from the
+  file entirely.
+- **A permanent guard was added for a mistake found in four separate files.** "These are the last N
+  regions in the list" has now broken four times; `tests/region-layout.test.js` states the invariant
+  it was always reaching for — PLAYABLE_REGIONS is in strictly increasing REGION_IDS order with no
+  gaps — once, for every country, with no count in it.
+
+## 2026-09-30 — The southwest, job 1: Navarth, West Pyros, the Ganesh Desert and the Ganesh Plain
+
+Built to `docs/southwest-1-brief.md`; the whole account is `docs/southwest-1-report.md`. Terrain,
+climate, water, scenery and wildlife only, and nothing that belongs to anybody. **This is the first
+quarter of a four-job programme** covering Azhora's whole southwest — thirteen regions, 322 hexes —
+which the user chose after asking how far "the southwest regions" reached, and which deliberately
+leaves the Ibenwood forest belt unbuilt for now.
+
+- **The block is an island, and the user chose that.** None of the four touches a built country: the
+  built frontier in the west is Nethereum and Isareos, which border the unbuilt Ibenwoods. So these
+  four are reached by F8 travel and by nothing else until the forest belt lands, every outer margin
+  is `outland`, and the block's own internal coherence is the only standard there was. **Its datum is
+  its two river mouths**, the gulf at the Ganesh Desert's north-west corner and the Vaellir's mouth
+  at West Pyros's southern tip, because those are the two places in it where sea level is a fact
+  rather than a choice. Jobs 2–4 inherit the same island and make it bigger.
+- **This is the first true desert in the game.** Read per hex off the World Builder map, eighty-one
+  of the hundred and seven hexes are **`BWh`** — hot desert — where nothing built before this was
+  drier than `BSh`, and the Oves Desert's own report had noted that the map's author had `BWh`
+  available and did not use it there. The Ganesh Desert's thirty-one hexes are the first country in
+  the game with hot desert on every one of them.
+- **And the climate is a gradient, which is the block's shape**: `BSh` × 18 down West Pyros's eastern
+  columns beside the great river, `Csb` × 6 and `Csa` × 2 on two green corners — Navarth's
+  north-eastern tip where the Ibenwood reaches in, and the south-eastern corner where Marosh and the
+  southern sea begin — and `BWh` over everything else. **Aridity increases westward and inland.**
+  `southwestAridity` blends it on the ground's own falloff and the scatter, the ground colour and the
+  wildlife all read off it; measured, the steepest change anywhere is 0.157 in twenty metres, where
+  the map itself puts `Csa` against `BWh` one hex apart.
+- **The atlas's three odd hexes are the block's three features and every one is also one of its
+  wettest.** The one `forest` hex is `Csb`; both `grassland` hexes are `Csa` and both are one hex
+  from the sea. Terrain and climate agree, so each carries a feature and not a band — the way the
+  West Lotharn's one `Dfa` hex became its cold head.
+- **The world grew west**, from 36.20 hexes wide to **45.70**, which is more than anything has spent
+  in that direction, and the Ganesh Desert alone spends it. `WINDOW.minQ` went **−33 to −41**,
+  measured off the coast lattice, which turned 71 claimed hexes in six countries from sea into land —
+  all of them the block's horizon and none of them its own ground. The world is now very nearly
+  square, 45.70 by 45.656.
+- **The lore of Navarth and of Pyros is the furthest from its atlas of anything built so far, and the
+  atlas won.** `navarth.md` describes cold snowy plateau country; the map says hot desert over twenty
+  of its twenty-two hexes, so the adjustment keeps the altitude, the exposure, the pastoral economy
+  and the whole Fire-Memory-at-a-distance argument and changes only the weather. `pyros.md` says West
+  Pyros is "the greener, wetter" half and East Pyros is in the rain shadow; the map reverses it, and
+  gives West Pyros no `hills` hex at all, so its famous terraces are on the ridge at its eastern edge
+  and its agriculture is bottomland. Nineteen claims across four lore files, adjusted in place.
+- **One name is coined and it is not an invention.** This is the first block in the west whose
+  people's tongue is actually in `azhoran_language_profiles.py`, so the great river is **the
+  Vaellir**, which is `src/languages.js`'s own Pyrosi word for a river, used the way an Avon is a
+  river. Two new dialects, both the lore's: `west-pyrosi` for Navarth and West Pyros (Navarth gets no
+  dialect of its own because its lore makes it scrupulous about the centre's forms, not divergent
+  from them), and `ganesh`, the contact speech of the Moreshi/Mittoli junction the plain sits on,
+  shared with the desert, which has no speech of its own.
+- **One new rig, and it was overdue: the bone-bird.** The fauna overview names it, gives it a
+  two-and-a-half-metre wingspan and a bald head, and puts it exactly here — "the large scavenger of
+  the desert margins... the most visible large animals of the Moreshe from caravan routes". Both the
+  Oves and the Mithala had used the turkey-vulture as a stand-in for it and said so; the stand-in is
+  spent here.
+- **Emptiness is the answer, harder than in the Oves.** Seventeen ranges over a hundred and seven
+  hexes, seven of them on the one river; **the Ganesh Desert, the largest of the four at thirty-one
+  hexes, has three and two of those are birds in the air**, because its own lore says a severe dry
+  year "presents a surface that appears essentially lifeless". The river fox is absent by
+  measurement: the only river margin in Navarth is on an unbuilt border and the widest clear run
+  behind any point of its bank is twelve metres, where a fox that never flees needs a hundred.
+- **Seven stale lists**, three beyond the ones the brief named. The world-box guards in
+  `region-layout`, `isareos-world` and `nethereum-world`; the `minX` pin in `west-lotharn-world`; the
+  two `OWN_SKY` copies in `region-sky` and `eer-world`; and **two in `tests/mithala-world.test.js`**,
+  one of them the third generation of the same "last in the list" mistake two previous builders had
+  already rewritten in two other files. `open-country` passed untouched again.
+- **One landmark of another country moved, and the render is why.** Growing the world west shifts
+  every coarse-band terrain vertex, which pushed the Mithala's `east-mithala-gallery` from just under
+  a metre buried in the drawn ground to 1.04 m. It stood on a levee crest the seven-metre grid cannot
+  follow; it is eight metres further off the channel now, on the bank the gallery actually stands on.
+- **`west-life`'s three failures are all somebody else's animals.** Run law by law (the chase tests
+  are now very slow: five minutes for the run-down law, seventeen for the return-home one), the two
+  laws about this block's own kind of animal pass and the three that fail name
+  `elagos-meadow-cattle`, `feradom-country-17-98` and `oveth-herons` — the same three the last three
+  builders have recorded as pre-existing. None of this block's seventeen ranges appears in any of them.
+- **The colour pass took three renders and the haze was the culprit.** The desert came back as white
+  sand; two rounds of darkening the ground swatches barely moved it, because at .0030 density a
+  near-white haze was more than half of every pixel past a hundred and fifty metres. The desert sky's
+  haze is a warm dust now (`0xc6b996`) at **.0024**, which is the clearest air in the game and is what
+  a hot desert should have anyway.
+
+## 2026-09-29 — The Mithala plain: four countries built as one landform
+
+Built to `docs/mithala-brief.md`; the full account is `docs/mithala-report.md`. Terrain, climate,
+water, scenery and wildlife only. Seven decisions worth writing down, because the next builder in
+this quarter of the continent will meet all of them.
+
+**1. Four countries, one profile, one sky, one dialect.** South, West, East and North Mithala share
+forty-nine hex edges, one climate code and one river system, so they are quarters of one plain and
+not four countries that happen to touch. Their terrain profiles are identical to the digit and every
+difference of level between them is a landform (`mithalaTilt`), because a base or a wavelength that
+differed across any of those forty-nine edges would put a step in the middle of one plain. The sky is
+one for the same reason — a horizon that changed at an internal border would be a lie about a country
+whose whole point is that the horizon does not change. And the dialect is one because the lore’s own
+divisions here are **channels, not countries**: “they call themselves people of the Olveth Arm or the
+Minoran plain… your identity is your channel”, and a channel crosses every one of the four borders.
+
+**2. `Dfa` is drawn by the species, not the weather.** The plain is hot-summer humid continental on
+all 116 hexes — the first properly continental country in the game — and the game has no seasons. So
+the summer face is built and the winter is carried by what grows and grazes: tall warm-season prairie
+grass and forbs, willow, black poplar and alder on the water and **not one evergreen anywhere**,
+sedge on the fen margin, and a heavy cold-adapted wild bovid whose whole distribution is a seasonal
+circuit. What winter should bring is written out in the report; this block, not the Oves, is where
+seasons will show most, and the ground is already shaped for the flood.
+
+**3. The world grew north, by more than any country has grown it.** −1301.17 m to **−2167.196**,
+36.996 hexes tall to **45.656**, and `WINDOW.minR` 90 to **79** — measured off the coast lattice,
+not guessed. It turned 329 claimed hexes in seventeen countries from sea into land, which is the
+whole northern horizon: the Acor Wetlands, the Acorwood and the Oremindi.
+
+**4. The atlas leaves one hex unclaimed inside South Mithala, and the game now holds it.**
+`ENCLOSED_LAKES` (one lake, the Stillwater) became **`ENCLOSED_HEXES`** and carries terrain: (5,92)
+is `hills` on the World Builder map, ringed by South Mithala on all six sides, and unclaimed. Left
+out it was a hundred-metre hole of sea at 0.6 m in the middle of the flattest country in the game.
+Taking it makes the plain one piece and the Lotharn’s apron the unbroken chain of five `hills` hexes
+the map draws. **If a re-export ever produces a third such hex, nothing warns about it.**
+
+**5. The biggest water in the game after the Lizeem, and it is not called the Lizeem.** The atlas
+draws sixty-one new river edges in thirteen chains with one outlet. The largest is `medium` where the
+Lizeem is `large` elsewhere, and the lore says the river below Minora is a set of channels rather
+than one river — so it is **the main channel**, the great river’s name stays on the great river, and
+the one name taken from the lore is **the north braid**. Nothing is coined: there is no Mithali
+profile in `azhoran_language_profiles.py` and the lore says the name Mithala itself does not
+decompose in Mittoli.
+
+**6. A river on a flood plain runs on a floor it has laid itself.** Six of the eight channels are
+drawn on a border and four of those borders are unbuilt, so up to two thirds of the hex blend along
+them is `outland` at twelve times this plain’s amplitude. Before the **swale** — which levels the
+ground within 45 m of every channel to the plain’s own designed surface — the west arm’s water was
+forced down 6.79 m and arrived 5.3 m below the river it flows into. It is a landform and not a patch,
+and the levees and backswamps go with it: **the ground is highest at the water and lowest halfway to
+the next channel**, which is why the lore puts every village on a bank.
+
+**7. One new rig, the frostback buffalo, and it is wild.** The fauna overview names it and places it
+on this plain by name, and is explicit that it is **not** domestic stock — which is the only reason a
+country built with nothing of anybody’s in it can carry a bovid. The river-horn, which is what the
+Mithala is really about, belongs to households and is not built. The three Plains predators the
+overview names — the hunt-hound pack, the grey grass-lion, the north wolf — are deliberately absent:
+every animal in this system is ambient, and a grass-lion that stands in the open and backs off at a
+walk is a worse lie about the animal than leaving it out.
+
 ## 2026-09-30 - Ibenwood guarded inner belt implemented
 
 The user authorized the next Ibenwood phase: concealed, persistent ranger defenses
@@ -114,7 +499,6 @@ clearance of the widespread forests and elven retreat. Elfland is the continent'
 only independent elf country, ruled by a powerful sorcerer king and queen. Older
 draft lore does not override these instructions; discrepancies are recorded in
 the design discussion rather than silently rewriting World Builder.
-
 ## 2026-09-26 — Addison's quest: her sister's fire (the user's premise)
 
 **The quest.** Addison wants the traveler to steal the fire spirit out of her rival

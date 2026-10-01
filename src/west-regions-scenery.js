@@ -1077,6 +1077,12 @@ export function createWestScenery(kit) {
           const a = random() * 6.28, out = range(3.4, 5.2);
           const bx = x + Math.sin(a) * out, bz = z + Math.cos(a) * out;
           if (hexOwnerAt(bx, bz) !== 'Isareos' || westBareGround(bx, bz, 2) || westWaterSurface(bx, bz) !== null) continue;
+          // **And a clump member keeps off Isamouth's ground too.** The parent is checked above and
+          // the members were not, so a bush standing just outside the circle could throw one of its
+          // three or four up to five metres inside it. It never did until the world grew north for
+          // the Mithala plain and re-rolled this seeded stream, and then it did, once, at 60.7 m of
+          // a 62 m radius - which is the kind of thing that holds by luck until it does not.
+          if (atIsamouth(bx, bz)) continue;
           if (hollowThorn.some(bush => Math.hypot(bush.x - bx, bush.z - bz) < 3.2)) continue;
           hollowThorn.push({ x: bx, z: bz, s: range(.7, 1.3), rot: random() * 6.28 });
         }

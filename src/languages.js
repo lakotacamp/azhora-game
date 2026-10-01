@@ -173,7 +173,7 @@ export const LANGUAGES = freeze({
     from: 'the world-builder profile `mittoli`',
     note: 'The great western family and the tongue of commerce, governance and scholarship. The traveler meets three of its dialects: Luscian, thick with Elagosi and plains loanwords; the Plain’s eastern Mittoli, with an older layer under its place names that nobody has traced; and Amodian, a foothill dialect carrying a terrace-country substrate and a set of water-measure words Standard Mittoli lacks.',
     borrows: ['ambroni', 'pyrosi'],
-    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn', 'ovesos'],
+    dialects: ['luscian', 'plain', 'amodian', 'vastos', 'meneth', 'caricas', 'nesdor', 'eer', 'gala', 'avite', 'isareos', 'nethrani', 'lotharn', 'ovesos', 'mithali'],
     onsets: ['al', 'ar', 'azh', 'bel', 'cael', 'dael', 'dor', 'el', 'gal', 'hom', 'kael', 'mel', 'mir', 'nil', 'sor', 'tal', 'thal', 'trel', 'vel', 'zael'],
     middles: ['a', 'ae', 'e', 'i', 'o', 'oe', 'u'],
     suffixes: ['a', 'ael', 'an', 'ath', 'el', 'eth', 'in', 'ith', 'oe', 'ol', 'om', 'on', 'or', 'os', 'oss', 'um'],
@@ -259,6 +259,7 @@ export const LANGUAGES = freeze({
     where: 'the Marosh fens and the coast beyond them, and inland to the canyon country',
     sound: 'Long vowels and hissing consonants on compact endings: maan, nur, qad, sax, waa, rih, closing -ah, -at, -iim, -ub.',
     from: 'the world-builder profile `moreshi`',
+    dialects: ['ganesh', 'plateau', 'haman', 'fogspeech'],
     note: 'A separate lineage, older than the western families and possibly older than their common ancestor, and of no practical use to anyone trying to get directions in the Moroshe. The court form is a dialect of Coastal Trade Moreshi; the deep-desert forms are the conservative ones. There is a ritual register nobody has been able to analyse, and the desert peoples do not discuss it in terms that help.',
     onsets: ['al', 'ar', 'bar', 'ghay', 'ha', 'kal', 'maan', 'mar', 'naj', 'nur', 'qad', 'rih', 'sab', 'sar', 'sax', 'waa', 'zar'],
     middles: ['a', 'aa', 'i', 'ii', 'u', 'uu'],
@@ -275,6 +276,7 @@ export const LANGUAGES = freeze({
     where: 'the Pyros hills, west and east, and the transit towns between them',
     sound: 'Strong heads on volcanic stems — pyr, vor, vel, neth, kael — running out through -oss, -ell, -marr, -ith.',
     from: 'the world-builder profile `pyrosi`',
+    dialects: ['west-pyrosi'],
     note: 'Mittoli’s sister off a common ancestor older than any surviving record, and in contact with it ever since. West Pyrosi is formal and layered, and encodes social relationship in the verb in a way that gives Mittoli speakers continuous trouble: the politeness registers are not optional, and using the wrong one is not rude exactly, but it is noticed. East Pyrosi is the trade form — more vocabulary, less grammar, maximum utility.',
     borrows: ['mittoli'],
     onsets: ['bass', 'dre', 'fell', 'gel', 'kael', 'kel', 'llaer', 'moss', 'neth', 'nor', 'pyr', 'rael', 'tael', 'tal', 'vaell', 'vel', 'vor'],
@@ -531,9 +533,133 @@ export const DIALECTS = freeze({
   ovesos: dialect('ovesos', 'Inner-branch Mittoli', 'mittoli',
     'A variant of Standard Mittoli plain to any downstream speaker, whose whole distinctive vocabulary is water and who may use it: *oves*, the lower valley where hill country opens into farming ground and the root the country\u2019s own name is built on; *thris-kael*, "the returning inside water", the inner tributary, used in writing to Minora and never between neighbours; *vel-sorten*, the division of flood-renewed bottomland among farming claims; and *osk-milis*, water-right seniority, old enough to appear in the oldest land records and with no clear etymology in Standard Mittoli at all. Its legal speech runs to the genealogical where Minora\u2019s runs to the measured, and its submissions to the Branch Court are twice as long as anybody else\u2019s.',
     word => word.replace(/oss$/, 'os').replace(/th/, 'thr')),
+  // **The Mithala plain, all four countries, one dialect** (src/mithala-world.js). mithala.md's
+  // Language section names it: "The Mithali dialects are Mittoli in family - the grammar, the core
+  // vocabulary, the fundamental structure are recognizable to a speaker of Standard Mittoli - but
+  // old enough in their divergence to cause significant comprehension problems in rapid speech. A
+  // Caeras valley merchant and a Mithala channel farmer can communicate slowly and carefully; in
+  // casual speech at ordinary speed they often cannot." So it is Mittoli and no new tongue is
+  // invented - but it is the most divergent Mittoli in the game, and the only one that is hard to
+  // follow at speed rather than merely marked.
+  //
+  // **One dialect for the four countries, and dividing it by country would be inventing a division
+  // the lore denies.** "Mithala people do not generally call themselves Mithala people; they call
+  // themselves people of the Olveth Arm or the Minoran plain or whichever river-section describes
+  // their actual location... your identity is your channel, because your channel is your flood
+  // timing, your water rights, your grain calendar, your neighbors." The divisions here are
+  // channels, which run across all four borders and none of which is a country; a per-country
+  // dialect would cut the plain the one way its own people never cut it. It is the same argument the
+  // West Lotharn made for sharing the East's: the lore's unit is not the map's.
+  //
+  // What is distinctive is **the sky and the flood**, and both are the lore's own: "The astronomical
+  // and meteorological vocabulary in the Mithala dialects is extensive and specific. There are terms
+  // for sky conditions that Standard Mittoli must describe in phrases - kinds of cloud at specific
+  // heights, kinds of evening color that indicate specific weather patterns, the appearance of
+  // certain stars in specific positions at specific seasons." The two words written down anywhere
+  // are *moravel*, "the grain-attention", for a period of outside interest in the harvest, and the
+  // proverb *Vet mithalan, vel noreth* - "the flood returns, the grain does not ask".
+  mithali: dialect('mithali', 'Mithali', 'mittoli',
+    'The most divergent Mittoli anybody still calls Mittoli: the grammar and the core vocabulary are Standard, and at ordinary speed a Caeras merchant and a channel farmer cannot follow one another. Its weight is in two places. **The sky**, because on a plain with nothing to interrupt it the western horizon tells you about the next three days, and there are single terms here for cloud at a stated height, for kinds of evening colour and for a star in a stated place in a stated season that Standard Mittoli needs a phrase for; the continent’s oldest astronomy came out of them and cannot be read without them. **And the flood**, whose calendar is kept in parallel with the astronomical one and causes steady friction with anybody administering by the other: *moravel*, "the grain-attention", said of a period of outside interest in the harvest with resigned familiarity rather than alarm, and the proverb every variant of which says the same thing - *Vet mithalan, vel noreth*, "the flood returns, the grain does not ask". The name *Mithala* itself is older than Mittoli and does not decompose in it.',
+    word => word.replace(/ae/, 'a').replace(/([aeiou])l$/, '$1ln').replace(/^th/, 't')),
+  // **The southwestern block** (src/southwest-world.js): two dialects over four countries, and the
+  // first tongue in the west whose profile is actually in the World Builder
+  // (`world-builder/azhoran_language_profiles.py` has `pyrosi` where it has no Mithali, no Ovesi and
+  // no Lothi), so the Pyrosi lexicon above is authored rather than derived.
+  //
+  // **Navarth and West Pyros speak Pyrosi**, and the tongue entry above already draws the line this
+  // dialect is: "West Pyrosi is formal and layered, and encodes social relationship in the verb in
+  // a way that gives Mittoli speakers continuous trouble: the politeness registers are not
+  // optional." pyros.md adds that the people of West Pyros "speak a dialect that mixes Mittoli
+  // grammar with Pyrosi vocabulary in roughly equal measure", which is what the twist does here.
+  //
+  // **Navarth is not given a dialect of its own**, and that is the lore's own position rather than
+  // a gap. navarth.md makes Navarth's distinctiveness ceremonial and economic and never linguistic:
+  // its whole project is keeping the heartland's practice exactly - "they keep better ceremonial
+  // records. They send more practitioners to the heartland training centers. They are more
+  // scrupulous, in formal terms, about the correct conduct of the fire ceremonies than communities
+  // that have live fumaroles to improvise around." A community that scrupulous about the centre's
+  // forms is not the community that lets its speech drift, and the pilgrimage traffic to the great
+  // western sites keeps the contact continuous. It is the argument the West Lotharn made for
+  // sharing the East's dialect.
+  'west-pyrosi': dialect('west-pyrosi', 'West Pyrosi', 'pyrosi',
+    'The formal half of Pyros: Pyrosi vocabulary on grammar that is half Mittoli, with politeness registers that are not optional and that a Mittoli speaker gets wrong for years without being told. Its ordinary speech is layered with the volcanic lexicon even where there is no volcano — *pyross*, the ash, is the word for good soil, and a Navarth farmer uses it of ground that has never seen any — and the fire-ceremony vocabulary is common property rather than priestly, so a dispute over a boundary and a dispute over a rite are argued in the same words. Navarth speaks it a little slower, a little more carefully, and with the ceremonial forms kept more exactly than the heartland keeps them.',
+    word => word.replace(/oss$/, 'ossel').replace(/^pyr/, 'pyrr')),
+  // **The Ganesh Plain and the Ganesh Desert speak the contact speech of the junction.**
+  // ganesh_plain.md is explicit that the plain is not one people and never has been: "Moreshi-speaking
+  // groups whose traditions are continuous with the broader desert pastoral traditions... Mittoli-speaking
+  // groups from the north whose seasonal range extends south into the plain in good years; and
+  // communities whose mixed linguistic and cultural character reflects generations of contact
+  // between these two traditions at the plain's geographic midpoint. This linguistic diversity is
+  // not a recent development." A single `spoken()` line cannot say "two families meet here", so the
+  // dialect says it: Moreshi in the frame, because the desert side is Moreshi and the caravan
+  // vocabulary is, with the Mittoli half carried in the twist and in the note.
+  //
+  // **The Ganesh Desert has no speech of its own**, which is the same finding the Oves Desert gave:
+  // ganesh_desert.md has no language section at all, and says outright that the country "is crossed
+  // but not, in the full sense, inhabited" - the waystation families "are defined by their function
+  // on the route rather than by the desert as their home territory". So it carries the plain's,
+  // whose pastoral communities come down into it in the wet years. And the one word the desert does
+  // own is a word nobody can parse: "Ganesh" is pre-Moreshi, the G-N-Sh sequence "does not
+  // correspond to any known root in the standard triconsonantal inventory", and the lore's
+  // conclusion is that "whoever named this desert named it in a way that no current language on the
+  // peninsula can explain."
+  ganesh: dialect('ganesh', 'the Ganesh contact speech', 'maroshi',
+    'Not a dialect of one language so much as the seam between two: Moreshi in its frame and its whole caravan vocabulary, with Mittoli grammar showing through wherever the speaker’s people came down from the north, and households at the plain’s midpoint in which the older generation and the younger one do not agree which language they are speaking. What it is rich in is terrain at a scale no map records - the names of the depressions and the shallow channels and the springs, and the names of the specific plants that say how deep the water is under a given piece of ground, which is knowledge that only transmits by walking the routes with somebody who has them. Its one unparsable word is the country itself: *Ganesh* is older than Moreshi and no living language on the peninsula can decompose it.',
+    word => word.replace(/aa/, 'a').replace(/([bcdfghklmnprstvz])$/, '$1ah')),
   highland: dialect('highland', 'the highland Izoli', 'izoli',
     'Conservative where the coastal towns have moved on, and carrying shrine-keeping vocabulary the towns do not have and the tribes do not translate.',
     word => word.replace(/([bcdfgklmnprstvz])$/, '$1$1')),
+  // **The Dinelv plateau's Moreshi**, and it is the most closely described dialect in the whole archive.
+  // `dinelv_highlands.md`: "These communities are Moreshi-speaking, but their dialect sits closer to the
+  // canyon communities' speech than to the Coastal Trade Moreshi of the city. The [r]/[ʀ] distinction
+  // that the canyon traditions maintain is preserved in the highland dialect; the specific lexical
+  // contrasts that the distinction marks in canyon Moreshi are present in the highland speech, though
+  // with different distribution. Coastal Maroshi scholars who have studied the highland dialect classify
+  // it as transitional between canyon and coastal registers, which is accurate as a description and
+  // tells one nothing about how the highland speakers understand their own speech."
+  //
+  // It is called `plateau` and not `highland` because `highland` is already the Izoli one above. The
+  // transform doubles the r, which is the one sound change the lore actually specifies.
+  plateau: dialect('plateau', 'the plateau Moreshi', 'maroshi',
+    'The speech of people who were on the plateau before the city below it was administered and expect to be there after: Moreshi with the canyon country’s [r]/[ʀ] distinction kept where the coast has let it go, and the lexical contrasts that distinction marks still doing work, though not always the same work the canyons give them. Coastal scholars file it as transitional between canyon and coastal registers, which describes it and says nothing about how it is understood by the people speaking it. What it is rich in is stone and water: the kinds of bed in an escarpment and which of them will bear a load, and the names of the water points, in an order that is also a route and a season. The garrisons at the passes do not learn it, and their commanders’ reports say so without noticing that they are saying it.',
+    word => word.replace(/r/, 'rr').replace(/aa/, 'a')),
+  // **Hama's merchant dialect**, which `hama.md` names in its own tags and describes at length: "Hama's
+  // merchant dialect is a further-evolved form of Maroshi that has diverged specifically in its
+  // commercial and legal registers... developing compound roots and novel Form VIII reflexive
+  // constructions for specific contract conditions that do not occur in standard Coastal Trade
+  // correspondence. A treaty drafted in formal Haman commercial Moreshi requires a specialist to
+  // interpret if the reader's background is standard Dinelv administrative Moreshi."
+  //
+  // **The register the lore is about belongs to the Council of Merchant Houses and is not built.** What
+  // the dialect is here is the speech of the corner - the ordinary words of a green two hexes with an
+  // ocean on each side of it - and its famous contract grammar is named and left where it belongs.
+  haman: dialect('haman', 'the Haman merchant speech', 'maroshi',
+    'Coastal Trade Moreshi pushed further than the coast has pushed it, and pushed in one direction only: the derived stem forms that let a Moreshi contract say exactly which obligation falls when have been extended here into compound roots and reflexive constructions that no other Moreshi correspondence uses, and the Dinelv court has kept specialist translators for Haman documents since the early archives. Outside a contract it is ordinary enough - the words for the two winds, the words for the state of the sward in a dry winter, and a whole vocabulary for weather that arrives having crossed an ocean. The seven houses whose registers made it what it is, and every treaty in it, are theirs.',
+    word => word.replace(/at$/, 'aat').replace(/ii/, 'i')),
+  // **The transition zone's contact register, and it has a grammatical category no other language in
+  // Azhora has.** `trogo.md`: "One feature of the transition language that has drawn attention: it has a
+  // grammatical category that neither Moreshi nor any Azhoran mainland language possesses - a verb aspect
+  // marking actions that are conditional on the current state of the fog. Whether the fog is present or
+  // not changes the form of certain verbs describing movement, visibility, and resource access. The
+  // category is semantically precise and grammatically regular, which means it was not invented recently.
+  // It names a distinction that is genuinely important to people whose decisions depend on whether the fog
+  // wall is up. The canyon Moreshi find it unnecessary. The coastal forest people find it imprecise."
+  //
+  // **It is filed as a dialect of Maroshi and that is a compromise the comment has to own.** Half of what
+  // this register is made of is canyon Moreshi and the other half is the forest language of the mid-slope
+  // and the coast, "whose ancestry does not trace to the Moreshi tradition and whose language belongs to
+  // neither the Moreshi family nor any Azhoran mainland family that has been classified". That second half
+  // is not in `LANGUAGES` and inventing a tongue for it is not a builder's decision - so this entry is
+  // the half that has a parent, the way Cape Heth carries plain Maroshi as a stand-in (job 3), and the
+  // forest peoples' own tongue is an open question for whoever builds them. Filing it under Moreshi is
+  // exactly the Maroshi court's own mistake, which the lore is dry about, and it is named here so that
+  // nobody mistakes it for a finding.
+  //
+  // The transform is the fog aspect itself, made audible on one class of verb: a movement word takes a
+  // -zh when the fog is up. Nothing in the game asks yet.
+  fogspeech: dialect('fogspeech', 'the fog speech', 'maroshi',
+    'The register of the people who live where the desert stops and the forest starts, and it is made of both: canyon Moreshi roots on a grammar that has taken enough from the forest language below it to have a shape of its own. What it has that nothing else in Azhora has is an aspect for the fog - every verb of going, seeing or fetching takes one form while the fog wall is up and another while it is down, and the distinction is regular, old and not optional. The canyon speakers upriver call it unnecessary and the forest speakers downslope call it imprecise, and the people who use it find both complaints unsurprising. What it is rich in is the state of a way: which gullies are walkable this week, how far a thing can be seen, which resin is running. The three peoples whose arrangements it carries, and every one of those arrangements, are theirs.',
+    word => word.replace(/([aeiou])n$/, '$1zh').replace(/uu/, 'u')),
 });
 
 export const DIALECT_IDS = freeze(Object.keys(DIALECTS));
@@ -607,6 +733,13 @@ export const REGION_LANGUAGE = freeze({
   // note about the same dialect, not a second one, and a second one would need words nobody has
   // written down.
   'West Lotharn Mountains': spoken('mittoli', 'lotharn'),
+  // Twenty-eight to thirty-one: the four Mithala countries, and **one dialect across all four**, for
+  // the reason given at `mithali` above - the lore's own divisions on this plain are channels and
+  // not countries, and the channels cross every one of the four borders.
+  'South Mithala': spoken('mittoli', 'mithali'),
+  'West Mithala': spoken('mittoli', 'mithali'),
+  'East Mithala': spoken('mittoli', 'mithali'),
+  'North Mithala': spoken('mittoli', 'mithali'),
   // Feradom speech, the Drentish of the domain country, which already had its entry above
   // for the company's men who came from there.
   Feradom: spoken('feradom'),
@@ -624,6 +757,82 @@ export const REGION_LANGUAGE = freeze({
   // Water Council claims the desert margin — and nothing is coined for it.
   Ovesos: spoken('mittoli', 'ovesos'),
   'Oves Desert': spoken('mittoli', 'ovesos'),
+  // Thirty-two to thirty-five, the southwestern block (src/southwest-world.js). navarth.md: "Navarth
+  // is Pyrosi in affiliation, in cultural practice, in self-identification"; pyros.md gives West
+  // Pyros the dialect that "mixes Mittoli grammar with Pyrosi vocabulary in roughly equal measure".
+  // The two Ganesh countries take the contact speech of the language junction the plain sits on, and
+  // the desert takes the plain's because it has none and no lore section to give it one. See the
+  // dialect notes above for the whole argument.
+  Navarth: spoken('pyrosi', 'west-pyrosi'),
+  'West Pyros': spoken('pyrosi', 'west-pyrosi'),
+  'Ganesh Plain': spoken('maroshi', 'ganesh'),
+  'Ganesh Desert': spoken('maroshi', 'ganesh'),
+  // Thirty-six to thirty-nine, the four Meroshe deserts. **Plain Maroshi, and no dialect, and that is
+  // a decision rather than a gap.** moroshe_desert.md is emphatic that the desert peoples' own speech
+  // is the centre of this family and not a margin of it - "the desert languages are related to each
+  // other but not to the Mittoli family at all... a completely separate linguistic lineage that
+  // predates any contact with the western continent" - and the tongue entry above already says which
+  // end of Maroshi that is: "the court form is a dialect of Coastal Trade Moreshi; the deep-desert
+  // forms are the conservative ones."
+  //
+  // A dialect in this file marks a deviation from a centre. Both Maroshi dialects available are
+  // margins - the coastal court form the base tongue carries, and `ganesh`, the northern contact seam
+  // where Moreshi meets Mittoli on the Ganesh Plain - and the Meroshe is neither. So the four
+  // countries the atlas names after the desert itself speak the tongue without a twist on it, and the
+  // Ganesh Desert keeps `ganesh` because its own lore gives it to the plain's people rather than to
+  // the desert's. It is the argument Navarth got for sharing West Pyros's dialect, run the other way.
+  //
+  // **Nothing is coined.** The one Moreshi word this job uses is *malhat*, `maroshi.roots.salt`
+  // above, for the salt pan in the West Meroshe (src/southwest-world.js, `MEROSHE_SALT`) - the
+  // tongue's own word taken as a name, exactly as job 1 took *vaellir* from the Pyrosi lexicon for
+  // the river. The lore's own note on what "Moroshé" means is worth keeping in view while reading
+  // any of this: the Mittoli rendering is variously translated as "the wide nothing", "the place of
+  // patient waiting" or, in the oldest dialect still spoken in the deep interior, simply "home".
+  'North Meroshe Desert': spoken('maroshi'),
+  'West Meroshe Desert': spoken('maroshi'),
+  'Central Meroshe Desert': spoken('maroshi'),
+  'South Meroshe Desert': spoken('maroshi'),
+  // Forty to forty-two, the block's western edge (src/southwest-world.js). **Two new dialects and one
+  // adjustment, and all three are the lore's own words rather than a builder's guess.**
+  //
+  //  - **Cape Heth is the adjustment, and the lore states the problem itself.** `cape_heth.md` is at
+  //    pains to say who these people are *not*: "They are not related by language or cultural tradition
+  //    to the Boueni, despite the cape's position at the cold-current margin; they are a southwestern
+  //    Azhoran coastal people, related by language and material culture to the communities of the
+  //    Alezhor coast and Ibenale to the north." So the tongue wanted here is the Alezhor coast's - and
+  //    the Alezhor coast is not built, has no lore file of its own and has no entry in `LANGUAGES`. The
+  //    rule this table sets for that case is to "map it to the nearest one the lore itself calls its
+  //    parent or its neighbour and say so in the comment rather than inventing a language". The lore
+  //    names two neighbours and the atlas names two more: Alezhor and Ibenale to the north, which are
+  //    unbuilt, and the Ganesh Desert and the Dinelv Highlands to the east, which are built and speak
+  //    Moreshi. Alezhor is the Ganesh Desert's own northern neighbour and its water crosses the desert;
+  //    the Pyrosi profile is the only other western tongue within reach, and `pyrosi` belongs to the
+  //    hill empire and not to this coast. So the cape carries **plain Maroshi with no dialect** - the
+  //    nearest built speech, marked as a stand-in here rather than as a finding - and `boueni` is
+  //    explicitly *not* used, because the file it would have come from spends four paragraphs saying it
+  //    would be wrong. Whoever builds Alezhor or Ibenale should revisit this line first.
+  //  - **The Dinelv Highlands get `plateau`**, which the lore describes in more detail than it gives any
+  //    other dialect in the archive, down to a named phonemic contrast.
+  //  - **Hama gets `haman`**, which the lore names in its own tags as the "merchant dialect" and
+  //    describes in a paragraph of its own.
+  'Cape Heth': spoken('maroshi'),
+  'Dinelv Highlands': spoken('maroshi', 'plateau'),
+  Hama: spoken('maroshi', 'haman'),
+  //  - **Marosh gets plain `maroshi`, and for once that is the reading and not the stand-in.** Every other
+  //    Moreshi-speaking country in this block carries a dialect because it is a margin of the language;
+  //    this one is the centre of it. `marosh.md`: "The court language is Maroshi, a dialect of Coastal
+  //    Trade Moreshi - the triconsonantal-root language family that descends from the older Moreshi spoken
+  //    across the desert interior... Maroshi is its eastern-coast peninsular form." Marosh *is* the
+  //    eastern coast of the peninsula: twenty of its hex edges are the Iberos and the lore puts the court
+  //    at Dinelv on this shore. A dialect marks a deviation from a centre and there is no deviation to
+  //    mark. It is the argument job 2 gave the Meroshe for speaking the tongue with no twist on it, run
+  //    from the other end of the same language.
+  //  - **Trogo gets `fogspeech`**, the transition zone's contact register, whose fog-conditional verb
+  //    aspect is the single best piece of language in the archive. It is filed under Moreshi because half
+  //    of it is Moreshi and the other half has no tongue in this file; the dialect's own comment says so,
+  //    and the forest peoples' unclassified language is an open question rather than a gap.
+  Marosh: spoken('maroshi'),
+  Trogo: spoken('maroshi', 'fogspeech'),
 });
 
 /**

@@ -234,6 +234,14 @@ still holds, and the test says so.
 1. **Names.** The Telemonia border stream and the desert border stream are unnamed in the lore and
    the atlas and are left so; the distributary is called "the distributary" and its mouths "the
    Braided Mouths" in plain words. Yours to name.
+   **Answered 2026-10-01** (docs/southwest-finish-report.md): the two border streams are named from the
+   Mittoli lexicon, which is `mittoli` in `world-builder/azhoran_language_profiles.py` and
+   `LANGUAGES.mittoli.roots` in `src/languages.js`. The Telemonia border stream is **the Treloss** -
+   the profile's own border root *trel-* with the *-oss* ending this tongue puts on a watercourse
+   (*caeloss* is "river"), a form the profile's own `candidate_pool` emits. The desert border stream is
+   **the Caelin**, *mittoli.roots.flow*, "the flow" - and it is the same name as the Oves Desert's
+   reach of it, because the two are one chain. The distributary **stays descriptive**, on `gala.md`'s own
+   sentence that the names of Gala's small rivers are from a pre-Mittoli layer nobody can gloss.
 2. **The ribs.** The blended-wavelength chirp at every built/unbuilt border in the far west (above).
    A cure belongs in `relief()`/`terrainMix` (blend the relief values, not the wavelengths), which
    would move every border in the world; not attempted.

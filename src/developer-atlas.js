@@ -66,6 +66,51 @@ const ovesDesertAnchor = point(1260.932, 2800, -13, 116);
 // A West Lotharn hills hex on the long valley's floor, in the middle of the country and clear of
 // every border: (0, 98). For it the atlas's formula gives this point and no other.
 const westLotharnAnchor = point(1371.783, 2368, 0, 98);
+// The four Mithala countries, one middle hex each, clear of every border and of every channel.
+// For each pair the atlas's formula (x = 27.7128 * (q + r/2) + 13.856, y = 24r + 16) gives this
+// point and no other: South Mithala's plains (8, 91) on the flood plain between the apron and the
+// main channel, West Mithala's grassland (2, 89) in the middle of the upper grass, East Mithala's
+// grassland (9, 88) on the gather, and North Mithala's plains (8, 85) on the dry shelf.
+const southMithalaAnchor = point(1496.491, 2200, 8, 91);
+const westMithalaAnchor = point(1302.501, 2152, 2, 89);
+const eastMithalaAnchor = point(1482.634, 2128, 9, 88);
+const northMithalaAnchor = point(1413.352, 2056, 8, 85);
+// The four southwestern countries, one middle hex each, clear of every border, every rim and every
+// dry bed. For each pair the atlas's formula (x = 27.7128 * (q + r/2) + 13.856, y = 24r + 16) gives
+// this point and no other: Navarth's plains (-26, 119) on the open sweep between the western rim and
+// the eastern swells, West Pyros's plains (-22, 120) on the open plain a hundred metres off the
+// Vaellir, the Ganesh Desert's plains (-30, 123) in the middle of the floor between the two washes,
+// and the Ganesh Plain's plains (-25, 125) between the upper and middle channels.
+const navarthAnchor = point(942.235, 2872, -26, 119);
+const westPyrosAnchor = point(1066.942, 2896, -22, 120);
+const ganeshDesertAnchor = point(886.809, 2968, -30, 123);
+const ganeshPlainAnchor = point(1053.086, 3016, -25, 125);
+// The four Meroshe deserts, one middle hex each, clear of every border, every bench riser, every
+// dune crest and the salt pan. Same formula: the North Meroshe's plains (-27, 130) on the open rock
+// floor between two benches, the West Meroshe's plains (-35, 134) on the middle of the fan skirt and
+// well clear of the Malhat, the Central Meroshe's plains (-30, 134) on an interdune corridor in the
+// sand sea, and the South Meroshe's plains (-29, 138) in the middle of the stone floor.
+const northMerosheAnchor = point(1066.942, 3136, -27, 130);
+const westMerosheAnchor = point(900.666, 3232, -35, 134);
+const centralMerosheAnchor = point(1039.230, 3232, -30, 134);
+const southMerosheAnchor = point(1122.368, 3328, -29, 138);
+// Cape Heth, the Dinelv Highlands and Hama, one middle hex each. Same formula, and each one had to
+// dodge something new: Cape Heth's plains (-36, 127) on the middle of the cape, clear of the point,
+// the weather face and every drainage hollow; the Dinelv Highlands' hills (-31, 129) on the inner
+// ridge's crest, clear of all three mesas, all four basins and the escarpment on every side; and
+// Hama's grassland (-35, 139) in the middle of the seaward sward, clear of the winter beds and of the
+// line itself, because an anchor that landed on the line would be a point about which nothing is true.
+const capeHethAnchor = point(775.959, 3064, -36, 127);
+const dinelvAnchor = point(942.236, 3112, -31, 129);
+const hamaAnchor = point(969.948, 3352, -35, 139);
+// Marosh and Trogo, one middle hex each. Marosh's anchor is deliberately a `hills` hex - (-26, 133),
+// the middle of the crest, clear of the water gap and of all four combes - because the ridge is what
+// this country is and a point on the terrace would say nothing about it. Trogo's is (-26, 140), a
+// `deep_forest` hex in the middle of the canopy, thirty-four metres clear of the nearest gully and
+// two hundred from the crest: **it is the one anchor in the game that stands in ground a traveler
+// cannot walk to**, which is the point of the country.
+const maroshAnchor = point(1136.225, 3208, -26, 133);
+const trogoAnchor = point(1233.220, 3376, -26, 140);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -103,6 +148,10 @@ const LOCALS = [
   [25, 'Ovesos', 'ovesos', 'Ovesos', ovesosAnchor],
   [26, 'Oves Desert', 'oves-desert', 'Oves Desert', ovesDesertAnchor],
   [27, 'West Lotharn', 'west-lotharn', 'West Lotharn Mountains', westLotharnAnchor],
+  [28, 'South Mithala', 'south-mithala', 'South Mithala', southMithalaAnchor],
+  [29, 'West Mithala', 'west-mithala', 'West Mithala', westMithalaAnchor],
+  [30, 'East Mithala', 'east-mithala', 'East Mithala', eastMithalaAnchor],
+  [31, 'North Mithala', 'north-mithala', 'North Mithala', northMithalaAnchor],
   [32, 'East Ibenwood', 'east-ibenwood', 'East Ibenwood', point(1011.516265, 2656, -19, 110)],
   [33, 'North Ibenwood', 'north-ibenwood', 'North Ibenwood', point(886.808607, 2536, -21, 105)],
   [34, 'South Ibenwood', 'south-ibenwood', 'South Ibenwood', point(886.808607, 2728, -25, 113)],
@@ -110,6 +159,19 @@ const LOCALS = [
   [36, 'Central Ibenwood', 'central-ibenwood', 'Central Ibenwood', point(900.665013, 2656, -23, 110)],
   [38, 'Yunethre', 'yunethre', 'Yunethre', point(1039.23, 2464, -14, 102)],
   [37, 'South Oremindi', 'south-oremindi', 'South Oremindi Mountains', point(900.666, 2464, -19, 102)],
+  [39, 'Navarth', 'navarth', 'Navarth', navarthAnchor],
+  [40, 'West Pyros', 'west-pyros', 'West Pyros', westPyrosAnchor],
+  [41, 'Ganesh Desert', 'ganesh-desert', 'Ganesh Desert', ganeshDesertAnchor],
+  [42, 'Ganesh Plain', 'ganesh-plain', 'Ganesh Plain', ganeshPlainAnchor],
+  [43, 'North Meroshe', 'north-meroshe', 'North Meroshe Desert', northMerosheAnchor],
+  [44, 'West Meroshe', 'west-meroshe', 'West Meroshe Desert', westMerosheAnchor],
+  [45, 'Central Meroshe', 'central-meroshe', 'Central Meroshe Desert', centralMerosheAnchor],
+  [46, 'South Meroshe', 'south-meroshe', 'South Meroshe Desert', southMerosheAnchor],
+  [47, 'Cape Heth', 'cape-heth', 'Cape Heth', capeHethAnchor],
+  [48, 'Dinelv Highlands', 'dinelv', 'Dinelv Highlands', dinelvAnchor],
+  [49, 'Hama', 'hama', 'Hama', hamaAnchor],
+  [50, 'Marosh', 'marosh', 'Marosh', maroshAnchor],
+  [51, 'Trogo', 'trogo', 'Trogo', trogoAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

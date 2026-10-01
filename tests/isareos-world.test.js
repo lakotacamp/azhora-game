@@ -92,14 +92,39 @@ test('the climate remains humid subtropical while Menora has a clearer long-dist
   assert.ok(sky.density>0&&sky.density<DEFAULT_SKY.density);
 });
 
-test('Isareos remains fully contained as later mountain and woodland regions expand the world', () => {
-  assert.ok(Math.min(...cells.map(cell=>cell.x)) < -2840);
-  for(const cell of cells){
-    assert.ok(cell.x>WORLD_BOUNDS.minX&&cell.x<WORLD_BOUNDS.maxX);
-    assert.ok(cell.z>WORLD_BOUNDS.minZ&&cell.z<WORLD_BOUNDS.maxZ);
-  }
-  assert.ok((WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX)/METRES_PER_HEX>36);
-  assert.ok((WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ)/METRES_PER_HEX>36.9);
+test('Isareos is the country that spent most of the hex budget', () => {
+  // Eer lay inside the box Caricas already made. Isareos's western rim against the
+  // Ibenwood is what takes the world's edge out, from -2310 to -2960, and the guard in
+  // region-layout.test.js was raised from 30 to 36 for it and for nothing else. Nethereum's
+  // one `plains` hex then took it fifty metres further, to -3010, and the guard to 37.
+  const west = Math.min(...cells.map(cell => cell.x));
+  assert.ok(west < -2840, `Isareos reaches x = ${west.toFixed(0)}`);
+  assert.ok(WORLD_BOUNDS.minX < -2900, `the world's western edge is ${WORLD_BOUNDS.minX.toFixed(0)}`);
+  const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
+  const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
+  // And Cape Heth took it from 45.70 to 49.70 by reaching four hundred metres further west than the
+  // Ganesh Desert: its one `coast` hex, (-39,127), stands at x = -4250 against the desert's -3850,
+  // because x = W(q + r/2) and its rows are four higher. Job 2's report predicted job 3 would not move
+  // the box; it predicted correctly about the *window* and the box is a different thing.
+  // Before that, the southwestern block took it from 36.20 to 45.70 by reaching west past the unbuilt
+  // Ibenwood belt, which is the Ganesh Desert's westernmost hexes at x = -3900 (their outer flat)
+  // and the world's edge at -3960.002. Isareos's own rim at -2850 is nine hundred metres inside it
+  // now; what this test is about is that nothing here moved when the edge did.
+  // ...and the Ibenwood belt took it from 49.70 to 52.200 when the two blocks landed together:
+  // West Ibenwood's rim is at x = -4550, two hundred and fifty metres west of Cape Heth's -4300, so
+  // the world's edge goes from -4360.002 to -4610.002. That is the fifth time this number has moved
+  // and the first time somebody else's country moved it. Isareos's rim at -2850 is seventeen hundred
+  // metres inside it now, and the point of the line is unchanged: nothing here moved when the edge did.
+  assert.ok(wide > 52.1 && wide < 52.3, `the world is ${wide.toFixed(2)} hexes wide`);
+  // North to south was 30.93 hexes, set by West Izol and Amod, and nothing here touched it; the
+  // East Lotharn took it to 35.26 by reaching north to the Mithala border, the Ascarth Peninsula
+  // to 37.00 (36.996) by reaching south past West Izol to its tip, and the four Mithala countries
+  // to 45.66 by reaching north past the East Lotharn to the Acor Wetlands, which is North Mithala's
+  // row 82 (region-layout.test.js). Isareos touched none of it; what it spends is the western x.
+  // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
+  // (docs/southwest-2-report.md), which this country is nowhere near either.
+  // ...and 54.316 since Trogo carried it south again to z = 3264.426 (docs/southwest-4-report.md).
+  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
 });
 
 test('low hills, not quite highlands, blurring into the two countries either side of them', () => {

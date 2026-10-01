@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -384,13 +384,13 @@ export const REGION_TERRAIN = Object.freeze({
   }) }),
   // The Oves Desert (src/oves-world.js): twenty `plains` hexes and three `hills`, and the hills are
   // exactly the north-western rim the lore builds the whole rain shadow on. The country is a wedge of
-  // the Oveth basin whose apex is its eastern tip, where the Oveth and the southern border stream come
+  // the Oveth basin whose apex is its eastern tip, where the Oveth and the Caelin come
   // together, so its floor falls the length of it from the rim to that corner; the fall is a landform
   // (`ovesBasin`) and not a level, the way Caricas's shelf is, because a base can only say one number.
   //
   // 12 on the plains is the country's mean and is chosen against two things: it is half a metre
   // above the `outland` 11.5 it replaces, so registering the desert moves Gala's own hexes, the
-  // Lizeem's level and Gala's border stream by centimetres; and it stands two metres above Ovesos's
+  // Lizeem's level and the Caelin's Gala reach by centimetres; and it stands two metres above Ovesos's
   // plain across the Oveth, which is what the side of a basin does over the river's bottomland. The
   // hills' 22 is the rim's shoulder, not the rim: the three summits are `ovesRim`, laid on top of
   // this, the way Ascarth's two hills are laid on top of its 7.
@@ -413,6 +413,187 @@ export const REGION_TERRAIN = Object.freeze({
       hills: Object.freeze({ base: 58, amp: 8, wave: 215, ground: '#5d7246' }),
       mountain: Object.freeze({ base: 96, amp: 13, wave: 250, ground: '#586848' }),
     }) }),
+  // ---------------------------------------------------------------------------------------------
+  // The Mithala plain: four countries, one profile, and the flattest large country in the game
+  // ---------------------------------------------------------------------------------------------
+  // **The four are quarters of one landform, so they share one set of numbers to the digit.** They
+  // have forty-nine hex edges among them; a base or a wavelength that differed across any of those
+  // would put a step or a chirp in the middle of one plain, which is the lesson Gala and the
+  // Ascarths wrote down for their eight shared edges and the two Lotharns for their seven. Every
+  // difference of level between the four quarters is therefore a **landform** and not a profile:
+  // `mithalaTilt` (src/mithala-world.js) carries the whole fall of the plain, west to east and north
+  // to south, continuously across all four names, and the hex blend has nothing at all to carry.
+  //
+  // **One wavelength, 320**, for the same reason the Ascarth hills are on the grassland's: the
+  // blend's relief is a sine of the blended wavelength, so a hex on another wave shifts the phase of
+  // every sine within reach of it, and the ground steps where the blend's set of hexes changes. The
+  // four `hills` hexes in South Mithala are on 320 as well, and their roughness is amplitude alone.
+  //
+  // **The amplitudes are the lowest in the game after the Moros.** The lore is flat about it: "a
+  // plain that has no interest in rising. The horizon here is real. You can see it: a line,
+  // uninterrupted except by weather, circling the full compass." Half a metre over three hundred and
+  // twenty is a swell a traveler feels in the knees and never sees, and it is on purpose: everything
+  // a Mithala traveler can pick out - a levee, a backswamp, a bar, a dry summer channel - is a metre
+  // or two of the river's own work, and relief that competed with it would bury the lot.
+  //
+  // The grassland is a little rougher and a little higher than the plains because that is what the
+  // atlas means by the two words here: `grassland` over the western and northern hexes, which stand
+  // back from the braids on older ground, and `plains` over the channel country, which is what the
+  // flood has levelled. The `hills` are the Lotharn's last apron and are twelve metres over the
+  // grass, which is a swell you can see across and nothing at all beside a range of five hundred.
+  'South Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['South Mithala'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#758748' }),
+    hills: Object.freeze({ base: 24, amp: 2.6, wave: 320, ground: '#6b7c43' }),
+  }) }),
+  'West Mithala': Object.freeze({ base: 12, amp: .75, wave: 320, ground: REGION_BIOMES['West Mithala'].ground, byTerrain: Object.freeze({
+    plains: Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: '#738545' }),
+  }) }),
+  'East Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['East Mithala'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#6a8043' }),
+  }) }),
+  'North Mithala': Object.freeze({ base: 10.5, amp: .5, wave: 320, ground: REGION_BIOMES['North Mithala'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .75, wave: 320, ground: '#718647' }),
+  }) }),
+  // ---------------------------------------------------------------------------
+  // The southwestern block (src/southwest-world.js): Navarth, West Pyros, the Ganesh Desert and
+  // the Ganesh Plain - the driest quarter of the continent and the first true desert in the game.
+  // ---------------------------------------------------------------------------
+  // **Every profile here is on wavelength 320**, which is Gala's, the Oves's, the Mithala's and
+  // the Ascarths' for the same reason: `relief()` takes its phase from x / wave, the hex blend
+  // mixes the wavelengths, and a country on another wave shifts the phase of every sine within
+  // reach of its border. These four share forty-six internal hex edges, so one wave across all
+  // of them is what makes those edges invisible.
+  //
+  // The bases carry the block's shape, and a base blends linearly across a hex boundary and is
+  // therefore already smooth - it is the sine that chirps. Navarth is the high ground at 40 with
+  // its hills at 58 (the crests on top of them are `navarthCrests`); West Pyros falls south to the
+  // Vaellir's mouth from 26; the Ganesh Desert is the lowest at 20 and falls north-west to a gulf
+  // shore; the Ganesh Plain at 22 sits on the divide between the two drainages. The `grassland`
+  // hex in West Pyros and the one in the Ganesh Plain are the block's two wettest hexes - both
+  // `Csa`, both a hex from the southern sea - and both are lower, greener and a little rougher
+  // than the plains behind them, which is what the atlas means by the change of word.
+  Navarth: Object.freeze({ base: 40, amp: 1.1, wave: 320, ground: REGION_BIOMES.Navarth.ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 58, amp: 2.8, wave: 320, ground: '#675e44' }),
+    // The one forest hex in the block, (-24,116), `Csb`, at Navarth's north-eastern tip against the
+    // South and East Ibenwood. It is the plateau's wooded shoulder falling into the forest belt, so
+    // it stands well below the tableland rather than on it: the Ibenwood is low wet ground and this
+    // is the last hex of Navarth before it.
+    forest: Object.freeze({ base: 34, amp: 1.3, wave: 320, ground: '#5d6840' }),
+  }) }),
+  'West Pyros': Object.freeze({ base: 26, amp: .9, wave: 320, ground: REGION_BIOMES['West Pyros'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 12, amp: .8, wave: 320, ground: '#6b7542' }),
+  }) }),
+  'Ganesh Desert': Object.freeze({ base: 20, amp: .9, wave: 320, ground: REGION_BIOMES['Ganesh Desert'].ground }),
+  'Ganesh Plain': Object.freeze({ base: 22, amp: .85, wave: 320, ground: REGION_BIOMES['Ganesh Plain'].ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 14, amp: .8, wave: 320, ground: '#737a4d' }),
+  }) }),
+  // ---------------------------------------------------------------------------
+  // The four Meroshe deserts (src/southwest-world.js): ninety-five hexes, one terrain word and one
+  // climate code, and therefore the one job in this project where the profile table cannot say
+  // anything about the difference between four countries. The atlas writes `plains` and `BWh`
+  // ninety-five times over. **What tells them apart is the surface** - erg, reg, hamada, salt pan -
+  // and a surface is a landform and a scatter, not a base and an amplitude.
+  //
+  // So the bases only carry the block's fall and the amplitudes only say how rough the floor is
+  // between the landforms, which is the reverse of Navarth's `hills` and every mountain country
+  // before it. **Every one is on wavelength 320**, job 1's, for job 1's reason: `relief()` takes its
+  // phase from x / wave, and these four share fifty-seven internal hex edges with each other and ten
+  // more with the Ganesh Plain.
+  //
+  // North is the hamada and the highest floor of the four at 21, joining the Ganesh Plain's 22 over
+  // ten hex edges with a metre between them; it is the roughest (1.15), because bare bedrock with
+  // hard beds standing out of it is the one desert surface that is not a sheet. Central is the sand
+  // sea at 16 in its own shallow closed sink and is the *smoothest* thing in the game away from its
+  // dunes (0.55), because an interdune corridor is a gravel floor swept flat by the same wind that
+  // piled the ridge beside it. South is the reg at 14, flatter still than the Ganesh (0.6) because a
+  // stone pavement is what a desert looks like when everything loose has already gone. West is the
+  // fan skirt at 14, falling west to the ocean on `merosheFans`, a little rougher than the reg (0.85)
+  // because a bajada is a dozen overlapping cones of gravel and not a plane.
+  'North Meroshe Desert': Object.freeze({ base: 21, amp: 1.15, wave: 320, ground: REGION_BIOMES['North Meroshe Desert'].ground }),
+  'West Meroshe Desert': Object.freeze({ base: 14, amp: .85, wave: 320, ground: REGION_BIOMES['West Meroshe Desert'].ground }),
+  'Central Meroshe Desert': Object.freeze({ base: 16, amp: .55, wave: 320, ground: REGION_BIOMES['Central Meroshe Desert'].ground }),
+  'South Meroshe Desert': Object.freeze({ base: 14, amp: .6, wave: 320, ground: REGION_BIOMES['South Meroshe Desert'].ground }),
+  // ---------------------------------------------------------------------------
+  // Cape Heth, the Dinelv Highlands and Hama (src/southwest-world.js): the block's western edge, and
+  // the one place in it where the profile table has real work to do again. Job 2's four countries
+  // could not be told apart by a base or an amplitude at all; these three differ by eighty-five
+  // metres of base between them, which is more than any three neighbours in the game outside the two
+  // Lotharns.
+  //
+  // **Every one is on wavelength 320**, which is now nine countries of this block and eleven on the
+  // wave: `relief()` takes its phase from x / wave, the hex blend mixes the wavelengths, and these
+  // three share fifty-two hex edges with the block's other eight. The `mountain` profile is on 320
+  // too, where both Lotharns put their mountain hexes on a wave of their own - because a Lotharn
+  // mountain hex sits inside a range of mountain hexes and these three sit one hex from `hills` on
+  // every side of them.
+  //
+  // **Cape Heth is low and nearly flat**, base 13 against the Ganesh Desert's 20, because the lore is
+  // emphatic that this cape is "not a dramatic geographical feature... a low, extended point of land",
+  // and because twenty-one of its hex edges are open water: a cape that stood high would be a cliff
+  // headland, which is the thing the lore says it is not. `byTerrain.coast` at 5 is the point of the
+  // cape itself - the only `coast` hex any country on the atlas holds - and it is the lowest authored
+  // base in the game, three metres above the tideline, because the lore measures this cape's storms
+  // by how far up it the salt water got.
+  //
+  // **The Dinelv Highlands are the high ground of the whole southwest**, and the first desert
+  // highland in the game: `hills` at 96 is thirty-eight metres over Navarth's 58 and the highest
+  // non-Lotharn base there is. The `plains` hexes at 82 are *not* low plains - they are the six
+  // closed basins inside the plateau, fourteen metres under the rolling upland round them, which is
+  // what `plains` means when it is ringed by `hills`. And `mountain` at 138 is deliberately low for
+  // the word: the atlas paints these three hexes `BWh`, and a summit high enough to be a mountain in
+  // the Lotharn sense could not read as hot desert at its top. They are the only three hot-desert
+  // `mountain` hexes on the map and they are residual massifs, not peaks.
+  //
+  // **Hama is a coastal ramp**, and its two halves are the country's whole subject: `plains` at 28 is
+  // the stony broken rise on the inland side - "rough without being impassable", the highest and
+  // roughest of the block's `plains` after the hamada - and `grassland` at 15 is the green strip along
+  // the surf. Thirteen metres of fall over three hundred, and the atlas draws the climate line in the
+  // same place it draws the terrain line. Both are two metres higher than first authored, because job
+  // 1's tilt plane now runs over Hama too and takes seven metres off this corner on its own.
+  'Cape Heth': Object.freeze({ base: 13, amp: .8, wave: 320, ground: REGION_BIOMES['Cape Heth'].ground, byTerrain: Object.freeze({
+    coast: Object.freeze({ base: 5, amp: .5, wave: 320, ground: '#4c4b41' }),
+  }) }),
+  // The default here is the `hills` of the rolling upland, which is twenty-six of the thirty-five.
+  'Dinelv Highlands': Object.freeze({ base: 96, amp: 3.2, wave: 320, ground: REGION_BIOMES['Dinelv Highlands'].ground, byTerrain: Object.freeze({
+    plains: Object.freeze({ base: 82, amp: 1.4, wave: 320, ground: '#514c3a' }),
+    mountain: Object.freeze({ base: 138, amp: 5, wave: 320, ground: '#454234' }),
+  }) }),
+  Hama: Object.freeze({ base: 28, amp: 1.6, wave: 320, ground: REGION_BIOMES.Hama.ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 15, amp: .9, wave: 320, ground: '#44532f' }),
+  }) }),
+  // ---------------------------------------------------------------------------
+  // Marosh and Trogo (src/southwest-world.js): the block's eastern edge, and the two countries whose
+  // bases say why the Meroshe is a desert. Both are on wavelength 320, which is now the whole block
+  // and thirteen countries; between them they share seven hex edges with the four Meroshe quarters
+  // and one with each other, and a country on another wave would shift the phase of every sine
+  // within reach of those borders.
+  //
+  // **Marosh is a ridge and a terrace, and the ridge is the wall.** `hills` at 74 is the second
+  // highest base in the game outside the two Lotharns, behind the Dinelv plateau's 96 and thirty-six
+  // metres over Navarth's 58 - and it is a *coastal* ridge, one hex wide, standing between twenty hex
+  // edges of open Iberos water on the east and the Central Meroshe's sand at 16 on the west. That is
+  // the whole reason there is a desert behind it: the sea air comes in off the Iberos, the ridge
+  // wrings it out, and what gets over the top is dry. The atlas says so twice - `hills` reads `Csb`,
+  // the cooler-summer Mediterranean form that on a strip two hexes wide can only be altitude, and
+  // `grassland` reads `Csa`, the hot-summer one. `grassland` at 17 is the seaward terrace, two metres
+  // over Hama's sward because it has a ridge behind it rather than an ocean on two sides.
+  //
+  // **Trogo is the ridge that makes the rainforest.** `deep_forest` at 52 - **the first use of that
+  // terrain word anywhere in the game's world** - against the South Meroshe's 14 across thirteen hex
+  // edges, which is the "wall of dark canopy" job 2's own landmark promised and the reason the atlas's
+  // own developer heights put `deep_forest` at 18 where `plains` is 6. The lore's sentence is the
+  // design: "a ridgeline that catches the southern moisture and drops a fog wall on its windward face
+  // while the leeward side stays desert." The ridge is these twenty-two hexes; the leeward side is job
+  // 2's fog belt and then its stone floor. `grassland` at 13 is the coastal flat where the forest
+  // stops - "the coastal strip, where the rivers slow and the land flattens near the southern sea, is
+  // the most hospitable section" - so the fall from canopy to shore grass is thirty-nine metres over a
+  // hex, which is what the lore means by "rivers run fast, elevation changes quickly".
+  Marosh: Object.freeze({ base: 17, amp: .9, wave: 320, ground: REGION_BIOMES.Marosh.ground, byTerrain: Object.freeze({
+    hills: Object.freeze({ base: 74, amp: 2.6, wave: 320, ground: '#3c4a2a' }),
+  }) }),
+  Trogo: Object.freeze({ base: 52, amp: 2.4, wave: 320, ground: REGION_BIOMES.Trogo.ground, byTerrain: Object.freeze({
+    grassland: Object.freeze({ base: 13, amp: .8, wave: 320, ground: '#57642f' }),
+  }) }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1086,7 +1267,7 @@ const REGION_TEXT = {
     palette: { ground: '#a8a06a', accent: '#e2d6a6', fog: '#cdc9ae', sky: 0xc6dad8, haze: 0xdad5bc, hazeDensity: .0044 },
     npcIds: [], landmarks: ['the-sorten', 'upper-oveth', 'oves-upland-grass', 'oveth-gully', 'oves-open-plain'] },
   'Oves Desert': { subtitle: 'The rain shadow and its dry channels', spawn: point(-2205, 902),
-    description: 'The far tail of the Pyros rain shadow: a wedge of the Oveth basin falling from the rim hills in the north-west to the point in the east where the Oveth and the southern border stream come together. Rocky rather than sandy \u2014 worn stone through a thin poor soil, gravel pavement wherever the rock is up, perennial scrub spaced wide enough to walk between, and a stubble of dead seed-heads in the pockets where a wet year\u2019s grasses would be. Three low rounded hills on the rim intercept what moisture the westerlies carry, and the cut channels run east-south-east off their feet with no water in any of them. There is no permanent water in the country at all: one reach of one channel holds it below the gravel, and that is the only green in the Oves.',
+    description: 'The far tail of the Pyros rain shadow: a wedge of the Oveth basin falling from the rim hills in the north-west to the point in the east where the Oveth and the Caelin come together. Rocky rather than sandy \u2014 worn stone through a thin poor soil, gravel pavement wherever the rock is up, perennial scrub spaced wide enough to walk between, and a stubble of dead seed-heads in the pockets where a wet year\u2019s grasses would be. Three low rounded hills on the rim intercept what moisture the westerlies carry, and the cut channels run east-south-east off their feet with no water in any of them. There is no permanent water in the country at all: one reach of one channel holds it below the gravel, and that is the only green in the Oves.',
     palette: { ground: '#ab9f7c', accent: '#e6dcb4', fog: '#d4cdb4', sky: 0xcedcd2, haze: 0xe3dabd, hazeDensity: .0034 },
     npcIds: [], landmarks: ['rim-hills', 'dry-channels', 'oves-damp-reach', 'oves-dry-wedge', 'oves-apex'] },
   'Southern Ascarth': { subtitle: 'The tip of the finger', spawn: point(-850, 2021),
@@ -1101,6 +1282,165 @@ const REGION_TEXT = {
     description: 'The main range, and the highest ground in Azhora: one great massif standing five hundred and fifty metres over its own valleys, with the north summit, the western shoulder, the eastern summit and three lesser masses round it. Old stone worn into uneven courses, with wooded shelves, broken buttresses and grassy crowns; slanting ramps, ledge paths and limestone chimneys offer ways through the cliffs. The long valley runs the whole way through the range, flat-floored and grown over, with a divide a fifth of the way along it and a beck leaving each end; the north valley drains the massif to the Mithala plain, and the col at the eastern end is the saddle the East Lotharn begins from.',
     palette: { ground: '#5b6e44', accent: '#cfd0c4', fog: '#bcc8bd', sky: 0x9fc2d6, haze: 0xc3cec6, hazeDensity: .0027 },
     npcIds: [], landmarks: ['the-crest', 'north-summit', 'west-shoulder', 'east-summit', 'long-valley', 'long-valley-divide', 'north-valley', 'lotharn-col', 'south-rampart', 'the-cold-head'] },
+  // ---------------------------------------------------------------------------------------------
+  // The Mithala plain (src/mithala-world.js). Four countries, terrain and wildlife only.
+  // ---------------------------------------------------------------------------------------------
+  // Everything the Mithala lore is really about belongs to somebody and none of it is built:
+  // Minora and every channel-confluence market below it, the villages on their levees with their
+  // raised granaries, the flood calendar and the water courts, the floodwheat and the barley and
+  // the rye, the river-horn herds that pull the harrows, the barges and the docks, the sky-reading
+  // and the astronomy that came out of it, Mithalenna's cult, the Temple of the Seven Bowls and the
+  // Bowl-Keepers, the Cref oath and the warlords who broke it. What is built is the plain.
+  //
+  // **One sky over all four, and it is the one thing the lore insists on.** "The Mithala is known
+  // for its sky... the sky is large here because there is nothing to interrupt it, and a sky that is
+  // large behaves differently from a sky in hilly or forested country: weather comes from further
+  // away, the approach of storm is visible long in advance." The case for one sky rather than four
+  // is the same as the case for one terrain profile: this is one plain with four names on it, the
+  // four share forty-nine hex edges, and a horizon that changed at an internal border would be a lie
+  // about a country whose whole point is that the horizon does not change. The case for four would
+  // have been the climate, and the climate is `Dfa` on all 116 hexes - there is nothing to draw with.
+  //
+  // So: `hazeDensity` **.0038**, the clearest air of any green country in the game and second only
+  // to the Oves Desert's .0034 and the West Lotharn's .0027, both of which have a reason of their
+  // own (no water, and half a kilometre of altitude). Here the reason is that there is nothing in
+  // the way. A **bluer** background than anything else at this height - a continental summer dome
+  // rather than the lake country's soft green-grey - and a haze that is warm rather than cool,
+  // because what hangs in the air over this plain in July is the dust of grain land and not sea mist.
+  'South Mithala': { subtitle: 'The plain under the mountains', spawn: point(-1490, -1285),
+    description: 'The plain’s southern march, with both halves of the Lotharn standing along the whole of its southern border and nothing at all standing anywhere else. Flat dark grain country between two waters — the main channel running east along the northern border to the sea, the mountains’ border water running east under the forest — with four low swells of the foothills’ last apron inside it, the highest ground on the plain and still a swell you can walk over without noticing you have. At its north-western corner the two arms of the river come together and go on east as one.',
+    palette: { ground: '#6f8043', accent: '#cfc78e', fog: '#b3bfa0', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['mithala-meeting', 'the-main-channel', 'south-mithala-apron', 'south-mithala-levees', 'mountain-march'] },
+  'West Mithala': { subtitle: 'The upper grass', spawn: point(-2065, -1355),
+    description: 'The western entrance to the plain, and the quarter with the least water in it: twenty-four hexes of tall prairie grass standing to the waist on deep dark river soil, with the arm out of the hill country coming in along the Celder margin and a fan of small channels off it. This is the ground the lore means by saying the character changes before the land does — the country to the west is hills and this is not, and nothing anywhere announces the difference. It is also where the horizon closes into a full circle, and standing in the middle of it is the reason people who live here talk about the sky.',
+    palette: { ground: '#788a49', accent: '#d4ca94', fog: '#b7c2a3', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['round-horizon', 'the-west-arm', 'west-mithala-fan', 'west-mithala-grass'] },
+  'East Mithala': { subtitle: 'Where the channels gather', spawn: point(-1330, -1545),
+    description: 'The lowest and flattest quarter, and the one the water leaves by: the channels gather again here and the main one goes out to the sea across the eastern border, in a gallery of willow and poplar two trees deep that is the only wood on the plain. Rank green grass on the wettest ground in the Mithala, backswamps between the channels that stand under water for weeks in a spring the game cannot yet show, and on the north-eastern horizon the first dark line of the Acorwood.',
+    palette: { ground: '#63783e', accent: '#cac291', fog: '#adbb9f', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['east-mithala-gather', 'the-river-mouth', 'east-mithala-gallery', 'acorwood-horizon'] },
+  'North Mithala': { subtitle: 'The plain going north', spawn: point(-1790, -1815),
+    description: 'The plain going north until it stops being plain. Tall grass on a dry shelf in the south, and then a long imperceptible fall northward into sedge and rush and standing water as the Acor Wetlands begin, with no line anywhere to say where one becomes the other. The north braid comes down out of that ground on two heads and runs south to the meeting. Along the northern and north-eastern horizon the treeline thickens: the Acorwood, which closes off the north of the continent, approached across open country without a wall or a cliff to announce it.',
+    palette: { ground: '#6b8045', accent: '#ccc491', fog: '#b0bca3', sky: 0xa6cde4, haze: 0xccd2ba, hazeDensity: .0038 },
+    npcIds: [], landmarks: ['the-north-braid', 'north-braid-heads', 'north-mithala-shelf', 'north-mithala-fen', 'acorwood-approach'] },
+  // The southwestern block (src/southwest-world.js). **Two skies over four countries**, and the
+  // first of them is the first true-desert sky in the game. Navarth, the Ganesh Desert and the
+  // Ganesh Plain read `BWh` over seventy-four of their eighty hexes between them, and what a hot
+  // desert does to the air is take the water out of it: the clearest air in Azhora at .0030,
+  // against the Oves Desert's .0034, with a pale bleached-blue sky and a haze that is dust rather
+  // than moisture. West Pyros is the one steppe country of the four - `BSh` over eighteen of its
+  // twenty-seven hexes, with a river down the whole of its eastern side - so it gets the steppe
+  // sky Gala and Ovesos share, a shade greener and a shade closer.
+  Navarth: { subtitle: 'The plateau above the desert', spawn: point(-3350, 1155),
+    description: 'The high ground of the southwest and the last of the Pyrosi country going north: a worn tableland of pale stone and thin soil standing forty metres over the plain, with ten broad rounded swells on it and open sweeps of bare scrub between them. Hot desert over all of it but the north-eastern tip, where two hexes of Mediterranean air carry the one piece of forest the atlas gives this quarter and the Ibenwood’s southern edge begins. The country’s only water runs along its northern border, out of the green country beyond it and away west to the sea; from the western swells the ground falls away into the Ganesh and there is nothing at all between here and the horizon.',
+    palette: { ground: '#6f6449', accent: '#b3a884', fog: '#a19b84', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['navarth-plateau', 'navarth-swells', 'navarth-west-rim', 'navarth-wood', 'alezhor-water'] },
+  'West Pyros': { subtitle: 'The plain and the great river', spawn: point(-3000, 1241),
+    description: 'An open semi-arid plain falling south from the Navarth rim to the sea, with the Vaellir - the largest river in this quarter of the continent - running the whole length of its eastern border and growing from a wadeable head to a hundred paces of water nobody crosses. Bunch grass in tussocks with bare earth between them over most of it, thinning west into desert scrub against Navarth; a ribbon of poplar and tamarisk along the river and no other wood anywhere; and at the southern tip, where the river reaches the sea, one hex and a half of genuinely green Mediterranean country. Everything the lore of Pyros is about - the terraces, the fumarole sites, the Fire Memory, and Gala on its hill above the confluence - belongs to somebody and none of it is here.',
+    palette: { ground: '#6c6944', accent: '#aea580', fog: '#9a9a83', sky: 0xbdd2ce, haze: 0xc3bb9c, hazeDensity: .0036 },
+    npcIds: [], landmarks: ['the-vaellir', 'vaellir-ford', 'vaellir-mouth', 'pyros-open-plain', 'pyros-green-tip'] },
+  'Ganesh Desert': { subtitle: 'The dry crossing', spawn: point(-3550, 1501),
+    description: 'Thirty-one hexes of true hot desert, the first in Azhora and the largest single country in the southwest: flat to gently rolling ground made by old alluvium rather than uplift, with no canyon, no escarpment and nothing dramatic in it anywhere. Wind is the whole of what shapes it - a thin sheet of fine pale sediment over stone, swept down to gravel on the rises and gathered a hand deep in the pockets, with the grain of it running with the summer wind out of the north-west. Sparse deep-rooted scrub spaced wide enough to walk between and a stubble of bleached seed-heads where a wet year’s flush would be. Two washes cross it with nothing in either, one reach of one of them holding water below the gravel; and on the north-west it runs out at a gulf it is arid right up to, which is the strangest thing about it.',
+    palette: { ground: '#776d54', accent: '#b7ae8c', fog: '#a8a288', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['ganesh-floor', 'ganesh-washes', 'ganesh-damp-reach', 'ganesh-shore', 'ganesh-wind-grain'] },
+  'Ganesh Plain': { subtitle: 'The ground that cannot decide', spawn: point(-2930, 1620),
+    description: 'The transition between the desert and the green country to the south-east, and the lore says it behaves from decade to decade as though it cannot decide which it belongs to. Level clay-floored ground crossed by three shallow drainage channels too diffuse to be rivers, with closed depressions strung along them where the water gathers and the grass lasts longest - and in a dry year, which is the face the world can show, those depressions are the only green on it and everything between them is scrub and bare pale clay. A low divide runs down the eastern side, and the channels show it: two of them leave it westward for the Ganesh and the third runs east-south-east to the sea four hundred metres away. The south-eastern corner is the exception - one hex of Mediterranean grass where Marosh’s country begins.',
+    palette: { ground: '#70684c', accent: '#b3a988', fog: '#a59e86', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['ganesh-plain-channels', 'ganesh-depressions', 'ganesh-plain-divide', 'ganesh-plain-green-corner'] },
+  // The four Meroshe deserts (src/southwest-world.js). **Ninety-five hexes, one terrain word, one
+  // climate code** - and therefore the one place in this project where the atlas cannot tell four
+  // countries apart and the build has to. What tells them apart is the surface underfoot and the one
+  // thing on each one's horizon, and **the sky is part of that**, because the air over a desert is
+  // not the same air everywhere in it.
+  //
+  // North and Central take job 1's desert sky unchanged - .0024, the clearest air in Azhora, a
+  // bleached sky and a haze that is warm dust rather than water - because they are the interior and
+  // that is what the interior of a hot desert looks like. The other two are argued from the atlas:
+  //
+  //  - **West Meroshe has ten hex edges of open western ocean**, and hama.md says what arrives on it:
+  //    "the western face is open-ocean coast, exposed to the weather patterns that originate in the
+  //    far west and arrive at the peninsula having crossed considerable water". Sea air over a desert
+  //    carries salt and a marine layer, so .0032 and a little bluer: still the second-clearest air in
+  //    the game, and not the interior's.
+  //  - **South Meroshe is under fog**, which is the whole of what makes it different from the rest of
+  //    the Meroshe. trogo.md: "where desert air meets ocean-loaded humidity along the southeastern
+  //    ridge, fog forms and stays, sometimes for days... warm and thick and close". So this is the one
+  //    `BWh` country in Azhora whose air is *thicker* than the average rather than thinner - .0046,
+  //    against the Oves steppe's .0034 - and the only desert in the game a traveler cannot see across.
+  'North Meroshe Desert': { subtitle: 'The rock at the desert’s head', spawn: point(-2950, 2021),
+    description: 'The northern transition of the Meroshe, the largest desert on the continent, and the first thing to know about it is that it is not sand. It is rock: bare bedrock under a skin of gravel, swept clean and ringing underfoot, with the harder beds standing out of the floor in low steps a metre or two high that run north and south for three hundred paces at a time and are the only direction this country offers. The lore calls it "the rocky hammada of the northern transition zone — flat gravel plains and exposed bedrock where scrubby thorn trees still manage to exist", and the thorn is here, rooted in the joints of the stone, the only tree standing anywhere in ninety-five hexes of desert. Two things are on its horizon on the atlas: the Ganesh Plain’s pale clay running out northward with no line to mark where, which is built, and Marosh’s green Mediterranean hills a mile east across the shimmer, which is not — so that side of it is open country for now. The oasis houses, the caravan routes and the dustback herds the lore hangs on this country all belong to somebody and none of them is here.',
+    palette: { ground: '#67634e', accent: '#a9a184', fog: '#9b957e', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['meroshe-hamada', 'meroshe-benches', 'meroshe-thorn', 'meroshe-dust-line', 'meroshe-green-shoulder'] },
+  'West Meroshe Desert': { subtitle: 'The skirt, the salt and the sea', spawn: point(-3550, 2367),
+    description: 'A desert between a highland and an ocean, and it is made of what the highland sends down and what the ocean does not send up. Three broad cones of gravel spread south-west out of the Dinelv escarpment — which is on the atlas and not yet built, so the plateau above them is open country — and have grown together into one skirt falling to the water: cobbles a hand across at the heads where the walking is bad, pebbles four hundred paces out, dust deep enough to print at the toe, which is the whole story of water that comes down twice in a decade. Where the last of that drainage stops there is the Malhat — three hundred paces of salt floor, flat to the centimetre, white and hard and the one place in this desert where water can be seen and not drunk. Ten of this country’s hex edges are the open western sea, and a hundred paces inland of the surf the ground is as arid as it is twenty miles in. The plateau road above it, its cisterns and its garrison are the Route Registry’s and are not built.',
+    palette: { ground: '#655d48', accent: '#a79e84', fog: '#97937f', sky: 0xbfd0cf, haze: 0xc4bda6, hazeDensity: .0032 },
+    npcIds: [], landmarks: ['meroshe-fan-skirt', 'meroshe-salt-pan', 'meroshe-dry-shore', 'meroshe-escarpment-foot'] },
+  'Central Meroshe Desert': { subtitle: 'The sand sea', spawn: point(-2880, 2420),
+    description: 'The erg, and the only one in Azhora: thirty-one hexes of clean sand piled into parallel ridges that run north-west to south-east on the summer wind’s own bearing, seven metres from floor to crest and two hundred and thirty paces apart, with a flat swept gravel corridor between every pair. It is the one country in the game that has no horizon — from the crest of a ridge the next ridge is the skyline, and from the corridor between them there is nothing to see in any direction but two walls of sand. A traveler can walk a corridor fast, north-west or south-east and no other way; crossing the grain means climbing a dozen ridges in turn. The sand is here because there is nowhere else for it to go: the whole country lies in a shallow closed sink with no river edge anywhere on it and no outlet in any direction. The lore is plain about what this ground is — "navigating the sand seas without local knowledge is considered one of the more reliable methods of dying on Azhora" — and the local knowledge belongs to people who are not built.',
+    palette: { ground: '#736a4e', accent: '#b0a684', fog: '#a09980', sky: 0xc3d4cc, haze: 0xc6b996, hazeDensity: .0024 },
+    npcIds: [], landmarks: ['meroshe-sand-sea', 'meroshe-corridors', 'meroshe-sink', 'meroshe-sand-edge'] },
+  'South Meroshe Desert': { subtitle: 'The stone floor under the fog', spawn: point(-2800, 2800),
+    description: 'The bottom of the desert, and the one part of it that gets wet. The ground is reg — a pavement of pebbles packed edge to edge over the whole country, flat enough to see twenty miles over and varnished so dark by iron and manganese that it looks wet from a distance and holds a footprint for a year. Thirteen of its hex edges are Trogo’s tropical rainforest and four are the southern ocean, and what crosses the line between the two is fog: warm, thick, close, standing for days at a time, watering a surface the atlas still calls hot desert. So the southern third of this country carries a crust, lichen in the lee of every pebble, and thorn scrub standing close enough together to walk round — none of which the rest of the Meroshe can manage — and the north-western third, against the sand sea, is as bare as anything in Azhora. A rainforest stands half a mile off the eastern edge with cloud sitting in it, and since job 4 it is built: twenty-two hexes of `Af`, standing fifty metres over this floor, and the twenty hexes of the Meroshe whose aridity is no longer a flat 1.000 are almost all of them looking at it or at Marosh. The canyon communities the lore puts south of here, and everything they own, are not built.',
+    palette: { ground: '#3d3427', accent: '#847a64', fog: '#7c735e', sky: 0xbec9c3, haze: 0xc0bcab, hazeDensity: .0046 },
+    npcIds: [], landmarks: ['meroshe-stone-floor', 'meroshe-fog-margin', 'meroshe-forest-wall', 'meroshe-south-shore'] },
+  // Cape Heth, the Dinelv Highlands and Hama (src/southwest-world.js): the block's western edge, and
+  // **three skies, every one of them argued from the atlas rather than from the climate code.**
+  //
+  //  - **Cape Heth** is a desert with the sea on three sides of it and twenty-one hex edges of open
+  //    water, which is more maritime than anything in the block: sea air over a hot desert, so .0034,
+  //    a little bluer and a little closer than the interior's .0024. It is the West Meroshe's argument
+  //    (.0032, ten ocean edges) taken twice as far, and the number is that country's plus a shade.
+  //  - **The Dinelv Highlands** get the *clearest* air in Azhora, .0021, and the reason is altitude and
+  //    not dryness: the plateau stands eighty metres over everything round it, the lore says "rainfall
+  //    at the plateau elevation is somewhat higher than on the coast directly below, but not
+  //    substantially", and what a hot-desert upland has less of than a hot-desert floor is dust. This
+  //    is the West Lotharn's argument (.0027 at five hundred metres) run in a desert.
+  //  - **Hama** is the one country in the whole block whose air is properly wet, and it earns it twice:
+  //    nine of its nineteen hexes read `Csb` and nineteen of its hex edges are ocean. .0052 - thicker
+  //    than the South Meroshe's fog belt, which is the block's previous record - with a sky that is
+  //    blue rather than bleached and a haze of sea moisture rather than dust. Standing on the line
+  //    between its halves a traveler can see the difference in the air as well as in the ground.
+  'Cape Heth': { subtitle: 'The desert that runs out at the sea on three sides', spawn: point(-4000, 1848),
+    description: 'A low desert promontory reaching four hundred metres further west than any other ground in Azhora, with open water on the north, the west and the south of it. The lore is careful to say what it is not: "not a dramatic geographical feature in the mode of high cliff headlands or bold rocky outcrops; it is a low, extended point of land that juts far enough west to matter as a navigational landmark" - and the atlas agrees, giving it `plains` on eighteen hexes and hot desert on all eighteen. The rock is grey-brown marine sandstone soft enough to cut with hand tools; one long low ridge runs down the spine, and it decides everything - the western face takes the weather and the salt and carries nothing but lichen and gravel, the eastern side is in its lee and holds what soil the cape has in a string of shallow drainage hollows. At the point is the only `coast` hex the atlas puts inside any country on the map: bare wave-cut rock three metres above the water with sea on four of its six sides. The cape communities, their harbour on the south-eastern face, their cisterns, their salvage and the whole navigation trade the lore builds on this headland belong to somebody and none of it is built.',
+    palette: { ground: '#514e40', accent: '#9b9880', fog: '#8e8c78', sky: 0xbdcfd0, haze: 0xc2bda9, hazeDensity: .0034 },
+    npcIds: [], landmarks: ['heth-point', 'heth-spine', 'heth-weather-face', 'heth-hollows', 'heth-bight'] },
+  'Dinelv Highlands': { subtitle: 'The desert plateau', spawn: point(-3400, 1989),
+    description: 'The first desert highland in the game and the high ground of the whole southwest: thirty-five hexes of hot desert standing eighty metres over the cape on one side and the sand deserts on the other, with `hills` on twenty-six of them, `BWh` on every single one, and no green hex anywhere. The way up is the escarpment, which the lore calls "the most dramatic terrain on the eastern peninsula" - exposed sedimentary rock in horizontal bands, warm-toned stone low down and a harder darker stone above it, cut by seasonal channels that run twice a decade and stand as dark lines down the face the rest of the time. On top it is not flat: ridge systems cross it north to south "aligned with the peninsula’s long axis", three gaps get a traveler through them, six closed basins hold what water the plateau gets and are the only ground on it where anything roots deep, and three massifs stand over the whole plateau - the only three hot-desert `mountain` hexes on the atlas, and residual blocks rather than peaks, because a summit high enough to be a mountain could not read as hot desert at its top. The city of Dinelv below, the plateau road, the garrisons at the passes, their cisterns, the quarries and the pastoral communities who have been up here longer than any of it are all somebody’s and none of them is built.',
+    palette: { ground: '#4d4839', accent: '#9a937a', fog: '#8d8873', sky: 0xc6d6cd, haze: 0xc8bc9a, hazeDensity: .0021 },
+    npcIds: [], landmarks: ['dinelv-plateau', 'dinelv-escarpment', 'dinelv-ridges', 'dinelv-north-pass', 'dinelv-middle-saddle', 'dinelv-massifs', 'dinelv-basins'] },
+  Hama: { subtitle: 'Where the desert stops', spawn: point(-3250, 2887),
+    description: 'The corner of the continent, with ocean on the west and ocean on the south, and the only place in the southwest where the desert ends in something green instead of in water or in more desert. The atlas draws the line twice and in the same place: nine `grassland` hexes that are every one of them `Csb`, and ten `plains` hexes that are every one of them `BWh`, with no hex where the two fields disagree. So the seaward two hexes are real Mediterranean country - winter-rain grass thick enough to walk through, low evergreen scrub in the hollows, a few wind-shaped trees leaning inland - and the inland half is a stony broken rise between that and the Meroshe, which the lore calls "rough without being impassable: enough friction to make overland access from the desert difficult". Between them, over about two hundred paces, the grass thins to tussocks and then to nothing and the ground turns to gravel, and that two hundred paces is the country. The winter watercourses that carry the rain down to the sea are dry, as they are in the dry years the lore says Hama cannot rely on. Hama Harbour, the Council of Merchant Houses, the seven families and every plot on the coastal margin are somebody’s and none of them is built.',
+    palette: { ground: '#475433', accent: '#8b9a6c', fog: '#828e72', sky: 0xb4c8d2, haze: 0xb9bdb0, hazeDensity: .0052 },
+    npcIds: [], landmarks: ['hama-green-line', 'hama-grass', 'hama-broken-ground', 'hama-corner', 'hama-winter-beds'] },
+  // Marosh and Trogo (src/southwest-world.js): the block's eastern edge, and **two skies, one of which
+  // is the whole point of the job.**
+  //
+  //  - **Marosh** has not one `BWh` hex - the first country in thirteen that can say so - and twenty
+  //    hex edges of open Iberos water, one more than Hama. So .0055, a shade thicker than Hama's .0052,
+  //    which was the block's record: eight `Csb` hexes on a ridge that is wringing the sea out, over a
+  //    terrace that is `Csa`, under an easterly sky that is properly blue rather than bleached. It is
+  //    the sheltered coast of the peninsula where Hama is the exposed one, and a sheltered warm sea
+  //    puts more water in the air than an open cold one does.
+  //  - **Trogo is `.0144`, which is nearly two and a third times the game's own default and nearly
+  //    seven times the clearest air in it.** It is the first half of the user's decision of 30
+  //    September 2026 about what a deep forest is: *a country you cannot see far in and cannot go
+  //    straight through*. `FogExp2` hides a fraction `1 - exp(-(density x depth)^2)` of a surface, so
+  //    at .0144 a traveler is **half hidden at 58 metres, nine tenths gone at 105 and invisible at
+  //    120** - where the game's default .0062 takes 279 metres to do the same and job 2's erg, the
+  //    shortest sight line in the game until now, blocks the view at 140 with a six-metre dune. This
+  //    blocks it at 120 with cloud, and there are trees in the way as well. The colour is the second
+  //    half of the argument and was the harder half: job 1 found that a near-white haze is over half of
+  //    every pixel past a hundred and fifty metres, so a haze this thick has to be **dark**, and what
+  //    it actually is here is the lore's own fog - "not the cold sea-fog of Bouen's coast. It is warm
+  //    and thick and close" - cloud sitting inside a canopy, which is grey-green and not white.
+  Marosh: { subtitle: 'The ridge the desert is behind', spawn: point(-2520, 2367),
+    description: 'Eighteen hexes in a strip two wide down the Iberos face of the peninsula, and the only country in the southwest with no hot desert on it at all. The atlas draws its line twice over and in the same place: eight `hills` hexes that are every one of them `Csb`, the cooler-summer Mediterranean form, and ten `grassland` hexes that are every one of them `Csa`, the hot-summer one, with no hex where the two fields disagree. On a coastal strip two hexes wide the only thing that makes a summer cooler is height, so the line is drawn by the ridge - and the ridge is why everything west of here is a desert. Sea air comes in off the Iberos, seventy-four metres of oak and maquis wrings it out, and what crosses the crest has the rain already taken out of it: the Central Meroshe\u2019s sand sea begins on the far side of this one hill. East of the crest the ground falls three hundred metres to twenty hex edges of open water through grass, aromatic scrub and the low olive-grey of a hot-summer terrace. One gap breaks the ridge, and the atlas puts the only river it draws on this whole coast in the bottom of it. Dinelv the capital, the Route Registry, the Tariff Table, the caravan road that crosses the gap and every plot on the terrace are the Maroshi court\u2019s and none of them is built.',
+    palette: { ground: '#4d5c33', accent: '#9aa872', fog: '#8a9670', sky: 0xa8c6d4, haze: 0xb7c3b4, hazeDensity: .0055 },
+    npcIds: [], landmarks: ['marosh-ridge', 'marosh-water-gap', 'marosh-water', 'marosh-terrace', 'marosh-shore', 'marosh-dry-side'] },
+  Trogo: { subtitle: 'The first rainforest', spawn: point(-2300, 2887),
+    description: 'Twenty-two hexes of `deep_forest`, every one of them `Af` - tropical rainforest with no dry season, the wettest code the atlas paints anywhere on the map - with seven `Csa` `grassland` hexes along the southern shore where the forest stops, and no hex where the two fields disagree. One hex west is the South Meroshe, which is hot desert on all twenty-one of its own, and the thirteen hex edges between them are the sharpest boundary the atlas draws anywhere. The lore explains both in one sentence: "a ridgeline that catches the southern moisture and drops a fog wall on its windward face while the leeward side stays desert." This is the ridgeline. It stands fifty metres over the desert behind it, takes the whole southern ocean on its face, and the fog job 2 built into the Meroshe\u2019s stone floor comes off this crest. **Two rules belong to this country and to nowhere else yet.** The air is so thick that a traveler is half hidden at fifty-eight paces and gone at a hundred and twenty - the shortest sight line in the game by a factor of two. And the ground can be walked along the watercourses, the animal paths and the clearings, and not through the thicket between them: a country you cannot see far in and cannot go straight through. The three peoples of the ecotone, their fog-conditional verb aspect, the estuary fishing villages, the timber Hama has been quietly buying for a century and the resin the Maroshi court taxes without understanding are all somebody\u2019s, and none of them is built.',
+    palette: { ground: '#2c3a24', accent: '#5d7350', fog: '#4e6247', sky: 0x8e9d92, haze: 0x6d7d6b, hazeDensity: .0144 },
+    npcIds: [], landmarks: ['trogo-forest', 'trogo-fog-ridge', 'trogoreth', 'trogo-animal-paths', 'trogo-clearings', 'trogo-thicket', 'trogo-forest-edge', 'trogo-estuary'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

@@ -36,7 +36,32 @@ export const MAP_PATH = path.resolve(root, '../world-builder/map/resources/examp
  */
 export const RIVER_REGIONS = ['Pueth', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'East Lotharn Mountains',
-  'North Ibenwood', 'East Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre'];
+  // The four Mithala countries, added together for the reason the four western ones were: the
+  // atlas braids one river system across all four, and naming them one at a time would chop the
+  // braids into pieces at each border and then silently re-join them. Sixty-one edges come in
+  // with them. Measured before they were added: no existing chain loses its key, changes a
+  // single point, or gains a confluence - the nearest built water is the East Lotharn's border
+  // water, and its two Lotharn-only pieces are 14 and 2 points before and after, to the digit.
+  'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+  // The four southwestern countries, added together for the same reason again: the atlas draws
+  // twenty-eight edges on them in two chains, and both chains cross a country border - the
+  // northern water runs along Navarth's border with Alezhor and then along the Ganesh Desert's,
+  // and the Vaellir runs the whole of West Pyros's eastern border. Naming them one at a time
+  // would chop both into pieces at a border and then silently re-join them. Measured before they
+  // were added: no chain that already existed loses its key, changes a point or gains a
+  // confluence - the nearest built water is the Oveth, a thousand metres east of West Pyros.
+  'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+  // Marosh and Trogo, and **these are the first river edges the atlas draws inside a southwestern
+  // country rather than along its border.** Job 1's twenty-eight all run on a border with unbuilt
+  // country and jobs 2 and 3 have none at all - ninety-five hexes of Meroshe and seventy-three of the
+  // western edge with not one river edge on any of them. There are seven here: three small edges round
+  // the corner of Marosh's (-25,131), which is the water gap through its ridge, and four round
+  // Trogo's (-25,140) and (-25,141), which is the Trogoreth. Both chains have the same country on both
+  // banks, so neither can chop or re-join anything that already exists; measured before they were
+  // added, no existing chain loses its key, changes a point or gains a confluence, and the nearest
+  // built water is the Vaellir, six hundred metres north-west of Marosh's northern tip.
+  'Marosh', 'Trogo',
+    'North Ibenwood', 'East Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre'];
 const NEIGHBORS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const SIZES = new Set(['small', 'medium', 'large']);
 

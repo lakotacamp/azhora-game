@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DEFAULT_SKY, regionSky, mixHex, mixSky, composeSky, createSkyBlend } from '../src/region-sky.js';
 import { regions, OPEN_COUNTRY } from '../src/region-world.js';
+import { OWN_SKY } from './own-sky.js';
 
 /**
  * The sky, and the promise that came with permission to build it: **nothing that exists
@@ -47,7 +48,8 @@ test('the default sky is the three numbers src/main.js has always used', () => {
 // declare their own cool horizons in region-world.js; all other countries keep the default.
 // The West Lotharn is the twelfth, and the first to ask for its horizon on account of height:
 // five hundred and fifty metres of range wants thinner, clearer air than the East's.
-const OWN_SKY = new Set(['Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Isareos', 'Caricas']);
+// The allow-list lives in tests/own-sky.js and is imported by tests/eer-world.test.js too: five
+// builders in a row found and extended two copies of it before job 3 made it one (see that file).
 
 test('every region but the ones that asked for their own gets the default sky, to the digit', () => {
   for (const region of regions) {

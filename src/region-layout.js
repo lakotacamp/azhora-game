@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -197,6 +197,98 @@ export const REGION_BIOMES = Object.freeze({
   'West Lotharn Mountains': Object.freeze({ id: 'high-lotharn', name: 'The West Lotharn', ground: '#5b6e44', canopy: '#3c5932', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'forest-floor', ownScatter: true,
     relief: { amplitude: 10, wavelength: 230 }, clearings: ['the-crest', 'long-valley'],
     note: 'The spine of the Lotharn, and its taller half: one great massif of five hundred and fifty metres with three lesser masses round it, uneven shoulders and buttresses laid in courses of cliff, with wooded shelves between them and grassy crowns above the tree line. The long valley runs the whole way through the range from the Vastos margin to the western hills, flat-floored and grown over, with a divide a fifth of the way along it and a beck leaving each end; the north valley drains the massif to the Mithala plain. Oak, chestnut, maple, beech, hickory, walnut and tulip poplar on the ledges to about three hundred and forty metres, then stone.' }),
+  // The four quarters of the Mithala plain (src/mithala-world.js, src/mithala-scenery.js). They are
+  // one landform with four names, they share forty-nine hex edges and one climate code, and their
+  // four biomes differ only in what the ground is doing where they stand - which is why every relief
+  // wavelength below is the same 320 and every amplitude within a quarter of a metre of its
+  // neighbour's. The first properly continental country in the game: `Dfa` on all 116 hexes, hot wet
+  // summers and hard winters, and the plants are the ones that answer for a winter the world cannot
+  // yet draw - tall prairie grass and forbs on the open ground, willow, poplar and alder on the
+  // water, and nothing evergreen anywhere.
+  'South Mithala': Object.freeze({ id: 'flood-plain', name: 'The southern Mithala', ground: '#6f8043', canopy: '#526f3c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'tall-grass', ownScatter: true,
+    relief: { amplitude: .5, wavelength: 320 }, clearings: ['mithala-meeting', 'south-mithala-apron'],
+    note: 'The plain’s southern march: flat grain country running up to the Lotharn, with the two ranges standing over it along the whole southern border and four low swells of the foothills’ last apron inside it. The main channel runs east along the northern border to the sea and the two arms of the river meet at its north-west corner; the border water runs east under the mountains.' }),
+  'West Mithala': Object.freeze({ id: 'upper-plain', name: 'The upper Mithala', ground: '#788a49', canopy: '#576f3f', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'tall-grass', ownScatter: true,
+    relief: { amplitude: .75, wavelength: 320 }, clearings: ['west-mithala-grass'],
+    note: 'The western entrance, and the highest and grassiest quarter: twenty-four grassland hexes of tall prairie on deep dark river soil, the plain before the braiding begins in earnest, with the arm from the hill country coming in along the Celder margin and a fan of small channels off it.' }),
+  'East Mithala': Object.freeze({ id: 'lower-plain', name: 'The lower Mithala', ground: '#63783e', canopy: '#4d6b3b', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'rank-grass', ownScatter: true,
+    relief: { amplitude: .5, wavelength: 320 }, clearings: ['east-mithala-mouth'],
+    note: 'The lowest and flattest quarter, where the channels gather again and the river goes to the sea: green rank grass on the wettest ground on the plain, a gallery of willow and poplar two trees deep on the main channel, and the first dark line of the Acorwood on the north-eastern horizon.' }),
+  'North Mithala': Object.freeze({ id: 'fen-margin', name: 'The northern Mithala', ground: '#6b8045', canopy: '#4a6640', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'sedge-grass', ownScatter: true,
+    relief: { amplitude: .55, wavelength: 320 }, clearings: ['north-mithala-fen'],
+    note: 'The plain going north until it stops being plain: tall grass on the dry shelf in the south, sedge and rush on the damp fall toward the Acor Wetlands, the north braid coming down out of that ground on two heads, and the Acorwood thickening along the northern horizon without a wall or a cliff to announce it.' }),
+  // The southwestern block (src/southwest-world.js, src/southwest-scenery.js): four countries in the
+  // driest quarter of the continent, and the first `BWh` - true hot desert - ground in Azhora.
+  // Eighty-one of their hundred and seven hexes read `BWh` on the World Builder map, against
+  // `BSh` eighteen times in West Pyros's eastern columns and `Csa`/`Csb` on the seven green hexes at
+  // the block's two wet corners. All four scatter their own country, because on this ground what
+  // grows is decided by how far a point is from water and how much fine sediment the wind has left
+  // it, and a single count per hex cannot say either.
+  Navarth: Object.freeze({ id: 'navarth-plateau', name: 'The Navarth plateau', ground: '#6f6449', canopy: '#576046', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: 1.1, wavelength: 320 }, clearings: ['navarth-crests'],
+    note: 'The block’s high ground: a worn tableland of pale stone and thin soil at forty-odd metres with ten hexes of rounded hills on it, the highest along the western rim above the Ganesh. Hot desert over twenty of its twenty-two hexes, with a bare scrub of wormwood and thorn spaced wide; the north-eastern tip is the exception, two `Csb` hexes where the Ibenwood’s southern edge reaches in and the one forest hex the atlas gives this quarter stands.' }),
+  'West Pyros': Object.freeze({ id: 'pyros-steppe', name: 'The West Pyros plain', ground: '#6c6944', canopy: '#546241', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'bunch-grass', ownScatter: true,
+    relief: { amplitude: .9, wavelength: 320 }, clearings: ['vaellir-gallery'],
+    note: 'An open plain falling south along the great river that is its whole eastern border: semi-arid bunch grass with bare earth between the tussocks over most of it, desert scrub on the western columns against Navarth, and a green southern tip where the river reaches the sea and the country turns Mediterranean for the last hex and a half. The gallery on the water is the only wood in the block outside Navarth’s one forest hex.' }),
+  'Ganesh Desert': Object.freeze({ id: 'ganesh-desert', name: 'The Ganesh', ground: '#776d54', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .9, wavelength: 320 }, clearings: ['ganesh-washes'],
+    note: 'Thirty-one hexes of true hot desert, every one of them `BWh`, falling north-west to a gulf shore it is arid right up to. Flat to gently rolling, the relief made by old alluvium and not by uplift; wind is the defining force, and what it leaves is a thin sheet of fine pale sediment over stone, swept bare on the rises and gathered in the pockets. Sparse deep-rooted perennial scrub, a stubble of dead annual seed-heads where a wet year’s flush would be, and two dry washes with nothing in them but one damp reach.' }),
+  'Ganesh Plain': Object.freeze({ id: 'ganesh-plain', name: 'The Ganesh Plain', ground: '#70684c', canopy: '#586341', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .85, wavelength: 320 }, clearings: ['ganesh-depressions'],
+    note: 'The transition ground between the desert and the green south-east, and it cannot decide which it is: level clay-floored country crossed by shallow drainage channels too diffuse to be rivers, with closed depressions strung along them where water concentrates and the grass lasts longest. Dry-year face, so the perennial bunch grass has contracted to the depressions and the open ground between them is scrub and bare clay; the south-eastern corner, one `Csa` hex and three `Csb`, is where Marosh’s country begins and is green.' }),
+  // The four Meroshe deserts (src/southwest-world.js, src/southwest-scenery.js): the atlas gives all
+  // ninety-five hexes the same terrain word (`plains`) and the same climate code (`BWh`) - the
+  // largest single-character expanse in the game by a wide margin, and the whole problem of the job.
+  //
+  // **So they are told apart by what the ground is made of, which is the one thing the atlas's one
+  // word conceals.** Erg, reg and hamada are the real and distinct surfaces of a hot desert and the
+  // game had drawn none of them; the lore's own account of the Moroshe is exactly that division -
+  // "the rocky hammada of the northern transition zone... through the great sand seas of the central
+  // interior, to the canyon country of the south". North is the hamada, Central the erg, South the
+  // reg under the fog off the ocean, and West the fan skirt below the Dinelv escarpment with a salt
+  // pan at its foot. Every one scatters its own country, because on a surface this uniform what
+  // grows is decided by grain size and by fog and by nothing a per-hex count can say.
+  'North Meroshe Desert': Object.freeze({ id: 'meroshe-hamada', name: 'The Meroshe hamada', ground: '#67634e', canopy: '#4e5440', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: 1.15, wavelength: 320 }, clearings: ['meroshe-benches'],
+    note: 'Bare rock, and the only country in the desert with trees standing on it. The lore’s northern transition zone: "flat gravel plains and exposed bedrock where scrubby thorn trees still manage to exist", with the hard beds standing out of the floor in low steps a metre or two high that run on one bearing for hundreds of paces and then give out. Twenty-three hexes of `BWh`, the highest of the four, coming off the Ganesh Plain over ten hex edges with nothing to mark the change but the stone coming up through the dust.' }),
+  'West Meroshe Desert': Object.freeze({ id: 'meroshe-fans', name: 'The Meroshe fan skirt', ground: '#655d48', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .85, wavelength: 320 }, clearings: ['meroshe-salt-pan'],
+    note: 'The desert between a highland and an ocean. Three broad alluvial fans spread west off the Dinelv escarpment - coarse gravel at their heads, sorting finer the further out they go, because that is what a fan does with the water that comes down it twice in a decade - and where the last of them dies there is a salt pan, dead flat and crusted white and the one place in ninety-five hexes where water can be seen and not drunk. Ten of its hex edges are the open western ocean, and it is as dry a hundred paces inland of the surf as it is twenty miles in.' }),
+  'Central Meroshe Desert': Object.freeze({ id: 'meroshe-erg', name: 'The Meroshe sand sea', ground: '#736a4e', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'none', ownScatter: true,
+    relief: { amplitude: .55, wavelength: 320 }, clearings: ['meroshe-sand-sea'],
+    note: 'The erg, and the first sand sea in the game: thirty-one hexes of linear dunes running north-west to south-east on the summer wind’s own bearing, six to eight metres crest to floor, with dead-flat gravel corridors between them that are the only way through. "The central sand seas are genuinely extreme... Navigating the sand seas without local knowledge is considered one of the more reliable methods of dying on Azhora." It is the one country in Azhora that has no horizon: whichever way a traveler looks, the next ridge is two hundred paces away.' }),
+  'South Meroshe Desert': Object.freeze({ id: 'meroshe-reg', name: 'The Meroshe stone floor', ground: '#3d3427', canopy: '#464a30', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: .6, wavelength: 320 }, clearings: ['meroshe-fog-margin'],
+    note: 'The reg: a floor of close-packed pebbles varnished almost black, flat enough to see twenty miles over and swept so clean that a footprint shows. Thirteen of its hex edges are Trogo’s tropical rainforest, four are the southern ocean, and what crosses the line between them is the fog - "where desert air meets ocean-loaded humidity along the southeastern ridge, fog forms and stays, sometimes for days" - so the southern third of this country is desert that gets wet without ever being rained on, and carries a crust and a thorn scrub that the rest of the Meroshe cannot.' }),
+  // The three countries of the block's western edge (src/southwest-world.js, src/southwest-scenery.js),
+  // and each of them is a first. **Cape Heth is the only country on the atlas that holds a `coast`
+  // hex** - 1,332 of them ring the continent and exactly one falls inside somebody's outline, at the
+  // point of this cape. **The Dinelv Highlands are the only desert highland**: `BWh` on all
+  // thirty-five hexes with twenty-six `hills`, three `mountain` and six `plains`, and those three are
+  // the only hot-desert `mountain` hexes on the whole map. **Hama is the wet edge of the desert**, nine
+  // `Csb` hexes against ten `BWh` with the terrain word and the climate code drawing the same line on
+  // all nineteen. All three scatter their own country, because what grows on each is decided by
+  // distance from the surf, by height on an escarpment, or by which side of one line a point stands.
+  'Cape Heth': Object.freeze({ id: 'heth-cape', name: 'Cape Heth', ground: '#514e40', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'salt-scrub', ownScatter: true,
+    relief: { amplitude: .8, wavelength: 320 }, clearings: ['heth-point'],
+    note: 'A low desert promontory with the sea on three sides of it: "not a dramatic geographical feature in the mode of high cliff headlands... a low, extended point of land that juts far enough west to matter as a navigational landmark". Grey-brown marine sandstone soft enough to work with hand tools, one long low ridge down the spine with a spray-swept western face and a sheltered eastern one, drainage hollows on the lee side where what soil there is has gathered, and at the tip the only `coast` hex the atlas gives any country. Twenty-one of its hex edges are open water and eighteen of its nineteen hexes are hot desert.' }),
+  'Dinelv Highlands': Object.freeze({ id: 'dinelv-plateau', name: 'The Dinelv plateau', ground: '#4d4839', canopy: null, treesPerHex: 0, rocksPerHex: 0, undergrowth: 'desert-scrub', ownScatter: true,
+    relief: { amplitude: 3.2, wavelength: 320 }, clearings: ['dinelv-north-pass'],
+    note: 'The first desert highland in the game, and the high ground of the whole southwest: an arid plateau standing eighty metres over the cape on one side and the sand deserts on the other, reached by stepped escarpments whose cliff faces show the rock in horizontal bands - warm-toned stone low down, harder dark stone above. On top, a rolling upland of thin soil and spaced scrub with ridge systems crossing it north to south, three passes through them, six closed basins where the runoff dies, and three residual massifs standing over the lot. Hot desert on every one of its thirty-five hexes, tops included.' }),
+  Hama: Object.freeze({ id: 'hama-corner', name: 'The Hama corner', ground: '#475433', canopy: '#3c5030', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'rank-grass', ownScatter: true,
+    relief: { amplitude: 1.1, wavelength: 320 }, clearings: ['hama-green-line'],
+    note: 'Where the desert stops. Hama holds the corner of the continent - ocean on the west and ocean on the south - and the atlas splits it in half twice over: nine `grassland` hexes that are all `Csb` on the seaward side, ten `plains` hexes that are all `BWh` inland, and no hex where the two fields disagree. So the green is real winter-rain Mediterranean grass two hexes deep along the surf, the dry half is a stony broken rise between it and the Meroshe - "rough without being impassable" - and the line between them is the only place in the southwest where the aridity gradient reaches a green country from the dry side.' }),
+  // ---------------------------------------------------------------------------
+  // Marosh and Trogo (src/southwest-world.js): the block's eastern edge, and the last two countries
+  // of the southwest quarter. **Neither has a single `BWh` hex**, which nothing else in thirteen
+  // countries can say, and between them they hold fifty hex edges of open ocean on the Iberos side
+  // of the peninsula - the side the whole Meroshe is in the lee of.
+  Marosh: Object.freeze({ id: 'marosh-ridge', name: 'The Marosh ridge', ground: '#4d5c33', canopy: '#3a4f2c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
+    relief: { amplitude: 2.6, wavelength: 320 }, clearings: ['marosh-water-gap'],
+    note: 'The wall the Meroshe is behind. Eighteen hexes in a strip two wide down the peninsula\u2019s Iberos face, and the atlas draws the same line twice over: eight `hills` hexes that are every one of them `Csb` on the inland side, ten `grassland` hexes that are every one of them `Csa` on the seaward side, and no hex where the two fields disagree. So the inland half is a single oak-and-maquis ridge at seventy-four metres, catching the sea air and wringing it out, and the seaward half is a hot-summer Mediterranean terrace of grass and aromatic scrub falling to twenty hex edges of open water. One gap through the ridge, where the atlas draws the only river it gives this coast.' }),
+  Trogo: Object.freeze({ id: 'trogo-rainforest', name: 'The Trogo rainforest', ground: '#2c3a24', canopy: '#24361f', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'dense', ownScatter: true,
+    relief: { amplitude: 2.4, wavelength: 320 }, clearings: ['trogo-fog-ridge'],
+    note: 'The first rainforest in the game: twenty-two `deep_forest` hexes that are every one of them `Af` - tropical, with no dry season, the wettest code the atlas paints anywhere - with seven `Csa` `grassland` hexes along the southern shore where the forest stops, and no hex where the two fields disagree. A slope forest on the ridge that makes it: the ridge catches the southern ocean\u2019s moisture, drops a fog wall on its windward face and leaves the Meroshe in its lee, which is why there is a desert one hex west of a rainforest. **Two rules of its own**: a haze so thick that a traveler is half hidden at fifty-eight paces, and an undergrowth that can be walked along the watercourses, the animal paths and the clearings and not through the thicket between them.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

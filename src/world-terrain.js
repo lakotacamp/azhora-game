@@ -18,6 +18,8 @@ import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
 import { ovesTint } from './oves-world.js';
+import { mithalaTint } from './mithala-world.js';
+import { southwestTint } from './southwest-world.js';
 import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
@@ -275,6 +277,49 @@ export function groundBeforeFeradom(x, z) {
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
+/**
+ * **The countries whose ground colour their region's swatch cannot carry, as a table walked in order.**
+ *
+ * This was an `if/else` chain that grew one branch per country, and it failed silently twice. Job 2 of
+ * the southwest found that `southwestTint` had been computed and then dropped on the floor since the day
+ * the block was built - so the Ganesh's swept floor and sediment pockets, the Ganesh Plain's green
+ * depressions, the damp reach and both wet corners had all been drawn as the flat biome swatch, and
+ * nobody could have noticed until a job arrived whose countries could only be told apart by their
+ * colour. Job 3 met the same failure mode one level down, inside `southwestTint`, where an early
+ * `return` would have thrown the Dinelv plateau's colours away on the three hundred metres its box
+ * overlaps the Meroshe's. **Both reports asked for this chain to become a list of pairs walked in
+ * order**; this is that, and it is the last job of the southwestern programme, so it is done here.
+ *
+ * The order is the chain's own and it matters: Gala first, because it matches on one swatch and one box;
+ * then the Oves, the Mithala and the southwest, each of which answers `null` everywhere it has no
+ * opinion. The first family with an opinion paints, exactly as the first true branch did, and a family
+ * that has none costs one call. Nothing about the colour of any ground in Azhora changes.
+ *
+ * `tests/southwest-world.test.js` holds the guard the silent failures wanted: **every family in this
+ * table must move the colour of the screen somewhere in its own country.** Adding a sixth is one row
+ * here and one row there, and forgetting the second turns the test red with the family's own name in it.
+ *
+ * **And the level below is a table too, as of 2026-10-01**: `southwestTint` was still a chain of three
+ * boxes with a branch per country nested inside each - which is the shape job 3 nearly lost the Dinelv
+ * plateau's colours to - and is now `SOUTHWEST_TINTS`, thirteen rows walked in order, each naming the
+ * country it speaks for. Its own guard holds two things the one here cannot: that every row paints
+ * somewhere on its own country's hexes, and that every one of the thirteen countries comes out tinted.
+ */
+const GROUND_TINTS = Object.freeze([
+  Object.freeze({ id: 'gala',
+    tint: (x, z, ground) => (inGalaBox(x, z) && ground === REGION_TERRAIN.Gala.ground ? galaGroundColour(x, z) : null) }),
+  Object.freeze({ id: 'oves', tint: ovesTint }),
+  Object.freeze({ id: 'mithala', tint: mithalaTint }),
+  Object.freeze({ id: 'southwest', tint: southwestTint }),
+]);
+/**
+ * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
+ * list is exactly the four it knows about and that every one of them moves the colour of the ground
+ * somewhere in its own country - so a fifth family added here turns the test red with its own id in the
+ * message, and a family that quietly stops painting turns it red with the same.
+ */
+export const GROUND_TINT_FAMILIES = Object.freeze(GROUND_TINTS.map(family => family.id));
+
 export function groundTint(color, x, z, THREE) {
   const mix = terrainMix(x, z), distance = landDistance(x, z);
   const target = new THREE.Color(0, 0, 0);
@@ -288,11 +333,21 @@ export function groundTint(color, x, z, THREE) {
   // in Ovesos the field calls the open steppe and the Sorten's bottomland the same word, and in the
   // desert it calls the soil pockets and the bare rock exposures the same word (`ovesTint`,
   // src/oves-world.js). Both answer null everywhere else, and everywhere else nothing changes.
-  const gala = inGalaBox(x, z) ? REGION_TERRAIN.Gala.ground : null;
+  // The Mithala's four have it worst of all, and for the oldest reason there is: on a flood plain
+  // what decides the colour of the ground is how far it is from a channel, because that decides how
+  // often it is under water. The levee crest, the open plain and the backswamp between two channels
+  // are three different colours inside two hundred metres, and the northern fen margin a fourth
+  // (`mithalaTint`, src/mithala-world.js).
+  // And in the southwestern block four more, because there what decides the colour is how dry the
+  // air is (a gradient across all four countries), whether the wind has swept the sediment off the
+  // stone (which changes over forty metres in the Ganesh), whether a point is in one of the Ganesh
+  // Plain's depressions, which is where all the grass on that plain is, and whether it is on the
+  // damp reach, which is the only green in the desert (`southwestTint`, src/southwest-world.js).
   for (const [ground, weight] of Object.entries(mix.grounds ?? {})) {
     if (!weight) continue;
-    const oves = ovesTint(x, z, ground);
-    if (ground === gala) swatch.set(galaGroundColour(x, z)); else if (oves !== null) swatch.set(oves); else swatch.set(ground);
+    let painted = null;
+    for (const family of GROUND_TINTS) { painted = family.tint(x, z, ground); if (painted != null) break; }
+    swatch.set(painted ?? ground);
     target.r += swatch.r * weight; target.g += swatch.g * weight; target.b += swatch.b * weight; total += weight;
   }
   if (total) { target.r /= total; target.g /= total; target.b /= total; }
