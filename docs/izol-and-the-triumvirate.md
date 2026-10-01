@@ -10,6 +10,12 @@ maritime power of the Iberos Sea).
 
 ## What Izol did while Ambron burned
 
+**30 September 2026 staging update:** the latest Menora brief places Wilhelm and
+his army at Menora at the start of the game. Older references below to the Nylon
+siege must not place him there or trap him there. The current status of that
+operation, any remaining garrison and its relationship to Hesk's later chapter
+need review; none is newly decided by the Menora implementation.
+
 - **978** — While the Empire is tearing itself apart, the Izoli Republic goes to war with
   **Selemis** and **breaks the Selemi fleet at sea**. Nobody expected this. Selemis has been the
   most consequential point of maritime power on the continent for two centuries, and Izol is a

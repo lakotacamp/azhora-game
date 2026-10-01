@@ -43,7 +43,11 @@ test('the baked survey carries every playable region and the land around them', 
   // regions so the coastline knows where the Stills begin.
   const land = new Set(LAND_HEXES.map(([q, r]) => `${q},${r}`));
   for (const region of PLAYABLE_SURVEY.regions) for (const cell of region.cells) assert.ok(land.has(`${cell.q},${cell.r}`));
-  assert.ok(LAND_HEXES.length > PLAYABLE_SURVEY.regions.reduce((sum, region) => sum + region.cells.length, 0) * 2);
+  // Compare actual surrounding atlas land; its ratio to built land decreases as regions open.
+  for(const region of atlas.regions) for(const c of region.cells) {
+    if(c.q>=WINDOW.minQ&&c.q<=WINDOW.maxQ&&c.r>=WINDOW.minR&&c.r<=WINDOW.maxR)
+      assert.ok(land.has(`${c.q},${c.r}`), `missing coast context ${c.q},${c.r}`);
+  }
   for (const [q, r] of LAND_HEXES) assert.ok(q >= WINDOW.minQ && q <= WINDOW.maxQ && r >= WINDOW.minR && r <= WINDOW.maxR);
 });
 

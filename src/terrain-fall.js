@@ -50,7 +50,8 @@ export function createTerrainFall() {
     const magnitude = Math.max(1, Math.hypot(sx, sz));
     for (let i = 0; i < steps && active; i++) {
       elapsed += step;
-      const start = surfaceAt(position.x, position.z);
+      const beforeY = position.y;
+      const start = surfaceAt(position.x, position.z, { maxY: beforeY });
       const steepContact = !start.water && start.slope > CLIMBING.grabSlope
         && position.y <= start.height + .08 && velocity <= 0;
       drift.x += sx / magnitude * 3 * step; drift.z += sz / magnitude * 3 * step;
@@ -68,7 +69,8 @@ export function createTerrainFall() {
       velocity -= TERRAIN_FALL.gravity * step;
       position.y += velocity * step;
       peak = Math.max(peak, position.y);
-      const ground = surfaceAt(position.x, position.z);
+      // Resolve against the previous feet height, so a fast fall cannot pass through a deck.
+      const ground = surfaceAt(position.x, position.z, { maxY: beforeY });
       if (velocity <= 0 && position.y <= ground.height) {
         position.y = ground.height;
         const blocked = Math.hypot(position.x - bx, position.z - bz) < 1e-5;

@@ -228,3 +228,75 @@ test('a focus tip reaching through a wall cannot launch a fireball beyond it',()
   assert.equal(game.magic.view().projectiles.length,0);
   assert.equal(game.events.filter(e=>e.type==='spell-stopped').length,1);
 });
+
+const ranger = (id,y,extra={}) => ({id:`ibenwood-ranger-${id}`,x:0,y,z:6,r:.4,
+  minY:y,maxY:y+1.95,hp:100,maxHp:100,team:'enemy',...extra});
+function fireAtRangers(bodies,{height=2.7,colliders=[],walkSurfaces=[],ground=()=>1.5}={}) {
+  const game=fixture({bodies,colliders,getCastOrigin:()=>({x:0,y:height,z:0})});
+  game.position.y=height-1.2;game.world.heightAt=ground;game.world.walkSurfaces=walkSurfaces;
+  game.magic.learn('fireball');assert.equal(game.magic.cast('fireball').ok,true);
+  game.run(2);return game;
+}
+
+test('fireballs above or below forest rangers miss instead of hitting their ground projection',()=>{
+  for(const [height,feet] of [[2.7,8],[9.2,1.5]]) {
+    const target=ranger('other-floor',feet),game=fireAtRangers([target],{height});
+    assert.equal(target.hp,100);assert.equal(game.skills.xp('fire'),0);
+    assert.equal(game.events.filter(event=>event.type==='spell-impact').length,0);
+    assert.equal(game.events.filter(event=>event.type==='spell-released').length,1);
+  }
+  const target=ranger('same-floor',8),game=fireAtRangers([target],{height:9.2});
+  assert.equal(target.hp,74);assert.equal(game.skills.xp('fire'),21);
+  const impacts=game.events.filter(event=>event.type==='spell-impact');assert.equal(impacts.length,1);
+  assert.equal(impacts[0].y,9.2);assert.equal(impacts[0].impact.y,9.2);
+  assert.ok(Math.abs(impacts[0].impact.z-(6-.4-.34))<1e-8);
+});
+
+test('a fireball passes under bounded canopy rails and decks to hit a ranger on the ground',()=>{
+  const target=ranger('below-deck',1.5),game=fireAtRangers([target],{
+    colliders:[{kind:'canopy-rail',x:0,z:3,hx:2,hz:.08,minY:8,maxY:9.2}],
+    walkSurfaces:[{id:'overhead-deck',kind:'deck',a:{x:0,y:8,z:0},b:{x:0,y:8,z:7},width:3}]});
+  assert.equal(target.hp,74);assert.equal(game.events.some(event=>event.type==='spell-stopped'),false);
+  assert.equal(game.events.filter(event=>event.type==='spell-impact').length,1);
+});
+
+test('canopy floor slabs, upper rails and terrain stop fireballs before forest rangers',()=>{
+  for(const obstacle of [
+    {walkSurfaces:[{id:'low-deck',kind:'deck',a:{x:0,y:2.9,z:3},b:{x:0,y:2.9,z:4},width:3}]},
+    {height:9.2,colliders:[{kind:'canopy-rail',x:0,z:3,hx:2,hz:.08,minY:8,maxY:9.2}]},
+    {ground:(_x,z)=>z>3&&z<4?3.5:1.5},
+    {colliders:[{kind:'tree',x:0,z:3.137,r:.005,minY:1.5,maxY:14}]}
+  ]) {
+    const target=ranger('covered',obstacle.height?8:1.5),game=fireAtRangers([target],obstacle);
+    assert.equal(target.hp,100);assert.equal(game.skills.xp('fire'),0);
+    const stopped=game.events.filter(event=>event.type==='spell-stopped');assert.equal(stopped.length,1);
+    assert.ok(stopped[0].z<4);assert.equal(stopped[0].y,obstacle.height??2.7);
+    assert.equal(game.magic.view().projectiles.length,0);
+  }
+});
+
+test('the earliest swept ranger contact wins over roster order and cover later in the same step',()=>{
+  const near=ranger('near',1.5,{z:5.37,r:.01}),far=ranger('far',1.5,{z:5.40,r:.01});
+  // At 17 m/s these contacts all fall in the 4.958..5.100 m simulation step.
+  const game=fireAtRangers([far,near],{colliders:[{kind:'wall',x:0,z:5.42,hx:2,hz:.01}]});
+  assert.equal(near.hp,74);assert.equal(far.hp,100);assert.equal(game.skills.xp('fire'),21);
+  assert.equal(game.events.filter(event=>event.type==='spell-impact').length,1);
+  assert.equal(game.events.some(event=>event.type==='spell-stopped'),false);
+  assert.ok(Math.abs(game.events.find(event=>event.type==='spell-impact').impact.z-5.02)<1e-8);
+});
+
+test('cover before a ranger wins even when both are reached during the same fireball step',()=>{
+  const target=ranger('behind-wall',1.5,{z:5.37,r:.01});
+  const game=fireAtRangers([target],{colliders:[{kind:'wall',x:0,z:5.35,hx:2,hz:.01}]});
+  assert.equal(target.hp,100);assert.equal(game.events.some(event=>event.type==='spell-impact'),false);
+  const stop=game.events.find(event=>event.type==='spell-stopped');assert.ok(stop);
+  assert.ok(Math.abs(stop.z-5)<1e-8);
+});
+
+test('fireball release checks cover at the raised hand instead of the player’s ground footprint',()=>{
+  const target=ranger('clear-under-rail',1.5);
+  const game=fixture({bodies:[target],colliders:[{kind:'rail',x:0,z:.5,hx:2,hz:.1,minY:8,maxY:9.2}],
+    getCastOrigin:()=>({x:0,y:2.7,z:1})});
+  game.magic.learn('fireball');game.magic.cast();game.run(2);
+  assert.equal(target.hp,74);assert.equal(game.events.some(event=>event.type==='spell-stopped'),false);
+});

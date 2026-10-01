@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
-  'West Lotharn Mountains'];
+  'West Lotharn Mountains', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre'];
 /**
  * **Lake hexes that belong to the region all round them.** The World Builder map paints these
  * `lake`; the dev atlas this script reads leaves them unclaimed, because a lake is nobody's
@@ -69,7 +69,7 @@ export const ENCLOSED_LAKES = Object.freeze({ 'South Suval': Object.freeze([Obje
  * channel one hex wide - and with 133 they were all the sea: the tip would have looked out on open
  * water where the atlas draws Selemi's shore. So 135, the last row the lattice reaches, and no slack.
  */
-export const WINDOW = { minQ: -33, maxQ: 34, minR: 90, maxR: 135 };
+export const WINDOW = { minQ: -41, maxQ: 34, minR: 87, maxR: 135 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

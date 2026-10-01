@@ -1,8 +1,17 @@
 import { regionFirePits } from './regions.js';
 import { OUTPOST_FIRE } from './outpost.js';
 import { FARM_FIRE } from './farming.js';
+import { GROVE_WOOD } from './ibenwood-pilot.js';
+import { IBENWOOD_BRANCH_IDS } from './ibenwood-gathering.js';
 // Every fire the world lights, including Stanley's shared garden cooking fire.
 const KNOWN_FIRES = new Set(['village-fire', 'pond-fire', ...regionFirePits.map(fire => fire.id), OUTPOST_FIRE.id, FARM_FIRE.id]);
+// Explicit pickup identities retain every original stick and grove save.
+const KNOWN_STICKS = new Set([
+  ...Array.from({ length: 7 }, (_, pocket) => [1, 2].map(slot => `stick-${pocket + 1}-${slot}`)).flat(),
+  ...GROVE_WOOD.map(site => site.id), ...IBENWOOD_BRANCH_IDS,
+]);
+const knownStickIds = value => Array.isArray(value) && value.length <= KNOWN_STICKS.size
+  && new Set(value).size === value.length && value.every(id => KNOWN_STICKS.has(id));
 const uniqueIds = (value, pattern, limit) => Array.isArray(value) && value.length <= limit
   && new Set(value).size === value.length && value.every(id => typeof id === 'string' && pattern.test(id));
 
@@ -13,7 +22,7 @@ export function validateWoodlandProgress(value, stock) {
     || (Object.hasOwn(value, 'practiceGuards') && (!Number.isSafeInteger(value.practiceGuards) || value.practiceGuards < 0 || value.practiceGuards > 1))
     || !Number.isSafeInteger(value.practiceDodges) || value.practiceDodges < 0 || value.practiceDodges > 1
     || !uniqueIds(value.acorns, /^acorn-[1-6]-[1-4]$/, 24)
-    || !uniqueIds(value.sticks, /^stick-[1-7]-[1-2]$/, 14)
+    || !knownStickIds(value.sticks)
     || !uniqueIds(value.fruits, /^pawpaw-[1-6]-[1-2]$/, 12)
     || !uniqueIds(value.discoveries, /^[a-zA-Z][a-zA-Z0-9-]{0,63}$/, 400)) return false;   // room for every landmark the regions add: the world drew 162 when the cap was 160, and a save past the cap is refused whole
   const camp = value.camp;

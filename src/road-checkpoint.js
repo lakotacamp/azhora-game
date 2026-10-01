@@ -1,3 +1,5 @@
+import { validateIbenwoodDefenseSnapshot } from './ibenwood-defense.js';
+import { IBENWOOD_BOUNDARY } from './ibenwood-boundary.js';
 import { validateBarrettGeography } from './barrett-geography.js';
 import { AMBRON_LAYOUT_VERSION } from './ambron-city-layout.js';
 import { migrateAmbronPlayer, migrateAmbronCagney } from './ambron-checkpoint-migration.js';
@@ -16,6 +18,7 @@ import { createSpiderQuest, validateSpiderQuestSnapshot } from './spider-quest.j
 import { createMurderQuest, validateMurderQuestSnapshot } from './murder-quest.js';
 import { createCatQuest, validateCatQuestSnapshot } from './cat-quest.js';
 import { createCagneyQuest, validateCagneySnapshot } from './cagney-quest.js';
+import { validateFrontierRaids } from './frontier-raids.js';
 import { validateKaylaSnapshot } from './kayla.js';
 import { createKaylaRace, validateKaylaRaceSnapshot } from './kayla-race.js';
 import { CUB_HONEY_ITEM } from './cub-honey-quest.js';
@@ -28,6 +31,7 @@ import { createJourney } from './journey.js';
 import { validateWeaponSnapshot, WEAPON_TYPES, TRADEABLE_WEAPONS } from './weapons.js';
 import { mercenaryById } from './mercenaries.js';
 import { validatePlayerCharacter } from './player-characters.js';
+import { validWalkSurfaceId } from './walk-surfaces.js';
 import { journeySites, WORLD_BOUNDS as PLAYABLE_BOUNDS } from './regions.js';
 import { METRES_PER_HEX, AUTHORED_METRES_PER_HEX, toWorld } from './world-scale.js';
 import { validateWoodlandProgress, copyWoodlandProgress } from './woodland-progress.js';
@@ -100,7 +104,7 @@ export const ROAD_CHECKPOINT_KEY = 'azhora-road-checkpoint-v1';
 export const ROAD_CHECKPOINT_VERSION = 1;
 // The playable extent comes from the authored regions (worldBoundsFor), so a
 // saved position is judged against the ground that actually exists.
-const WORLD_BOUNDS = Object.freeze({ ...PLAYABLE_BOUNDS });
+const WORLD_BOUNDS = PLAYABLE_BOUNDS;
 const failed = reason => ({ ok: false, data: null, reason });
 const suvalFlightCells = new Set(SUVAL_FLIGHT_REGIONS.flatMap(name => REGION_CELLS[name].map(cell => `${name}:${cell.q},${cell.r}`)));
 function validBatmanSave(data, stock) {
@@ -226,6 +230,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (!validateTroupeSnapshot(data.troupe)) return failed('The saved players of Nylon are invalid.');
     if (!validateBrandySnapshot(data.brandy)) return failed('The saved visit to Brandy Frank is invalid.');
     if (!validateJesseCarriage(data.jesseCarriage)) return failed('The saved carriage lesson is invalid.');
+    if (!validateIbenwoodDefenseSnapshot(data.ibenwoodDefense,IBENWOOD_BOUNDARY.rangerPosts)) return failed('The saved elven rangers are invalid.');
     if (!validateBrandyHousehold(data.brandyHome)) return failed('The saved household of Jon and Brandy is invalid.');
     if (!validateSaltSnapshot(data.salt)) return failed('The saved voyage of the Sultana is invalid.');
     if (!validateWoodcuttingSnapshot(data.woodcutting)) return failed('The saved woodcutting is invalid.');
@@ -266,6 +271,8 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
       && data.worldScale !== METRES_PER_HEX && data.worldScale !== AUTHORED_METRES_PER_HEX)
       return failed('The saved checkpoint was taken in a world this build cannot place you in.');
     const saved = data.position;
+    if (saved && Object.hasOwn(saved, 'surfaceId') && !validWalkSurfaceId(saved.surfaceId))
+      return failed('The saved walking surface is invalid.');
     const migrate = !Object.hasOwn(data, 'worldScale') || data.worldScale === AUTHORED_METRES_PER_HEX;
     if (data.ambronLayoutVersion !== undefined && ![1, AMBRON_LAYOUT_VERSION].includes(data.ambronLayoutVersion))
       return failed('The saved capital layout is invalid.');
@@ -287,6 +294,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.murder !== undefined && !validateMurderQuestSnapshot(data.murder)) return failed('The saved case in Cobble is invalid.');
     if (data.cat !== undefined && !validateCatQuestSnapshot(data.cat)) return failed('The saved errand for Liz is invalid.');
     if (!validBatmanSave(data, stock)) return failed('The saved vigilante quest, carried flight, or bounty proof is inconsistent.');
+    if (!validateFrontierRaids(data.frontierRaids)) return failed('The saved frontier patrol is invalid.');
     if (!validateKaylaSnapshot(data.kayla)) return failed('The saved honey rounds are invalid.');
     if (!validateKaylaRaceSnapshot(data.kaylaRace)) return failed('The saved race for Kayla is invalid.');
     if (!validateCubHoneySnapshot(data.cubHoney)) return failed('The saved honey lesson for the cub is invalid.');
@@ -376,7 +384,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
       weapons: { version: 1, equippedId: data.weapons.equippedId,
         sword: { ...data.weapons.sword }, stick: { ...data.weapons.stick }, ...(data.weapons.extra ? { extra: { ...data.weapons.extra } } : {}) },
       journeyGathered: [...data.journeyGathered], meadowCleared: data.meadowCleared,
-      position: { x: p.x, z: p.z }, heardDoom: data.heardDoom,
+      position: { x: p.x, z: p.z, ...(!migrate && p.surfaceId ? { surfaceId: p.surfaceId } : {}) }, heardDoom: data.heardDoom,
     };
     // Which game this was. One field, and a save without it is a normal-mode adventure.
     if (Object.hasOwn(data, 'mode')) result.mode = data.mode;
@@ -428,6 +436,8 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (Object.hasOwn(data, 'brandy')) result.brandy = { ...data.brandy };
     if (data.jesseCarriage) result.jesseCarriage = JSON.parse(JSON.stringify(data.jesseCarriage));
     if (data.brandyHome) result.brandyHome = JSON.parse(JSON.stringify(data.brandyHome));
+    if (data.frontierRaids) result.frontierRaids=JSON.parse(JSON.stringify(data.frontierRaids));
+    if (data.ibenwoodDefense) result.ibenwoodDefense = JSON.parse(JSON.stringify(data.ibenwoodDefense));
     if (Object.hasOwn(data, 'salt')) result.salt = { ...data.salt };
     if (Object.hasOwn(data, 'woodcutting')) result.woodcutting = { ...data.woodcutting };
     if (Object.hasOwn(data, 'construction')) result.construction = { ...data.construction, posts: { ...data.construction.posts } };

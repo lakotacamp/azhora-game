@@ -107,10 +107,11 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * west: the peninsula lies inside the box Nethereum and Drent already made. So the north-south guard
    * goes to 37 and no further, with four-tenths of a metre to spare, and it gets a floor of its own.
    */
-  assert.ok(bounds.maxX - bounds.minX < 37 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 37 * METRES_PER_HEX, 'the playable regions fit a walkable world');
+  assert.ok(bounds.maxX - bounds.minX < 52.3 * METRES_PER_HEX && bounds.maxZ - bounds.minZ < 37 * METRES_PER_HEX, 'the playable regions fit a walkable world');
+  // Five Ibenwood regions extend the west edge by 1600m; north/south stay fixed.
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
-  assert.ok(bounds.maxX - bounds.minX > 36 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxX - bounds.minX > 52.1 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
   assert.ok(bounds.maxZ - bounds.minZ > 36.9 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 

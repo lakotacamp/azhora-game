@@ -1557,6 +1557,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   }
 
   const head = new THREE.Group();
+  head.name = 'Head';
   head.position.set(0, 1.365, 0);
   body.add(head);
   // A shaved head keeps the skull, and a shaved side keeps the temple, in the
@@ -1566,6 +1567,11 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   part(head, UNIT_CYLINDER, skinMat, [0, -0.035, 0], [0.069, 0.14, 0.069]);
   round(head, hairColors.length ? skinMat : crownMat, [0, 0.202, -0.045], [0.224, 0.227, 0.183]);
   round(head, skinMat, [0, 0.181, 0.015], [isCook || slight || isDyer ? 0.187 : 0.195, 0.228, 0.18]);
+  if (look?.elven) for (const side of [-1, 1]) {
+    const ear = part(head, new THREE.ConeGeometry(.075, .30, 4), skinMat, [side * .268, .235, -.01]);
+    ear.rotation.z = -side * 1.05; ear.name = 'Pointed elven ear';
+    head.userData.elven = true;
+  }
   for (const side of [-1, 1]) {
     round(head, skinMat, [side * 0.194, 0.186, 0], [0.047, 0.062, 0.044]);
     round(head, noseMat, [side * 0.212, 0.186, 0.027], [0.018, 0.032, 0.014]);
@@ -1574,14 +1580,15 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     round(head, dark, [side * 0.065, 0.226, 0.191], [0.018, isAvrelFarmer ? 0.018 : 0.025, 0.011]);
     round(head, whites, [side * 0.065 - 0.006, 0.235, 0.2], [0.006, 0.007, 0.004]);
     const brow = box(head, hairMat, [side * 0.069, 0.273, 0.167], [0.078, isCook || slight || isDyer ? 0.013 : 0.018, 0.02]);
-    brow.rotation.z = side * -0.075;
+    brow.rotation.z = look?.expression === 'twisted' ? (side < 0 ? -.32 : .16) : side * -0.075;
   }
   round(head, noseMat, [0, 0.178, 0.207], [0.04, 0.035, 0.044]);
   // A tiny smile rather than a painted texture.
   box(head, leather, [0, 0.116, 0.171], [0.051, 0.01, 0.012]);
   for (const side of [-1, 1]) {
     const mouthCorner = box(head, leather, [side * 0.029, 0.12, 0.168], [0.016, 0.008, 0.01]);
-    mouthCorner.rotation.z = side * 0.45;
+    mouthCorner.rotation.z = look?.expression === 'twisted' ? (side < 0 ? -.18 : .8) : side * .45;
+    if(look?.expression === 'twisted' && side > 0) mouthCorner.position.y += .018;
   }
   if (isMercenary) {
     // Seven ways to wear a jaw. Everything hangs in the head's own batch.
@@ -3087,7 +3094,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     part(elbows[1], UNIT_CYLINDER, strap, [0, -0.1, 0.004], [0.077, 0.09, 0.079]);
     const helmet = new THREE.Group();
     helmet.name = isSuvaliGuard ? 'Suvali iron cap' : isElodiGuard ? 'Elodi open helm' : isFeradomi ? 'Feradom nasal helm' : isOfficer ? 'Ambroni plumed helm' : 'Ambroni helm';
-    head.add(helmet);
+    if (look?.noHat !== true) head.add(helmet);
     if (isElodiGuard) {
       // A black hood drawn over a light open helm: the face bare, the hood falling to the shoulders.
       const hood = material(0x19191b);

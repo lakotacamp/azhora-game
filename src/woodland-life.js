@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GROVE_WOOD } from './ibenwood-pilot.js';
+import { createIbenwoodGatheringSites } from './ibenwood-gathering.js';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { canStand } from './game-state.js';
 import { REGION_CELLS } from './region-world.js';
@@ -128,6 +130,8 @@ export function createWoodlandLife(scene, world) {
       sticks.push({ id: `stick-${pocketIndex + 1}-${++count}`, x, z, name: 'Fallen stick', collected: false });
     }
   }
+  sticks.push(...GROVE_WOOD.map(s=>({...s})));
+  sticks.push(...createIbenwoodGatheringSites(world));
   const stickMeshes = new THREE.InstancedMesh(stickGeometry, coloredMaterial, sticks.length);
   stickMeshes.name = 'Collectible fallen sticks'; stickMeshes.castShadow = true; stickMeshes.receiveShadow = true; root.add(stickMeshes);
   const stickGlints = new THREE.InstancedMesh(new THREE.OctahedronGeometry(1, 0),

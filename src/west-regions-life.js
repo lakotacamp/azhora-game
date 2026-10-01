@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GROVE_WILDLIFE } from './ibenwood-pilot.js';
+import { IBENWOOD_LIFE_ZONES } from './ibenwood-life.js';
 import { canStand, canSwim } from './game-state.js';
 import { SEA_LEVEL } from './region-world.js';
 import { westWaterSurface } from './west-ground.js';
@@ -11,6 +13,8 @@ import { GALA_WILDLIFE_ZONES } from './gala-wildlife.js';
 import { ASCARTH_WILDLIFE_ZONES } from './ascarth-wildlife.js';
 import { OVES_WILDLIFE_ZONES } from './oves-wildlife.js';
 import { WEST_LOTHARN_WILDLIFE_ZONES } from './west-lotharn-wildlife.js';
+import { SOUTH_OREMINDI_WILDLIFE_ZONES } from './south-oremindi-wildlife.js';
+import { YUNETHRE_WILDLIFE_ZONES } from './yunethre-world.js';
 
 /**
  * The animals of the four western regions.
@@ -26,7 +30,7 @@ import { WEST_LOTHARN_WILDLIFE_ZONES } from './west-lotharn-wildlife.js';
  */
 
 const TAU = Math.PI * 2;
-const resident = zone => zone.habitat === 'woodland' || zone.habitat === 'countryside';
+const resident = zone => zone.habitat === 'woodland' || zone.habitat === 'countryside' || zone.habitat === 'mountain';
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const angleDelta = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const sphere = new THREE.IcosahedronGeometry(1, 1);
@@ -228,12 +232,37 @@ function models() {
       leg: geometry([Y(0x6b6154, [0, -.18, 0], [.066, .36, .068]), B(0x4c443a, [0, -.35, .025], [.12, .11, .16])]),
     },
 
-    /**
-     * The *vel-caric*: "a small, semi-aquatic carnivore with a distinctive
-     * dark-tipped tail and the narrow, mobile face of a creature that lives in
-     * river margins". Long in the body and low to the ground, rust over cream,
-     * with a full tail that ends in black.
-     */
+    'oremindi-snowgoat': {
+      // The lore's wild alpine animal, in its patchy grey-white summer coat.
+      // Upright black horns, a beard, deep shoulders and split hooves distinguish
+      // it from the domestic hill sheep. One shared body/head/leg rig per band.
+      body: geometry([
+        S(0xd8d8cf, [0, .81, -.04], [.29, .32, .54]),
+        S(0xe8e5d8, [0, .92, .28], [.28, .38, .28]),
+        S(0xa7aaa2, [-.17, .89, -.22], [.18, .22, .27]),
+        S(0xb6b8af, [.17, .80, .02], [.18, .24, .29]),
+        S(0xeeeeDF, [0, .67, .14], [.23, .24, .36]),
+        S(0xc7c9bf, [0, .87, -.55], [.09, .09, .17], [-.35, 0, 0]),
+        ...both(side => S(0xc4c6bc, [side * .19, .60, .36], [.105, .20, .15])),
+        ...both(side => S(0xadb0a6, [side * .19, .59, -.34], [.105, .20, .17])),
+      ]),
+      head: geometry([
+        S(0xe2e0d3, [0, .02, .04], [.14, .19, .21]),
+        S(0xb9bdb1, [0, -.07, .20], [.10, .11, .16]),
+        S(0x353a34, [0, -.08, .34], [.07, .06, .035]),
+        C(0xcbcfc2, [0, -.24, .10], [.08, .23, .065], [Math.PI, 0, 0]),
+        ...both(side => S(0xcfd2c5, [side * .18, .10, -.015], [.13, .065, .065], [0, 0, side * .15])),
+        ...both(side => C(0x373b35, [side * .08, .31, -.06], [.034, .34, .032], [-.4, 0, side * .10])),
+        ...both(side => S(0x151914, [side * .115, .055, .16], [.019, .022, .018])),
+      ]),
+      leg: geometry([
+        Y(0xb7bcaf, [0, -.24, 0], [.053, .48, .056]),
+        ...both(side => B(0x343a34, [side * .03, -.49, .025], [.049, .085, .14])),
+      ]),
+    },
+
+    /** The vel-caric: a long, low river-margin carnivore, rust over cream,
+     * with a narrow face and a full tail ending in black. */
     'river-fox': {
       body: geometry([
         S(0x9a5c33, [0, .27, -.02], [.115, .125, .30]),
@@ -288,12 +317,28 @@ function models() {
       ear: geometry([S(0x86704f, [0, .12, 0], [.04, .17, .036]), S(0xbda88c, [0, .125, .024], [.019, .128, .012])]),
     },
 
-    /**
-     * The dry-plateau hawk, which the fauna overview places in East Pyros where
-     * it "hunts the upland grasslands". Vastos's western margin is the Pyros
-     * transition zone, so it is carried east onto the plain; an extension, and
-     * noted as one. Drawn for the only way it is ever seen here: in the air.
-     */
+    'oremindi-mountain-eagle': {
+      // Named by the Oremindi fauna draft. Broad fingered wings and a gold nape
+      // distinguish this bird from the small plateau hawk without a new controller.
+      body: geometry([
+        S(0x594c39, [0, 0, -.025], [.11, .105, .27]),
+        S(0x7c6846, [0, -.04, .07], [.09, .075, .19]),
+        S(0x463c30, [0, -.005, -.35], [.10, .025, .18]),
+        S(0x9b8658, [0, .04, .22], [.075, .075, .09]),
+        C(0xb9a45c, [0, .013, .315], [.028, .095, .026], [Math.PI / 2 + .45, 0, 0]),
+        S(0x29291f, [0, -.026, .348], [.022, .035, .020]),
+        ...both(side => S(0x10130e, [side * .049, .065, .255], [.014, .015, .011])),
+      ]),
+      wing: geometry([
+        S(0x786748, [.30, 0, .015], [.35, .028, .18]),
+        S(0x65563e, [.69, -.008, -.04], [.34, .024, .14]),
+        ...Array.from({ length: 5 }, (_, i) => S(0x342f27, [.99 + i * .042, -.016, -.13 + i * .065],
+          [.19, .014, .037], [0, -.36 + i * .15, 0])),
+      ]),
+    },
+
+    /** The dry-plateau hawk of the East Pyros uplands, extended to Vastos's
+     * western plain. Drawn for the only way it is seen here: in the air. */
     'plateau-hawk': {
       body: geometry([
         S(0x7d6347, [0, 0, -.02], [.075, .075, .20]),
@@ -917,6 +962,10 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...ASCARTH_WILDLIFE_ZONES,
   ...OVES_WILDLIFE_ZONES,
   ...WEST_LOTHARN_WILDLIFE_ZONES,
+  ...SOUTH_OREMINDI_WILDLIFE_ZONES,
+  ...YUNETHRE_WILDLIFE_ZONES,
+  ...GROVE_WILDLIFE,
+  ...IBENWOOD_LIFE_ZONES,
 ]);
 
 /**
@@ -973,6 +1022,7 @@ const CIRCLE_RADIUS = 46, CIRCLE_PERIOD = 27;
  */
 const SOAR = Object.freeze({
   'plateau-hawk': { slow: .4, rock: .12, dihedral: .16 },
+  'oremindi-mountain-eagle': { slow: .3, rock: .09, dihedral: .10 },
   'turkey-vulture': { slow: .26, rock: .16, dihedral: .26 },
   harrier: { slow: .55, rock: .20, dihedral: .38 },
   // A seabird on long narrow wings held flat and nearly still: it rides the wind off the sea.
@@ -1000,6 +1050,7 @@ export const LIFE_REACH = 130;
 const GRAZER_RIG = Object.freeze({
   longhorn: { neck: .86, high: 1.38, low: .62, shoulder: .76, hip: .24, fore: .50, stride: .42 },
   'hill-sheep': { neck: .43, high: .84, low: .48, shoulder: .44, hip: .22, fore: .34, stride: .42 },
+  'oremindi-snowgoat': { neck: .40, high: 1.07, low: .72, shoulder: .53, hip: .20, fore: .36, stride: .40 },
   // The deer's pivot is its shoulder joint rather than the base of a head: `neck` and
   // `high` are where that joint is, and the 1.15 rad swing the grazing pose applies
   // carries the whole neck down with the head. `low` drops the joint a little as well,
@@ -1036,7 +1087,31 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   // stood in, and its duck are on it. The western rivers carry no level of their own for the world
   // to judge by, so on those a duck's water was always "ground", and nothing there changes.
   const footing = (x, z, zone) => canStand(x, z, world, zone.radius) || (zone.float && canSwim(x, z, world, zone.radius));
-  const valid = (x, z, zone) => inRange(x, z, zone) && footing(x, z, zone)
+  // Optional mountain habitat limits apply at the home and every movement step.
+  // Other regional populations retain their original footing rules.
+  function habitatFits(x, z, zone) {
+    if (zone.minHeight === undefined && zone.maxHeight === undefined && zone.maxSlope === undefined && !zone.waterOnly) return true;
+    const y = world.heightAt(x, z);
+    if (!Number.isFinite(y) || y < (zone.minHeight ?? -Infinity) || y > (zone.maxHeight ?? Infinity)) return false;
+    if (zone.waterOnly && (world.waterAt?.(x, z) ?? -Infinity) < y + .12) return false;
+    if (zone.habitat === 'mountain') {
+      for (const [dx, dz] of [[zone.radius, 0], [-zone.radius, 0], [0, zone.radius], [0, -zone.radius]]) {
+        const px = x + dx, pz = z + dz;
+        if (zone.keepRegion && world.regionAt && world.regionAt(px, pz)?.name !== zone.region) return false;
+        const water = world.waterAt?.(px, pz) ?? null;
+        if (zone.waterOnly ? water === null || water < world.heightAt(px, pz) + .12
+          : water !== null && water > world.heightAt(px, pz)) return false;
+      }
+    }
+    if (zone.maxSlope !== undefined && !zone.waterOnly) {
+      const s = Math.max(.4, zone.radius), e = world.heightAt(x + s, z), w = world.heightAt(x - s, z);
+      const n = world.heightAt(x, z - s), south = world.heightAt(x, z + s);
+      if (Math.hypot((e - w) / (2 * s), (south - n) / (2 * s)) > zone.maxSlope
+        || Math.max(Math.abs(e - y), Math.abs(w - y), Math.abs(n - y), Math.abs(south - y)) > s * zone.maxSlope) return false;
+    }
+    return true;
+  }
+  const valid = (x, z, zone) => inRange(x, z, zone) && footing(x, z, zone) && habitatFits(x, z, zone)
     && (!zone.keepRegion || !world.regionAt || world.regionAt(x, z)?.name === zone.region)
     && !(zone.exclusions ?? []).some(area => x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ);
   /**
@@ -1198,11 +1273,11 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * all. They turn to face you and give ground at about a walk, which is truer than fleeing and
    * keeps them from being chased to the horizon. The fox still never flees.
    */
-  const FLEE_AT = { longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
+  const FLEE_AT = { 'oremindi-snowgoat': 13, longhorn: 7.5, 'hill-sheep': 6.5, 'upland-hare': 9, otter: 8, 'wading-bird': 11, 'river-fox': 0,
     egret: 12, stilt: 11, duck: 10, gull: 9, boar: 8.5, 'red-deer': 18, 'nethrani-cattle': 7.5, goose: 14 };
-  const WALK = { longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
+  const WALK = { 'oremindi-snowgoat': .65, longhorn: .42, 'hill-sheep': .48, 'upland-hare': 1.9, otter: 1.1, 'wading-bird': .5, 'river-fox': .9,
     egret: .5, stilt: .8, duck: .45, gull: .7, boar: .6, 'red-deer': .7, 'nethrani-cattle': .38, goose: .5 };
-  const RUN = { 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
+  const RUN = { 'oremindi-snowgoat': 7.8, 'hill-sheep': 5.6, 'upland-hare': 9.6, otter: 8.2, 'wading-bird': 10,
     egret: 10, stilt: 10.4, duck: 9.8, gull: 11, boar: 8.4, 'red-deer': 10.5, goose: 10.6 };
   /**
    * Cattle, whatever breed. They do not bolt: they put their heads up, turn to face whoever
@@ -1221,7 +1296,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   /** The fox drifts back as fast as you come on, up to `cap`: only a flat run gains on it, and slowly. */
   const FOX = Object.freeze({ floor: 1, cap: 6.6, lead: 1.06, arm: 2.8, notice: 10 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
-  const RETURN = { longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
+  const RETURN = { 'oremindi-snowgoat': 1.8, longhorn: 1.3, 'hill-sheep': 1.5, 'upland-hare': 2.8, otter: 1.8, 'wading-bird': 1.4, 'river-fox': 1.5,
     egret: 1.4, stilt: 1.7, duck: 1.3, gull: 1.6, boar: 1.6, 'red-deer': 2.4, 'nethrani-cattle': 1.2, goose: 1.4 };
   const HOME = 16, SETTLED = 6;
   const BACK = [0, .35, -.35, .7, -.7], ALONG = [1.05, -1.05, 1.4, -1.4, 1.75, -1.75, 2.1, -2.1];
@@ -1494,7 +1569,15 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
       const aloft = animal.action === 'fly' || animal.action === 'dive';
       if (!aloft && d <= HOME / 2) continue;
       const reach = RETURN[animal.species] * elapsed;
-      if (aloft || reach >= d) { animal.x = animal.home.x; animal.z = animal.home.z; }
+      if (flock.zone.habitat === 'mountain' && !aloft) {
+        // An unwatched mountain animal still has to use a real route. Elapsed
+        // time is never permission to teleport through a cliff or lake.
+        if (!retraceRoute(animal, reach)) {
+          const step = Math.min(reach, d), to = { x: animal.x + dx / d * step, z: animal.z + dz / d * step };
+          if (clearEdge(animal, to, flock.zone)) { animal.x = to.x; animal.z = to.z; }
+        }
+      }
+      else if (aloft || reach >= d) { animal.x = animal.home.x; animal.z = animal.home.z; }
       else for (let s = 1; s <= reach; s += 1) {
         const x = animal.x + dx / d * s, z = animal.z + dz / d * s;
         if (!valid(x, z, flock.zone)) break;
@@ -1502,7 +1585,8 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
       }
       animal.y = footingY(animal.x, animal.z, flock.zone); animal.lift = 0; animal.flight = 0; animal.landing = null; animal.hidden = false;
       animal.speed = 0; animal.detour = 0; animal.blocked = 0; animal.cornered = 0; animal.homing = false; animal.slip = 0;
-      animal.action = 'graze'; animal.timer = 1 + animal.index * .3; animal.trail = [];
+      animal.action = 'graze'; animal.timer = 1 + animal.index * .3;
+      if (flock.zone.habitat !== 'mountain' || Math.hypot(animal.x - animal.home.x, animal.z - animal.home.z) < SETTLED) animal.trail = [];
     }
   }
 

@@ -21,6 +21,10 @@ import { ovesTint } from './oves-world.js';
 import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
+import { menoraGround } from './menora-city.js';
+import { caricasSettlementGround } from './caricas-settlement.js';
+import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
+import { yunethreGround, yunethreTint } from './yunethre-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const smooth = (a, b, x) => { const v = clamp((x - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
@@ -232,6 +236,10 @@ function bridgeEmbankment(x, z, ground) {
 /** Ground with the river channels cut, before any deck or pier override. */
 export function groundWithRiver(x, z) {
   // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
+  const base=groundBeforeFrontier(x,z);
+  return menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier));
+}
+function groundBeforeFrontier(x,z){
   return feradomGround(x, z, groundBeforeFeradom(x, z), groundBeforeFeradom);
 }
 
@@ -263,7 +271,7 @@ export function groundBeforeFeradom(x, z) {
   // own box; it touches nothing within a hundred metres of Gala or of the Lizeem (src/ascarth-world.js).
   // Lotharn's valleys are cut before western water; level the pass road and made places afterward.
   // Keep the Suval climbing landscape and Iscare ground, then blend Feradom's inland seam.
-  return ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))));
+  return yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))))));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -312,6 +320,8 @@ export function groundTint(color, x, z, THREE) {
   const cliff = ascarthCliffTint(x, z, distance);
   color.lerp(new THREE.Color('#cdb98a'), (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
   if (cliff?.rock) color.lerp(new THREE.Color('#8a857a'), cliff.rock);
+  const oremindi=southOremindiTint(x,z);if(oremindi!==null)color.set(oremindi);
+  const yunethre=yunethreTint(x,z);if(yunethre!==null)color.set(yunethre);
   return color;
 }
 

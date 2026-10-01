@@ -4,6 +4,117 @@ Decisions the user has made in conversation, written down so that whoever builds
 have to ask again. Newest first. Where an answer supersedes the spoken brief
 (`docs/original-brief.md`) or an earlier note, the answer here wins.
 
+## 2026-09-30 - Ibenwood guarded inner belt implemented
+
+The user authorized the next Ibenwood phase: concealed, persistent ranger defenses
+around the elven inner belt. This implements the existing decisions that outer
+forests remain explorable, visible signs precede lethal arrows without a spoken
+warning, and exceptional stealth can permit unauthorized entry. See the
+[guarded-belt implementation and validation record](ibenwood-defense-implementation.md).
+
+The current build adds boundary stones and signs, grounded ranger patrols,
+individual sight and noise awareness, physical arrows that meet cover and bodies,
+and combat counterplay. Taught Stealth and its level affect exposure and noise;
+there is no automatic detection for crossing the boundary. Ranger health, deaths,
+patrol positions and awareness persist in saves. Returning outside the belt
+cancels new aim and shots; the patrols do not pursue throughout the outer forest.
+
+**Implementation defaults, not additional user decisions:** 44 m sight range,
+a 100-degree vision cone, 180 ranger health, 70 damage per arrow, a roughly
+0.7-second draw tell after detection, and a 2-second shot cooldown. These are
+tunable values for the first guarded-belt pass.
+
+Permission quests, dimensional withdrawal, civilian communities, the king and
+queen, building interiors, magical fauna and broader regional quests remain
+future work. Further consequences for prohibited tree felling are undecided;
+existing protected-tree refusal and fallen-branch gathering remain in place.
+All five regions retain the Environment preview classification. Dwarfland
+remains design only.
+
+## 2026-09-30 - Begin Ibenwood implementation
+
+The user authorized the next Ibenwood implementation phase after requesting denser
+wild forest outside settled groves. The environment expansion covers the five
+regions. Implementation defaults are traversable woodland with denser detour patches,
+and selected canopy exteriors reached by stairs and bridges. These defaults were
+proposed but not separately answered; do not record them as explicit user selections.
+That environment pass established the forest and exterior settlements. The later
+guarded-belt phase above adds rangers and unauthorized stealth entry; permission
+quests and dimensional withdrawal remain future work. Dwarfland remains design only.
+
+## 2026-09-30 - Ibenwood pilot feedback: denser wild forest
+
+The user likes the representative grove pilot, but wants the wild forest outside
+settled groves to be more densely wooded than the pilot. Preserve the distinction
+between inhabited clearings and denser forest between settlements. This feedback
+does not change the confirmed mixture of forest ages, wildlife, or elven entry rules.
+This was followed by authorization to begin implementation (recorded above).
+
+## 2026-09-30 - Dwarfland (design only)
+
+The user places Dwarfland in West and East Baldro Mountains (spoken as
+"Baldor"). Both regions remain dwarf-controlled. Dwarves have lived there for
+thousands of years and built great inhabited cities inside the mountains.
+Their culture is to be developed afresh; existing Azhora lore is inspiration
+for human context, not a constraint on the new dwarf design.
+
+Dwarves once dominated mountains and hills across the continent, including
+Gorgi, Lotharn, Oremindi, and Suval. Elves held the forests. Their territories
+were fairly equitable; they fought wars without wiping each other out.
+Human expansion now threatens both peoples with extinction. The user asks
+for terrain and wildlife design for the two Baldro regions, compared with
+Elfland. Dwarfland implementation is not authorized yet. See the
+[design draft](dwarfland-design-draft.md) for atlas constraints, proposals,
+and unanswered questions.
+
+## 2026-09-30 - Ibenwood and Elfland (one-grove pilot authorized)
+
+The initial authorization covered one representative grove and its surrounding
+forest, followed by assessment of usage, completion time, visual quality, and
+corrections. The later five-region environment and guarded-belt phases above
+supersede that initial limit. See the [pilot brief](ibenwood-pilot-brief.md) for
+the original limited scope.
+See [the design discussion](ibenwood-design-draft.md) for the confirmed premise,
+proposed terrain and ecology, sources, and remaining questions.
+
+**All four outer forests are explorable; a guarded inner belt protects Central
+Ibenwood.** Elfland rules the center and the inward-facing parts of North, East,
+South, and West Ibenwood. Forest Mittoli human communities remain in the outer
+forest; elves rule the inner belt and heart.
+
+**No spoken warning: visible boundary signs come before lethal arrows.** The
+rangers are extremely skilled, concealed defenders. Do not add a spoken ultimatum
+or warning-shot phase in place of the user's choice.
+
+**When Elfland is present, exceptionally skilled players can sneak inside
+without permission.** Consent is not an absolute entry requirement. The design
+must preserve a real unauthorized stealth route into the kingdom.
+
+**Wildlife is mostly natural outside; stranger creatures and plants become more
+apparent inward.** Keep this a gradual progression through the forest.
+
+**Elven settlements mix dwellings among branches, homes nestled around enormous
+roots, and ancient stone buildings absorbed into the forest.** Individual building
+designs remain to be discussed.
+
+**Elfland has several inhabited groves with a distinct royal heart, leaving
+substantial stretches of ancient forest between settlements.** Exact grove
+locations, numbers, and sizes are not yet decided.
+
+**In elven territory, gathering fallen wood is permitted; felling living trees
+is prohibited.** Permission to gather does not grant permission to trespass.
+Further consequences for prohibited felling remain undecided.
+
+**When Elfland withdraws, the forest remains, but paths no longer reach Elfland.**
+The user has not yet decided the conditions for withdrawal, how permission is
+earned, or a connection to the Cromb Coo Coo material.
+
+The user's new history places human arrival around 1,000 years ago, followed by
+clearance of the widespread forests and elven retreat. Elfland is the continent's
+only independent elf country, ruled by a powerful sorcerer king and queen. Older
+draft lore does not override these instructions; discrepancies are recorded in
+the design discussion rather than silently rewriting World Builder.
+
 ## 2026-09-26 — Addison's quest: her sister's fire (the user's premise)
 
 **The quest.** Addison wants the traveler to steal the fire spirit out of her rival
@@ -844,3 +955,69 @@ copied**, and nothing here belongs to anybody.
 The user authorized editing Claude's West Lotharn draft and integrating it into the main desktop build. The imported region retains its approximately 550 m crest, seven summits, nine caves and wilderness-only scope. Terrain continuity, the summit silhouette, forest grounding, species-aware woodcutting and actual route traversal were refined. The full account and validation results are in `docs/west-lotharn-integration.md`; those details supersede the original build measurements above.
 
 The user separately requested a design plan for the rest of the regions, explicitly without beginning implementation. `docs/remaining-regions-design-plan.md` is that review draft: 104 atlas regions outside the integrated regional build, including the four Mithalas already underway in a separate checkout. Its ordering, loading/performance work and proposed mechanics remain plans for review, not implemented features. No work was done in the Mithala checkout or the World Builder repository.
+
+### 2026-09-30: South Oremindi terrain and wildlife
+
+The user requested beginning South Oremindi Mountains terrain and wildlife after the Elfland work. The implemented environment follows the atlas footprint, with mountain relief, wooded feet, alpine ground, both mapped lakes and persistent wild fauna. NPCs, settlements and quests were not requested and are not part of this phase. The implementation record is [South Oremindi Mountains environment](south-oremindi-environment.md); its height and habitat tuning are build choices rather than additional user canon.
+
+### 2026-09-30: Menora, the occupied Caricas and independent Yunethre
+
+The user requested a beautiful holy frontier city called **Menora** (also dictated
+as Minora) at the actual Isa-Lizeem fork in **Isareos**, by the Caricas/Nethereum
+crossroads. It has great white walls, a spectacular Sorcerers' Guild tower and a
+grand temple. Cedric is alive there, a claimant expelled from Ambron by rebels who
+installed his half-brother Willard; he has long dirty-blonde hair. Wilhelm and his
+army are also here; his hair is short, almost silver-blonde, with no bun or hat,
+and his expression is twisted and maniacal. Menora remains stable and well
+defended. Their Chapter 3/4 story is not decided, and old notes about Cedric's death,
+a destroyed holy city or Wilhelm trapped at Nylon are superseded.
+
+Caricas begins fully occupied by the Ambroni Empire, with soldiers, a town and
+farms, while retaining its separate civil-war side-story design. Preserve the
+existing wooded Carica corridor and river-fox habitat beside cultivated ground.
+
+Yunethre is an independent steppe pass between West Lotharn and South Oremindi.
+Nomadic centaurs, literally half person and half horse, resist human encroachment
+from Celder in the north and Isareos in the south. Elfland supports and trades with
+them. Their mounted culture may draw inspiration from Mongolian nomadic peoples
+without treating real-world culture as a monster stereotype. Like elves and
+dwarves, they have lost most of their former lands to expanding humans.
+Bane's Camp is their base; another camp in Henborth is explicitly for later.
+Northern and western Isareos suffer raids, while Menora is protected.
+
+A small western Yunethre town beside the lake below South Oremindi is neutral,
+independent of Ambron, Celder and Elfland, and respected by surrounding sides.
+Humans, elves and centaurs coexist there. Generic civilian names and personal
+stories are not invented: guards and requested faction presence communicate the
+mixed settlement. Rivers and the lake retain their authored positions.
+
+The implementation uses the atlas spellings Isareos, Caricas, Nethereum, Yunethre,
+Celder, Henborth and Ambron for voice-to-text variations in this brief.
+
+The completed build and its desktop testing instructions are recorded in
+[Frontier implementation](frontier-implementation.md).
+
+### 2026-09-30: Country-level strategy brainstorm
+
+After the frontier work, the user requested brainstorming an optional strategic
+layer on the existing map, with countries holding regions and hexes and potentially
+controllable armies. Ambron, Ascarth and Lond illustrate different scales. The
+[strategic-layer brainstorm](strategic-layer-brainstorm.md) is design only:
+country command, time progression, economy, logistics and campaign integration
+are proposals for discussion, not approved or implemented mechanics.
+
+### 2026-09-30: Inquest Clearlistern placement — next morning
+
+The user identified a wooded lakeshore clearing in South Oremindi Mountains in
+two attached screenshots as the future wizard's home. The wizard starts the
+main-quest continuation toward confronting “Kepthamigar” (as dictated). The next
+pass should add a cottage and a **literal blank-slate figure** named **Inquest
+Clearlistern**, with a named mailbox under the standing home rule. Appearance and
+quest development remain undecided. The user is shutting down and explicitly
+requested **a note for the morning, not implementation tonight**. Placement cues
+and the bounded next-session task are saved in
+[Inquest Clearlistern's cottage](next-session-inquest-clearlistern.md).
+
+### 2026-10-01: Inquest cottage authorized
+
+The user resumed with "go ahead with that cottage." Implemented the small Long Tarn cottage, named mailbox and literal blank-slate Inquest Clearlistern at the screenshot-matched shoreline clearing. The future main-quest role is still a design note only. See [the placement record](next-session-inquest-clearlistern.md) for coordinates and scope.

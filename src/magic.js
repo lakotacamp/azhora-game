@@ -1,5 +1,7 @@
 import { SPELLS, SPELL_IDS, FOCUS_WEAPONS, castWith, focusAt, spellXp, readingXp, learnableSpell } from './sorcery.js';
 import { meleeLineClear } from './melee-contact.js';
+import { forestSegmentHit } from './forest-sightline.js';
+import { forestBodyHit } from './forest-arrows.js';
 import { TESTIMONY, MURDERER, MURDERER_READING } from './murder-quest.js';
 
 export const MAGIC_VERSION = 1;
@@ -8,6 +10,7 @@ const finite = point => point && Number.isFinite(point.x) && Number.isFinite(poi
 const alive = actor => finite(actor) && !actor.dead && actor.active !== false && actor.action !== 'dead'
   && !(Number.isFinite(actor.hp) && actor.hp <= 0);
 const gap = (a,b) => Math.hypot(a.x-b.x,a.z-b.z);
+const forestRanger = actor => (actor.npcId ?? actor.id)?.startsWith('ibenwood-ranger-');
 
 /** Thoughts are authored flavour, never extra testimony or a substitute for Troy's case. */
 export function thoughtOf(npc) {
@@ -85,10 +88,11 @@ export function createMagic({ skills, inventory, weapons, combat, position, worl
       });
   }
 
-  function hit(target, profile, origin, yaw) {
+  function hit(target, profile, origin, yaw, contact = null) {
     const event = { id: `spell-hit-${++sequence}`, spellId: profile.id, school: profile.school,
       source: 'player', sourceId: 'traveler', targetId: target.id, targetNpcId: target.npcId,
       x: target.x, z: target.z, origin: {x:origin.x,z:origin.z}, yaw, damage: profile.damage };
+    if (contact) { event.y=contact.y; event.impact={x:contact.x,y:contact.y,z:contact.z}; }
     let result = target.managed ? combat.spellHit(target.id, profile.damage, { yaw, spellId: profile.id }) : {handled:false};
     const managed = !!result.handled;
     if (!managed) result = damageWorld(target, profile.damage, event) ?? {damage:0};
@@ -155,7 +159,9 @@ export function createMagic({ skills, inventory, weapons, combat, position, worl
     const origin = finite(tip) && Number.isFinite(tip.y) ? {x:tip.x,y:tip.y,z:tip.z}
       : {x:at.x,y:(at.y??world?.heightAt?.(at.x,at.z)??0)+1.2,z:at.z};
     // A hand reaching through a wall must not launch a spell on its other side.
-    if (!meleeLineClear(at,origin,world)) { emit('spell-stopped',{id,...origin}); return; }
+    const blocked = cast.profile.swarm ? !meleeLineClear(at,origin,world)
+      : forestSegmentHit(world,{x:at.x,y:(at.y??world?.heightAt?.(at.x,at.z)??0)+1.2,z:at.z},origin,{radius:cast.profile.radius});
+    if (blocked) { emit('spell-stopped',{id,...origin}); return; }
     if (cast.profile.swarm) swarms.push({id,...origin,profile:cast.profile,left:cast.profile.stay,tick:0});
     else projectiles.push({id,...origin,yaw:cast.yaw,flown:0,profile:cast.profile,origin:{...origin}});
     emit('spell-released',{id,spellId:cast.profile.id,origin:{...origin}});
@@ -177,12 +183,24 @@ export function createMagic({ skills, inventory, weapons, combat, position, worl
     }
     const roster = projectiles.length || swarms.length ? bodies() : [];
     for (let index=projectiles.length-1;index>=0;index--) {
-      const ball=projectiles[index],before={x:ball.x,z:ball.z};
+      const ball=projectiles[index],before={x:ball.x,y:ball.y,z:ball.z};
       const travel=Math.min(ball.profile.speed*dt,ball.profile.range-ball.flown);
       ball.x+=Math.sin(ball.yaw)*travel;ball.z+=Math.cos(ball.yaw)*travel;ball.flown+=travel;
-      if(!meleeLineClear(before,ball,world)) {projectiles.splice(index,1);emit('spell-stopped',{id:ball.id,x:ball.x,z:ball.z});continue;}
-      const target=roster.find(body=>gap(body,ball)<=ball.profile.radius+(body.r??.36));
-      if(target) {hit(target,ball.profile,ball.origin,ball.yaw);projectiles.splice(index,1);}
+      // Cover is a swept volume at the visible projectile's height: a canopy
+      // deck stops fire, while the open ground beneath it remains open.
+      let contact=forestSegmentHit(world,before,ball,{radius:ball.profile.radius});
+      for(const body of roster) {
+        // Keep older actors' contact rules, but elevated forest rangers require
+        // an actual torso contact, not a hit on their projected ground position.
+        const candidate=forestRanger(body) ? forestBodyHit(before,ball,body,ball.profile.radius)
+          : gap(body,ball)<=ball.profile.radius+(body.r??.36) ? {t:1,body} : null;
+        if(candidate&&(!contact||candidate.t<contact.t))contact=candidate;
+      }
+      if(contact) {
+        if(contact.body)hit(contact.body,ball.profile,ball.origin,ball.yaw,Number.isFinite(contact.y)?contact:null);
+        else emit('spell-stopped',{id:ball.id,x:contact.x,y:contact.y,z:contact.z});
+        projectiles.splice(index,1);
+      }
       else if(ball.flown>=ball.profile.range) projectiles.splice(index,1);
     }
     for(let index=swarms.length-1;index>=0;index--) {

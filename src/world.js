@@ -1,3 +1,8 @@
+import { createIbenwoodScenery } from './ibenwood-scenery.js';
+import { groveGround } from './ibenwood-pilot.js';
+import { createIbenwoodRegionalScenery } from './ibenwood-regional-scenery.js';
+import { createWalkSurfaces } from './walk-surfaces.js';
+import { createIbenwoodRiverSystem, createIbenwoodRiverScenery } from './ibenwood-rivers.js';
 import { createRegionalFarmlandScenery } from './regional-farmland-scenery.js';
 import { FARMSTEADS } from './regional-farmland.js';
 // `WATERLINE` is the line the predicates judge wet by; `waterAt` below answers it for the sea
@@ -46,6 +51,13 @@ import { createHomestead } from './homestead-world.js';
 import { inKoopwood } from './woodcutting.js';
 import { forestTimber } from './wood-species.js';
 import { getTreeRegistry, registerWorldTree } from './tree-registry.js';
+import { createSouthOremindiScenery } from './south-oremindi-scenery.js';
+import { createInquestHome } from './inquest-home-scenery.js';
+import { INQUEST_HOME, inquestHomeClear } from './inquest-home.js';
+import { createYunethreScenery } from './yunethre-scenery.js';
+import { YUNETHRE_LANDMARKS } from './yunethre-world.js';
+import { refineSouthOremindiGround } from './south-oremindi-ground.js';
+import { SOUTH_OREMINDI_LAKES, SOUTH_OREMINDI_LANDMARKS, southOremindiOwns, southOremindiWaterAt } from './south-oremindi-world.js';
 import { createWestSuvalScenery } from './west-suval-world.js';
 import { createWineryScenery } from './winery-world.js';
 import { buildBirdGarden, birdGardenSites, inBirdGarden } from './bird-garden.js';
@@ -92,6 +104,10 @@ import { AMOD_ROAD, AMOD_NPC_POSITIONS, AMOD_LANDMARKS, tarvelDistance } from '.
 import { amodTerrainSink } from './amod-terraces.js';
 import { createAmodScenery } from './amod-scenery.js';
 import { WEST_REGION_LANDMARKS, westBareGround, westRiverDistance } from './west-regions.js';
+import { createMenoraScenery } from './menora-scenery.js';
+import { MENORA, MENORA_PATHS, MENORA_BUILDINGS, menoraDeckHeight } from './menora-city.js';
+import { CARICAS_TOWN, CARICAS_ROADS } from './caricas-settlement.js';
+import { createCaricasSettlement } from './caricas-settlement-scenery.js';
 import { createWestScenery } from './west-regions-scenery.js';
 import { createGalaScenery } from './gala-scenery.js';
 import { GALA_LANDMARKS } from './gala-world.js';
@@ -261,7 +277,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     if (weight >= 1) return village;
     return lerp(groundWithRiver(x, z), village, weight);
   }
-  function groundHeight(x, z) { return brandyHomeGround(x, z, rawGroundHeight); }
+  function uncarvedForestGround(x,z) { return groveGround(x,z,(a,b)=>brandyHomeGround(a,b,rawGroundHeight)); }
+  const ibenwoodRivers=createIbenwoodRiverSystem({groundHeight:uncarvedForestGround});
+  function groundHeight(x, z) { return ibenwoodRivers.ground(x,z,uncarvedForestGround(x,z)); }
   pond.surfaceY = villageBase(pond.x, pond.z) - .55;
   pond.castPoint.y = pond.surfaceY + .035;
   const pondWorld = villageToWorld(pond.x, pond.z);
@@ -280,7 +298,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   }
   let roadHeightAt = () => null;
   let portGroundAt = (x,z) => groundHeight(x,z);
+  let southOremindiSurface=null;
   function heightAt(x, z) {
+    if(southOremindiSurface&&southOremindiOwns(x,z))return southOremindiSurface(x,z);
     const local = worldToVillage(x, z);
     // The pier deck, exactly as Tidehaven always had it.
     if (Math.abs(local.x) < 2.2 && local.z >= 22 && local.z <= 48) return 1.8;
@@ -305,6 +325,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const deck = deckAt(x, z);
     if (deck) return deck.deckY + .09;
     // Ambron's causeway, over the narrows and down to the made ground of each bank.
+    const menoraDeck=menoraDeckHeight(x,z);if(menoraDeck!==null)return menoraDeck;
     const causeway = ambronDeckHeight(x, z);
     if (causeway !== null) return causeway;
     if(inPortCalos(x,z))return portGroundAt(x,z);
@@ -461,7 +482,13 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // Vertex spacing is unchanged; the grid simply covers more ground. The fine
   // 2.5 m band still holds Tidehaven, which did not move, and the Avrel
   // clearing, which did.
-  const terrainXs = axisSamples(WORLD_BOUNDS.minX - 80, WORLD_BOUNDS.maxX + 80, Math.min(-252, AVREL_CLEARING.x - 60), 62);
+  // Keep the established mesh samples east of the old edge byte-for-byte stable.
+  // Starting the sampler at the new edge would rephase every road and tree base.
+  const establishedWestEdge = -3010.001927939127 - 80;
+  const terrainXs = axisSamples(establishedWestEdge, WORLD_BOUNDS.maxX + 80, Math.min(-252, AVREL_CLEARING.x - 60), 62);
+  const extension = [], extensionCount = Math.ceil((establishedWestEdge - (WORLD_BOUNDS.minX - 80)) / 7.1);
+  for (let i = extensionCount; i > 0; i--) extension.push(establishedWestEdge - i * (establishedWestEdge - (WORLD_BOUNDS.minX - 80)) / extensionCount);
+  terrainXs.unshift(...extension);
   // The fine band reaches north over the Tessen bridge and its road post, so the river's cut and the embankment read true.
   const terrainZs = axisSamples(WORLD_BOUNDS.minZ - 80, WORLD_BOUNDS.maxZ + 80, Math.min(-110, TESSEN_BRIDGE.crossing.z - 45), Math.max(172, AVREL_CLEARING.z + 60));
   const columns = terrainXs.length, rows = terrainZs.length;
@@ -1341,6 +1368,12 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // The West Lotharn's are kept in their own array so `world.lotharnCaves` stays the East's alone
   // (tests/east-lotharn-peaks.test.js counts it); main.js walks both through one cave controller.
   const westLotharnCaves = createWestLotharnCaves(groundHeight);
+  const ibenwood=createIbenwoodScenery({parent:world,heightAt:groundHeight,colliders,terrain:{xs:terrainXs,zs:terrainZs,positions:terrainPositions},terrainRoot});
+  const ibenwoodWater=createIbenwoodRiverScenery({THREE,parent:world,rivers:ibenwoodRivers,terrainRoot,heightAt:groundHeight});
+  const forestRenderedGround=(x,z)=>ibenwoodRivers.nearest(x,z,40)?groundHeight(x,z):treeGroundAt(x,z);
+  const ibenwoodForest=createIbenwoodRegionalScenery({parent:world,heightAt:groundHeight,renderedGroundHeight:forestRenderedGround,colliders,
+    waterClear:(x,z,padding=0)=>{const hit=ibenwoodRivers.nearest(x,z,20);return !hit||hit.distance>hit.half+padding+2;}});
+  // Elevated outdoor surfaces are composed after the lake-town promenade is built.
   const feradom = createFeradomScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   const eastLotharn = createEastLotharnScenery({
     root: world, material, mesh, box, post, pebble, wornPatch,
@@ -1354,6 +1387,14 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   });
   // The Ascarth Peninsula (src/ascarth-scenery.js): grass, scrub and stone on the finger, the wood on
   // its interior hills, the green stone, and the rock fallen at the foot of its cliffs. Nobody's.
+  const oremindiGround=refineSouthOremindiGround({THREE,terrainRoot,heightAt:groundHeight,coarseHeightAt:treeGroundAt});
+  southOremindiSurface=oremindiGround.heightAt;
+  const southOremindi=createSouthOremindiScenery({parent:world,heightAt:groundHeight,renderedGroundHeight:southOremindiSurface,colliders,terrainRoot,isReserved:inquestHomeClear});
+  southOremindi.ground=oremindiGround;
+  const inquestHome=createInquestHome({parent:world,cottage,material,box,post,heightAt,colliders});
+  const yunethre=createYunethreScenery({parent:world,heightAt,colliders});
+  const outdoorWalkSurfaces=[...ibenwoodForest.walkSurfaces,...yunethre.walkSurfaces];
+  const forestWalks=createWalkSurfaces(outdoorWalkSurfaces,heightAt);
   const ascarth = createAscarthScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
   const westSuval = createWestSuvalScenery({ root: world, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
@@ -1372,6 +1413,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     backLabel: 'Nothom', back: MAIN_ROAD[22], parent: world });
   // The four western regions (src/west-regions-scenery.js): their water, their gravel,
   // their sedge and Vastos's sulfur ground. Terrain and wildlife only; nobody lives there.
+  const menora=createMenoraScenery({parent:world,heightAt:groundHeight,colliders});
+  const caricasSettlement=createCaricasSettlement({parent:world,heightAt:groundHeight,colliders});
   const westScenery = createWestScenery({ root: world, material, mesh, pebble, groundHeight, colliders, wornPatch, dummy, color, round });
   // Gala (src/gala-scenery.js): its water, its dry wash, and what grows on the steppe, the maquis and
   // the coast. Its own seeded stream, after the west's, so nothing already built moves for it.
@@ -1478,6 +1521,10 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   addPath(AMBRON_ROAD, 4.6); addPath(LAKE_ROAD, 3.6); for (const track of ELAGOS_ROADS.slice(2)) addPath(track, track === CALOSS_ELAGOS_ROAD ? 4.2 : 2.6);
   for (const path of PORT_CALOS_PATHS) addPath(path.points,path.width,world,path.kind==='trail'?'trail':'road');
   addPath(SYLVIA_PATH.points, SYLVIA_PATH.width, world, 'trail');
+  paths.push(inquestHome.path);
+  // Region scenery already draws these roads; append navigation only after the original main road.
+  paths.push(...yunethre.paths.map(p=>Object.assign([...p.points],{width:p.width})));
+  paths.push(...[...MENORA_PATHS,...CARICAS_ROADS].map(p=>Object.assign([...p.points],{width:p.width})));
 
   // Footpaths join a road at its edge. Their full centre lines still meet for
   // navigation, but brown faces must not stripe or z-fight across the pale road.
@@ -1876,6 +1923,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   const mapPoint = (x, z) => Object.freeze({ x, z });
   const seaEdge = shorePoints.map(spot => mapPoint(spot.x, spot.z));
   const mapWaters = Object.freeze([
+    ...ibenwoodRivers.mapWaters,
+    ...SOUTH_OREMINDI_LAKES.map(l=>Object.freeze({id:l.id,kind:'polygon',points:l.shore})),
     Object.freeze({ id: 'coast-water', kind: 'polygon', points: Object.freeze([...seaEdge,
       mapPoint(WORLD_BOUNDS.maxX + 120, seaEdge.at(-1).z), mapPoint(WORLD_BOUNDS.maxX + 120, seaEdge[0].z)]) }),
     Object.freeze({ id: 'willowmere-water', kind: 'circle', x: pondWorld.x, z: pondWorld.z, radius: pond.radius }),
@@ -1931,7 +1980,9 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   villageTimber(pineTrees, 'pine');
   treeRegistry.configure({reindex:()=>{colliderIndex=null;}});
   const api = {
-    heightAt, groundHeight, lotharnCaves, westLotharnCaves,
+    menora, caricasSettlement, inquestHome,
+    heightAt, groundHeight, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater,
+    supportAt: forestWalks.supportAt, walkSurfaces: outdoorWalkSurfaces,
     roadSurfaceMetrics,
     mapWaters,
     mapBridges: bridgeDecks,
@@ -1961,7 +2012,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
      * the point is under both and the deeper of the two is what you are in.
      */
     waterAt(x, z) {
-      let surface = WATERLINE;
+      let surface = Math.max(WATERLINE,ibenwoodRivers.waterAt(x,z)??WATERLINE,southOremindiWaterAt(x,z)??WATERLINE);
       for (const c of colliderGrid().near(x, z, 0)) {
         if (c.surface === undefined || c.r === undefined) continue;
         const dx = x - c.x, dz = z - c.z;
@@ -2006,6 +2057,8 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     southSuvalMetrics: southSuval.metrics,
     eastLotharnMetrics: eastLotharn.metrics,
     westLotharnMetrics: westLotharn.metrics,
+    southOremindiMetrics: southOremindi.metrics,
+    yunethreMetrics: yunethre.metrics,
     feradomMetrics: feradom.metrics,
     farmlandMetrics: regionalFarmland.metrics, farmsteads: FARMSTEADS,
     suvalHighlandMetrics: suvalHighlands.metrics,
@@ -2129,6 +2182,12 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...Object.fromEntries(Object.entries({ ...ELOD_STANDS, ...EAST_SUVAL_STANDS }).map(([id, stand]) => [id, { x: stand.x, z: stand.z }])),
     },
     landmarks: [
+      {...MENORA,id:"menora-city",description:"White walls, a grand imperial temple and the high Sorcerers’ Guild needle guard the Isa–Lizeem fork."},
+      CARICAS_TOWN,
+      ...MENORA_BUILDINGS.filter(b=>["temple","sorcerers-tower"].includes(b.kind)).map(b=>({...b,description:b.name})),
+      ...SOUTH_OREMINDI_LANDMARKS,
+      {id:INQUEST_HOME.id,name:INQUEST_HOME.name,x:INQUEST_HOME.x,z:INQUEST_HOME.z},
+      ...YUNETHRE_LANDMARKS,
       { id: 'harbor', name: 'Tidehaven Landing', ...villageToWorld(0, 29), description: 'Small fishing boats cross the Stills to this sheltered corner of Drent’s coast.' },
       { id: 'village', name: 'Tidehaven Village', ...villageToWorld(0, 5), description: 'Salt on the breeze. Smoke above the rooftops. A quiet place to begin.' },
       { id: 'woodland', name: 'The Greenway', ...villageToWorld(0, -36), description: 'An old footpath winds inland beneath the welcoming forest canopy.' },
@@ -2182,6 +2241,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       westScenery.update(time);
       eastLotharn.update(time);
       westLotharn.update(time);
+      southOremindi.update(time);
       galaScenery.update(time);
       ovesScenery.update(time);
       regionScenery.millSails.rotation.z = time * .115;

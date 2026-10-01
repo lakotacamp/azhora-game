@@ -1,3 +1,5 @@
+import { colliderOverlapsHeight } from './walk-surfaces.js';
+
 // Q/E are single-key shortcuts for the existing W+A / W+D diagonals.
 // Merge directional intent before normalization so overlapping keys never
 // change the angle or make diagonal travel faster than ordinary walking.
@@ -21,7 +23,7 @@ export const WATERLINE = 0.45;
  */
 const WATER_COLLIDERS = new Set(['river-water', 'pond-water']);
 
-function clearHere(x, z, world, radius, afloat = false) {
+function clearHere(x, z, world, radius, afloat = false, feetY = world.feetY) {
   const b = world.bounds;
   if (x < b.minX + radius || x > b.maxX - radius || z < b.minZ + radius || z > b.maxZ - radius) return false;
   // The shapes that could reach this point, from the world's grid (src/collider-grid.js);
@@ -30,6 +32,8 @@ function clearHere(x, z, world, radius, afloat = false) {
   for (let i = 0; i < near.length; i++) {
     const c = near[i];
     if (WATER_COLLIDERS.has(c.kind)) continue;
+    if ((Number.isFinite(c.minY) || Number.isFinite(c.maxY))
+      && !colliderOverlapsHeight(c, feetY ?? (feetY = world.heightAt(x, z)))) continue;
     if (c.r !== undefined) { const dx = x - c.x, dz = z - c.z, reach = c.r + radius; if (dx * dx + dz * dz < reach * reach) return false; }
     else if (Math.abs(x - c.x) < c.hx + radius && Math.abs(z - c.z) < c.hz + radius) return false;
   }
@@ -48,8 +52,8 @@ function clearHere(x, z, world, radius, afloat = false) {
  */
 export const waterAt = (x, z, world) => world?.waterAt?.(x, z) ?? WATERLINE;
 
-export function canStand(x, z, world, radius = 0.34) {
-  return clearHere(x, z, world, radius) && world.heightAt(x, z) >= waterAt(x, z, world);
+export function canStand(x, z, world, radius = 0.34, feetY) {
+  return clearHere(x, z, world, radius, false, feetY) && world.heightAt(x, z) >= waterAt(x, z, world);
 }
 
 /**
@@ -59,8 +63,8 @@ export function canStand(x, z, world, radius = 0.34) {
  * Depth is not a gate: nothing is too deep to enter. Distance is what refuses you, and it refuses
  * you by drowning you.
  */
-export function canSwim(x, z, world, radius = 0.34) {
-  return clearHere(x, z, world, radius, true) && world.heightAt(x, z) < waterAt(x, z, world);
+export function canSwim(x, z, world, radius = 0.34, feetY) {
+  return clearHere(x, z, world, radius, true, feetY) && world.heightAt(x, z) < waterAt(x, z, world);
 }
 
 /**
@@ -70,8 +74,8 @@ export function canSwim(x, z, world, radius = 0.34) {
  */
 export function moveCharacter(position, dx, dz, world, radius, { swimming = false, canTraverse = null } = {}) {
   const passable = swimming
-    ? (x, z) => canStand(x, z, world, radius) || canSwim(x, z, world, radius)
-    : (x, z) => canStand(x, z, world, radius);
+    ? (x, z) => canStand(x, z, world, radius, position.y) || canSwim(x, z, world, radius, position.y)
+    : (x, z) => canStand(x, z, world, radius, position.y);
   const steps = Math.max(1, Math.ceil(Math.hypot(dx,dz)/0.18));
   for(let i=0;i<steps;i++) {
     if(passable(position.x+dx/steps,position.z) && (!canTraverse || canTraverse(position.x,position.z,position.x+dx/steps,position.z))) position.x+=dx/steps;

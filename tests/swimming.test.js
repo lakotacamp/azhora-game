@@ -402,7 +402,7 @@ test('the game refuses the water to a rider, and a sword to a swimmer', () => {
   const footSurface = new Function('SWIM','bed','level',`
     const world={heightAt:()=>bed},waterAt=()=>level,lotharnCave={floorAt:()=>null};
     ${hostFunction('fallSurfaceAt')}
-    return fallSurfaceAt(0,0);
+    return fallSurfaceAt(0,0,{maxY:bed,stepUp:0});
   `);
   assert.equal(footSurface(SWIM,5,15).height,15-SWIM.sink,'the feet hang below the local lake surface, not the sea');
   assert.equal(footSurface(SWIM,14.8,15).height,14.8,'shallow water does not push the feet through the bed');

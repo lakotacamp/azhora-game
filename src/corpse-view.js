@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createCentaur} from './centaur-model.js';
 import { createCharacter, createGoblin, createWolf, createCat, createHorse, createOgre, createRockTroll, groundShadow, setShadowCasting } from './characters.js';
 import { createEdModel } from './chameleon-model.js';
 import { createBosco } from './bosco-model.js';
@@ -97,6 +98,7 @@ function coverBody(item, world) {
 }
 
 export function createCorpseActor(body) {
+  if(body.kind==='centaur')return restingActor(createCentaur({variant:body.variant}));
   if (body.kind === 'bear') return restingBear(isBearCub(body) ? createBearCub() : createKaylaBear());
   if (body.kind === 'puck') return wrappedActor(createGoblin({ wine: true }));
   if (body.kind === 'chameleon') { const actor = createEdModel(); actor.animate(0, 0, { sober: true }); return restingActor(actor, 1.35); }

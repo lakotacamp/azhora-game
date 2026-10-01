@@ -16,6 +16,11 @@ const SPECS = [
   ['ambron-west-allotments', 'West of the Plain Gate', 'Elagos', -1215, 235, 'grain', 'vegetable', 4],
   ['ambron-south-allotments', 'Ambron south allotments', 'Elagos', -1098, 232, 'vegetable', 'orchard', 4],
   ['ambron-ossen-fields', 'Ossen-side field plots', 'Elagos', -1035, 224, 'grain', 'meadow', 3],
+  ['caricas-north-fields', 'Caricas north fields', 'Caricas', -2105, 159, 'grain', 'vegetable', 3],
+  ['caricas-east-orchard', 'Caricas east orchard', 'Caricas', -2015, 300, 'orchard', 'grain', 4],
+  ['caricas-lower-fields', 'Caricas lower fields', 'Caricas', -1920, 350, 'grain', 'meadow', 3],
+  ['caricas-shelf-gardens', 'Caricas shelf gardens', 'Caricas', -1980, 381, 'vegetable', 'orchard', 4],
+  ['caricas-upper-fields', 'Caricas upper fields', 'Caricas', -1890, 192, 'grain', 'vegetable', 3],
 ];
 const cropFor = (kind, variant) => kind === 'grain' ? 'barley' : kind === 'vegetable' ? (variant % 2 ? 'beet' : 'carrot') : null;
 export const FARMSTEADS = freeze(SPECS.map(([id, name, region, x, z, main, side, count], index) => {
@@ -69,6 +74,11 @@ export const FARM_LANES = freeze([
   lane('ambron-west-allotments', 'south', [[-1190, 252], [-1184, 246], [-1182.65, 238.5]]),
   lane('ambron-south-allotments', 'south', [[-1087, 259], [-1112, 259], [-1147, 252], [-1173, 244], [-1183, 239]]),
   lane('ambron-ossen-fields', 'north', [[-1027, 199], [-1014, 196], [-1002.5, 191.5]]),
+  lane('caricas-north-fields', 'south', [[-2129, 194]]),
+  lane('caricas-east-orchard', 'north', [[-2014, 262.05]]),
+  lane('caricas-lower-fields', 'north', [[-1924, 324], [-1950, 315]]),
+  lane('caricas-shelf-gardens', 'north', [[-1980, 349]]),
+  lane('caricas-upper-fields', 'south', [[-1910, 220]]),
 ]);
 /** Compact obstacles accepted by the existing resident-wildlife range controller. */
 export const FARMLAND_WILDLIFE_EXCLUSIONS = freeze(FARMSTEADS.flatMap(farm => [

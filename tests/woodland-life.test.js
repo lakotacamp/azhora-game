@@ -9,7 +9,7 @@ const { createWoodlandLife } = await sourceModule('../src/woodland-life.js');
 const scene = new THREE.Scene(), world = createWorld(scene), life = createWoodlandLife(scene, world);
 
 test('Woodland pickups, NPCs, repair, cooking, and fishing are reachable from the village', () => {
-  const state = life.state();
+  const state = {...life.state(),sticks:life.state().sticks.filter(s=>!s.id.startsWith('ibenwood-'))};
   assert.equal(state.acorns.length, 24);
   assert.equal(state.sticks.length, 14);
   assert.equal(state.fruits.length, 12);

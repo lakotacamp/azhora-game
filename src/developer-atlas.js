@@ -103,6 +103,13 @@ const LOCALS = [
   [25, 'Ovesos', 'ovesos', 'Ovesos', ovesosAnchor],
   [26, 'Oves Desert', 'oves-desert', 'Oves Desert', ovesDesertAnchor],
   [27, 'West Lotharn', 'west-lotharn', 'West Lotharn Mountains', westLotharnAnchor],
+  [32, 'East Ibenwood', 'east-ibenwood', 'East Ibenwood', point(1011.516265, 2656, -19, 110)],
+  [33, 'North Ibenwood', 'north-ibenwood', 'North Ibenwood', point(886.808607, 2536, -21, 105)],
+  [34, 'South Ibenwood', 'south-ibenwood', 'South Ibenwood', point(886.808607, 2728, -25, 113)],
+  [35, 'West Ibenwood', 'west-ibenwood', 'West Ibenwood', point(748.244542, 2680, -29, 111)],
+  [36, 'Central Ibenwood', 'central-ibenwood', 'Central Ibenwood', point(900.665013, 2656, -23, 110)],
+  [38, 'Yunethre', 'yunethre', 'Yunethre', point(1039.23, 2464, -14, 102)],
+  [37, 'South Oremindi', 'south-oremindi', 'South Oremindi Mountains', point(900.666, 2464, -19, 102)],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

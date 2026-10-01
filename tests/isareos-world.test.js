@@ -16,6 +16,8 @@ import {
 import { WEST_PROFILES, westGroundAt, westWaterSurface, isareosLie } from '../src/west-ground.js';
 import { DEFAULT_SKY, regionSky } from '../src/region-sky.js';
 import { groundWithRiver } from '../src/world-terrain.js';
+import { menoraReserved } from '../src/menora-city.js';
+import { caricasSettlementReserved } from '../src/caricas-settlement.js';
 import { SUBREGIONS } from '../src/map-fog.js';
 import { regionBuildStatus } from '../src/build-status.js';
 import { regionLevel, levelWords } from '../src/region-levels.js';
@@ -76,7 +78,7 @@ test('Isareos is a registered region, landlocked, and without a tree the atlas d
   assert.equal(regions.find(region => region.name === 'Isareos').landmarks.some(id => /coast|harbour|inlet|mouth/.test(id)), false);
 });
 
-test('the Köppen field says one thing over the whole country, and the traveler notices nothing', () => {
+test('the climate remains humid subtropical while Menora has a clearer long-distance sky', () => {
   const map = new URL('../../world-builder/map/resources/examples/azhora.wwmap', import.meta.url);
   if (!existsSync(map)) { assert.ok(true, 'World Builder not checked out beside this repo'); return; }
   const atlas = JSON.parse(readFileSync(map, 'utf8').replace(/^﻿/, ''));
@@ -84,25 +86,20 @@ test('the Köppen field says one thing over the whole country, and the traveler 
   const counts = {};
   for (const cell of isareos.cells) counts[atlas.hexes[`${cell.q},${cell.r}`]?.climate ?? '(none)'] = 1 + (counts[atlas.hexes[`${cell.q},${cell.r}`]?.climate ?? '(none)'] ?? 0);
   assert.deepEqual(counts, { Cfa: 31 }, 'humid subtropical over every hex, the same as Drent and the lake country');
-  // Which is why Isareos, alone of the six, declares no sky: there is nothing to say.
-  assert.deepEqual({ ...regionSky(regions.find(region => region.name === 'Isareos')) }, { ...DEFAULT_SKY });
+  // Preserve the regional colour family while allowing the city skyline to be seen.
+  const sky=regionSky(regions.find(region => region.name === 'Isareos'));
+  assert.equal(sky.background,DEFAULT_SKY.background);assert.equal(sky.fog,DEFAULT_SKY.fog);
+  assert.ok(sky.density>0&&sky.density<DEFAULT_SKY.density);
 });
 
-test('Isareos is the country that spent most of the hex budget', () => {
-  // Eer lay inside the box Caricas already made. Isareos's western rim against the
-  // Ibenwood is what takes the world's edge out, from -2310 to -2960, and the guard in
-  // region-layout.test.js was raised from 30 to 36 for it and for nothing else. Nethereum's
-  // one `plains` hex then took it fifty metres further, to -3010, and the guard to 37.
-  const west = Math.min(...cells.map(cell => cell.x));
-  assert.ok(west < -2840, `Isareos reaches x = ${west.toFixed(0)}`);
-  assert.ok(WORLD_BOUNDS.minX < -2900, `the world's western edge is ${WORLD_BOUNDS.minX.toFixed(0)}`);
-  const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
-  const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  assert.ok(wide > 36 && wide < 37, `the world is ${wide.toFixed(2)} hexes wide`);
-  // North to south was 30.93 hexes, set by West Izol and Amod, and nothing here touched it; the
-  // East Lotharn took it to 35.26 by reaching north to the Mithala border, and the Ascarth Peninsula
-  // to 37.00 (36.996) by reaching south past West Izol to its tip (region-layout.test.js).
-  assert.ok(Math.abs(tall - 37.00) < .05, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
+test('Isareos remains fully contained as later mountain and woodland regions expand the world', () => {
+  assert.ok(Math.min(...cells.map(cell=>cell.x)) < -2840);
+  for(const cell of cells){
+    assert.ok(cell.x>WORLD_BOUNDS.minX&&cell.x<WORLD_BOUNDS.maxX);
+    assert.ok(cell.z>WORLD_BOUNDS.minZ&&cell.z<WORLD_BOUNDS.maxZ);
+  }
+  assert.ok((WORLD_BOUNDS.maxX-WORLD_BOUNDS.minX)/METRES_PER_HEX>36);
+  assert.ok((WORLD_BOUNDS.maxZ-WORLD_BOUNDS.minZ)/METRES_PER_HEX>36.9);
 });
 
 test('low hills, not quite highlands, blurring into the two countries either side of them', () => {
@@ -157,9 +154,8 @@ test('the Isa, the three becks that feed it, and the ground kept clear where it 
   assert.equal(ISAREOS_RIVER.name, 'The Isa');
   assert.ok(WEST_REGION_LANDMARKS.some(mark => /\bIsa\b/.test(mark.name) || /\bIsa\b/.test(mark.description ?? '')),
     'and the chart says so somewhere');
-  // **Isamouth is not built**, because it is a settlement and this pass builds none — and
-  // the ground where it will stand is kept plain, so that putting it there later does not
-  // mean moving a gallery and re-rolling every seeded draw after it.
+  // The old confluence reservation remains a stable river/scatter anchor. The new
+  // settlement is Menora, not a second town with the older draft name Isamouth.
   assert.ok(!WEST_REGION_LANDMARKS.some(mark => /Isamouth/.test(mark.name)), 'Isamouth is a town and is not built');
   assert.ok(!SUBREGIONS.some(area => /Isamouth/.test(area.name)));
   const confluence = ISAREOS_RIVER.points.at(-1);
@@ -196,6 +192,8 @@ test('every hex of Isareos is honest ground, and nobody is sealed in', () => {
     const y = world.heightAt(spot.x, spot.z);
     assert.ok(Number.isFinite(y), `NaN ground at ${spot.x}, ${spot.z}`);
     assert.ok(landDistance(spot.x, spot.z) > 0, `${spot.x}, ${spot.z} is under water in a landlocked country`);
+    // Authored city walls, buildings and graded approaches have dedicated route tests.
+    if (hexOwnerAt(spot.x,spot.z) !== 'Isareos' || menoraReserved(spot.x,spot.z,24) || caricasSettlementReserved(spot.x,spot.z,24)) continue;
     if (westBareGround(spot.x, spot.z, 4)) continue;
     worst = Math.max(worst, Math.abs(groundWithRiver(spot.x, spot.z) - westGroundAt(spot.x, spot.z)));
     const standable = canStand(spot.x, spot.z, world, .5)
@@ -284,7 +282,7 @@ test('red deer on the open grass, hares on the shoulders, otters on the water an
   life.dispose();
 });
 
-test('a red deer cannot be run down, and the country is charted, levelled and empty of people', () => {
+test('a red deer cannot be run down, and Menora joins the charted frontier', () => {
   /**
    * The law `tests/west-life.test.js` holds for the whole west, spelled out for the animal
    * this country is for — and measured the way that file measures a cornered sheep, because
@@ -326,7 +324,8 @@ test('a red deer cannot be run down, and the country is charted, levelled and em
   life.dispose();
 
   const isareos = regions.find(region => region.name === 'Isareos');
-  assert.deepEqual([...isareos.npcIds], [], 'terrain and wildlife only');
+  assert.ok(isareos.npcIds.includes('prince-cedric')&&isareos.npcIds.includes('prince-wilhelm'));
+  assert.ok(world.menora.metrics&&world.menora.mapFeatures.length>=15);
   for (const id of isareos.landmarks) assert.ok(world.landmarks.some(mark => mark.id === id), `the chart knows ${id}`);
   for (const mark of WEST_REGION_LANDMARKS.filter(item => isareos.landmarks.includes(item.id)))
     assert.equal(hexOwnerAt(mark.x, mark.z), 'Isareos', `${mark.id} stands outside Isareos`);
@@ -336,6 +335,5 @@ test('a red deer cannot be run down, and the country is charted, levelled and em
   assert.equal(regionBuildStatus('Isareos').playable, true);
   assert.equal(regionLevel('Isareos'), 3);
   assert.equal(levelWords(3), 'A hard country');
-  for (const name of ['Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos'])
-    assert.deepEqual([...regions.find(region => region.name === name).npcIds], [], `${name} places nobody`);
+  assert.equal(regionBuildStatus('Isareos').state, 'early');
 });

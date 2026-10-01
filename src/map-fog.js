@@ -8,7 +8,9 @@
 import { hexAt } from './region-world.js';
 import { FARMSTEADS } from './regional-farmland.js';
 import { WINERY } from './winery.js';
+import { CARICAS_TOWN } from './caricas-settlement.js';
 import { ISCARE_RUIN_SITES, ISCARE_REGION } from './iscare-world.js';
+import { IBENWOOD_GROVES, IBENWOOD_ARRIVALS, IBENWOOD_PILOT } from './ibenwood-environment.js';
 
 export const MAP_FOG_VERSION = 1;
 /** The chart records ground the traveler has actually stood on: one authored hex at a time. */
@@ -120,7 +122,13 @@ export const SUBREGIONS = Object.freeze([
   area('eer-channels', 'The Two Channels', 'Eer', -1120, 1100, 95, 'Shallow water leaving the loam and going south-east to the sea, widening and slowing until it stops keeping to one bed. Herons stand in all three threads of it and do not move when you do.'),
   area('eer-scrub', 'The Dry Half', 'Eer', -1070, 1180, 100, 'Where the rain stops coming in summer: tawny grass, grey cushion scrub that smells of itself when you walk through it, and wild olives standing singly with nothing near them. Nobody drew a line here; the weather changed under you a hundred paces back.'),
   area('eer-bays', 'The Low Bays', 'Eer', -930, 1250, 95, 'The Iberos coast of Eer: low headlands and small sheltered bays, none of them big enough to be a harbour. No cliff, no proper beach — the grass thins, gives out, and the water is there. Gulls on all of it, and something with a fin out past the surf.'),
-  // Isareos: a country charted by which shoulder you are on and which valley is under it.
+  area(CARICAS_TOWN.id, CARICAS_TOWN.name, 'Caricas', CARICAS_TOWN.x, CARICAS_TOWN.z, CARICAS_TOWN.radius, 'An Imperial garrison holds the town, with worked farms on the dry shelf and the old wooded river corridor nearby.'),
+  area('caricas-farms', 'The Caricas Fields', 'Caricas', -2000, 240, 65, 'Cultivated fields outside the occupied town; the civil war has not ended simply because the army holds its roads.'),
+  area('menora', 'Menora', 'Isareos', -2345, 120, 112, 'The fortified holy city at the Isa-Lizeem fork. Tall white walls enclose a great temple, the Sorcerers’ Guild tower, gardens and stone streets.'),
+  area('menora-army-muster', 'The Blood Prince’s Army', 'Isareos', -2474, 83, 48, 'Prince Wilhelm and his army camp outside Menora’s western gate. Their role in the later main story is still to unfold.'),
+  area('yunethre-free-town', 'Lakeside Free Town', 'Yunethre', -3000.0019279391277, -317.41016151377545, 50, 'Independent neutral ground beside the lake below South Oremindi. Humans, elves and centaurs share this town, respected by the neighboring powers.'),
+  area('yunethre-centaur-camp', 'Bane’s Camp', 'Yunethre', -2700.0019279391277, -317.41016151377545, 62, 'A nomadic centaur camp in the mountain pass. The clans defend their dwindling plains against encroachment from the north and south, with trade and support from Elfland.'),
+  // Isareos: the fortified holy city and the exposed grass-hill frontier.
   area('isareos-shoulders', 'The Isareos Shoulders', 'Isareos', -2520, -60, 110, 'The high ground between the valley heads: the same modest hundred-foot rise over and over, grass to the top of every one and no tree on any. Every one is a climb and none of them needs route-finding, which is the whole use of this country to everybody who crosses it.'),
   area('isareos-hollows', 'The Thorn Hollows', 'Isareos', -2610, 20, 95, 'Hawthorn and blackthorn down in the folds and on the lee of every shoulder, in threes and fours and nothing tall enough to stand under. On open hill country the wind decides where a woody thing may live, and it has decided here.'),
   area('isareos-gallery', 'The Isa Gallery', 'Isareos', -2620, 116, 100, 'Alder, willow and hazel two trees deep along the Isa and not one pace further. There is no forest hex anywhere in this country: this ribbon is the whole of the wood in it, and the valley communities cut it and let it grow again.'),
@@ -205,6 +213,17 @@ export const SUBREGIONS = Object.freeze([
   area('kelvath', 'Kelvath Cove', 'West Izol', 252, 1750, 50, 'A slip, a saw pit and a hull on the stocks with no planking on her, in a cove easier to reach by sea than by land.'),
   area('sightstone', 'The Sightstone', 'West Izol', 382, 1806, 60, 'The shoulder of the Hearth Road where all three Presences stand up at once. The Hearthstone itself is further in.'),
   area('long-pasture', 'The Long Pasture', 'West Izol', 272, 1956, 62, 'The low inland grass where the highland flocks come down, with a dry-stone fold and a cairn.'),
+  // Append new chart areas: existing discovery ids and ordering belong to saved charts.
+  ...IBENWOOD_GROVES.map(grove => area(grove.id, grove.name, grove.region, grove.x, grove.z, grove.radius,
+    grove.kind === 'royal' ? 'The reserved royal clearing in the heart of Elfland, surrounded by substantial ancient forest.'
+      : 'An elven grove among ancient living trees, with dwellings among roots, branches and old stone. Living trees are protected.')),
+  area('ibenwood-pilot-grove', 'East Ibenwood Grove', 'East Ibenwood', IBENWOOD_PILOT.x, IBENWOOD_PILOT.z, IBENWOOD_PILOT.radius,
+    'The established elven grove in East Ibenwood, with root dwellings and inhabited boughs. Living trees are protected; fallen wood may be gathered.'),
+  // Central arrival is already inside High Bough Grove: give that ground one name.
+  ...Object.entries(IBENWOOD_ARRIVALS).filter(([region, point]) => !IBENWOOD_GROVES.some(grove => grove.region === region
+    && Math.hypot(grove.x - point.x, grove.z - point.z) <= grove.radius)).map(([region, point]) =>
+    area(`ibenwood-${region.split(' ')[0].toLowerCase()}-arrival`, `${region} Woodland`, region, point.x, point.z, 38,
+      'A woodland approach among old trees and forest paths. The outer forest leads toward the ancient inner belt of Elfland.')),
 ]);
 
 export const SUBREGION_IDS = Object.freeze(SUBREGIONS.map(item => item.id));

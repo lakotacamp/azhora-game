@@ -8,9 +8,10 @@
  * start) permits steps that open the gap, but never steps farther through it.
  */
 import { canStand, moveCharacter } from './game-state.js';
+import { WALK_STEP, colliderOverlapsHeight } from './walk-surfaces.js';
 
 /** Footprints, in metres of radius. */
-export const BODY = Object.freeze({ person: .3, traveler: .34, dog: .26, cat: .15, horse: .5, bear: .8, batman: .76, ogre: .62, wolf: .32, spider: 1.02 });
+export const BODY = Object.freeze({ person: .3, traveler: .34, dog: .26, cat: .15, horse: .5, centaur: .76, bear: .8, batman: .76, ogre: .62, wolf: .32, spider: 1.02 });
 
 /**
  * A view of `world` whose colliders include the frame's bodies. `moving(who, radius)`
@@ -22,7 +23,9 @@ export function bodyWorld(world, { ignore = [] } = {}) {
   const adapter = {
     get bounds() { return world.bounds; },
     get colliders() { return world.colliders; },
-    heightAt: (x, z) => world.heightAt(x, z),
+    heightAt: (x, z) => Number.isFinite(mover?.y) && world.supportAt
+      ? world.supportAt(x, z, { maxY: mover.y, stepUp: WALK_STEP, groundSlope: false }).height : world.heightAt(x, z),
+    get feetY() { return mover?.y; },
     waterAt: (x, z) => world.waterAt?.(x, z),
     nearColliders(x, z, reach = 0, out) {
       const near = world.nearColliders ? world.nearColliders(x, z, reach, out) : [...world.colliders];
@@ -31,7 +34,7 @@ export function bodyWorld(world, { ignore = [] } = {}) {
       let kept = 0;
       for (let i = 0; i < near.length; i++) {
         const c = near[i];
-        if (ignore.includes(c.kind)) continue;
+        if (ignore.includes(c.kind) || !colliderOverlapsHeight(c, mover?.y)) continue;
         if (mover && c.kind === 'prop' && Math.hypot(c.x - mover.x, c.z - mover.z) < c.r + moverRadius) continue;
         near[kept++] = c;
       }
@@ -41,6 +44,7 @@ export function bodyWorld(world, { ignore = [] } = {}) {
         if (!body || body.active === false || body.dead || body.fallen || body.lying || body.action === 'dead'
           || (Number.isFinite(body.hp) && body.hp <= 0)) continue;
         if (mover && moverId != null && (body.id === moverId || body.npcId === moverId)) continue;
+        if (!colliderOverlapsHeight(body, mover?.y)) continue;
         if (mover) {
           const awayX = mover.x - body.x, awayZ = mover.z - body.z, before = Math.hypot(awayX, awayZ);
           // Do not turn a small lunge/spawn overlap into permission to pass

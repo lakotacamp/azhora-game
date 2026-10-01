@@ -2,7 +2,8 @@
 // Every authored region can be revealed through chart knowledge or the developer map override.
 // The chart is covered by fog: only the hexes the traveler has charted (src/map-fog.js) show through,
 // unless the developer's override lifts the fog and tints each region by how far it is built.
-import { hexAtlasCorners } from './region-world.js';
+import { hexAtlasCorners, TRANSFORM as HEX_WORLD_TRANSFORM } from './region-world.js';
+import { MENORA_OUTLINE } from './menora-city.js';
 import { PLAYABLE_SURVEY } from './region-survey.js';
 import { atlasLocalDetail, atlasCityDetail, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from './world-map-detail.js';
 
@@ -113,9 +114,12 @@ export function createWorldMap() {
     cityLayer.replaceChildren();
     cityLayer.setAttribute('viewBox', `0 0 ${metadata.width} ${metadata.height}`);
     cityLayer.setAttribute('width', metadata.width); cityLayer.setAttribute('height', metadata.height);
-    const cityPath = cityDetail.boundary.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ') + 'Z';
-    cityLayer.append(node('path', { d: cityPath, class: 'atlas-capital-ground', 'data-city': 'ambron' }));
-    cityLayer.append(node('path', { d: cityPath, class: 'atlas-capital-wall', 'vector-effect': 'non-scaling-stroke' }));
+    for (const city of [{ id: 'ambron', boundary: cityDetail.boundary },
+      { id: 'menora', boundary: MENORA_OUTLINE.map(p => HEX_WORLD_TRANSFORM.worldToAtlas(p.x, p.z)) }]) {
+      const cityPath = city.boundary.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ') + 'Z';
+      cityLayer.append(node('path', { d: cityPath, class: 'atlas-capital-ground', 'data-city': city.id }));
+      cityLayer.append(node('path', { d: cityPath, class: 'atlas-capital-wall', 'data-city': city.id, 'vector-effect': 'non-scaling-stroke' }));
+    }
     detail.setAttribute('viewBox', `0 0 ${metadata.width} ${metadata.height}`);
     detail.setAttribute('width', metadata.width); detail.setAttribute('height', metadata.height);
     const pathText = points => points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ');
@@ -194,8 +198,7 @@ export function createWorldMap() {
     overlay.style.transform = image.style.transform;
     detail.style.transform = image.style.transform;
     cityLayer.style.transform = image.style.transform;
-    const capitalWall=cityLayer.querySelector('.atlas-capital-wall');
-    if(capitalWall){capitalWall.style.strokeWidth=String(2/scale);capitalWall.style.strokeDasharray=`${5/scale} ${2/scale}`;}
+    for(const capitalWall of cityLayer.querySelectorAll('.atlas-capital-wall')){capitalWall.style.strokeWidth=String(2/scale);capitalWall.style.strokeDasharray=`${5/scale} ${2/scale}`;}
     const countryLabels=overlay.querySelector('[data-role="labels"]');
     if(countryLabels)countryLabels.style.opacity=String(Math.max(0,Math.min(1,(24-zoom)/12)));
     cityLayer.style.opacity = String(Math.max(0, Math.min(1, (zoom - 2.5) / 2)));

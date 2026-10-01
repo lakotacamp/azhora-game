@@ -4,7 +4,7 @@
 export const CLIMBING = Object.freeze({ grabSlope: .9, restSlope: .6, maxSlope: 12, reach: 1.45, radius: .34,
   speed: 1.8, movingDrain: 7, descendingDrain: 3.5, hangingDrain: 1.2, burstCost: 14,
   safeDrop: 3.5, gravity: 20 });
-const CLIMB_REGIONS = new Set([4, 5, 18, 20, 21, 27, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains']);
+const CLIMB_REGIONS = new Set([4, 5, 18, 20, 21, 27, 37, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains']);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const copy = p => p ? { x: p.x, y: p.y, z: p.z } : null;
 const finite = p => p && Number.isFinite(p.x) && Number.isFinite(p.z);
@@ -81,7 +81,7 @@ export function createClimbing({ world: worldSource, onEvent = () => {} }) {
   function probe(from, facing) {
     if (!finite(from) || !Number.isFinite(facing)) return { available: false, reason: 'No reachable rock face.' };
     const w = world();
-    if (!isClimbTerrain(w, from.x, from.z)) return { available: false, reason: 'Climbing is available in Suval, the Lotharn and Feradom.' };
+    if (!isClimbTerrain(w, from.x, from.z)) return { available: false, reason: 'Climbing is available in Suval, the Lotharn, Feradom and South Oremindi.' };
     const base = w.heightAt(from.x, from.z), forward = { x: Math.sin(facing), z: Math.cos(facing) };
     let previous = { ...from }, found = null;
     // Do not jump a collider to grab the other side, or snap up a ledge taller than the body.

@@ -14,7 +14,7 @@ function fixture() {
 test('Regional beds use the same seed, tending, XP, harvest and save rules without needing a teacher',()=>{
   const {skills,inventory,farming}=fixture();
   assert.equal(farming.met,false);
-  for(const region of ['Feradom','Elagos']) {
+  for(const region of ['Feradom','Elagos','Caricas']) {
     const row=REGIONAL_FARM_ROWS.find(r=>r.region===region);
     farming.stockSeeds();const seeds=inventory.count('carrot-seed'),xp=skills.xp('farming');
     assert.equal(farming.sow(row.id,'carrot',10).ok,true);

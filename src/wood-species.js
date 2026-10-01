@@ -4,6 +4,13 @@
 const freeze = Object.freeze;
 const timber = (species, name, woodKind = species, log = null, plank = null, carriageUse = null) => freeze({ species, woodName: name, woodKind, log, plank, carriageUse });
 export const WOOD_SPECIES = freeze({
+  // Protected Ibenwood species have identity but no harvest products or recipes.
+  'grey-vault': timber('grey-vault', 'Grey Vault'),
+  'pale-witness': timber('pale-witness', 'Pale Witness'),
+  bloodoak: timber('bloodoak', 'Bloodoak'),
+  'midnight-elm': timber('midnight-elm', 'Midnight Elm'),
+  ridgeback: timber('ridgeback', 'Ridgeback'),
+  deeproot: timber('deeproot', 'Deeproot'),
   'loblolly-pine': timber('loblolly-pine', 'Loblolly pine', 'pine', 'pine-logs', 'pine-plank', 'Light carriage panels and the first repair lesson.'),
   'white-oak': timber('white-oak', 'White oak', 'oak', 'oak-logs', 'oak-plank', 'Sturdy carriage frames and running gear.'),
   'black-willow': timber('black-willow', 'Black willow', 'willow', 'willow-logs'),

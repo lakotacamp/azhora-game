@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -143,6 +143,16 @@ export const VILLAGE_LOCAL_BOX = Object.freeze({ minX: -112, maxX: 112, minZ: -1
 // Terrain: a base level and relief per biome, blended between neighbouring hexes
 // ---------------------------------------------------------------------------
 export const REGION_TERRAIN = Object.freeze({
+  // Keep the former outland contribution: authored plains relief only changes owned ground.
+  Yunethre: Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#a4a363' }),
+  // Registration keeps the exact former outland contribution to Ibenwood's blended ground.
+  // South Oremindi's own landform module raises hills and peaks only inside its atlas footprint.
+  'South Oremindi Mountains': Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
+  'East Ibenwood': Object.freeze({ base: 22, amp: 3.2, wave: 155, ground: REGION_BIOMES['East Ibenwood'].ground }),
+  'North Ibenwood': Object.freeze({ base: 27, amp: 3.2, wave: 155, ground: REGION_BIOMES['North Ibenwood'].ground }),
+  'South Ibenwood': Object.freeze({ base: 18, amp: 3.2, wave: 155, ground: REGION_BIOMES['South Ibenwood'].ground }),
+  'West Ibenwood': Object.freeze({ base: 24, amp: 3.2, wave: 155, ground: REGION_BIOMES['West Ibenwood'].ground }),
+  'Central Ibenwood': Object.freeze({ base: 25, amp: 3.2, wave: 155, ground: REGION_BIOMES['Central Ibenwood'].ground }),
   'Iscare Archipeligo': Object.freeze({base:8, amp:2.5, wave:80, ground:'#909477', byTerrain:Object.freeze({hills:Object.freeze({base:20,amp:6,wave:90,ground:'#969382'})})}),
   Drent: Object.freeze({ base: 4.6, amp: 2.6, wave: 90, ground: REGION_BIOMES.Drent.ground }),
   Luscia: Object.freeze({ base: 8.6, amp: 4.5, wave: 140, ground: REGION_BIOMES.Luscia.ground }),
@@ -869,6 +879,13 @@ function outlineBounds(loops) {
 }
 
 const REGION_TEXT = {
+  Yunethre: { subtitle: 'The grass passage between the mountains', spawn: hexCentre(-14, 102), description: 'Independent centaur plains between the Lotharn and Oremindi, a lakeside free town and the nomadic camp. The neutral town welcomes humans, elves and centaurs.', palette: { ground: '#a4a363', accent: '#e4d8ae', fog: '#cbd1ad', sky: 0xb3cbd3, haze: 0xcbd1ad, hazeDensity: .0017 }, npcIds: [], landmarks: [] },
+  'South Oremindi Mountains': { subtitle: 'The high range above Ibenwood', spawn: hexCentre(-19, 102), description: 'High mountains and cold hill approaches above Ibenwood, with alpine lake basins, tundra and permanent ice. This environment preview builds the terrain and wildlife; Sevron, the sage and the campaign chapter remain unfinished.', palette: { ground: '#89908f', accent: '#e2e7df', fog: '#c7d4d8', sky: 0xb2c9d7, haze: 0xc7d4d8, hazeDensity: .0018 }, npcIds: [], landmarks: [] },
+  'East Ibenwood': { subtitle: 'The eastern woodland margin', spawn: hexCentre(-19, 110), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#617548', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },
+  'North Ibenwood': { subtitle: 'The cold northern boughs', spawn: hexCentre(-21, 105), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#627951', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },
+  'South Ibenwood': { subtitle: 'The southern river woods', spawn: hexCentre(-25, 113), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#536e48', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },
+  'West Ibenwood': { subtitle: 'Moss and old stone', spawn: hexCentre(-29, 111), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#526747', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },
+  'Central Ibenwood': { subtitle: 'The forest heart', spawn: hexCentre(-23, 110), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#4b6344', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },
   'Iscare Archipeligo': {subtitle:'The burned island passages', spawn:point(-650,1155), description:'Low islands, shoals and narrow sea channels. Zecron and the small settlements were burned by the Blood Prince; only ruins and returning wildlife remain.', palette:{ground:'#909477',accent:'#d9caaa',fog:'#b8c4b9',sky:0xadc9d1,haze:0xb8c4b9,hazeDensity:.005}, npcIds:[],landmarks:['zecron-ruins','iscare-hamlets']},
   Drent: { subtitle: 'The forest coast and Tidehaven', spawn: at(-15, 29),
     description: 'All of Drent is broadleaf forest: ferns, sorrel and deer, with Tidehaven on the eastern shore, one farm clearing inland, and the ruins of Rena at its centre, where the region’s principal town stood until eighty years ago.',
@@ -943,13 +960,11 @@ const REGION_TEXT = {
     description: 'Cold ridge-and-valley upland between the mountains and the lake country: parallel ridges running east and west, a beck on every valley floor, hay meadow between them, wild chestnut and walnut on the lower faces and close-grown hardwood above. Southward the ridges lower and the country opens, and there is no line at which Meneth stops.',
     palette: { ground: '#7d8f63', accent: '#cfd4a6', fog: '#bac6bb' },
     npcIds: [], landmarks: ['meneth-ridges', 'meneth-becks', 'meneth-nut-slopes'] },
-  // Caricas is terrain and wildlife only. The fox keeper families, the Water Council and the
-  // farms on the terraced slopes are the region's whole political life and none of it is built;
-  // what is built is the ground they keep, and the fox.
-  Caricas: { subtitle: 'The Carica corridor', spawn: point(-1950, 289),
-    description: 'A wooded river corridor on the fall from an upland shelf to the Lizeem: the Carica quick and rocky where it leaves the shelf, slow and deep-banked below, and old-growth forest tight to the water for the whole of its middle reach. This is the ground of the vel-caric, the river fox, and it has never been cleared.',
-    palette: { ground: '#7e8f5b', accent: '#c7cf9a', fog: '#b0bfae' },
-    npcIds: [], landmarks: ['carica-corridor', 'carica-upper', 'lizeem-channel', 'caricas-shelf'] },
+  // Imperial occupation adds a town and worked fields while the river-fox corridor stays wooded.
+  Caricas: { subtitle: 'The occupied river country', spawn: point(-2092, 231),
+    description: 'Imperial soldiers hold the river town and its patchwork of farms. The Carica drops from the upland shelf into a wooded corridor, where old riverbank forest and the vel-caric river fox survive beside the worked country. Occupation has settled who commands the road, not the civil war.',
+    palette: { ground: '#7e8f5b', accent: '#c7cf9a', fog: '#b0bfae', sky: 0xaacfd3, haze: 0xb3d3d0, hazeDensity: .0028 },
+    npcIds: [], landmarks: ['caricas-garrison-town', 'caricas-farms', 'carica-corridor', 'carica-upper', 'lizeem-channel', 'caricas-shelf'] },
   // Nesdor is terrain and wildlife only. The Nesdor Way, the route-communities that live off
   // it, the inns and warehouses and the legal practitioners who sell the difference between
   // two jurisdictions are the whole of what the lore is about, and none of it is built.
@@ -974,17 +989,11 @@ const REGION_TEXT = {
     description: 'The plain between the great river and the sea, and the place the green country ends: deep black loam and rank damp grass in the north-west, dry tawny grass and aromatic scrub on the Mediterranean coast, and the change happening under your feet in the middle of the country rather than at either border. Two shallow channels braid across it to a low shore of small bays. Wild olives stand singly on the open grass. The Lizeem is the western wall and there is no way over it anywhere.',
     palette: { ground: '#6d8748', accent: '#ded0a0', fog: '#c4cdb2', sky: 0xbdd8dc, haze: 0xd2d4c2, hazeDensity: .0049 },
     npcIds: [], landmarks: ['eer-loam', 'eer-braids', 'eer-bays', 'eer-olives', 'lizeem-reach'] },
-  // Isareos is terrain and wildlife only. The drove road that the whole lore file is
-  // organised round, the valley grazing communities, their fords and the herder's chart of
-  // them are all somebody's, and somebody is not built. Nor is the coast: the atlas gives
-  // Isareos thirty-one hexes and not one unclaimed edge, so the inlets, the inshore fishery,
-  // the boatbuilding timber and Isamouth are gone from the lore as well as from here
-  // (docs/six-regions-brief.md, disagreement 1). This is the first country past the Lizeem's
-  // head, and the last familiar one: everything beyond it is not.
-  Isareos: { subtitle: 'The grass hills past the river’s head', spawn: point(-2450, -58),
-    description: 'Low grass hills west of the Lizeem’s head, with a valley between every pair of shoulders and deep humid grass to the top of all of them. Hawthorn and blackthorn keep to the hollows and the lee sides; alder, willow and hazel keep to the water and go two trees deep and no further. There is no dramatic backdrop, no defining river and no particularly fertile valley — it is the most ordinary country in the west, which after four hundred metres of it is the thing worth noticing. Red deer on the open grass, hares on the shoulders, and the shadow of something circling.',
-    palette: { ground: '#6f9150', accent: '#d3dca6', fog: '#b7c8ac' },
-    npcIds: [], landmarks: ['isareos-shoulders', 'isareos-hollows', 'isareos-gallery', 'isareos-becks', 'isareos-west-rim'] },
+  // Menora guards the real Isa-Lizeem fork; its holy city is stable while the outer frontier is raided.
+  Isareos: { subtitle: 'Menora and the Imperial frontier', spawn: point(-2308, -7),
+    description: 'Menora rises over the Isa-Lizeem fork: great white walls, an immense Sorcerers’ Guild tower and a sacred Imperial temple. Cedric keeps his claim to the crown here; Wilhelm and his army camp outside. Beyond the protected city, northern and western hills are exposed to centaur raids from Yunethre.',
+    palette: { ground: '#6f9150', accent: '#d3dca6', fog: '#b7c8ac', sky: 0xaacfd3, haze: 0xb3d3d0, hazeDensity: .0020 },
+    npcIds: ['prince-cedric', 'prince-wilhelm'], landmarks: ['menora', 'menora-grand-temple', 'menora-sorcerers-guild', 'menora-army-muster', 'isareos-shoulders', 'isareos-hollows', 'isareos-gallery', 'isareos-becks', 'isareos-west-rim'] },
   // Nethereum is terrain and wildlife only, like the six before it. The ridge communities, the
   // Flood Council, the Flood Recall, the weirs and the oats and hay on the flood meadow are all
   // somebody's, and somebody is not built — and two of them are impossible besides, because

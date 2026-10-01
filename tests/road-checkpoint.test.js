@@ -758,3 +758,14 @@ test('checkpoint validation preserves sparse world-tree harvests without needing
   assert.equal(checkpoint.save({ ...data, woodcutting: broken }).ok, false);
   assert.deepEqual(checkpoint.read().data.woodcutting, woodcutting, 'a bad stump timer does not replace the saved adventure');
 });
+
+test('canopy floor identity survives a checkpoint while legacy positions remain unchanged', () => {
+  const { data, checkpoint } = fixture();
+  const position = { ...data.position, surfaceId: 'ibenwood:canopy-home-1' };
+  assert.equal(checkpoint.save({ ...data, position }).ok, true);
+  assert.deepEqual(checkpoint.read().data.position, position);
+  assert.equal(checkpoint.save(data).ok, true);
+  assert.deepEqual(checkpoint.read().data.position, data.position);
+  for (const surfaceId of [null, 42, '', 'a'.repeat(129), '../floor'])
+    assert.equal(checkpoint.save({ ...data, position: { ...data.position, surfaceId } }).ok, false);
+});

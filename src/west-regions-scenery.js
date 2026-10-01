@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { yunethreReserved } from './yunethre-world.js';
+import { menoraReserved } from './menora-city.js';
+import { caricasSettlementReserved } from './caricas-settlement.js';
+import { regionalFarmlandClear } from './regional-farmland.js';
+const frontierReserved=(x,z)=>menoraReserved(x,z,2)||caricasSettlementReserved(x,z,2)||regionalFarmlandClear(x,z,2)||yunethreReserved(x,z,1);
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, SURVEY, hexAt, hexCentre, METRES_PER_HEX, landDistance } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
@@ -377,6 +382,11 @@ export function createWestScenery(kit) {
         :kind==='isareos-tree'?(tree.hazel?'common-hazel':index%2?'black-willow':'black-alder')
         :kind==='nethereum-tree'?(tree.willow?'black-willow':'black-alder')
         :index%2?'beech':'white-oak';
+      if(frontierReserved(tree.x,tree.z)){
+        const at=colliders.indexOf(collider);if(at>=0)colliders.splice(at,1);
+        dummy.scale.setScalar(0);dummy.updateMatrix();for(const part of parts)part.mesh.setMatrixAt(part.index,dummy.matrix);
+        return;
+      }
       registerWorldTree(colliders,{id:worldTreeId(kind,tree.x,tree.z),x:tree.x,z:tree.z,y,height,species},parts,collider);
     });
     for (const batch of [trunks, crowns]) {
@@ -395,6 +405,7 @@ export function createWestScenery(kit) {
       dummy.scale.set(rock.s, rock.s * range(.4, .7), rock.s * range(.75, 1.25)); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
       batch.setColorAt(index, color.setHSL(.16, .07, range(.44, .6)));
+      if(frontierReserved(rock.x,rock.z)){dummy.scale.setScalar(0);dummy.updateMatrix();batch.setMatrixAt(index,dummy.matrix);}
     });
     batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); parent.add(batch);
     metrics.rocks += rocks.length;
@@ -409,6 +420,7 @@ export function createWestScenery(kit) {
       dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
       batch.setColorAt(index, tint(tuft));
+      if(frontierReserved(tuft.x,tuft.z)){dummy.scale.setScalar(0);dummy.updateMatrix();batch.setMatrixAt(index,dummy.matrix);}
     });
     batch.receiveShadow = true; batch.computeBoundingSphere(); parent.add(batch);
     metrics.grass += tufts.length;
@@ -597,10 +609,12 @@ export function createWestScenery(kit) {
     // metre in this line is a place a traveler walks out into a deep river.
     const step = Math.max(1, Math.round(sample.half / 3.2));
     const radius = sample.half / (step + .5) + 1.4;
+    // Deep water occupies the channel below its surface, never the air above a bridge.
+    const surface = westWaterSurface(sample.x, sample.z);
     for (let k = -step; k <= step; k++) {
       const offset = sample.half * (k / (step + .5));
       colliders.push({ x: sample.x + sample.nx * offset, z: sample.z + sample.nz * offset,
-        r: radius, kind: 'west-deep-water' });
+        r: radius, kind: 'west-deep-water', ...(surface !== null ? { surface, maxY: surface } : {}) });
     }
   }
 
@@ -1090,19 +1104,21 @@ export function createWestScenery(kit) {
     const batch = new THREE.InstancedMesh(round, material('#46603c', { flatShading: true }), hollowThorn.length * 3);
     let at = 0;
     for (const bush of hollowThorn) {
+      const reserved = frontierReserved(bush.x, bush.z);
       const y = groundHeight(bush.x, bush.z);
       for (let lobe = 0; lobe < 3; lobe++) {
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .58 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * (lobe === 2 ? .96 : .62), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.2, .2));
         dummy.scale.set(bush.s * .86, bush.s * .58, bush.s * .82);
+        if (reserved) dummy.scale.setScalar(0);
         dummy.updateMatrix(); batch.setMatrixAt(at, dummy.matrix);
         // Dark, but not a hole in the grass: photographed across two valleys the first
         // thorn read as gravel, because a lightness of .18 against a hillside of .45 is
         // a shadow and not a bush.
         batch.setColorAt(at++, color.setHSL(range(.22, .30), range(.19, .30), range(.25, .36)));
       }
-      colliders.push({ x: bush.x, z: bush.z, r: .58 * bush.s, kind: 'isareos-thorn' });
+      if (!reserved) colliders.push({ x: bush.x, z: bush.z, r: .58 * bush.s, kind: 'isareos-thorn' });
     }
     batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere();
     batch.name = 'Isareos hollow thorn'; isareos.add(batch); metrics.thorn += hollowThorn.length;

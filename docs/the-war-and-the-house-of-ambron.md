@@ -3,9 +3,18 @@
 The user's own history, set down so the game and every agent build from one text. The
 present year is **980**. Anything here that contradicts an older note wins. Where this
 touches the world-builder lore (`../world-builder/azhora_lore`), the lore's geography is
-taken as given: Ambron on the Lake Ela narrows (`geography/regions/elagos.md`), Izol with
+taken as given: Ambron between the four lakes (`geography/regions/elagos.md`), Izol with
 no capital (`izol.md`), Nylon at the mouth of the Lizeem (`nylon.md`) with **Eer** as its
 farming hinterland, which foreign powers take in order to starve the city (`eer.md`).
+
+## Current frontier ruling (30 September 2026)
+
+The latest user brief supersedes the older draft in which Cedric was murdered,
+Menora was razed and Wilhelm was trapped in Nylon. **None of those events has
+happened at the start of this build.** Menora is the living holy frontier city at
+the Isa-Lizeem fork, near the meeting of Isareos, Caricas and Nethereum. Its great
+temple shelters Cedric; its western muster ground holds Wilhelm and his army.
+The main-story consequences are reserved for later Chapter 3/4 design.
 
 ## The house of Ambron
 
@@ -15,8 +24,8 @@ farming hinterland, which foreign powers take in order to starve the city (`eer.
 | **Valdemar the younger** | The eldest son. Died before his father. |
 | **Ruzo** | Valdemar the younger's son — christened Valdemar too, and goes by **Ruzo**, the name he took when he renounced his family. The old king thought him the ablest of them. He did not believe in the Empire's mission and would not take the throne he arguably had the first claim to. He is friendly with Willard and backs the constitutional monarchy. In the game he is already named, unwitting, in the Coalition's roster: "the prince who renounced his family". |
 | **Valroy** | Second son, and the eldest living. Abroad across the eastern sea on a colonial crusade when his father died, and claimed the throne from there. **Has just landed in the east with his army** — the news that opens Chapter 3 on both branches. Determined, independent, and deaf to argument. |
-| **Cedric** | Third son, half-brother to Valroy. Took the throne in fact while Valroy was away. Hated. Driven out of Ambron by the revolution; fled to the holy city in Isareos; killed there by Wilhelm, with all his family. |
-| **Wilhelm** | Younger than Cedric, older than Willard. **The Blood Prince.** Worships Nanvir, the man-eating god. Sacked Solis in 977, took Nylon, went north into Isareos claiming to relieve Cedric, killed him instead and razed the holy city. Now besieged in Nylon. |
+| **Cedric** | Third son; half-brother to Willard. Took the throne while Valroy was away. Driven out of Ambron by the revolution, he remains alive in Menora's grand temple in Isareos and still claims the crown. Long dirty-blonde hair. His later story is undecided. |
+| **Wilhelm** | Younger than Cedric, older than Willard. **The Blood Prince.** Worships Nanvir, the taboo blood god. Devastated Suval and the Iscare islands. He and his army are now present at intact Menora. Short very pale blonde, almost silver hair; a twisted, maniacal expression. |
 | **Willard** | The youngest. Installed as **constitutional monarch in Ambron** by the republicans, one day before the traveler arrives. |
 
 ## King, or emperor?
@@ -59,15 +68,19 @@ the kit. (Decided 2026-09-19; the game used Legion, Legate, Tribune and Latin na
   **Pyros, the Avites, Nylon** — declare war on Solis. Solis stands alone: **Lamdris** in
   South Suval and **East Suval** stay neutral rather than be destroyed with it.
 - **976–977** — The siege of Solis, about a year, without taking the city.
-- **977** — **Prince Wilhelm arrives and storms Solis**: he burns the city, and kills the
-  allies besieging it alongside him. That provokes war with Pyros, the Avites and Nylon.
-  He marches straight on **Nylon** in **Eer**, seizes the city, and disappears for a time.
-  **Solis is left mostly destroyed.**
-- **980, before the game** — Revolution in Ambron drives Cedric out; he flees to the holy
-  city in Isareos. Wilhelm follows, kills him and his family, and razes the holy city:
-  hence the Blood Prince. The revolutionaries and Willard settle on a constitutional
-  monarchy. The Coalition — the Izoli Republic, Suval, Ambroni rebels, Pyros, Selemis,
-  Marosh, the island cities — raises its own war against the Empire, and takes Solis.
+- **977** - Wilhelm arrives from Inseld, where his army had been stationed for ten years.
+  He lands in South Suval and burns farms and towns as offerings to Nanvir, razing
+  Imlamdris. He then attacks both the siege of Solis and Solis itself, destroying the
+  non-Ambroni allied forces and the city. Other southern countries interpret his
+  independent actions as an Ambroni declaration of war. He sails to the Iscare
+  archipelago and burns Zecron and smaller settlements.
+- **978** - The Blood Prince sails south with his army. Little is heard from him for
+  two years.
+- **980, before the game** - The revolution in Ambron drives Cedric out. He takes
+  refuge at Menora's great temple in Isareos and continues to claim the crown. The
+  rebels install his half-brother Willard. Wilhelm and his army are also now at
+  Menora, which remains intact, stable and exceptionally well defended. The date
+  and route of Wilhelm's return, and the princes' later dealings, are still open.
 - **980, the game** — The traveler lands at Tidehaven. Chapter 2 ends at the border battle
   and their own side's ground. Chapter 3 opens in Ambron a day after the revolution, and
   with the news that **Valroy has landed in the east**.
@@ -117,8 +130,9 @@ carry short paragraphs).
   nobody in the north said otherwise in his hearing, and he held Stonefist through a **steward**,
   a Cref of the rock appointed from Ambron. The steward still holds it.
 - **The legitimacy crisis.** The oath was sworn to a man in the rock, not a house on a lake. With
-  the old king dead and his sons at war — Valroy claiming from abroad, Cedric dead, Wilhelm
-  besieged in Nylon, Willard a king by a republic's leave, Ruzo having renounced the family —
+  the old king dead and his sons at war - Valroy claiming from abroad, Cedric still
+  claiming from Menora, Wilhelm and his army there too, Willard a king by a republic's
+  leave, Ruzo having renounced the family -
   the kings of the north are asking whether the oath has an object at all. This is the major
   issue the traveler meets on going north into the Alliance's country.
 
@@ -136,6 +150,6 @@ roll with no ground yet.
   Krefar, Stornul, Grethal, Fordun, Vrakel, Harsk, Vralketh, Skordun).
 - **Olo and Blizard**: which ground on the atlas.
 
-- Does the razed holy city in Isareos have a name? The lore does not give one.
+- What role do Cedric, Wilhelm and Menora play in Chapter 3 or Chapter 4? The city is intact and stable; no betrayal or destruction is predetermined.
 - Nanvir is new: he wants a place in `../world-builder/azhora_lore/culture/azhoran_religions.md`.
 - Is Prince Maro alive in 980, and where?

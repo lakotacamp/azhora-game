@@ -24,6 +24,7 @@ const PROVOKED_FOR = 4;
 // Each enemy kind has its own pace. Goblins keep the original timings; wolves
 // close faster, bite sooner and hit a little lighter.
 export const ENEMY_KINDS = Object.freeze({
+  centaur:Object.freeze({tell:.72,attack:.5,contact:.24,recovery:1.15,damage:26,speed:4.4,engage:2.6,reach:2.8,lunge:3.3,armor:.12,poise:true,pack:2,fixedStats:true}),
   // A living, powerful protector. He uses the same lethal combat and collision
   // rules as any creature once attacked, with no regional rescaling of his body.
   batman: Object.freeze({ tell: BATMAN_COMBAT.windup, attack: .44, contact: .19,
@@ -494,7 +495,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
   }
 
   function makeEnemy(id, kind, point, entry = 0, hp = kind === 'dummy' ? 100 : 75) {
-    const radius = kind === 'spider' ? BODY.spider : kind === 'bear' ? BODY.bear : kind === 'batman' ? BODY.batman : .45;
+    const radius = kind === 'centaur' ? BODY.centaur : kind === 'spider' ? BODY.spider : kind === 'bear' ? BODY.bear : kind === 'batman' ? BODY.batman : .45;
     const enemy = {
       id, kind, ...(kind === 'dummy' ? {x:point.x,z:point.z} : safePoint(point.x, point.z, radius)), yaw: 0,
       ...(['spider', 'bear', 'batman'].includes(kind) ? { r: radius } : {}),
@@ -1376,6 +1377,20 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
     return {damage:before-player.hp,defeated:player.hp<=0};
   }
 
+  /** Physical NPC projectiles arrive after swept contact, using normal armor, guard and defeat. */
+  function npcProjectileHit(damage, {sourceId, x=position.x, z=position.z, encounterId='world-archer', impactId=null}={}) {
+    if(!Number.isFinite(damage)||damage<=0||!sourceId||player.hp<=0||state.phase==='defeated')return {damage:0};
+    if(state.phase==='practice'||(state.phase==='active'&&lastEncounter.bout)){
+      const wasBout=state.phase==='active', previousEncounter=state.encounterId;
+      state.phase='peaceful';state.enemies=[];enemyTimers.clear();clearAllies();
+      if(wasBout)emit('spar-over',{encounterId:previousEncounter,winner:'walked-away'});
+    }
+    if(state.phase!=='active')state.encounterId=encounterId;
+    const before=player.hp,yaw=Math.atan2(position.x-x,position.z-z);
+    hurtPlayer({id:sourceId,x,z,yaw},damage,{source:'enemy',sourceId,by:sourceId,arrow:true,impactId},true);
+    return {damage:before-player.hp,defeated:player.hp<=0};
+  }
+
   /** The fight is over and he lost it. One place, so the shield's path cannot drift from the other. */
   function fall() {
     player.action = 'dead';
@@ -1981,7 +1996,7 @@ export function createCombat({ world, position, onEvent = () => {}, getWeapon, o
   }
 
   return {
-    state, startPractice, finishPractice, startEncounter, joinEnemy, attack, dodge, guard, draw, lowerBow, update, resetEncounter, disengage, pose, movementScale, heal, exhaust, revive, spellHit, npcSpellHit,
+    state, startPractice, finishPractice, startEncounter, joinEnemy, attack, dodge, guard, draw, lowerBow, update, resetEncounter, disengage, pose, movementScale, heal, exhaust, revive, spellHit, npcSpellHit, npcProjectileHit,
     setWeaponReady(value) { weaponReady = Boolean(value); },
     get slowed() { return slowedFor(); },
     /** How far the bow is drawn right now, 0 to 1, for the picture and the HUD. */

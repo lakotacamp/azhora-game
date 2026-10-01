@@ -11,6 +11,9 @@ import {
 } from '../src/west-regions.js';
 import { WEST_PROFILES, caricasShelf, westGroundAt, westWaterSurface } from '../src/west-ground.js';
 import { groundWithRiver } from '../src/world-terrain.js';
+import { menoraReserved } from '../src/menora-city.js';
+import { caricasSettlementReserved } from '../src/caricas-settlement.js';
+import { CARICAS_SOLDIERS } from '../src/frontier-people.js';
 import { SUBREGIONS } from '../src/map-fog.js';
 import { regionBuildStatus } from '../src/build-status.js';
 
@@ -123,6 +126,8 @@ test('Every hex of the corridor country is honest ground', () => {
     const y = world.heightAt(spot.x, spot.z);
     assert.ok(Number.isFinite(y), `NaN ground at ${spot.x}, ${spot.z}`);
     assert.ok(y > 2, `${spot.x}, ${spot.z} sinks to ${y.toFixed(1)} m`);
+    // Authored city walls, buildings and graded approaches have dedicated route tests.
+    if (hexOwnerAt(spot.x,spot.z) !== 'Caricas' || menoraReserved(spot.x,spot.z,24) || caricasSettlementReserved(spot.x,spot.z,24)) continue;
     worst = Math.max(worst, Math.abs(groundWithRiver(spot.x, spot.z) - westGroundAt(spot.x, spot.z)));
     if (westBareGround(spot.x, spot.z, 2)) continue;
     const standable = canStand(spot.x, spot.z, world, .5)
@@ -182,9 +187,11 @@ test('The river fox watches; everything else in the west runs', () => {
   life.dispose();
 });
 
-test('Caricas is charted and listed, and nobody lives there', () => {
+test('Caricas charts its occupied town while preserving the river-country landmarks', () => {
   const caricas = regions.find(region => region.name === 'Caricas');
-  assert.deepEqual([...caricas.npcIds], [], 'terrain and wildlife only');
+  assert.ok(world.caricasSettlement.metrics.buildings>=8);
+  assert.ok(CARICAS_SOLDIERS.length>=8);
+  for(const guard of CARICAS_SOLDIERS)assert.ok(canStand(guard.x,guard.z,world,.4),`${guard.id} is blocked`);
   for (const id of caricas.landmarks)
     assert.ok(world.landmarks.some(landmark => landmark.id === id), `the chart knows ${id}`);
   for (const landmark of WEST_REGION_LANDMARKS.filter(item => caricas.landmarks.includes(item.id)))

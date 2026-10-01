@@ -6,7 +6,7 @@
  *
  * The day matters. The traveler arrives **one day after the revolution**
  * (`docs/the-war-and-the-house-of-ambron.md`): Cedric is driven out and gone
- * east to Isareos, the republicans and Prince Willard have settled on a
+ * west to Menora in Isareos, the republicans and Prince Willard have settled on a
  * constitutional monarchy, the proclamation went up yesterday morning, and word
  * came last night that **Valroy has landed in the east** with the army he took
  * abroad. Nothing in the city has stopped. The chain went up at dawn as it does
@@ -128,7 +128,7 @@ export const ELAGOS_AMBIENT = freeze({
   'ambron-legate': freeze([
     'Lord Marshal Duvo Harn. I hold the narrows. Whatever else is being argued in this city, the narrows are held.',
     'You will hear that I turned my coat at dawn yesterday. I did not turn anything. My orders are to keep the roads, the lake trade and the granaries, and a proclamation nailed to the Toll House door does not alter one of the three.',
-    'Cedric is gone east. Wilhelm is shut up in Nylon and may the gods keep him there. Prince Valroy came ashore in the east four days ago with an army that has been fighting across the sea for six years, and he has not written to me. That is the only fact in this city worth your attention.',
+    'Cedric still claims the crown from the temple in Menora. Wilhelm has his army outside those white walls, and I do not trust that peace. Prince Valroy came ashore in the east four days ago with an army that has been fighting across the sea for six years, and he has not written to me. That is the only fact in this city worth your attention.',
     'If you are a sellsword, the pay is the pay and the army does not haggle. If you are a messenger, say so and say from whom.',
   ]),
   'ambron-adjutant': freeze([
