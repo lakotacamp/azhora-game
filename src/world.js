@@ -117,6 +117,8 @@ import { createSouthwestScenery } from './southwest-scenery.js';
 import { OVES_LANDMARKS } from './oves-world.js';
 import { MITHALA_LANDMARKS } from './mithala-world.js';
 import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
+import { createSelemisScenery } from './selemis-scenery.js';
+import { SELEMIS_LANDMARKS } from './selemis-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
@@ -1439,6 +1441,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // oak and pine at Navarth's tip. Its own seeded stream, after the Mithala's, so nothing already
   // built moves for it. Nobody's.
   const southwestScenery = createSouthwestScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
+  // Selemis (src/selemis-scenery.js): the island's straw grass and aromatic scrub, the pale stone on
+  // its tops, the pines leaning in the lee of its hills, the tamarisk and the wrack on its strand, the
+  // stones in its two winter beds and the rock fallen at the foot of its cliffs. Its own seeded
+  // stream, after the southwest's, so nothing already built moves for it. Nobody's.
+  const selemisScenery = createSelemisScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   const stakedProps = [];
   buildMorosWorks({ parent: world, heightAt: groundHeight, colliders, signs, movingGroups, stakedProps, roadDistance });
@@ -2083,6 +2090,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     ovesMetrics: ovesScenery.metrics,
     mithalaMetrics: mithalaScenery.metrics,
     southwestMetrics: southwestScenery.metrics,
+    selemisMetrics: selemisScenery.metrics,
     ascarthMetrics: ascarth.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
@@ -2245,6 +2253,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...OVES_LANDMARKS,
       ...MITHALA_LANDMARKS,
       ...SOUTHWEST_LANDMARKS,
+      ...SELEMIS_LANDMARKS,
     ],
     paths,
     update(time, dt) {

@@ -244,6 +244,8 @@ import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASH
   MAROSH_RIDGE as SOUTHWEST_MAROSH_RIDGE, MAROSH_GAP as SOUTHWEST_WATER_GAP, TROGO_CREST as SOUTHWEST_TROGO_CREST,
   TROGO_GULLIES as SOUTHWEST_GULLIES, TROGO_CLEARINGS as SOUTHWEST_CLEARINGS } from './southwest-world.js';
 import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
+import { HARBOUR as SELEMIS_HARBOUR, HEADS as SELEMIS_HEADS, HILLS as SELEMIS_HILLS, WINTER_BEDS as SELEMIS_BEDS,
+  CHANNEL_VIEW as SELEMIS_CHANNEL_VIEW, SOUTH_CLIFFS as SELEMIS_SOUTH_CLIFFS } from './selemis-world.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -2237,6 +2239,42 @@ function init() {
       // The estuary: prop roots down to the tideline and the southern ocean behind them.
       if(view==='southwest-trogo-estuary'){const m=mark('trogo-estuary');
         return shot({x:m.x-62,z:m.z-46},{x:m.x+30,z:m.z+34},.02,1.8);}
+    }
+    // Selemis. Worked out from the island's own numbers - the harbour the atlas's hexes make, the two
+    // heads at the ends of its strand, the hills and the winter beds - so a view cannot drift off the
+    // thing it shows when a landform moves.
+    if(view.startsWith('selemis-')){
+      const h=SELEMIS_HARBOUR,across=h.across[0];
+      // The island from the tip of the Ascarth Peninsula: the cliff top of the peninsula's last hex,
+      // looking down the harbour's own axis at the strand, the two heads and the hills behind them.
+      if(view==='selemis-from-the-tip')
+        return shot({x:across.x+h.axis.x*34,z:across.z+h.axis.z*34},{x:h.strand.x,z:h.strand.z},.1,2);
+      // The other way: from the back of the strand across the bay, with the peninsula's cliffs
+      // standing on the far side of the water and a head on either hand.
+      if(view==='selemis-strand')
+        return shot({x:h.strand.x+h.axis.x*16,z:h.strand.z+h.axis.z*16},{x:h.water.x,z:h.water.z},.035,7,true,{x:h.strand.x,z:h.strand.z});
+      // The hollow, from high over the high hill: the slope the lore's city climbs, the strand at the
+      // bottom of it and the channel beyond. High on purpose - the camera backs off from what it looks
+      // at until something stops it, and at a lower angle the thing that stopped it was a pine.
+      if(view==='selemis-hollow'){const hill=SELEMIS_HILLS[1];
+        return shot({x:hill.x,z:hill.z},{x:h.strand.x,z:h.strand.z},.55,1);}
+      // Headland to headland: from over the east head across the bay to the west head, and the
+      // channel and the peninsula behind it. It looks at the west head's tip and not at its crown:
+      // the camera backs off from what it looks at until something stops it, the crown has stone
+      // standing out of it, and the first try at this view was a picture of one of them.
+      if(view==='selemis-heads'){const east=SELEMIS_HEADS[1],west=SELEMIS_HEADS[0];
+        return shot({x:east.x,z:east.z},{x:west.tip.x,z:west.tip.z},.09,3);}
+      // The Nocveth, from the island's own cliff top on its southern shore, straight across to the
+      // foot of the peninsula's cliffs.
+      if(view==='selemis-channel'){const v=SELEMIS_CHANNEL_VIEW;
+        return shot({x:v.x,z:v.z+6},{x:v.x-2,z:v.z-77},.08,4);}
+      // The ocean face, from out over the water: thirteen metres of pale stone and the high hill
+      // standing behind the top of it.
+      if(view==='selemis-south-cliffs'){const c=SELEMIS_SOUTH_CLIFFS;
+        return shot({x:c.x-58,z:c.z+52},{x:c.x,z:c.z},.05,-5);}
+      // A winter bed, looked down from its head in the saddle to the strand it runs out on.
+      if(view==='selemis-winter-bed'){const line=SELEMIS_BEDS[0].line,a=line[0],b=line[line.length-1];
+        return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.17,1);}
     }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
@@ -10556,7 +10594,7 @@ function init() {
         // are worked out by the same function. The spots come from the regions' own numbers
         // rather than typed in, so a view cannot drift off the thing it is meant to show
         // when the ground under it is adjusted.
-        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')||view.startsWith('southwest-')){
+        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')||view.startsWith('southwest-')||view.startsWith('selemis-')){
           questStage=QUEST_DONE;combat.finishPractice();player.setArmed(true);
           const spot=westReviewSpot(view);
           if(spot){

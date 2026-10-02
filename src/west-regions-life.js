@@ -17,6 +17,7 @@ import { SOUTH_OREMINDI_WILDLIFE_ZONES } from './south-oremindi-wildlife.js';
 import { YUNETHRE_WILDLIFE_ZONES } from './yunethre-world.js';
 import { MITHALA_WILDLIFE_ZONES } from './mithala-wildlife.js';
 import { SOUTHWEST_WILDLIFE_ZONES } from './southwest-wildlife.js';
+import { SELEMIS_WILDLIFE_ZONES } from './selemis-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -1271,6 +1272,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...IBENWOOD_LIFE_ZONES,
   ...MITHALA_WILDLIFE_ZONES,
   ...SOUTHWEST_WILDLIFE_ZONES,
+  ...SELEMIS_WILDLIFE_ZONES,
 ]);
 
 /**

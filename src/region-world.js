@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, Selemi: 52 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -594,6 +594,14 @@ export const REGION_TERRAIN = Object.freeze({
   Trogo: Object.freeze({ base: 52, amp: 2.4, wave: 320, ground: REGION_BIOMES.Trogo.ground, byTerrain: Object.freeze({
     grassland: Object.freeze({ base: 13, amp: .8, wave: 320, ground: '#57642f' }),
   }) }),
+  // Selemi (src/selemis-world.js), the island one row of water south of the Ascarth tip. **It touches
+  // nobody**: all fourteen hexes round it are unclaimed sea, so this profile is read by nothing that
+  // shapes any ground - the whole island is `selemisGround`'s, as the tip of the peninsula is
+  // `ascarthGround`'s - and it says what that ground is: 11.3 m is the island's mean height, measured
+  // over every square metre of it that stands above the waterline, and the roll is its bench's own.
+  // What the row does do is colour: the hex blend still weighs this swatch against the `outland` green
+  // of the sea hexes in reach, and `selemisTint` takes both shares on the island's own ground.
+  Selemi: Object.freeze({ base: 11.3, amp: 1.3, wave: 110, ground: REGION_BIOMES.Selemi.ground }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1441,6 +1449,25 @@ const REGION_TEXT = {
     description: 'Twenty-two hexes of `deep_forest`, every one of them `Af` - tropical rainforest with no dry season, the wettest code the atlas paints anywhere on the map - with seven `Csa` `grassland` hexes along the southern shore where the forest stops, and no hex where the two fields disagree. One hex west is the South Meroshe, which is hot desert on all twenty-one of its own, and the thirteen hex edges between them are the sharpest boundary the atlas draws anywhere. The lore explains both in one sentence: "a ridgeline that catches the southern moisture and drops a fog wall on its windward face while the leeward side stays desert." This is the ridgeline. It stands fifty metres over the desert behind it, takes the whole southern ocean on its face, and the fog job 2 built into the Meroshe\u2019s stone floor comes off this crest. **Two rules belong to this country and to nowhere else yet.** The air is so thick that a traveler is half hidden at fifty-eight paces and gone at a hundred and twenty - the shortest sight line in the game by a factor of two. And the ground can be walked along the watercourses, the animal paths and the clearings, and not through the thicket between them: a country you cannot see far in and cannot go straight through. The three peoples of the ecotone, their fog-conditional verb aspect, the estuary fishing villages, the timber Hama has been quietly buying for a century and the resin the Maroshi court taxes without understanding are all somebody\u2019s, and none of them is built.',
     palette: { ground: '#2c3a24', accent: '#5d7350', fog: '#4e6247', sky: 0x8e9d92, haze: 0x6d7d6b, hazeDensity: .0144 },
     npcIds: [], landmarks: ['trogo-forest', 'trogo-fog-ridge', 'trogoreth', 'trogo-animal-paths', 'trogo-clearings', 'trogo-thicket', 'trogo-forest-edge', 'trogo-estuary'] },
+  // **Selemis is terrain, climate, water, scenery and wildlife, and nothing that belongs to anybody**
+  // (docs/selemis-brief.md). Nearly everything its lore has is the city, and the city is somebody's:
+  // the harbour that "is the city", the lower harbour district built over its own foundations, the
+  // residential districts on the hills, the warehouses and chandlers' yards, the archive with its
+  // copper roof gone green, the harbour fortifications, the fast ships kept in the channel, the
+  // outpost network - and, in the game's own story, the Izoli general who has sat in it since 979
+  // (`src/izol-world.js`, docs/izol-and-the-triumvirate.md). None of it is built and nothing here
+  // says it is not there: what is built is the ground it stands on.
+  //
+  // **The peninsula's own sky, to the digit, and that is the argument.** The channel is sixty metres of
+  // water and the lore's one sentence about it is that "on a clear day you can read smoke from the
+  // other shore". An island with a different haze from the cliff a stone's throw north of it would
+  // change the air over a traveler halfway across a swim, and it would make that sentence false in the
+  // one place it is about. So the three numbers are Southern Ascarth's - `Csa` on every hex of both, the
+  // same sea on every side of both - and `tests/selemis-world.test.js` holds them equal.
+  Selemi: { subtitle: 'The island across the channel', spawn: point(-790, 2436),
+    description: 'An island of eight hexes a channel’s width south of the tip of the Ascarth Peninsula, and a crescent, as its lore says: one bay in the hollow of it with a strand of sand round three sides, a rocky head at either end of the strand, and the cliffs of the peninsula’s tip standing across the water on the fourth. Behind the strand the ground climbs out of the hollow to three grass hills along the island’s back, the middle one twenty-seven metres up, and beyond them it tilts on up toward the open sea and ends in thirteen metres of pale cliff. Straw-pale grass and aromatic scrub over pale stone, thicker and greener in the lee of the hills, where a few pines lean away from the sea wind; two dry winter beds come down to the strand, and there is no stream and no spring. Every shore that is not the bay is a cliff, with seabirds on the heads and sea-plungers working the water off the ocean face. The city of Selemis that fills this crescent from headland to headland, its harbour works and its walls, its ships and everybody in it are somebody’s, and none of it is built.',
+    palette: { ground: '#b1a971', accent: '#e3d9ac', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
+    npcIds: [], landmarks: ['selemis-harbour', 'selemis-west-head', 'selemis-east-head', 'selemis-hills', 'selemis-winter-beds', 'selemis-south-cliffs', 'selemis-channel'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

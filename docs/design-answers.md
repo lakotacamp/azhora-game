@@ -1405,3 +1405,40 @@ and the bounded next-session task are saved in
 ### 2026-10-01: Inquest cottage authorized
 
 The user resumed with "go ahead with that cottage." Implemented the small Long Tarn cottage, named mailbox and literal blank-slate Inquest Clearlistern at the screenshot-matched shoreline clearing. The future main-quest role is still a design note only. See [the placement record](next-session-inquest-clearlistern.md) for coordinates and scope.
+
+### 2026-10-01 - Selemis: the island across the channel, terrain and wildlife, nobody's
+
+The user: "start working on the Selemis region." Read as every region in this programme has been
+read - terrain, climate, water, scenery and wildlife, and nothing that belongs to anybody
+(`docs/selemis-brief.md`, `docs/selemis-report.md`).
+
+- **Appended last on its base**, under the atlas's own key `Selemi` (the place is Selemis and its
+  people the Selemi, as `Iscare Archipeligo` keeps the atlas's spelling). Its number is
+  `REGION_IDS.Selemi` and is written in that one place: other countries took the next ids on main
+  while it was being built, so it is renumbered at landing. No city, harbour works, road, ship, person
+  or quest: nearly everything the lore has of Selemis is the city, and the city is somebody's.
+- **The atlas wins** (the standing rule of 2026-09-21): eight `grassland` hexes, `Csa` on every one,
+  no river edge, fourteen unclaimed sea hexes round them. It moved neither the world box nor the
+  survey window, measured: the box is the same four numbers with it and without it.
+- **The crescent is the atlas's own.** Exactly one sea hex has three of the island's hexes round it,
+  (-7,133), and the hex across that water is the last hex of Southern Ascarth: the lore's "concave face
+  turned toward the Azhoran coast", to the degree. That bay is the harbour, with a strand of sand round
+  it and a rocky head at either end.
+- **Builder's choices where the lore is silent**, each labelled in the report and each the user's to
+  overturn: three grass hills along the island's back (the lore's "interior hills", on hexes the atlas
+  calls grassland, so lower than the peninsula's and with no wood on their tops); a table tilted up
+  toward the open sea, with a cliff on every shore that is not the harbour's; no stream and no spring,
+  only two dry winter beds; and seabirds and dolphins with no land animal (a hare's range was measured
+  and fits; none was added, because the lore gives the island no land animal).
+- **Two names taken from the Selemi lexicon and none coined**: the bay is the Seloca (a harbour) and
+  the channel the Nocveth (a crossing), both `LANGUAGES.selemi.roots` in `src/languages.js`, which
+  derives that tongue from the World Builder's `tennoca` profile.
+- **The swim crossing was measured and not decided.** The channel is 59.7-61.0 m of water shore to
+  shore at its three pinches, six metres deep. Under the swim rule as it stands a level-1 swimmer
+  crosses either way and arrives having drowned for the last few metres. Whether that should be so is
+  the user's decision; the rule was not touched.
+- **Decided 2026-10-02: the channel can be swum.** The user: "Selemis channel can be swum." The swim rule
+  stays exactly as it was, and swimming is the way on and off the island until somebody builds a boat.
+- The lore (`geography/regions/selemis.md`, `geography/regions/iberos_coast.md`,
+  `peoples/the_selemi.md`) was adjusted in place in four sentences: the island lies off the
+  peninsula's southern tip, not south-west of the peninsula; and its interior hills are low grass hills.

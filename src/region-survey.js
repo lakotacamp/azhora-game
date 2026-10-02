@@ -433,6 +433,10 @@ export const PLAYABLE_SURVEY = Object.freeze({
         terrain:'deep_forest'},{q:-29,r:141,terrain:'deep_forest'},{q:-28,r:141,terrain:'deep_forest'},{q:-27,r:141,terrain:'deep_forest'},{q:-26,r:141,
         terrain:'grassland'},{q:-25,r:141,terrain:'grassland'},{q:-29,r:142,terrain:'grassland'},{q:-28,r:142,terrain:'grassland'},{q:-27,r:142,
         terrain:'grassland'}]) }),
+    Object.freeze({ id: "Selemi", name: "Selemi",
+      bounds: Object.freeze({"x":1593.487,"y":3192,"width":110.852,"height":80}), centerX: 1647.18, centerY: 3235,
+      cells: Object.freeze([{q:-9,r:133,terrain:'grassland'},{q:-8,r:133,terrain:'grassland'},{q:-9,r:134,terrain:'grassland'},{q:-8,r:134,terrain:'grassland'},{q:-7,r:134,
+        terrain:'grassland'},{q:-9,r:135,terrain:'grassland'},{q:-8,r:135,terrain:'grassland'},{q:-7,r:135,terrain:'grassland'}]) }),
   ]),
 });
 

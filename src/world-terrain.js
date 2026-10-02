@@ -14,6 +14,7 @@ import { southSuvalGround } from './south-suval-world.js';
 import { eastLotharnGround } from './east-lotharn-world.js';
 import { feradomGround, feradomSeam } from './feradom-world.js';
 import { ascarthGround, ascarthCliffTint } from './ascarth-world.js';
+import { selemisGround, selemisTint, selemisShoreTint } from './selemis-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
@@ -273,7 +274,10 @@ export function groundBeforeFeradom(x, z) {
   // own box; it touches nothing within a hundred metres of Gala or of the Lizeem (src/ascarth-world.js).
   // Lotharn's valleys are cut before western water; level the pass road and made places afterward.
   // Keep the Suval climbing landscape and Iscare ground, then blend Feradom's inland seam.
-  return yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))))));
+  // Selemis lays its own ground last of all (src/selemis-world.js). It is an island with no land
+  // border, so it has no seam with anything: it writes only where `regionAt` answers `Selemi` and the
+  // coast field is positive, and answers with the ground it was handed everywhere else.
+  return selemisGround(x, z, yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))))))));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -295,6 +299,10 @@ export function groundBeforeFeradom(x, z) {
  * opinion. The first family with an opinion paints, exactly as the first true branch did, and a family
  * that has none costs one call. Nothing about the colour of any ground in Azhora changes.
  *
+ * **Selemis is the fifth row, and the first added as a row** (2026-10-01): an island of eight hexes
+ * whose one swatch cannot say which side of its own hills a point is on (`selemisTint`,
+ * src/selemis-world.js). It answers `null` off the island, so nothing else changes colour for it.
+ *
  * `tests/southwest-world.test.js` holds the guard the silent failures wanted: **every family in this
  * table must move the colour of the screen somewhere in its own country.** Adding a sixth is one row
  * here and one row there, and forgetting the second turns the test red with the family's own name in it.
@@ -311,14 +319,34 @@ const GROUND_TINTS = Object.freeze([
   Object.freeze({ id: 'oves', tint: ovesTint }),
   Object.freeze({ id: 'mithala', tint: mithalaTint }),
   Object.freeze({ id: 'southwest', tint: southwestTint }),
+  Object.freeze({ id: 'selemis', tint: selemisTint }),
 ]);
 /**
  * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
- * list is exactly the four it knows about and that every one of them moves the colour of the ground
- * somewhere in its own country - so a fifth family added here turns the test red with its own id in the
+ * list is exactly the five it knows about and that every one of them moves the colour of the ground
+ * somewhere in its own country - so a sixth family added here turns the test red with its own id in the
  * message, and a family that quietly stops painting turns it red with the same.
  */
 export const GROUND_TINT_FAMILIES = Object.freeze(GROUND_TINTS.map(family => family.id));
+
+/**
+ * **The shores that are not beaches, as a second table walked the same way.** Every shore in the world
+ * is tinted as sand for its last fifteen metres, and a cliff is the one shore that is wrong on: the
+ * Ascarth Peninsula's were the first, drawn by one line that named the peninsula, and Selemis's are the
+ * second. Two countries is where a line becomes a list - the ground table above is the argument - so a
+ * country whose shore is stone is a row here: its function answers `{ sand, rock, stone }` on its own
+ * cliffs (how much of the sand tint to keep, how much of the face is bare stone, and what colour that
+ * stone is; the peninsula's grey-brown where `stone` is left out) and `null` everywhere else. The first
+ * row with an answer paints. `tests/selemis-world.test.js` holds the guard: every row must put stone on
+ * its own country's shore somewhere, so a row that quietly stops painting says so with its own id.
+ */
+const SHORE_TINTS = Object.freeze([
+  Object.freeze({ id: 'ascarth', tint: ascarthCliffTint }),
+  Object.freeze({ id: 'selemis', tint: selemisShoreTint }),
+]);
+export const SHORE_TINT_FAMILIES = Object.freeze(SHORE_TINTS.map(family => family.id));
+/** One row of the shore table asked on its own, for the guard. */
+export const shoreTintOf = (id, x, z, distance) => SHORE_TINTS.find(family => family.id === id)?.tint(x, z, distance) ?? null;
 
 export function groundTint(color, x, z, THREE) {
   const mix = terrainMix(x, z), distance = landDistance(x, z);
@@ -369,12 +397,13 @@ export function groundTint(color, x, z, THREE) {
     }
   }
   color.lerp(new THREE.Color('#cdb98a'), 1 - smooth(1, 15, distance));
-  // The Ascarth cliffs are the one shore in the world that is not a beach: grass to the edge and
-  // bare stone down the face (src/ascarth-world.js). Everywhere else `cliff` is null and this is the
-  // same sand it has always been.
-  const cliff = ascarthCliffTint(x, z, distance);
+  // The Ascarth cliffs were the one shore in the world that is not a beach: grass to the edge and
+  // bare stone down the face (src/ascarth-world.js). Selemis's are the second (`SHORE_TINTS` above).
+  // Everywhere else `cliff` is null and this is the same sand it has always been.
+  let cliff = null;
+  for (const family of SHORE_TINTS) { cliff = family.tint(x, z, distance); if (cliff) break; }
   color.lerp(new THREE.Color('#cdb98a'), (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
-  if (cliff?.rock) color.lerp(new THREE.Color('#8a857a'), cliff.rock);
+  if (cliff?.rock) color.lerp(new THREE.Color(cliff.stone ?? '#8a857a'), cliff.rock);
   const oremindi=southOremindiTint(x,z);if(oremindi!==null)color.set(oremindi);
   const yunethre=yunethreTint(x,z);if(yunethre!==null)color.set(yunethre);
   return color;

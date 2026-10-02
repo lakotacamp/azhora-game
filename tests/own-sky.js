@@ -39,4 +39,8 @@ export const OWN_SKY = new Set([
   // `.0144`, which is nearly two and a third times the game's own default** - the first half of what a
   // deep forest is, and the shortest sight line in Azhora by a factor of two.
   'Marosh', 'Trogo',
+  // Selemis: the Ascarth Peninsula's own sky, to the digit. The channel between them is sixty metres
+  // of water and the lore's one sentence about it is that smoke can be read across it on a clear day,
+  // so the air is one air (docs/selemis-report.md).
+  'Selemi',
 ]);

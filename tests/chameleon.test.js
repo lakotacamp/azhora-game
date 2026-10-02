@@ -43,7 +43,11 @@ const inPolygon = (points, x, z) => {
  */
 // Gala too (docs/gala-brief.md, 28 September 2026): terrain, climate, water and wildlife, and
 // nothing that belongs to anybody - and a wine chameleon is somebody.
-const WITHOUT_ED = new Set(['South Suval', 'Gala', 'Northern Ascarth', 'Southern Ascarth']);
+// And Selemi (docs/selemis-brief.md, 1 October 2026), for the same reason exactly: terrain, climate,
+// water, scenery and wildlife, and nothing that belongs to anybody. He goes to the island the day
+// people do. (The countries built between the Ascarths and this one did not add themselves, which is
+// why the number this test wants has run ahead of his spots; that is theirs and is left as found.)
+const WITHOUT_ED = new Set(['South Suval', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Selemi']);
 
 test('every one of his spots is somewhere a chameleon can be: dry ground, off the road, in its own country', async () => {
   const w = await built();
