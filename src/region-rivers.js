@@ -207,7 +207,7 @@ export const RIVER_EDGES = Object.freeze([
   Object.freeze({ a: Object.freeze([16,101]), b: Object.freeze([17,100]), size: 'small', regions: Object.freeze(["Pueth", "Feradom"]) }),
   Object.freeze({ a: Object.freeze([16,101]), b: Object.freeze([17,101]), size: 'small', regions: Object.freeze(["Pueth", "Feradom"]) }),
   Object.freeze({ a: Object.freeze([16,102]), b: Object.freeze([17,101]), size: 'small', regions: Object.freeze(["Pueth", "Feradom"]) }),
-  Object.freeze({ a: Object.freeze([16,104]), b: Object.freeze([16,105]), size: 'small', regions: Object.freeze(["Pueth", null]) }),
+  Object.freeze({ a: Object.freeze([16,104]), b: Object.freeze([16,105]), size: 'small', regions: Object.freeze(["Pueth", "Drent"]) }),
   Object.freeze({ a: Object.freeze([17,101]), b: Object.freeze([17,102]), size: 'small', regions: Object.freeze(["Feradom", "Pueth"]) }),
   Object.freeze({ a: Object.freeze([2,87]), b: Object.freeze([3,86]), size: 'small', regions: Object.freeze(["West Mithala", "North Mithala"]) }),
   Object.freeze({ a: Object.freeze([2,92]), b: Object.freeze([2,93]), size: 'small', regions: Object.freeze(["West Mithala", "South Mithala"]) }),

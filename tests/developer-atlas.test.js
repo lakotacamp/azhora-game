@@ -17,7 +17,7 @@ const atlas = createDeveloperAtlasData(metadata, svg, survey);
 
 test('all authored regions have exact polygons, matching survey cells, and their original terrain colors', () => {
   assert.equal(atlas.regions.length, 131);
-  assert.equal(atlas.regions.reduce((count, region) => count + region.cells.length, 0), 3733);
+  assert.equal(atlas.regions.reduce((count, region) => count + region.cells.length, 0), 3735);
   assert.equal(atlas.width, 3062.266);
   assert.equal(atlas.height, 4088);
   assert.equal(atlas.hexSize, 16);
@@ -58,6 +58,12 @@ test('developer export is derived from read-only World Builder source with docum
   const adjusted = applyGameAtlasAdjustments(source);
   assert.equal(source.hexes['15,105'].region, 'Pueth', 'the upstream map is unchanged');
   assert.equal(adjusted.hexes['15,105'].region, 'Drent');
+  for (const key of ['16,105', '16,106']) {
+    assert.equal(source.hexes[key].region, undefined, 'the upstream sea is unchanged');
+    assert.equal(source.hexes[key].terrain, 'coast');
+    assert.equal(adjusted.hexes[key].region, 'Drent');
+    assert.equal(adjusted.hexes[key].terrain, 'forest');
+  }
   assert.deepEqual(metadata.gameAdjustments, GAME_ATLAS_ADJUSTMENTS);
   assert.deepEqual(survey.gameAdjustments, GAME_ATLAS_ADJUSTMENTS);
   const size = source.hexSize, halfWidth = Math.sqrt(3) * size / 2;

@@ -77,7 +77,7 @@ import { createWestSuvalScenerySteps } from './west-suval-world.js';
 import { createWineryScenery } from './winery-world.js';
 import { buildBirdGarden, birdGardenSites, inBirdGarden } from './bird-garden.js';
 import { createRegionScenerySteps, regionClear } from './world-regions.js';
-import { createColliderGrid } from './collider-grid.js';
+import { createColliderGrid, watchColliderEdits } from './collider-grid.js';
 import { OPENING_FIGHT_GROUND } from './opening-fights.js';
 import { HIDEOUT_SITE, hideoutToWorld, PUETH_ROAD, HIDEOUT_APPROACH_TRAIL, TESSEN_BRIDGE, PUETH_RIVERS, PUETH_NPC_POSITIONS, PUETH_LANDMARKS, puethRiverDistance } from './pueth-world.js';
 import { createPuethScenerySteps } from './pueth-scenery.js';
@@ -2114,12 +2114,19 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const worldBorder = villageToWorld(border.x, border.z);
   const worldRepairBench = villageToWorld(repairBench.x, repairBench.z);
 
-  // Collision asks this grid, not the whole list. The list only ever changes by a
-  // push or a splice (a recovered sack, a repaired beacon, a camp struck), each of
-  // which changes its length, so the length is what tells the index it is stale.
-  let colliderIndex = null, indexedFor = -1;
+  // Collision asks this grid, not the whole list. Fast files appended scenery
+  // incrementally; edits to an existing prefix invalidate it before more scenery
+  // can mask a removal with a larger list. Full retains its length-based rebuild.
+  let colliderIndex = null, indexedFor = -1, colliderEditsWatched = false;
   const colliderGrid = () => {
-    if (!colliderIndex || indexedFor !== colliders.length) { colliderIndex = createColliderGrid(colliders); indexedFor = colliders.length; }
+    if (fast && !colliderEditsWatched) {
+      watchColliderEdits(colliders, () => { colliderIndex = null; }); colliderEditsWatched = true;
+    }
+    if (!colliderIndex || indexedFor !== colliders.length) {
+      if (fast && colliderIndex && colliders.length > indexedFor) colliderIndex.append(colliders, indexedFor);
+      else colliderIndex = createColliderGrid(colliders);
+      indexedFor = colliders.length;
+    }
     return colliderIndex;
   };
   const villageTimber = (list, prefix) => list.flatMap((tree, i) => {

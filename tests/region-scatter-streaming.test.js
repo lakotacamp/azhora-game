@@ -4,7 +4,10 @@ import crypto from 'node:crypto';
 import { sourceModule } from './module-loader.js';
 import * as THREE from '../vendor/three.module.js';
 import { groundWithRiver } from '../src/world-terrain.js';
+import { DRENT_PENINSULA_HEXES } from '../src/game-atlas-adjustments.js';
+import { hexAt } from '../src/region-world.js';
 const { createRegionScenery } = await sourceModule('../src/world-regions.js');
+const { getTreeRegistry } = await sourceModule('../src/tree-registry.js');
 import { finishBuild } from '../src/build-steps.js';
 
 // Exercise actual shared woodland geometry, timber registration and collision.
@@ -33,6 +36,26 @@ test('Fast woodland defers remote geometry and preserves Full output under rever
   const result=createRegionScenery({...fast,fastInitialRegion:1});
   assert.ok(result.timberTrees.length>0);
   assert.ok(result.timberTrees.every(tree=>tree.region==='Drent'));
+  for(const hex of DRENT_PENINSULA_HEXES){
+    const prefix=`drent-peninsula-${hex.q}-${hex.r}-`;
+    const grove=result.timberTrees.filter(tree=>tree.id.startsWith(prefix));
+    assert.ok(grove.length>=12,`the ${hex.q},${hex.r} headland contains an actual forest`);
+    for(const tree of grove){
+      assert.deepEqual(hexAt(tree.x,tree.z),hex);
+      assert.ok(['white-oak','loblolly-pine'].includes(tree.species));
+      assert.equal(getTreeRegistry(fast.colliders).get(tree.id)?.harvestable,true);
+    }
+  }
+  const peninsulaKeys=new Set(DRENT_PENINSULA_HEXES.map(({q,r})=>`${q},${r}`));
+  for(const tree of baseline.timberTrees.filter(tree=>tree.id.startsWith('country-'))){
+    const hex=hexAt(tree.x,tree.z);
+    assert.equal(peninsulaKeys.has(`${hex.q},${hex.r}`),false,'legacy samples cannot spill into newly added land');
+  }
+  for(const species of ['pine','oak']){
+    const prefix=`country-${species}-`, ids=baseline.timberTrees.filter(tree=>tree.id.startsWith(prefix))
+      .map(tree=>Number(tree.id.slice(prefix.length))).sort((a,b)=>a-b);
+    assert.deepEqual(ids,ids.map((_,index)=>index),'independent headland IDs must not consume legacy tree counters');
+  }
   assert.equal(result.deferredScenery.length,5);
   assert.ok(result.deferredScenery.every(job=>!job.regions.includes(1)));
   const initialTrees=result.timberTrees.length;

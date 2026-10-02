@@ -164,8 +164,8 @@ const LOCALS = [
   [34, 'South Ibenwood', 'south-ibenwood', 'South Ibenwood', point(886.808607, 2728, -25, 113)],
   [35, 'West Ibenwood', 'west-ibenwood', 'West Ibenwood', point(748.244542, 2680, -29, 111)],
   [36, 'Central Ibenwood', 'central-ibenwood', 'Central Ibenwood', point(900.665013, 2656, -23, 110)],
-  [38, 'Yunethre', 'yunethre', 'Yunethre', point(1039.23, 2464, -14, 102)],
   [37, 'South Oremindi', 'south-oremindi', 'South Oremindi Mountains', point(900.666, 2464, -19, 102)],
+  [38, 'Yunethre', 'yunethre', 'Yunethre', point(1039.23, 2464, -14, 102)],
   [39, 'Navarth', 'navarth', 'Navarth', navarthAnchor],
   [40, 'West Pyros', 'west-pyros', 'West Pyros', westPyrosAnchor],
   [41, 'Ganesh Desert', 'ganesh-desert', 'Ganesh Desert', ganeshDesertAnchor],
@@ -179,6 +179,9 @@ const LOCALS = [
   [49, 'Hama', 'hama', 'Hama', hamaAnchor],
   [50, 'Marosh', 'marosh', 'Marosh', maroshAnchor],
   [51, 'Trogo', 'trogo', 'Trogo', trogoAnchor],
+  // The two mountain gates share the same arrival hexes as the playable regions.
+  [52, 'West Baldro', 'west-baldro', 'West Baldro Mountains', point(2230.881, 1648, 46, 68)],
+  [53, 'East Baldro', 'east-baldro', 'East Baldro Mountains', point(2397.158, 1696, 51, 70)],
   // Its number is read, not written: another branch has taken the next ids on main, so this island's
   // will change the day it lands, and the one place that says what it is is `REGION_IDS`.
   [REGION_IDS.Selemi, 'Selemis', 'selemis', 'Selemi', selemisAnchor],

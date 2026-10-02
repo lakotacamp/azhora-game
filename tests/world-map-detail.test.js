@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { atlasCellKey, atlasLocalDetail, atlasCityDetail, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from '../src/world-map-detail.js';
 import { readFileSync } from 'node:fs';
-import { TRANSFORM, hexAt, hexCentre } from '../src/region-world.js';
+import { TRANSFORM, hexAt, hexCentre, landDistance, villageToWorld } from '../src/region-world.js';
+import { groundWithRiver } from '../src/world-terrain.js';
 import { buildLocalMapModel } from '../src/local-map-data.js';
 import { regions, regionAt, WORLD_BOUNDS } from '../src/regions.js';
 import { createMapFog } from '../src/map-fog.js';
@@ -180,13 +181,24 @@ test('the journal Tessen and real river share the corrected mouth without a seco
 
 test('the local bank correction preserves upstream data and is safe to apply twice', () => {
   const source = { hexes: { '15,105': { q: 15, r: 105, region: 'Pueth', terrain: 'plains' },
-    '15,104': { q: 15, r: 104, region: 'Pueth', terrain: 'grassland' } },
+    '15,104': { q: 15, r: 104, region: 'Pueth', terrain: 'grassland' },
+    '16,105': { q: 16, r: 105, terrain: 'coast', climate: 'Cfb' },
+    '16,106': { q: 16, r: 106, terrain: 'coast', climate: 'Cfb' },
+    '15,106': { q: 15, r: 106, terrain: 'coast', climate: 'Cfb' } },
     rivers: { '14,104|14,105': 'small', '14,105|15,105': 'small', '14,106|15,105': 'small', '1,2|1,3': 'large' } };
   const before = structuredClone(source), adjusted = applyGameAtlasAdjustments(source);
   assert.deepEqual(source, before, 'imports never mutate the upstream map');
   assert.equal(adjusted.hexes['15,105'].region, 'Drent');
   assert.equal(adjusted.hexes['15,105'].terrain, 'plains');
   assert.deepEqual(adjusted.hexes['15,104'], source.hexes['15,104']);
+  for (const key of ['16,105', '16,106']) {
+    assert.equal(adjusted.hexes[key].region, 'Drent');
+    assert.equal(adjusted.hexes[key].terrain, 'forest');
+    assert.equal(adjusted.hexes[key].climate, 'Cfb');
+  }
+  assert.deepEqual(adjusted.hexes['15,106'], source.hexes['15,106'], 'the harbor channel stays open');
+  assert.throws(() => applyGameAtlasAdjustments({ ...source, hexes: { ...source.hexes,
+    '16,105': { ...source.hexes['16,105'], region: 'Peblos' } } }), /overlaps another authored region/);
   assert.equal(adjusted.rivers['14,104|14,105'], undefined);
   assert.equal(adjusted.rivers['14,105|15,105'], undefined);
   assert.equal(adjusted.rivers['14,106|15,105'], undefined);
@@ -196,4 +208,50 @@ test('the local bank correction preserves upstream data and is safe to apply twi
   assert.equal(adjusted.rivers['1,2|1,3'], 'large');
   assert.deepEqual(applyGameAtlasAdjustments(adjusted), adjusted);
   assert.throws(() => applyGameAtlasAdjustments({ hexes: {}, rivers: {} }), /no longer matches/);
+});
+
+
+test('the two forested peninsula hexes belong to Drent on both charts and the playable ground', () => {
+  const survey = JSON.parse(readFileSync(new URL('../assets/azhora-dev-regions.json', import.meta.url), 'utf8'));
+  const metadata = JSON.parse(readFileSync(new URL('../assets/azhora-world-map.json', import.meta.url), 'utf8'));
+  for (const [q, r] of [[16, 105], [16, 106]]) {
+    const owners = survey.regions.filter(region => region.cells.some(cell => cell.q === q && cell.r === r));
+    assert.deepEqual(owners.map(region => region.id), ['Drent']);
+    const cell = owners[0].cells.find(cell => cell.q === q && cell.r === r), point = hexCentre(q, r);
+    assert.equal(cell.terrain, 'forest');
+    assert.equal(regionAt(point.x, point.z).name, 'Drent');
+    assert.ok(landDistance(point.x, point.z) > 10, 'the village bay cannot carve through the peninsula');
+    assert.ok(groundWithRiver(point.x, point.z) > 1.4, 'the new forest stands on dry ground');
+  }
+  assert.deepEqual(survey.gameAdjustments, metadata.gameAdjustments);
+  const longstone = hexCentre(17, 107);
+  assert.equal(regionAt(longstone.x, longstone.z).name, 'Peblos');
+  for (const point of [hexCentre(15, 106), hexCentre(16, 107), villageToWorld(0, 47)]) {
+    assert.ok(landDistance(point.x, point.z) < -2, 'harbor and offshore channels remain sea');
+    assert.ok(groundWithRiver(point.x, point.z) < 0, 'the harbor keeps water below its pier');
+  }
+});
+
+test('the forested headland has a dry walking connection north of Tidehaven harbor', () => {
+  // Flood the local terrain, not a prescribed straight line through the inlet.
+  const step = 4, minX = -20, minZ = -103, width = 64, depth = 40;
+  const ground = new Float64Array(width * depth), seen = new Uint8Array(ground.length);
+  for (let j = 0; j < depth; j++) for (let i = 0; i < width; i++)
+    ground[j * width + i] = groundWithRiver(minX + i * step, minZ + j * step);
+  const start = 10 * width, queue = [start]; seen[start] = 1;
+  assert.ok(ground[start] > 1.2, 'the starting Drent bank is dry');
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const id = queue[cursor], i = id % width, j = Math.floor(id / width);
+    for (const [x, z] of [[i - 1, j], [i + 1, j], [i, j - 1], [i, j + 1]]) {
+      if (x < 0 || z < 0 || x >= width || z >= depth) continue;
+      const next = z * width + x;
+      if (seen[next] || ground[next] < 1.2 || Math.abs(ground[next] - ground[id]) / step > .75) continue;
+      seen[next] = 1; queue.push(next);
+    }
+  }
+  for (const [q, r] of [[16, 105], [16, 106]]) {
+    const target = hexCentre(q, r);
+    assert.ok(queue.some(id => Math.hypot(minX + id % width * step - target.x,
+      minZ + Math.floor(id / width) * step - target.z) < step), `walkable connection to ${q},${r}`);
+  }
 });

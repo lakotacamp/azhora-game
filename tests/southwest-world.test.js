@@ -313,7 +313,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // nearest hex and past `maxX` - so it is horizon and nothing else. That is the smallest widening this
   // window has ever had: job 1's bought 71 hexes, job 2's 143, job 3's none and job 4's one.
   // 2,079 until the Baldro Mountains carried the window to maxQ 60 and minR 59: 903 more claimed hexes are inside it.
-  assert.equal(LAND_HEXES.length, 2982, 'job 4 turns one hex of sea into land, and it is the Azhor Stones');
+  // And two more since the game's own atlas adjustment gave Drent its forested peninsula east of Tidehaven.
+  assert.equal(LAND_HEXES.length, 2984, 'job 4 turns one hex of sea into land, and it is the Azhor Stones');
   assert.ok(land.has('1,145'), 'the Azhor Stones hex row 145 is the one the widening bought');
   assert.equal(hexCentre(1, 145).x > 600 && hexCentre(1, 145).z > 3400, true, 'and it is out past the eastern edge');
   for (const name of EDGE) for (const cell of cellsOf(name))

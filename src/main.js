@@ -9657,6 +9657,15 @@ async function init() {
         reviewFrozen=false;reviewTarget=null;reviewCat=null;player.group.visible=true;
         clearTimeout(toastTimer);$('toast').classList.remove('visible');
         leaveOpening();document.body.classList.add('playing');show('opening',false);show('loading',false);show('modal-backdrop',false);show('dialogue',false);mode='playing';
+        if(view==='drent-peninsula'||view==='drent-peninsula-ground'){
+          const aerial=view==='drent-peninsula',at=aerial?{x:150,z:-57}:{x:202,z:24};
+          questStage=QUEST_DONE;combat.finishPractice();player.setArmed(false);
+          player.group.position.set(at.x,world.heightAt(at.x,at.z),at.z);player.group.visible=!aerial;
+          reviewFrozen=true;reviewVista=aerial;
+          reviewTarget=aerial?new THREE.Vector3(105,3,-22):null;
+          yaw=aerial?.85:-.65;pitch=aerial?.8:.24;distance=targetDistance=aerial?290:9;
+          settleCamera();return;
+        }
         if(view.startsWith('baldro-')){
           const east=view.includes('east'),k=BALDRO_KINGDOMS[east?1:0];baldroHost.leave();
           testGoTo(k.arrival,'DWARFLAND','');reviewFrozen=true;reviewTarget=null;reviewVista=false;
