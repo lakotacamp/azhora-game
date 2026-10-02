@@ -15,6 +15,7 @@ import { eastLotharnGround } from './east-lotharn-world.js';
 import { feradomGround, feradomSeam } from './feradom-world.js';
 import { ascarthGround, ascarthCliffTint } from './ascarth-world.js';
 import { selemisGround, selemisTint, selemisShoreTint } from './selemis-world.js';
+import { telemoniaGround, telemoniaTint } from './telemonia-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
@@ -248,6 +249,10 @@ function groundBeforeFrontier(x,z){
 }
 
 export function groundBeforeFeradom(x, z) {
+  return telemoniaGround(x, z, groundBeforeTelemonia(x, z), groundBeforeTelemonia);
+}
+/** Everything `groundBeforeFeradom` lays but the Telemon highland: the ground its border seam is measured against. */
+function groundBeforeTelemonia(x, z) {
   const bedrock = bedrockHeight(x, z), distance = calossDistance(x, z);
   let ground = distance < CALOSS_BANK_DISTANCE ? calossChannel(x, z, bedrock) : bedrock;
   ground = calossEmbankment(x, z, ground);
@@ -278,6 +283,9 @@ export function groundBeforeFeradom(x, z) {
   // Selemis lays its own ground last of all (src/selemis-world.js). It is an island with no land
   // border, so it has no seam with anything: it writes only where `regionAt` answers `Selemi` and the
   // coast field is positive, and answers with the ground it was handed everywhere else.
+  // And Telemonia outside even that (`groundBeforeFeradom`, above; src/telemonia-world.js): the Telemon
+  // highland writes only on its own hexes, meets the ground across its border line - which is where the
+  // Caelin and the Treloss run, cut by the Oves's and Gala's own channels before it - and rises off it.
   const regional = selemisGround(x, z, yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))))))));
   return baldroHeight(x,z,regional);
 }
@@ -305,6 +313,10 @@ export function groundBeforeFeradom(x, z) {
  * whose one swatch cannot say which side of its own hills a point is on (`selemisTint`,
  * src/selemis-world.js). It answers `null` off the island, so nothing else changes colour for it.
  *
+ * **Telemonia is the sixth row** (2026-10-02): its rim, its terraces, its washes, the floors of its
+ * passes and the Belketh are all one `hills` or `plains` swatch to the atlas (`telemoniaTint`,
+ * src/telemonia-world.js), and it answers `null` off its own hexes.
+ *
  * `tests/southwest-world.test.js` holds the guard the silent failures wanted: **every family in this
  * table must move the colour of the screen somewhere in its own country.** Adding a sixth is one row
  * here and one row there, and forgetting the second turns the test red with the family's own name in it.
@@ -322,10 +334,11 @@ const GROUND_TINTS = Object.freeze([
   Object.freeze({ id: 'mithala', tint: mithalaTint }),
   Object.freeze({ id: 'southwest', tint: southwestTint }),
   Object.freeze({ id: 'selemis', tint: selemisTint }),
+  Object.freeze({ id: 'telemonia', tint: telemoniaTint }),
 ]);
 /**
  * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
- * list is exactly the five it knows about and that every one of them moves the colour of the ground
+ * list is exactly the six it knows about and that every one of them moves the colour of the ground
  * somewhere in its own country - so a sixth family added here turns the test red with its own id in the
  * message, and a family that quietly stops painting turns it red with the same.
  */

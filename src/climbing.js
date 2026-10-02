@@ -1,10 +1,15 @@
-/** Free climbing in Suval, both halves of the Lotharn Mountains and Feradom's hills. This controller owns no input, rendering or saved state.
+/** Free climbing in Suval, both halves of the Lotharn Mountains, Feradom's hills, South Oremindi and the Telemon highland.
+ * This controller owns no input, rendering or saved state.
  * Feet follow the actual heightfield; only the exposed bedrock skins cease to be obstacles.
- * Walls, frontier rocks, water, trees and people remain solid at every substep. */
+ * Walls, frontier rocks, water, trees and people remain solid at every substep, and a face the world marks
+ * unclimbable (`climbForbidden`) gives no hold at all. */
 export const CLIMBING = Object.freeze({ grabSlope: .9, restSlope: .6, maxSlope: 12, reach: 1.45, radius: .34,
   speed: 1.8, movingDrain: 7, descendingDrain: 3.5, hangingDrain: 1.2, burstCost: 14,
   safeDrop: 3.5, gravity: 20 });
-const CLIMB_REGIONS = new Set([4, 5, 18, 20, 21, 27, 37, 52, 53, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains', 'West Baldro Mountains', 'East Baldro Mountains']);
+// Telemonia is here by name only (docs/telemonia-stage1-brief.md): its number is written in `REGION_IDS` and nowhere
+// else, because it is renumbered the day it lands, and every caller in the game asks `world.regionAt`, which answers
+// the region itself - so `r.name` finds it. Its rim's cliff bands are what stop a walker there (src/telemonia-world.js).
+const CLIMB_REGIONS = new Set([4, 5, 18, 20, 21, 27, 37, 52, 53, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains', 'West Baldro Mountains', 'East Baldro Mountains', 'Telemonia']);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const copy = p => p ? { x: p.x, y: p.y, z: p.z } : null;
 const finite = p => p && Number.isFinite(p.x) && Number.isFinite(p.z);
@@ -18,6 +23,15 @@ export function isClimbTerrain(world, x, z) {
 
 // Compatibility for existing Suval callers; the supported terrain now includes the new ranges.
 export const isSuvalClimbTerrain = isClimbTerrain;
+
+/**
+ * Faces no hand holds, whatever the skill: the world says where (`world.unclimbableAt(x, z)`; src/world.js
+ * answers it for Kethorn's rock and its wall in Telemonia, whose gate is the only way onto the top). Read
+ * where this rule decides whether a hand can go somewhere - the surface a grab looks for, and every
+ * attached step of a climb - and nowhere else: walking, falling and sliding off are the ground's own, so a
+ * walker still cannot walk up such a face (`canWalkSlope`) and a faller still comes down it.
+ */
+export const climbForbidden = (world, x, z) => !!world.unclimbableAt?.(x, z);
 
 /** Collision filtering is deliberately a one-kind allowlist, never a generic rock bypass. */
 export function climbSurfaceClear(world, x, z, { radius = CLIMBING.radius, ignoreFaces = true } = {}) {
@@ -39,7 +53,7 @@ export function sampleClimbSurface(world, x, z) {
   const gz = (world.heightAt(x, z + step) - world.heightAt(x, z - step)) / (step * 2);
   const slope = Math.hypot(gx, gz), valid = Number.isFinite(h + slope);
   const gradient = { x: slope > 1e-7 ? gx / slope : 0, z: slope > 1e-7 ? gz / slope : 0 };
-  const allowed = valid && slope <= CLIMBING.maxSlope && isClimbTerrain(world, x, z) && climbSurfaceClear(world, x, z);
+  const allowed = valid && slope <= CLIMBING.maxSlope && isClimbTerrain(world, x, z) && !climbForbidden(world, x, z) && climbSurfaceClear(world, x, z);
   return { allowed, height: h, slope, gradient, yaw: Math.atan2(gradient.x, gradient.z),
     climbable: allowed && slope >= CLIMBING.grabSlope, resting: allowed && slope <= CLIMBING.restSlope };
 }
@@ -81,7 +95,7 @@ export function createClimbing({ world: worldSource, onEvent = () => {} }) {
   function probe(from, facing) {
     if (!finite(from) || !Number.isFinite(facing)) return { available: false, reason: 'No reachable rock face.' };
     const w = world();
-    if (!isClimbTerrain(w, from.x, from.z)) return { available: false, reason: 'Climbing is available in Suval, the Lotharn, Feradom and South Oremindi.' };
+    if (!isClimbTerrain(w, from.x, from.z)) return { available: false, reason: 'Climbing is available in Suval, the Lotharn, Feradom, South Oremindi and Telemonia.' };
     const base = w.heightAt(from.x, from.z), forward = { x: Math.sin(facing), z: Math.cos(facing) };
     let previous = { ...from }, found = null;
     // Do not jump a collider to grab the other side, or snap up a ledge taller than the body.
@@ -127,7 +141,7 @@ export function createClimbing({ world: worldSource, onEvent = () => {} }) {
     let covered = 0;
     for (let i = 0; i < steps; i++) {
       const next = { x: position.x + dx / steps, z: position.z + dz / steps };
-      if (!isClimbTerrain(w, next.x, next.z) || !climbSurfaceClear(w, next.x, next.z) || !crossingAllowed(w, position, next)) break;
+      if (!isClimbTerrain(w, next.x, next.z) || (attached && climbForbidden(w, next.x, next.z)) || !climbSurfaceClear(w, next.x, next.z) || !crossingAllowed(w, position, next)) break;
       const h = w.heightAt(next.x, next.z);
       if (attached && Math.abs(h - position.y) > 1.2) break;
       if (!attached && h > position.y + .1) break;

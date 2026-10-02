@@ -115,6 +115,9 @@ const trogoAnchor = point(1233.220, 3376, -26, 140);
 // Selemis's middle hex, (-8, 134): `grassland` like the other seven, and the one the hollow behind the
 // harbour and the high hill share. For (-8, 134) the atlas's formula gives this point and no other.
 const selemisAnchor = point(1648.912, 3232, -8, 134);
+// A Galmeth plains hex, (-13, 120), where the travel button puts the traveler: on the plain north-east of
+// Kethorn's rock. For (-13, 120) the atlas's formula gives this point and no other.
+const telemoniaAnchor = point(1316.358, 2896, -13, 120);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -179,6 +182,8 @@ const LOCALS = [
   // Its number is read, not written: another branch has taken the next ids on main, so this island's
   // will change the day it lands, and the one place that says what it is is `REGION_IDS`.
   [REGION_IDS.Selemi, 'Selemis', 'selemis', 'Selemi', selemisAnchor],
+  // Telemonia's number is read, not written, for the same reason: it is renumbered the day it lands.
+  [REGION_IDS.Telemonia, 'Telemonia', 'telemonia', 'Telemonia', telemoniaAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

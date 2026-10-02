@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
-  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'West Baldro Mountains', 'East Baldro Mountains', 'Selemi'];
+  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'West Baldro Mountains', 'East Baldro Mountains', 'Selemi', 'Telemonia'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -231,6 +231,16 @@ export const ENCLOSED_HEXES = Object.freeze({
  * q = -39 in rows 79-145), so the generated file is identical either way. It is not this island's to
  * move and `tests/southwest-world.test.js` pins the -50, so it is reported rather than changed
  * (docs/selemis-report.md).
+ *
+ * Then **Telemonia was added, and it moved neither the box nor the window either**, measured both
+ * ways as Selemi's case was (docs/telemonia-stage1-report.md). Its twenty-five hexes are rows 118-122,
+ * q -17...-11: centres x -2350...-1850 and z 1068.2...1414.6, its outline at x -2400...-1800 and
+ * z 1010.5...1472.3. That is 2,210 m inside the western edge West Ibenwood set, 2,410 m inside the
+ * eastern one, 3,178 m inside the northern and 1,792 m inside the southern, so `worldBoundsFor` answers
+ * the same four numbers with it as without it. All twenty-five were already land in LAND_HEXES - the
+ * atlas has always claimed them, and the window has covered rows 118-122 since the Ascarths - so the
+ * lattice, LAND_HEXES and every hex a sample falls in are as they were, and the only thing this
+ * script writes differently is one more region in `PLAYABLE_SURVEY`.
  */
 // Baldro reaches row 62 and the north-east corner of the playable world. The
 // surrounding window includes every hex touched by the fixed-phase coast grid;

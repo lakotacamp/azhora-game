@@ -19,6 +19,7 @@ import { YUNETHRE_WILDLIFE_ZONES } from './yunethre-world.js';
 import { MITHALA_WILDLIFE_ZONES } from './mithala-wildlife.js';
 import { SOUTHWEST_WILDLIFE_ZONES } from './southwest-wildlife.js';
 import { SELEMIS_WILDLIFE_ZONES } from './selemis-wildlife.js';
+import { TELEMONIA_WILDLIFE_ZONES } from './telemonia-wildlife.js';
 
 /**
  * The animals of the four western regions.
@@ -1275,6 +1276,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...MITHALA_WILDLIFE_ZONES,
   ...SOUTHWEST_WILDLIFE_ZONES,
   ...SELEMIS_WILDLIFE_ZONES,
+  ...TELEMONIA_WILDLIFE_ZONES,
 ]);
 
 /**

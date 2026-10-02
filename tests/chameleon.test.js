@@ -47,7 +47,9 @@ const inPolygon = (points, x, z) => {
 // water, scenery and wildlife, and nothing that belongs to anybody. He goes to the island the day
 // people do. (The countries built between the Ascarths and this one did not add themselves, which is
 // why the number this test wants has run ahead of his spots; that is theirs and is left as found.)
-const WITHOUT_ED = new Set(['South Suval', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Selemi']);
+// And Telemonia (docs/telemonia-stage1-brief.md, 2 October 2026): stage 1 is the country and not its people, and the
+// closed kingdom would not have him anyway; whether he goes there is stage 2's.
+const WITHOUT_ED = new Set(['South Suval', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Selemi', 'Telemonia']);
 
 test('every one of his spots is somewhere a chameleon can be: dry ground, off the road, in its own country', async () => {
   const w = await built();
