@@ -23,23 +23,24 @@
     "name": "Drent",
     "x": 1621.2,
     "y": 2472,
-    "width": 277.128,
+    "width": 318.697,
     "height": 152
   },
   "style": "inked parchment chart",
   "uncharted": [],
   "gameAdjustments": [
-    "tidehaven-northeast-bank-v1"
+    "tidehaven-northeast-bank-v1",
+    "drent-forested-peninsula-v1"
   ],
   "terrainCounts": {
     "ocean": 13622,
-    "coast": 1332,
+    "coast": 1330,
     "mountain": 165,
     "high_mountain": 116,
     "plains": 1482,
     "hills": 432,
     "highland": 14,
-    "forest": 162,
+    "forest": 164,
     "deep_forest": 285,
     "wetland": 28,
     "grassland": 658,
@@ -250,11 +251,11 @@
       "name": "Drent",
       "x": 1621.2,
       "y": 2472,
-      "width": 277.128,
+      "width": 318.697,
       "height": 152,
-      "centerX": 1769.463,
-      "centerY": 2549.2,
-      "hexCount": 40
+      "centerX": 1776.589,
+      "centerY": 2549.143,
+      "hexCount": 42
     },
     {
       "id": "East Acordwood",

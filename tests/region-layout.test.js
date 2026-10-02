@@ -55,7 +55,7 @@ test('rebuilt regions take their outlines and cells from the authored hexes at t
   const drent = regionOutline(survey, 'Drent')[0];
   const width = Math.max(...drent.map(p => p.x)) - Math.min(...drent.map(p => p.x));
   // Sizes are stated in hexes, so the check survives a change of world scale.
-  assert.ok(width > 6.8 * METRES_PER_HEX && width < 10 * METRES_PER_HEX, `Drent is ${width.toFixed(0)} m wide: larger than the old first-district strip`);
+  assert.ok(close(width / METRES_PER_HEX, 11.5, .0001), `Drent includes the eastern peninsula: ${width.toFixed(0)} m wide`);
   assert.equal(regionOutline(survey, 'Nowhere').length, 0);
 });
 

@@ -307,11 +307,18 @@ passed. Native checks passed for both Baldro cities (49 assertions), the complet
 dwarf autoplay (31), and Willowmere character loading and fishing (39), with no
 renderer errors. The dwarf run included mid-lesson save/resume and a fresh repeat.
 
-The loading-mode pass also passes 68 startup/scheduling/scenery tests and 59
+The loading-mode pass also passes 71 startup/scheduling/scenery tests and 59
 save, woodcutting, walk-surface and road tests. The native chooser confirms the
 button order, ten-second countdown and successful Fast launch. An isolated Full
 run took 96.4 seconds cold and 67.2 seconds with a cache hit, with no renderer
-errors (`tests/artifacts/loading-modes-full.json`).
+errors (`tests/artifacts/loading-modes-full.json`). The native Fast run reached
+its initialized opening in 14.8 seconds, then completed all 90 background jobs
+and made all 53 supported regions ready. Its 21 loading checks and 31 dwarf
+quest checks passed, including deferred travel, late collisions and walkways,
+saved progress, and a fresh quest repeat. The conservative background run took
+about twenty minutes to finish the remaining world while rendering continued;
+nearby regions and requested destinations become available earlier. These are
+single-run timings, and Fast remains experimental.
 
 ## Code and validation
 

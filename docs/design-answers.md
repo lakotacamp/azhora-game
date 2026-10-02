@@ -1437,3 +1437,41 @@ this later authorization supersedes that status for Baldro alone. See
 [Dwarfland implementation](dwarfland-implementation.md) for the current module map,
 controls, limits and validation, and [the updated design](dwarfland-design-draft.md)
 for the confirmed choices and proposals that remain open.
+
+### 2026-10-02: Optional peninsula tutorial redesign — planning only
+
+The user requested a design plan, explicitly **not implementation**, for moving
+the opening lessons to the new forested Drent peninsula. The complete draft is
+[Peninsula tutorial and foundational movement skills](peninsula-tutorial-design.md).
+
+After loading, a new game offers Start tutorial or Start game. Start tutorial
+requires completing the peninsula lessons before leaving. The final teacher
+list is Chris Scotwood for Walking; Jojo for the sandwich/inventory introduction,
+Running and Cooking; Glun for combat; Bear (currently Barrett) for Cartography;
+Jess for Swimming; Ryan for Fishing. Catch a real fish with Ryan, then bring it
+to Jojo and cook it. Walking and running improve through time spent actually
+moving; walking's speed cap remains below beginner running. Running consumes
+stamina and becomes faster and more efficient with practice. Swimming continues
+to improve through use. A distinct Stamina skill versus Running's endurance
+benefits remains a design choice; the draft recommends the latter.
+
+The user explicitly confirmed that Glun's final letter starts Ed the Word's
+arrival, and that Start game skips to just after this handoff with baseline
+skills and the letter earned. It does not skip to enlistment. The letter sends
+the player to Tidewater Haven to join the Ambroni army. Chris independently
+completes the lessons, walks to Tidewater Haven, and waits there for the player's
+completion if necessary. He then leaves without waiting for Ed and ordinarily
+encounters the rebel ambush alone. Preserve existing character IDs through the
+voice-transcribed spelling variations; do not create duplicate Chris/Glun/Bear
+characters.
+
+The user also requested enforceable tutorial boundaries. Jess warns against
+swimming away; ignoring her and trying to escape toward Peblos triggers a giant,
+overwhelming sea monster, visibly revealed before it kills the player. Flying
+away, including on the developer dragon, triggers an overwhelming Balrog-like
+winged demon that materializes and kills the player after a readable reveal.
+These encounters return the player to the tutorial. The draft recommends keeping
+completed lessons and legitimate inventory/XP on recovery and removing the
+restrictions at graduation. A visible land gate, exact creature art, and tuning
+are proposals rather than implemented or finalized details. No game code was
+changed for this design request.

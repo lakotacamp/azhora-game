@@ -761,7 +761,9 @@ export function villageShoreLocalZ(lx) {
  */
 export function landDistance(x, z) {
   const atlas = sampleCoast(x, z);
-  const bay = smooth(-70, -26, z) * (1 - smooth(88, 132, z));
+  // Keep the original village inlet local. Its old eastward-infinite carve
+  // would drown the Drent peninsula beyond the harbor channel.
+  const bay = smooth(-70, -26, z) * (1 - smooth(88, 132, z)) * (1 - smooth(50, 130, x));
   if (bay <= 0) return atlas;
   const local = worldToVillage(x, z);
   return lerp(atlas, Math.min(atlas, villageShoreLocalZ(local.x) - local.z), bay);

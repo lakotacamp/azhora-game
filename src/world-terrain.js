@@ -93,7 +93,12 @@ function padded(x, z, natural) {
 
 /** The land without water features: the two fields, blended where they meet. */
 export function bedrockHeight(x, z) {
-  const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
+  const local = worldToVillage(x, z);
+  // The original village beach must give way to the new northern headland.
+  // Keep the harbor and all village ground, blending only beyond its northeast
+  // shore so the forest joins the mainland instead of becoming an offshore island.
+  const headland = smooth(28, 60, local.z) * smooth(58, 98, local.x);
+  const weight = villageWeight(local.x, local.z) * (1 - headland);
   if (weight >= 1) return villageBase(local.x, local.z);
   if (weight <= 0) return regionBase(x, z);
   return lerp(regionBase(x, z), villageBase(local.x, local.z), weight);

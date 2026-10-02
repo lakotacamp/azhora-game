@@ -1,12 +1,13 @@
 import { forEachBuild } from './build-each.js';
 import { finishBuild } from './build-steps.js';
+import { DRENT_PENINSULA_HEXES } from './game-atlas-adjustments.js';
 import { regionalFarmlandClear } from './regional-farmland.js';
 import { AVREL_POND } from './avrel-pond.js';
 import { SYLVIA_STUDIO } from './visual-arts.js';
 import * as THREE from 'three';
 import {
   REGION_ORDER, REGION_IDS, REGION_CELLS, REGION_BIOMES, METRES_PER_HEX, AVREL_CLEARING, CALOSS, CALOSS_BANK,
-  STORY_SITES, MAIN_ROAD, SUVAL_ROAD, FRONTIER, LUMBER_TOWN, townPoint, hexOwnerAt, journeySites, regionNpcPositions } from './region-world.js';
+  STORY_SITES, MAIN_ROAD, SUVAL_ROAD, FRONTIER, LUMBER_TOWN, townPoint, hexAt, hexOwnerAt, journeySites, regionNpcPositions } from './region-world.js';
 import { HIDEOUT_CLEARINGS, PUETH_CLEARINGS } from './pueth-world.js';
 import { PEBLOS_CLEARINGS } from './peblos-world.js';
 import { portCalosClear } from './port-calos-world.js';
@@ -116,9 +117,15 @@ export function regionClear(x, z, margin = 0) {
 // batch of roughly the old size: culling stays as fine-grained as it was.
 const BLOCK_HEXES = Math.max(1, Math.round(6 / (WORLD_SCALE * WORLD_SCALE)));
 
-/** Groups of nearby hexes, so each batch of scatter has a small bounding sphere. */
+const peninsulaKeys = new Set(DRENT_PENINSULA_HEXES.map(({q,r}) => `${q},${r}`));
+const isPeninsulaCell = ({q,r}) => peninsulaKeys.has(`${q},${r}`);
+const isPeninsulaPoint = (x,z) => isPeninsulaCell(hexAt(x,z));
+
+/** Groups of nearby hexes, so each batch of scatter has a small bounding sphere.
+ * New peninsula cells use an independent stream below; inserting them into this
+ * legacy sequence would move every later tree and invalidate harvested-tree saves. */
 function cellBlocks(name, size = BLOCK_HEXES) {
-  const cells = [...REGION_CELLS[name]].sort((a, b) => a.z - b.z || a.x - b.x);
+  const cells = REGION_CELLS[name].filter(cell => !isPeninsulaCell(cell)).sort((a, b) => a.z - b.z || a.x - b.x);
   const blocks = [];
   for (let i = 0; i < cells.length; i += size) blocks.push(cells.slice(i, i + size));
   return blocks;
@@ -176,7 +183,11 @@ export function* createRegionScenerySteps(kit) {
    */
   const tuftsPerHex = biome => Math.round((biome.tuftsPerHex ?? (biome.undergrowth === 'none' ? 34 : 26)) * WORLD_SCALE * WORLD_SCALE);
 
-  function* scatterBlock(name, block, biome, parent, prepared = null, sampleOnly = false) {
+  function* scatterBlock(name, block, biome, parent, prepared = null, sampleOnly = false, patch = null) {
+    // The two new land cells were water in the legacy stream. Reject old-cell
+    // samples that spill across their border before consuming acceptance draws.
+    const owns = patch?.owns ?? ((x,z) => hexOwnerAt(x,z) === name && !(name === 'Drent' && isPeninsulaPoint(x,z)));
+    const idPrefix = patch?.idPrefix ?? 'country';
     const { trees, rocks, tufts } = prepared ?? { trees: [], rocks: [], tufts: [] };
     const dense = biome.undergrowth === 'dense';
     if (!prepared) for (const cell of block) { if (++buildWork % 32 === 0) yield;
@@ -188,7 +199,7 @@ export function* createRegionScenerySteps(kit) {
         // A copse grows with the hex it stands in, so its trees keep their spacing.
         const spread = clusters ? 9 * WORLD_SCALE : METRES_PER_HEX * .48;
         const x = anchor.x + range(-spread, spread), z = anchor.z + range(-spread * 1.1, spread * 1.1);
-        if (hexOwnerAt(x, z) !== name || kit.insideVillage(x, z)) continue;
+        if (!owns(x, z) || kit.insideVillage(x, z)) continue;
         if (regionClear(x, z, 2.5) || kit.roadDistance(x, z) < 4.2 || kit.riverDistance(x, z) < 12) continue;
         if (groundHeight(x, z) < 1.4) continue;
         if (trees.some(tree => Math.hypot(tree.x - x, tree.z - z) < (dense ? 3.1 : 5.2))) continue;
@@ -199,12 +210,12 @@ export function* createRegionScenerySteps(kit) {
       }
       for (let i = 0; i < biome.rocksPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-26 * WORLD_SCALE, 26 * WORLD_SCALE), z = cell.z + range(-28 * WORLD_SCALE, 28 * WORLD_SCALE);
-        if (hexOwnerAt(x, z) !== name || kit.insideVillage(x, z) || regionClear(x, z, 2) || kit.roadDistance(x, z) < 3.4) continue;
+        if (!owns(x, z) || kit.insideVillage(x, z) || regionClear(x, z, 2) || kit.roadDistance(x, z) < 3.4) continue;
         rocks.push({ x, z, s: range(.55, biome.id === 'stone-hills' ? 3.1 : 1.3), rot: range(0, 6.28) });
       }
       for (let i = 0; i < tuftsPerHex(biome); i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-27 * WORLD_SCALE, 27 * WORLD_SCALE), z = cell.z + range(-30 * WORLD_SCALE, 30 * WORLD_SCALE);
-        if (hexOwnerAt(x, z) !== name || kit.insideVillage(x, z) || kit.roadDistance(x, z) < 2.1) continue;
+        if (!owns(x, z) || kit.insideVillage(x, z) || kit.roadDistance(x, z) < 2.1) continue;
         // Grass grows on any ground above the tideline, which in the Lake Lands includes the bed of a lake.
         if (kit.waterClear?.(x, z) || regionalFarmlandClear(x,z,.3) || jesseWorkshopClear(x, z, .2)) continue;
         if (groundHeight(x, z) < 1.2) continue;
@@ -233,7 +244,7 @@ export function* createRegionScenerySteps(kit) {
         dummy.rotation.set(0, tree.rot, 0); dummy.scale.set(tree.s, height * .82, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
         const parts = [{mesh:trunks,index}];
-        const timber = { ...forestTimber(tree.pine), id: tree.pine ? `country-pine-${pineTreeCount++}` : `country-oak-${broadTreeCount++}`, x: tree.x, z: tree.z, y,
+        const timber = { ...forestTimber(tree.pine), id: tree.pine ? `${idPrefix}-pine-${pineTreeCount++}` : `${idPrefix}-oak-${broadTreeCount++}`, x: tree.x, z: tree.z, y,
           height, radius: .38 * tree.s, trunkHeight: height * .82, trunkTopRadius: .21 * tree.s,
           axis: [0, 1, 0], base: { x: tree.x, y, z: tree.z }, region: name };
         timberTrees.push(timber);
@@ -289,6 +300,22 @@ export function* createRegionScenerySteps(kit) {
       batch.receiveShadow = true; batch.computeBoundingSphere(); parent.add(batch);
       metrics.grass += tufts.length; metrics.batches++;
     }
+  }
+
+  function* scatterDrentPeninsula(parent) {
+    const savedSeed = seed, savedPines = pineTreeCount, savedBroad = broadTreeCount;
+    try {
+      for (const hex of DRENT_PENINSULA_HEXES) {
+        const cell = REGION_CELLS.Drent.find(cell => cell.q === hex.q && cell.r === hex.r);
+        if (!cell) continue;
+        // Each hex keeps its own stream and IDs even if the headland grows later.
+        seed = (0x5d3e71a9 ^ Math.imul(hex.q, 73856093) ^ Math.imul(hex.r, 19349663)) >>> 0;
+        pineTreeCount = 0; broadTreeCount = 0;
+        const owns = (x,z) => { const h = hexAt(x,z); return h.q === hex.q && h.r === hex.r && hexOwnerAt(x,z) === 'Drent'; };
+        yield* scatterBlock('Drent', [cell], REGION_BIOMES.Drent, parent, null, false,
+          { owns, idPrefix: `drent-peninsula-${hex.q}-${hex.r}` });
+      }
+    } finally { seed = savedSeed; pineTreeCount = savedPines; broadTreeCount = savedBroad; }
   }
 
   // -------------------------------------------------------------------------
@@ -811,6 +838,7 @@ export function* createRegionScenerySteps(kit) {
         if (++buildWork % 32 === 0) yield;
         yield* scatterBlock(name, block, biome, parent);
       }
+      if (name === 'Drent') yield* scatterDrentPeninsula(parent);
     }
   } else {
     const initial = new Set([...chosenRegions].map(value => typeof value === 'number' ? value : REGION_IDS[value]));
@@ -837,6 +865,7 @@ export function* createRegionScenerySteps(kit) {
       for (const record of preparedRegions.get(name)) {
         yield* scatterBlock(name, null, REGION_BIOMES[name], parentOverride ?? district(name), record);
       }
+      if (name === 'Drent') yield* scatterDrentPeninsula(parentOverride ?? district(name));
       preparedRegions.delete(name); completed.add(name);
     }
     for (const name of names) {
