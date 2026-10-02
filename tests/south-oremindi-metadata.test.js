@@ -40,7 +40,10 @@ test('South Oremindi retains all 45 authored cells and its two lake components w
     assert.ok(land.has(`${cell.q},${cell.r}`), 'owned lakes remain inland water, not sea');
     assert.ok(cell.q >= WINDOW.minQ && cell.q <= WINDOW.maxQ && cell.r >= WINDOW.minR && cell.r <= WINDOW.maxR);
   }
-  const oldBounds = { minX: -4610.001927939127, maxX: 609.9980720608719, minZ: -2167.195996001615, maxZ: 3264.4264805429416 };
+  // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
+  const oldBounds = { minX: -4610.001927939127, maxX: 2209.9980720608737, minZ: -3899.2468035704924, maxZ: 3264.4264805429416 };
   // North and south are North Mithala's and Trogo's since they landed; east and west are as they were.
   // South Oremindi still spends none of the four.
   for (const key of Object.keys(oldBounds)) assert.ok(Math.abs(WORLD_BOUNDS[key] - oldBounds[key]) < 1e-8, key);

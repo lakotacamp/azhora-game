@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, landDistance, relief } from './region-world.js';
@@ -30,7 +32,10 @@ import { galaClimate, galaSouthness, galaClear, onWashFloor, washPlace, GALA_WAS
  * Everything is placed on Gala's own hexes (`hexOwnerAt`), from one seeded stream of its own, so
  * nothing already built anywhere else moves by a centimetre for it.
  */
-export function createGalaScenery(kit) {
+export function createGalaScenery(...args) { return finishBuild(createGalaScenerySteps(...args)); }
+
+export function* createGalaScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, groundHeight, colliders, dummy, color, round } = kit;
   const group = new THREE.Group(); group.name = 'Gala scenery'; root.add(group);
   let seed = 2100421;
@@ -61,7 +66,7 @@ export function createGalaScenery(kit) {
     fragmentShader: 'uniform float time; varying vec3 p; void main(){float w=sin(p.x*.38-time*1.3+p.z*1.05)*sin(p.x*.16+p.z*1.25);vec3 c=vec3(.27,.36,.31)+vec3(.14,.15,.12)*pow(max(w,0.),8.);gl_FragColor=vec4(c,1.);}',
   });
   /** A ribbon over a line of samples, broken wherever the ground rises through it (`westWaterSurface` decides). */
-  function ribbon(samples, name, halfOf = sample => sample.half) {
+  function* ribbon(samples, name, halfOf = sample => sample.half) {
     const widthAt = typeof halfOf === 'number' ? () => halfOf : halfOf;
     let run = [];
     const flush = () => {
@@ -79,30 +84,30 @@ export function createGalaScenery(kit) {
       sheet.name = name; group.add(sheet); metrics.water++;
       run = [];
     };
-    for (const sample of samples) {
+    for (const sample of samples) { if (++buildWork % 32 === 0) yield;
       const y = westWaterSurface(sample.x, sample.z);
       if (y === null) { flush(); continue; }
       run.push({ ...sample, y });
     }
     flush();
   }
-  for (const course of GALA_RIVERS) ribbon(WEST_PROFILES.get(course.id), course.name);
+  for (const course of GALA_RIVERS) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(course.id), course.name)); }
   const MOUTHS = WEST_BRAIDS.find(braid => braid.id === 'gala-mouths');
   const threads = [1, -1].map(side => WEST_PROFILES.get(MOUTHS.course.id).map(sample => {
     const offset = braidThreadOffset(MOUTHS, sample.along);
     return offset === null ? null : { x: sample.x + sample.nx * offset * side, z: sample.z + sample.nz * offset * side, nx: sample.nx, nz: sample.nz };
   }).filter(Boolean));
-  threads.forEach((thread, index) => ribbon(thread, `${MOUTHS.course.name} thread ${index + 1}`, MOUTHS.half));
+  yield* forEachBuild(threads, function* (thread, index) { return (yield* ribbon(thread, `${MOUTHS.course.name} thread ${index + 1}`, MOUTHS.half)); });
 
   /**
    * The Oveth below its ford is a wall, as every deep western river is: laid along the water at its
    * own width, and dense enough that there is no gap a traveler walks out through. Its ford is the
    * rocky head of the reach, where nothing is laid.
    */
-  for (const sample of WEST_PROFILES.get(OVETH_REACH.id)) {
+  for (const sample of WEST_PROFILES.get(OVETH_REACH.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.ford) continue;
     const step = Math.max(1, Math.round(sample.half / 3.2)), radius = sample.half / (step + .5) + 1.4;
-    for (let k = -step; k <= step; k++) {
+    for (let k = -step; k <= step; k++) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half * (k / (step + .5));
       colliders.push({ x: sample.x + sample.nx * offset, z: sample.z + sample.nz * offset, r: radius, kind: 'west-deep-water' });
       metrics.blockers++;
@@ -113,10 +118,10 @@ export function createGalaScenery(kit) {
   // Stone, gravel and sand
   // -------------------------------------------------------------------------
   const stoneMaterial = material('#ffffff', { flatShading: true });
-  function stoneBatch(spots, name, tint, lift = .12) {
+  function* stoneBatch(spots, name, tint, lift = .12) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(round, stoneMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + spot.s * lift, spot.z);
       dummy.rotation.set(range(-.14, .14), spot.rot, range(-.14, .14));
       dummy.scale.set(spot.s, spot.s * (spot.flat ?? range(.25, .45)), spot.s * range(.7, 1.25)); dummy.updateMatrix();
@@ -132,15 +137,15 @@ export function createGalaScenery(kit) {
   const washGravel = [], washStones = [];
   {
     const W = GALA_WASH;
-    for (let i = 1; i < W.points.length; i++) {
+    for (let i = 1; i < W.points.length; i++) { if (++buildWork % 32 === 0) yield;
       const a = W.points[i - 1], b = W.points[i], length = Math.hypot(b.x - a.x, b.z - a.z), nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += 1.1) for (let k = 0; k < 3; k++) {
+      for (let d = 0; d < length; d += 1.1) { if (++buildWork % 32 === 0) yield; for (let k = 0; k < 3; k++) { if (++buildWork % 32 === 0) yield;
         const t = d / length, across = range(-W.floor - .6, W.floor + .6);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !onWashFloor(x, z, .6)) continue;
         washGravel.push({ x, z, s: range(.12, .42), rot: random() * 6.28 });
-      }
-      for (let d = 0; d < length; d += 6) {
+      } }
+      for (let d = 0; d < length; d += 6) { if (++buildWork % 32 === 0) yield;
         const t = d / length, side = random() < .5 ? -1 : 1, across = side * range(W.floor * .6, W.bank * .9);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !washPlace(x, z)) continue;
@@ -148,8 +153,8 @@ export function createGalaScenery(kit) {
       }
     }
   }
-  stoneBatch(washGravel, 'Gala wash gravel', () => color.set('#8d887b').offsetHSL(0, range(-.03, .03), range(-.06, .06)), .08);
-  stoneBatch(washStones, 'Gala wash cobbles', () => color.set('#7e786b').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .2);
+  (yield* stoneBatch(washGravel, 'Gala wash gravel', () => color.set('#8d887b').offsetHSL(0, range(-.03, .03), range(-.06, .06)), .08));
+  (yield* stoneBatch(washStones, 'Gala wash cobbles', () => color.set('#7e786b').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .2));
   metrics.gravel += washGravel.length; metrics.stones += washStones.length;
 
   /**
@@ -158,25 +163,25 @@ export function createGalaScenery(kit) {
    * which runs over the same stuff off the same margin.
    */
   const fordRock = [], streamGravel = [];
-  for (const sample of WEST_PROFILES.get(OVETH_REACH.id)) {
+  for (const sample of WEST_PROFILES.get(OVETH_REACH.id)) { if (++buildWork % 32 === 0) yield;
     if (!sample.ford) continue;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = range(0, sample.half + 3.5);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z)) continue;
       fordRock.push({ x, z, s: range(.25, .8), rot: random() * 6.28, flat: range(.35, .6) });
     }
   }
-  for (const sample of WEST_PROFILES.get(GALA_DESERT_STREAM.id)) {
-    for (let i = 0; i < 3; i++) {
+  for (const sample of WEST_PROFILES.get(GALA_DESERT_STREAM.id)) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = range(0, sample.half + 2.5);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z)) continue;
       streamGravel.push({ x, z, s: range(.15, .5), rot: random() * 6.28 });
     }
   }
-  stoneBatch(fordRock, 'Oveth ford rock', () => color.set('#77716a').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
-  stoneBatch(streamGravel, 'Desert stream gravel', () => color.set('#948c7a').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .08);
+  (yield* stoneBatch(fordRock, 'Oveth ford rock', () => color.set('#77716a').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16));
+  (yield* stoneBatch(streamGravel, 'Desert stream gravel', () => color.set('#948c7a').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .08));
   metrics.stones += fordRock.length; metrics.gravel += streamGravel.length;
 
   // -------------------------------------------------------------------------
@@ -197,10 +202,10 @@ export function createGalaScenery(kit) {
     return geometry;
   })();
   const bladeMaterial = material('#ffffff', { side: THREE.DoubleSide });
-  function reedBatch(spots, name) {
+  function* reedBatch(spots, name) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(reedGeometry, bladeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0); dummy.scale.set(spot.s, spot.s * range(.85, 1.35), spot.s); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
@@ -210,52 +215,52 @@ export function createGalaScenery(kit) {
     metrics.reeds += spots.length;
   }
   /** Reed along a course, on Gala's side, dry-footed: the water's edge and a pace or two back from it. */
-  function waterline(samples, every, perSide, reach, out, size) {
-    for (const sample of samples) {
+  function* waterline(samples, every, perSide, reach, out, size) {
+    for (const sample of samples) { if (++buildWork % 32 === 0) yield;
       if (sample.index % every) continue;
-      for (const side of [-1, 1]) for (let i = 0; i < perSide; i++) {
+      for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < perSide; i++) { if (++buildWork % 32 === 0) yield;
         const offset = sample.half + range(.2, reach);
         const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
         if (!own(x, z) || westWaterSurface(x, z) !== null || landDistance(x, z) < 1) continue;
         out.push({ x, z, s: range(size[0], size[1]), rot: random() * 6.28 });
-      }
+      } }
     }
   }
   const reeds = [];
   // The Lizeem's western bank, the whole of Gala's side of it: the reed bank.
-  waterline(WEST_PROFILES.get(LIZEEM.id), 1, 3, 6, reeds, [1.1, 1.9]);
-  waterline(WEST_PROFILES.get(LIZEEM_REACH.id), 1, 4, 7, reeds, [1.1, 2]);
+  (yield* waterline(WEST_PROFILES.get(LIZEEM.id), 1, 3, 6, reeds, [1.1, 1.9]));
+  (yield* waterline(WEST_PROFILES.get(LIZEEM_REACH.id), 1, 4, 7, reeds, [1.1, 2]));
   // The plain's own water: thick on the distributary and its braids, thinner up the Caelin and the Treloss.
-  waterline(WEST_PROFILES.get(GALA_CHANNEL.id), 1, 2, 3.2, reeds, [.9, 1.7]);
-  threads.forEach(thread => thread.forEach((point, index) => {
+  (yield* waterline(WEST_PROFILES.get(GALA_CHANNEL.id), 1, 2, 3.2, reeds, [.9, 1.7]));
+  yield* forEachBuild(threads, function* (thread) { return yield* forEachBuild(thread, function* (point, index) {
     if (index % 2) return;
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 2; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = MOUTHS.half + range(.2, 2.5);
       const x = point.x + point.nx * offset * side, z = point.z + point.nz * offset * side;
       if (!own(x, z) || westWaterSurface(x, z) !== null || landDistance(x, z) < 1) continue;
       reeds.push({ x, z, s: range(.9, 1.7), rot: random() * 6.28 });
     }
-  }));
-  waterline(WEST_PROFILES.get(GALA_TELEMONIA_STREAM.id), 2, 1, 2, reeds, [.6, 1.2]);
-  waterline(WEST_PROFILES.get(OVETH_REACH.id), 2, 1, 2.4, reeds, [.7, 1.4]);
-  reedBatch(reeds, 'Gala reed and sedge');
+  }); });
+  (yield* waterline(WEST_PROFILES.get(GALA_TELEMONIA_STREAM.id), 2, 1, 2, reeds, [.6, 1.2]));
+  (yield* waterline(WEST_PROFILES.get(OVETH_REACH.id), 2, 1, 2.4, reeds, [.7, 1.4]));
+  (yield* reedBatch(reeds, 'Gala reed and sedge'));
 
   /**
    * Sand on the braid bars and at the mouths, as on the Flats and in Eer: what a slow river drops on
    * a plain is sand, and at a coast it is pale.
    */
   const sand = [];
-  for (const sample of WEST_PROFILES.get(GALA_CHANNEL.id)) {
+  for (const sample of WEST_PROFILES.get(GALA_CHANNEL.id)) { if (++buildWork % 32 === 0) yield;
     const offset = braidThreadOffset(MOUTHS, sample.along);
     if (offset === null) continue;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 6; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, out = range(sample.half + .4, offset + MOUTHS.half + 5);
       const x = sample.x + sample.nx * out * side, z = sample.z + sample.nz * out * side;
       if (!own(x, z) || westWaterSurface(x, z) !== null) continue;
       sand.push({ x, z, s: range(.3, .9), rot: random() * 6.28, flat: range(.15, .25) });
     }
   }
-  stoneBatch(sand, 'Gala mouth sand', () => color.set('#b9a983').offsetHSL(0, range(-.04, .04), range(-.04, .04)), .03);
+  (yield* stoneBatch(sand, 'Gala mouth sand', () => color.set('#b9a983').offsetHSL(0, range(-.04, .04), range(-.04, .04)), .03));
   metrics.sand += sand.length;
 
   // -------------------------------------------------------------------------
@@ -265,18 +270,18 @@ export function createGalaScenery(kit) {
   const crownGeometry = new THREE.IcosahedronGeometry(1, 0);
   const barkMaterial = material('#6e5c46'), leafMaterial = material('#ffffff', { flatShading: true });
   /** Trunks and three crown lobes each, as the west's trees are drawn; `kind` tags the collider. */
-  function treeBatch(trees, name, tint, kind) {
+  function* treeBatch(trees, name, tint, kind) {
     if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
     const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, trees.length * 3);
     let at = 0;
-    trees.forEach((tree, index) => {
+    yield* forEachBuild(trees, function* (tree, index) {
       const y = gy(tree.x, tree.z), height = tree.h * tree.s;
       dummy.position.set(tree.x, y + height * tree.bole * .5, tree.z); dummy.rotation.set(range(-.05, .05), tree.rot, range(-.05, .05));
       dummy.scale.set(tree.s * tree.girth, height * tree.bole, tree.s * tree.girth); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
       const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .42 * tree.s * tree.girth, kind }; colliders.push(collider);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * tree.spread;
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? tree.top : tree.top - .16), tree.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
@@ -287,17 +292,17 @@ export function createGalaScenery(kit) {
       registerWorldTree(colliders,{id:worldTreeId(kind,tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:name.includes('tamarisk')?'tamarisk':tree.fig?'fig':'olive'},parts,collider);
     });
     trunks.name = `${name} trunks`; crowns.name = `${name} crowns`;
-    for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
+    for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
     metrics.trees += trees.length;
   }
   /** A low bush of three lobes: wormwood, saltbush, maquis, oleander and thrift are all this shape, at different sizes. */
-  function bushBatch(bushes, name, tint, collide = null) {
+  function* bushBatch(bushes, name, tint, collide = null) {
     if (!bushes.length) return;
     const batch = new THREE.InstancedMesh(round, leafMaterial, bushes.length * 3);
     let at = 0;
-    for (const bush of bushes) {
+    for (const bush of bushes) { if (++buildWork % 32 === 0) yield;
       const y = gy(bush.x, bush.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .42 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * bush.h * (lobe === 2 ? .62 : .42), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.16, .16), a, range(-.16, .16));
@@ -309,13 +314,13 @@ export function createGalaScenery(kit) {
     batch.name = name; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
   }
   /** Flowers, as small bright points on a bush: the oleander's pink and the thrift's. */
-  function bloomBatch(bushes, name, tint, per) {
+  function* bloomBatch(bushes, name, tint, per) {
     if (!bushes.length) return;
     const batch = new THREE.InstancedMesh(round, leafMaterial, bushes.length * per);
     let at = 0;
-    for (const bush of bushes) {
+    for (const bush of bushes) { if (++buildWork % 32 === 0) yield;
       const y = gy(bush.x, bush.z);
-      for (let k = 0; k < per; k++) {
+      for (let k = 0; k < per; k++) { if (++buildWork % 32 === 0) yield;
         const a = random() * 6.28, r = range(.1, .55) * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * r, y + bush.s * bush.h * range(.55, .95), bush.z + Math.cos(a) * r);
         dummy.rotation.set(0, a, 0); dummy.scale.setScalar(bush.s * range(.07, .12)); dummy.updateMatrix();
@@ -337,10 +342,10 @@ export function createGalaScenery(kit) {
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     return geometry;
   })();
-  function tuftBatch(tufts, name, tint) {
+  function* tuftBatch(tufts, name, tint) {
     if (!tufts.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, bladeMaterial, tufts.length);
-    tufts.forEach((tuft, index) => {
+    yield* forEachBuild(tufts, function* (tuft, index) {
       dummy.position.set(tuft.x, gy(tuft.x, tuft.z) + .02, tuft.z);
       dummy.rotation.set(0, tuft.rot, 0); dummy.scale.set(tuft.s * tuft.wide, tuft.s, tuft.s * tuft.wide); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix); batch.setColorAt(index, tint(tuft));
@@ -384,9 +389,9 @@ export function createGalaScenery(kit) {
   galleryOf(GALA_DESERT_STREAM, 3, 2, 7, 0);
   galleryOf(LIZEEM_REACH, 2, 2, 12, 0);
   galleryOf(LIZEEM, 3, 2, 10, 0);
-  treeBatch(tamarisk, 'Gala tamarisk', () => color.set('#8a9577').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'gala-tree');
-  bushBatch(oleander, 'Gala oleander', () => color.set('#4d6440').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .55);
-  bloomBatch(oleander, 'Gala oleander flower', () => color.set(random() < .78 ? '#d98aa6' : '#f1e6e8').offsetHSL(0, range(-.05, .05), range(-.05, .05)), 7);
+  (yield* treeBatch(tamarisk, 'Gala tamarisk', () => color.set('#8a9577').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'gala-tree'));
+  (yield* bushBatch(oleander, 'Gala oleander', () => color.set('#4d6440').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .55));
+  (yield* bloomBatch(oleander, 'Gala oleander flower', () => color.set(random() < .78 ? '#d98aa6' : '#f1e6e8').offsetHSL(0, range(-.05, .05), range(-.05, .05)), 7));
   metrics.tamarisk = tamarisk.length; metrics.oleander = oleander.length;
 
   /**
@@ -409,12 +414,12 @@ export function createGalaScenery(kit) {
   const tuftsPerHex = Math.round(27 * WORLD_SCALE * WORLD_SCALE);
   const rise = (x, z) => relief(x, z, GALA_SEAM.amp, GALA_SEAM.wave) / GALA_SEAM.amp;   // -1 in a hollow, 1 on a rise
   const standing = [], maquis = [], steppeShrubs = [], stones = [], thrift = [];
-  for (let start = 0; start < cells.length; start += BLOCK) {
+  for (let start = 0; start < cells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = cells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       // Three times the west's usual count: a plain with nothing else on it reads as bare sand
       // without, which is what the first review render showed.
-      for (let i = 0; i < tuftsPerHex * 3; i++) {
+      for (let i = 0; i < tuftsPerHex * 3; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.2)) continue;
         const c = galaClimate(x, z);
@@ -424,7 +429,7 @@ export function createGalaScenery(kit) {
         const coast = 1 - smooth(8, 70, landDistance(x, z));
         tufts.push({ x, z, s: range(.8, 1.6) * (1 + c.BSh * .8 - c.Csa * .15), wide: 1 + c.BSh * .6, rot: random() * 6.28, c, coast });
       }
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 70; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.5)) continue;
         const c = galaClimate(x, z), lift = rise(x, z);
@@ -436,7 +441,7 @@ export function createGalaScenery(kit) {
           maquis.push({ x, z, s: range(.8, 1.45), h: range(.9, 1.5), rot: random() * 6.28 });
         }
       }
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 14; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 5)) continue;
         const c = galaClimate(x, z);
@@ -448,14 +453,14 @@ export function createGalaScenery(kit) {
         standing.push({ x, z, fig, s: range(.9, 1.25), h: fig ? range(4.5, 6) : range(5.5, 7.5), rot: random() * 6.28,
           girth: fig ? 1.05 : 1.2, bole: fig ? .45 : .4, top: fig ? .82 : .8, spread: fig ? .2 : .22, wide: fig ? .34 : .36, deep: fig ? .26 : .24 });
       }
-      for (let i = 0; i < 18; i++) {
+      for (let i = 0; i < 18; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1)) continue;
         const c = galaClimate(x, z);
         if (random() > c.BSh * smooth(0, .8, rise(x, z)) * 1.4) continue;
         stones.push({ x, z, s: range(.25, .75), rot: random() * 6.28, flat: range(.35, .6) });
       }
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 40; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         const d = landDistance(x, z);
         if (d < 3 || d > 55 || !plantable(x, z, 1)) continue;
@@ -463,23 +468,23 @@ export function createGalaScenery(kit) {
         thrift.push({ x, z, s: range(.3, .55), h: range(.5, .8), rot: random() * 6.28 });
       }
     }
-    tuftBatch(tufts, 'Gala grass', tuft => {
+    (yield* tuftBatch(tufts, 'Gala grass', tuft => {
       const c = tuft.c;
       const hue = .115 * c.BSh + .15 * c.Csb + .19 * c.Csa + tuft.coast * .03;
       return color.setHSL(hue + range(-.012, .012), .30 * c.BSh + .30 * c.Csb + .32 * c.Csa + range(-.05, .05), .54 * c.BSh + .46 * c.Csb + .42 * c.Csa + range(-.04, .04));
-    });
+    }));
   }
   // Wild olive is pale, grey and open; fig a broader, brighter, rounder leaf. Hex, not HSL.
-  treeBatch(standing, 'Gala olive and fig', tree => tree.fig
+  (yield* treeBatch(standing, 'Gala olive and fig', tree => tree.fig
     ? color.set('#5f7a45').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05))
-    : color.set('#8e9a72').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'gala-tree');
-  bushBatch(steppeShrubs, 'Gala wormwood and saltbush', bush => bush.salt
+    : color.set('#8e9a72').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'gala-tree'));
+  (yield* bushBatch(steppeShrubs, 'Gala wormwood and saltbush', bush => bush.salt
     ? color.set('#8c9690').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05))
-    : color.set('#9a9c86').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05)));
-  bushBatch(maquis, 'Gala maquis', () => color.set('#55643f').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.05, .06)), .5);
-  stoneBatch(stones, 'Gala steppe stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
-  bushBatch(thrift, 'Gala sea grass and thrift', () => color.set('#6f8a5c').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.04, .05)));
-  bloomBatch(thrift, 'Gala thrift flower', () => color.set('#e3a3bf').offsetHSL(0, range(-.08, .05), range(-.06, .06)), 3);
+    : color.set('#9a9c86').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05))));
+  (yield* bushBatch(maquis, 'Gala maquis', () => color.set('#55643f').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.05, .06)), .5));
+  (yield* stoneBatch(stones, 'Gala steppe stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16));
+  (yield* bushBatch(thrift, 'Gala sea grass and thrift', () => color.set('#6f8a5c').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.04, .05))));
+  (yield* bloomBatch(thrift, 'Gala thrift flower', () => color.set('#e3a3bf').offsetHSL(0, range(-.08, .05), range(-.06, .06)), 3));
   metrics.shrubs = steppeShrubs.length; metrics.maquis = maquis.length; metrics.stones += stones.length; metrics.thrift = thrift.length;
   metrics.standing = standing.length;
 

@@ -162,14 +162,17 @@ test('the climate is Dfa on every one of the 116 hexes, and it is the first cont
 test('the world grows north, and it is the biggest structural change any region has made', () => {
   // Measured, not estimated. North Mithala's northernmost hex is the atlas's row 82, centred at
   // z = -2049.5, and its top corner stands at -2107.2; the world's margin is 60 m.
-  assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
+  // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
+  assert.ok(Math.abs(WORLD_BOUNDS.minZ - -3899.2468035704924) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   // 45.656 when this plain set the northern edge; 53.450 since the South Meroshe Desert carried the
   // southern one from 2398.401 to 3177.824. What the plain set is the *northern* edge, and that is
   // the number to hold here rather than the height it happened to make at the time.
   // ...and 54.316 since Trogo carried the southern edge to 3264.426 (docs/southwest-4-report.md).
-  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 71.637) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // East to west the plain took nothing, and the number below has moved twice for other people since
   // this test was written: to 45.70 for the Ganesh Desert and to **49.700** for Cape Heth, whose one
   // `coast` hex reaches four hundred metres further west again. What this plain is held to is unchanged:
@@ -179,13 +182,13 @@ test('the world grows north, and it is the biggest structural change any region 
   // that it spent none of it, which is what its own box being inside -2400...-950 says.
   // ...and 52.20 since West Ibenwood took the western edge to -4610.002 when the forest belt landed
   // alongside. Still none of it the plain's.
-  assert.ok(Math.abs(wide - 52.20) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
+  assert.ok(Math.abs(wide - 68.20) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
   // The other three edges are exactly where they were when this plain was built: it spends northing
   // and nothing else. The western one has moved twice since, and neither time for anything on this
   // plain: -3960.002 for the Ganesh Desert and **-4360.002** for Cape Heth's one `coast` hex - and a
   // third time, to **-4610.002**, for West Ibenwood when the forest belt landed alongside.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6);
-  assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxX - 2209.9980720608737) < 1e-6);
   // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
   // (docs/southwest-2-report.md), which the plain also spent nothing of.
   assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6);
@@ -197,14 +200,15 @@ test('the world grows north, and it is the biggest structural change any region 
   // COAST_MARGIN (96 m) beyond the world bounds on a fixed phase; its first row stands at
   // z = -2264.35, and a pointy-top hex reaches a circumradius past its centre, so row 79's hexes
   // (centres -2309.3) come down to -2251.6 and are the last the lattice can land in.
-  assert.equal(WINDOW.minR, 79);
+  assert.equal(WINDOW.minR, 59);
   // 135 when the Ascarth tip set it; 144 since the South Meroshe Desert carried the world south.
   // 145 since Trogo's row 142: one row deeper, measured off the lattice (docs/southwest-4-report.md).
   assert.equal(WINDOW.maxR, 145);
-  assert.equal(WINDOW.maxQ, 34);
+  assert.equal(WINDOW.maxQ, 60);
   const COAST_CELL = 4, COAST_MARGIN = 96, PHASE = -704.3502691896258;
   const latticeMinZ = PHASE + Math.floor((WORLD_BOUNDS.minZ - COAST_MARGIN - PHASE) / COAST_CELL + 1e-9) * COAST_CELL;
-  assert.ok(Math.abs(latticeMinZ - -2264.3502691896257) < 1e-6, `the lattice starts at ${latticeMinZ}`);
+  // -2264.350 while this plain held the northern edge; -3996.350 since the Baldro Mountains took it.
+  assert.ok(Math.abs(latticeMinZ - -3996.3502691896256) < 1e-6, `the lattice starts at ${latticeMinZ}`);
   let reached = Infinity;
   for (let x = WORLD_BOUNDS.minX - COAST_MARGIN; x <= WORLD_BOUNDS.maxX + COAST_MARGIN; x += COAST_CELL)
     reached = Math.min(reached, hexAt(x, latticeMinZ).r);

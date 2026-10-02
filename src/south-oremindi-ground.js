@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import { SOUTH_OREMINDI_BOUNDS, southOremindiOwns, southOremindiInset } from './south-oremindi-world.js';
 
 const SPACING = 2, BORDER = 10, FEATHER = 10, BUCKET = 8;
@@ -18,17 +19,20 @@ const overlaps = (box, b) => !box || box.max.x >= b.minX && box.min.x <= b.maxX 
  * through local buckets, then falls back to coarseHeightAt. tintAt is optional;
  * without it, vertex colours interpolate the existing terrain palette.
  */
-export function refineSouthOremindiGround({ THREE, terrainRoot, heightAt, coarseHeightAt, tintAt = null }) {
+export function refineSouthOremindiGround(...args) { return finishBuild(refineSouthOremindiGroundSteps(...args)); }
+export function* refineSouthOremindiGroundSteps({ THREE, terrainRoot, heightAt, coarseHeightAt, tintAt = null }) {
+  let buildWork = 0;
   if (!THREE || !terrainRoot?.traverse || typeof heightAt !== 'function' || typeof coarseHeightAt !== 'function')
     throw new TypeError('South Oremindi refinement requires THREE, terrainRoot, analytic heightAt and coarseHeightAt.');
   const tiles = [], patches = [], edges = new Map(), vertexCaches = new WeakMap();
   let longest = 0, visited = 0;
-  terrainRoot.traverse(mesh => {
-    if (!mesh.isMesh) return;
-    if (mesh.userData.southOremindiGround) { patches.push(mesh); return; }
-    if (mesh.userData.southOremindiRefined) return;
+  const sourceMeshes = []; terrainRoot.traverse(mesh => sourceMeshes.push(mesh));
+  for (const mesh of sourceMeshes) { if ((++buildWork & 31) === 0) yield;
+    if (!mesh.isMesh) continue;
+    if (mesh.userData.southOremindiGround) { patches.push(mesh); continue; }
+    if (mesh.userData.southOremindiRefined) continue;
     const geometry = mesh.geometry, position = geometry?.attributes.position, index = geometry?.index;
-    if (!position || !index || !overlaps(geometry.boundingBox, SOUTH_OREMINDI_BOUNDS)) return;
+    if (!position || !index || !overlaps(geometry.boundingBox, SOUTH_OREMINDI_BOUNDS)) continue;
     let cache = vertexCaches.get(position);
     if (!cache) { cache = new Map(); vertexCaches.set(position, cache); }
     const vertex = id => {
@@ -40,14 +44,14 @@ export function refineSouthOremindiGround({ THREE, terrainRoot, heightAt, coarse
       return cache.get(id);
     };
     const keep = [], faces = [];
-    for (let i = 0; i < index.count; i += 3) {
+    for (let i = 0; i < index.count; i += 3) { if ((++buildWork & 31) === 0) yield;
       visited++;
       const ids = [index.getX(i), index.getX(i + 1), index.getX(i + 2)], p = ids.map(vertex);
       // Border-crossing source faces stay completely unchanged. Their neighbours
       // are stitched below, even if a coarse mesh has unusually long edges.
       if (!p.every(v => v.owned) || Math.max(...p.map(v => v.inset)) <= BORDER) { keep.push(...ids); continue; }
       faces.push({ ids, p });
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < 3; j++) { if ((++buildWork & 31) === 0) yield;
         const a = p[j], b = p[(j + 1) % 3], k = edgeKey(a, b);
         longest = Math.max(longest, gap(a, b));
         const edge = edges.get(k);
@@ -55,20 +59,20 @@ export function refineSouthOremindiGround({ THREE, terrainRoot, heightAt, coarse
       }
     }
     if (faces.length) tiles.push({ mesh, geometry, keep, faces });
-  });
+  }
   const exposed = [...edges.values()].filter(edge => edge.count === 1);
-  const edgeDistance = boundaryDistance(exposed);
+  const edgeDistance = yield* boundaryDistanceSteps(exposed);
   const divisions = Math.max(1, Math.ceil(longest / SPACING));
   let removedTriangles = 0, newVertices = 0, newTriangles = 0;
-  for (const { mesh, geometry, keep, faces } of tiles) {
+  for (const { mesh, geometry, keep, faces } of tiles) { if ((++buildWork & 31) === 0) yield;
     const positions = [], colors = [], indices = [], vertices = new Map();
     const sourceColor = geometry.attributes.color, tint = new THREE.Color();
-    for (const { ids, p: [a, b, c] } of faces) {
+    for (const { ids, p: [a, b, c] } of faces) { if ((++buildWork & 31) === 0) yield;
       const determinant = (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
       const rows = [];
-      for (let i = 0; i <= divisions; i++) {
+      for (let i = 0; i <= divisions; i++) { if ((++buildWork & 31) === 0) yield;
         const row = [];
-        for (let j = 0; j <= divisions - i; j++) {
+        for (let j = 0; j <= divisions - i; j++) { if ((++buildWork & 31) === 0) yield;
           const u = i / divisions, v = j / divisions, w = 1 - u - v;
           const x = Math.fround(a.x * w + b.x * u + c.x * v), z = Math.fround(a.z * w + b.z * u + c.z * v);
           const k = `${x},${z}`;
@@ -97,10 +101,10 @@ export function refineSouthOremindiGround({ THREE, terrainRoot, heightAt, coarse
         }
         rows.push(row);
       }
-      for (let i = 0; i < divisions; i++) for (let j = 0; j < divisions - i; j++) {
+      for (let i = 0; i < divisions; i++) { if ((++buildWork & 31) === 0) yield; for (let j = 0; j < divisions - i; j++) { if ((++buildWork & 31) === 0) yield;
         indices.push(rows[i][j], rows[i + 1][j], rows[i][j + 1]);
         if (j < divisions - i - 1) indices.push(rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1]);
-      }
+      } }
     }
     const fine = new THREE.BufferGeometry();
     fine.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -114,21 +118,22 @@ export function refineSouthOremindiGround({ THREE, terrainRoot, heightAt, coarse
     mesh.parent.add(patch); patches.push(patch);
     removedTriangles += faces.length; newVertices += positions.length / 3; newTriangles += indices.length / 3;
   }
-  const sampler = triangleSampler(patches, coarseHeightAt);
+  const sampler = yield* triangleSamplerSteps(patches, coarseHeightAt);
   return { patches, heightAt: sampler.heightAt,
     metrics: { patches: patches.length, refinedTiles: tiles.length, sourceTrianglesVisited: visited, removedTriangles,
       vertices: newVertices, triangles: newTriangles, divisions, spacing: longest / divisions,
       preservedBorder: BORDER, boundaryEdges: exposed.length, lookupBuckets: sampler.bucketCount } };
 }
 
-function boundaryDistance(edges) {
+function* boundaryDistanceSteps(edges) {
+  let buildWork = 0;
   const buckets = new Map(), size = 20;
-  for (const edge of edges) {
+  for (const edge of edges) { if ((++buildWork & 31) === 0) yield;
     const { a, b } = edge;
     for (let ix = Math.floor((Math.min(a.x, b.x) - FEATHER) / size); ix <= Math.floor((Math.max(a.x, b.x) + FEATHER) / size); ix++)
-      for (let iz = Math.floor((Math.min(a.z, b.z) - FEATHER) / size); iz <= Math.floor((Math.max(a.z, b.z) + FEATHER) / size); iz++) {
+      { if ((++buildWork & 31) === 0) yield; for (let iz = Math.floor((Math.min(a.z, b.z) - FEATHER) / size); iz <= Math.floor((Math.max(a.z, b.z) + FEATHER) / size); iz++) { if ((++buildWork & 31) === 0) yield;
         const k = `${ix},${iz}`; if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(edge);
-      }
+      } }
   }
   return (x, z) => {
     let nearest = Infinity;
@@ -140,20 +145,21 @@ function boundaryDistance(edges) {
   };
 }
 
-function triangleSampler(patches, fallback) {
+function* triangleSamplerSteps(patches, fallback) {
+  let buildWork = 0;
   const buckets = new Map(), minX = Math.floor(SOUTH_OREMINDI_BOUNDS.minX / BUCKET) - 1;
   const minZ = Math.floor(SOUTH_OREMINDI_BOUNDS.minZ / BUCKET) - 1;
   const columns = Math.ceil(SOUTH_OREMINDI_BOUNDS.maxX / BUCKET) - minX + 2;
   const bucketKey = (ix, iz) => (iz - minZ) * columns + ix - minX;
   const geometries = patches.map(mesh => ({ positions: mesh.geometry.attributes.position.array, indices: mesh.geometry.index.array }));
-  for (let g = 0; g < geometries.length; g++) {
+  for (let g = 0; g < geometries.length; g++) { if ((++buildWork & 31) === 0) yield;
     const { positions: p, indices } = geometries[g];
-    for (let i = 0; i < indices.length; i += 3) {
+    for (let i = 0; i < indices.length; i += 3) { if ((++buildWork & 31) === 0) yield;
       const a = indices[i] * 3, b = indices[i + 1] * 3, c = indices[i + 2] * 3;
       for (let ix = Math.floor(Math.min(p[a], p[b], p[c]) / BUCKET); ix <= Math.floor(Math.max(p[a], p[b], p[c]) / BUCKET); ix++)
-        for (let iz = Math.floor(Math.min(p[a + 2], p[b + 2], p[c + 2]) / BUCKET); iz <= Math.floor(Math.max(p[a + 2], p[b + 2], p[c + 2]) / BUCKET); iz++) {
+        { if ((++buildWork & 31) === 0) yield; for (let iz = Math.floor(Math.min(p[a + 2], p[b + 2], p[c + 2]) / BUCKET); iz <= Math.floor(Math.max(p[a + 2], p[b + 2], p[c + 2]) / BUCKET); iz++) { if ((++buildWork & 31) === 0) yield;
           const k = bucketKey(ix, iz); if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(g, i);
-        }
+        } }
     }
   }
   return { bucketCount: buckets.size, heightAt(x, z) {

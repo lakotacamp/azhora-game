@@ -2,6 +2,8 @@
  * Pure world-space geography. The atlas owns the cells and lake catchments; this
  * module owns no residents, roads or buildings. Renderers, swimmers, naturalists
  * and climbing all use these same shores and the same continuous heightfield. */
+import { createHexBoundaryDistance } from './hex-boundary-distance.js';
+import { cacheTerrainPointSamples } from './terrain-point-cache.js';
 import { REGION_CELLS, REGION_OUTLINES, hexAt, hexCentre, TRANSFORM,
   seamlessTerrainMix, relief } from './region-world.js';
 import { PLAYABLE_SURVEY } from './region-survey.js';
@@ -45,10 +47,9 @@ function segment(x,z,a,b) {
 }
 const edges=outlines.flatMap(loop=>loop.map((p,i)=>[p,loop[(i+1)%loop.length]]));
 /** Positive only inside the exact owned hex union. No smoothing spills into Ibenwood. */
-export function southOremindiInset(x,z) {
-  if(!southOremindiOwns(x,z))return 0;
-  let d=Infinity;for(const [a,b] of edges)d=Math.min(d,segment(x,z,a,b).distance);return d;
-}
+const boundaryDistance=createHexBoundaryDistance({cells:SOUTH_OREMINDI_CELLS,edges,cellAt:southOremindiCellAt,
+  distanceToEdge:(x,z,[a,b])=>segment(x,z,a,b).distance});
+export function southOremindiInset(x,z) { return boundaryDistance(x,z); }
 const baseAt=(x,z)=>{const mix=seamlessTerrainMix(x,z);return mix.base+relief(x,z,mix.amp,mix.wave);};
 const anchor=(q,r,dx=0,dz=0)=>{const p=hexCentre(q,r);return point(p.x+dx,p.z+dz);};
 
@@ -191,7 +192,7 @@ const PATH_SHAPES=freeze([
   crownScramble,
 ]);
 export const PATHS=freeze(PATH_SHAPES.map(p=>freeze({...p,points:freeze(p.points.map(at=>freeze({...at,y:altitude(at.y)})))})));
-function pathSample(path,x,z) {
+function calculatePathSample(path,x,z) {
   const b=path.bounds;if(x<b.minX||x>b.maxX||z<b.minZ||z>b.maxZ)return null;
   let nearest=Infinity,chosen=null;
   const samples=[];
@@ -207,6 +208,7 @@ function pathSample(path,x,z) {
   for(const p of samples){const w=Math.max(0,1-(p.distance-nearest)/1.6)**3;sum+=p.y*w;total+=w;}
   return {...chosen,y:sum/total};
 }
+const pathSample=cacheTerrainPointSamples(calculatePathSample);
 export function southOremindiPathDistance(x,z) {
   let d=Infinity;for(const path of PATH_SHAPES){const p=pathSample(path,x,z);if(p)d=Math.min(d,p.distance);}return d;
 }

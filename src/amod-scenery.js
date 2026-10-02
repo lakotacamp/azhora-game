@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { REGION_CELLS, hexOwnerAt, hexAt, SURVEY } from './region-world.js';
@@ -30,7 +32,10 @@ import { groundTint } from './world-terrain.js';
  * batching can merge Ostel into a handful of draw calls; everything repeated is
  * instanced.
  */
-export function createAmodScenery(kit) {
+export function createAmodScenery(...args) { return finishBuild(createAmodScenerySteps(...args)); }
+
+export function* createAmodScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, mesh, box, post, pebble, barrel, crate, wornPatch, trailSign,
     groundHeight, colliders, dummy, color, wood, woodLight, darkWood, roofGeometry, cylinder, round,
     riverMaterial, regionClear } = kit;
@@ -73,7 +78,7 @@ export function createAmodScenery(kit) {
   const riverSamples = {};
   {
     const vertices = [], indices = [], outline = [];
-    TARVEL_PROFILE.forEach((sample, index) => {
+    yield* forEachBuild(TARVEL_PROFILE, function* (sample, index) {
       const next = TARVEL_PROFILE[Math.min(index + 1, TARVEL_PROFILE.length - 1)];
       const previous = TARVEL_PROFILE[Math.max(index - 1, 0)];
       const dx = next.x - previous.x, dz = next.z - previous.z, length = Math.hypot(dx, dz) || 1;
@@ -90,7 +95,7 @@ export function createAmodScenery(kit) {
     const water = new THREE.Mesh(geometry, riverMaterial); water.name = TARVEL.name; group.add(water);
     riverSamples[TARVEL.id] = outline;
     // The stream is not forded: blockers along it, with the road's lane left open.
-    for (const sample of outline) {
+    for (const sample of outline) { if (++buildWork % 32 === 0) yield;
       const acrossBridge = Math.abs((sample.x - b.crossing.x) * b.axis.x + (sample.z - b.crossing.z) * b.axis.z);
       if (acrossBridge < b.halfSpan + 1.6) continue;
       // `river-water` so the minimap and the water tests treat it as water; `stream`, not
@@ -99,7 +104,7 @@ export function createAmodScenery(kit) {
       metrics.waterColliders++;
     }
     // Bank stones and a few rushes where the water is slow.
-    for (let i = 4; i < outline.length; i += 3) {
+    for (let i = 4; i < outline.length; i += 3) { if (++buildWork % 32 === 0) yield;
       const sample = outline[i], side = random() < .5 ? -1 : 1, offset = sample.half + range(.4, 1.8);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (roadDistance(x, z) < 3) continue;
@@ -121,25 +126,25 @@ export function createAmodScenery(kit) {
   })();
   // The deck, laid along the road: `axis` is the road, so the span runs along local Z here.
   box(paleStone, 0, deckY - .22, 0, 5.6, .44, b.halfSpan * 2 + 1.2, bridge);
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     box(dryStone, side * 2.55, deckY + .42, 0, .5, .84, b.halfSpan * 2 + 1.2, bridge);          // parapets
     box(dressedStone, side * 2.55, deckY + .88, 0, .62, .14, b.halfSpan * 2 + 1.2, bridge);     // coping
   }
   // The arch: voussoirs turned about the span, springing from both banks.
   const springY = water + .2, riseY = deckY - .55, radius = Math.max(1.2, (riseY - springY));
-  for (let i = 0; i <= 9; i++) {
+  for (let i = 0; i <= 9; i++) { if (++buildWork % 32 === 0) yield;
     const angle = Math.PI * (i / 9), az = Math.cos(angle) * (b.halfSpan - .6), ay = Math.sin(angle) * radius;
     const stone = box(dressedStone, 0, springY + ay, az, 4.6, .5, .82, bridge);
     stone.rotation.x = -angle + Math.PI / 2;
   }
-  for (const end of [-1, 1]) box(dryStone, 0, springY - .8, end * (b.halfSpan + .2), 5.0, 2.4, 1.6, bridge);
+  for (const end of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(dryStone, 0, springY - .8, end * (b.halfSpan + .2), 5.0, 2.4, 1.6, bridge); }
   // The offering shelf on the upstream parapet: a cup of wine and a sprig of herb.
   box(dressedStone, -2.55, deckY + 1.0, 0, .9, .1, .9, bridge);
   post(material('#7d4a3c'), -2.55, deckY + 1.12, 0, .09, .16, bridge);
   post(material('#5f7a48'), -2.4, deckY + 1.15, .25, .015, .22, bridge);
-  for (const side of [-1, 1]) for (let along = -b.halfSpan; along <= b.halfSpan + .01; along += 1.4) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (let along = -b.halfSpan; along <= b.halfSpan + .01; along += 1.4) { if (++buildWork % 32 === 0) yield;
     colliders.push({ x: b.crossing.x + b.axis.x * along + b.side.x * side * 2.6, z: b.crossing.z + b.axis.z * along + b.side.z * side * 2.6, r: .4, kind: 'bridge-rail', bridge: b.id });
-  }
+  } }
 
   // -------------------------------------------------------------------------
   // The terraced ground, and a wall on every riser it has
@@ -162,19 +167,19 @@ export function createAmodScenery(kit) {
     const positions = new Float32Array(columns * rows * 3), colours = new Float32Array(columns * rows * 3);
     let jitter = 7331;
     const shade = () => { jitter = (Math.imul(jitter, 1664525) + 1013904223) >>> 0; return .955 + jitter / 4294967296 * .09; };
-    for (let j = 0; j < rows; j++) for (let i = 0; i < columns; i++) {
+    for (let j = 0; j < rows; j++) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < columns; i++) { if (++buildWork % 32 === 0) yield;
       const x = p.minX + i * STEP, z = p.minZ + j * STEP, index = j * columns + i;
       const y = groundHeight(x, z);
       heights[index] = y;
       positions.set([x, y, z], index * 3);
       groundTint(color, x, z, THREE).multiplyScalar(shade());
       colours.set([color.r, color.g, color.b], index * 3);
-    }
+    } }
     const indices = [];
-    for (let j = 0; j < rows - 1; j++) for (let i = 0; i < columns - 1; i++) {
+    for (let j = 0; j < rows - 1; j++) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < columns - 1; i++) { if (++buildWork % 32 === 0) yield;
       const a = j * columns + i;
       indices.push(a, a + columns, a + 1, a + 1, a + columns, a + columns + 1);
-    }
+    } }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
@@ -202,9 +207,9 @@ export function createAmodScenery(kit) {
     const ribbable = (x, z) => amodShaping(x, z) > .6 && !keepOut.some(spot => Math.hypot(spot.x - x, spot.z - z) < spot.r)
       && tarvelDistance(x, z) > 4.5 && roadDistance(x, z) > 3.6 && hexOwnerAt(x, z) === 'Amod';
     const sample = (a, b) => heights[Math.min(rows - 1, Math.max(0, b)) * columns + Math.min(columns - 1, Math.max(0, a))];
-    for (let j = 0; j < rows; j++) for (let i = 0; i < columns; i++) {
+    for (let j = 0; j < rows; j++) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < columns; i++) { if (++buildWork % 32 === 0) yield;
       const here = heights[j * columns + i], level = terraceLevel(here);
-      for (const [di, dj] of [[1, 0], [0, 1]]) {
+      for (const [di, dj] of [[1, 0], [0, 1]]) { if (++buildWork % 32 === 0) yield;
         const ni = i + di, nj = j + dj;
         if (ni >= columns || nj >= rows) continue;
         const there = heights[nj * columns + ni];
@@ -219,11 +224,11 @@ export function createAmodScenery(kit) {
         const down = Math.hypot(gx, gz) > .01 ? [-gx, -gz] : (there < here ? [di, dj] : [-di, -dj]);
         ribs.push({ x, z, top: Math.max(here, there), bottom: Math.min(here, there), yaw: Math.atan2(down[0], down[1]) });
       }
-    }
+    } }
     if (ribs.length) {
       const box1 = new THREE.BoxGeometry(1, 1, 1);
       const batch = new THREE.InstancedMesh(box1, material('#ffffff'), ribs.length);
-      ribs.forEach((rib, index) => {
+      yield* forEachBuild(ribs, function* (rib, index) {
         // Buried deep enough that a rib lying across ground that keeps falling at its
         // ends still has its foot in the hill rather than in the air.
         const height = Math.max(1.6, rib.top - rib.bottom + 1.7);
@@ -247,14 +252,14 @@ export function createAmodScenery(kit) {
   // -------------------------------------------------------------------------
   {
     const kerb = [];
-    DROMEL_PROFILE.forEach((sample, index) => {
+    yield* forEachBuild(DROMEL_PROFILE, function* (sample, index) {
       const next = DROMEL_PROFILE[Math.min(index + 1, DROMEL_PROFILE.length - 1)];
       const previous = DROMEL_PROFILE[Math.max(index - 1, 0)];
       const dx = next.x - previous.x, dz = next.z - previous.z, length = Math.hypot(dx, dz) || 1;
       kerb.push({ x: sample.x, z: sample.z, nx: -dz / length, nz: dx / length, level: sample.level, yaw: Math.atan2(dx, dz) });
     });
     const water = new THREE.BufferGeometry(), vertices = [], indices = [];
-    kerb.forEach((sample, index) => {
+    yield* forEachBuild(kerb, function* (sample, index) {
       vertices.push(sample.x - sample.nx * .6, sample.level - .18, sample.z - sample.nz * .6,
         sample.x + sample.nx * .6, sample.level - .18, sample.z + sample.nz * .6);
       if (index) { const v = index * 2; indices.push(v - 2, v, v - 1, v - 1, v, v + 1); }
@@ -262,9 +267,9 @@ export function createAmodScenery(kit) {
     water.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     water.setIndex(indices); water.computeVertexNormals(); water.computeBoundingSphere();
     const channel = new THREE.Mesh(water, riverMaterial); channel.name = 'The Dromel'; group.add(channel);
-    for (let i = 0; i < kerb.length; i += 2) {
+    for (let i = 0; i < kerb.length; i += 2) { if (++buildWork % 32 === 0) yield;
       const sample = kerb[i];
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
         const slab = box(dryStone, sample.x + sample.nx * side * .82, sample.level + .02, sample.z + sample.nz * side * .82, .46, .5, 2.2, group);
         slab.rotation.y = sample.yaw;
       }
@@ -273,10 +278,10 @@ export function createAmodScenery(kit) {
     const gateY = groundHeight(DROMEL_GATE.x, DROMEL_GATE.z);
     const gate = new THREE.Group(); gate.position.set(DROMEL_GATE.x, gateY, DROMEL_GATE.z);
     gate.rotation.y = Math.atan2(DROMEL_CHANNEL[5].x - DROMEL_CHANNEL[3].x, DROMEL_CHANNEL[5].z - DROMEL_CHANNEL[3].z); group.add(gate);
-    for (const side of [-1, 1]) box(dressedStone, side * .95, .62, 0, .5, 1.5, .7, gate);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(dressedStone, side * .95, .62, 0, .5, 1.5, .7, gate); }
     box(darkWood, 0, .38, 0, 1.5, .6, .1, gate);                                   // the board, half in its slot
     box(dressedStone, 0, 1.32, 0, 2.4, .22, .8, gate);                             // the lintel the tally is cut in
-    for (let i = 0; i < 5; i++) box(darkStone, -.7 + i * .35, 1.32, .42, .05, .12, .04, gate);
+    for (let i = 0; i < 5; i++) { if (++buildWork % 32 === 0) yield; box(darkStone, -.7 + i * .35, 1.32, .42, .05, .12, .04, gate); }
     colliders.push({ x: DROMEL_GATE.x, z: DROMEL_GATE.z, r: 1.3, kind: 'water-gate' });
     // The springhouse at the Tarvel head, where the Dromel is taken off.
     const headY = groundHeight(TARVEL_HEAD.x, TARVEL_HEAD.z);
@@ -347,7 +352,7 @@ export function createAmodScenery(kit) {
     metrics.buildings++;
     return yard;
   }
-  for (const building of OSTEL_BUILDINGS) terraceHouse(building);
+  for (const building of OSTEL_BUILDINGS) { if (++buildWork % 32 === 0) yield; terraceHouse(building); }
   wornPatch(OSTEL.centre.x, OSTEL.centre.z, 26, '#b2aa8d', 1.05);
 
   // The town spring: a basin under a low stone roof, and the first channel off it.
@@ -355,16 +360,16 @@ export function createAmodScenery(kit) {
     const s = OSTEL_SPRING, y = groundHeight(s.x, s.z);
     const springHouse = new THREE.Group(); springHouse.position.set(s.x, y, s.z);
     springHouse.rotation.y = Math.atan2(OSTEL.across.x, OSTEL.across.z); group.add(springHouse);
-    for (const side of [-1, 1]) box(dressedStone, side * 1.3, .9, 0, .45, 1.8, 1.9, springHouse);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(dressedStone, side * 1.3, .9, 0, .45, 1.8, 1.9, springHouse); }
     box(dressedStone, 0, 1.9, 0, 3.2, .3, 2.2, springHouse);
     box(paleStone, 0, .32, .55, 2.2, .64, .9, springHouse);                       // the basin
     box(riverMaterial, 0, .6, .55, 1.9, .05, .66, springHouse);                   // and the water standing in it
     box(dressedStone, 0, .12, 1.5, 1.0, .24, 1.0, springHouse);                   // the overflow sill
     colliders.push({ x: s.x, z: s.z, r: 2.0, kind: 'spring' });
     // The channel away from the overflow, downhill toward the first terraces.
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 9; i++) { if (++buildWork % 32 === 0) yield;
       const p = ostelPoint(9 - i * 1.6, -12 + i * 2.2), py = groundHeight(p.x, p.z);
-      for (const side of [-1, 1]) box(dryStone, p.x + OSTEL.along.x * side * .5, py + .1, p.z + OSTEL.along.z * side * .5, .35, .34, 1.9, group);
+      for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(dryStone, p.x + OSTEL.along.x * side * .5, py + .1, p.z + OSTEL.along.z * side * .5, .35, .34, 1.9, group); }
     }
   }
 
@@ -372,7 +377,7 @@ export function createAmodScenery(kit) {
   {
     const yard = OSTEL_STONE_YARD;
     wornPatch(yard.x, yard.z, yard.radius, '#c9c3ab', 1);
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 11; i++) { if (++buildWork % 32 === 0) yield;
       const angle = i * 2.399, r = range(1.5, yard.radius - 1.5);
       const x = yard.x + Math.sin(angle) * r, z = yard.z + Math.cos(angle) * r, y = groundHeight(x, z);
       const w = range(.7, 1.5), h = range(.4, .9), d = range(.5, 1.2);
@@ -382,7 +387,7 @@ export function createAmodScenery(kit) {
     }
     // The saw pit, with its frame over it.
     const pit = ostelPoint(21, 20), pitY = groundHeight(pit.x, pit.z);
-    for (const side of [-1, 1]) post(wood, pit.x + OSTEL.along.x * side * 1.5, pitY + 1.1, pit.z + OSTEL.along.z * side * 1.5, .1, 2.2, group);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, pit.x + OSTEL.along.x * side * 1.5, pitY + 1.1, pit.z + OSTEL.along.z * side * 1.5, .1, 2.2, group); }
     box(woodLight, pit.x, pitY + 2.1, pit.z, .12, .12, 3.4, group).rotation.y = Math.atan2(OSTEL.along.x, OSTEL.along.z);
     colliders.push({ x: pit.x, z: pit.z, r: 1.4, kind: 'saw-pit' });
   }
@@ -391,18 +396,18 @@ export function createAmodScenery(kit) {
   {
     const t = OSTEL_TOLL_TABLE, y = groundHeight(t.x, t.z);
     box(woodLight, t.x, y + .78, t.z, 1.9, .12, .95, group);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) post(wood, t.x + sx * .8, y + .38, t.z + sz * .38, .07, .78, group);
+    for (const sx of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (const sz of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, t.x + sx * .8, y + .38, t.z + sz * .38, .07, .78, group); } }
     colliders.push({ x: t.x, z: t.z, hx: 1.1, hz: .7, kind: 'toll-table' });
-    for (const [a, bb] of [[-16, 24], [-21, 23], [-12, 22]]) { const p = ostelPoint(a, bb); barrel(p.x, p.z, .95, group); colliders.push({ x: p.x, z: p.z, r: .5, kind: 'barrel' }); }
+    for (const [a, bb] of [[-16, 24], [-21, 23], [-12, 22]]) { if (++buildWork % 32 === 0) yield; const p = ostelPoint(a, bb); barrel(p.x, p.z, .95, group); colliders.push({ x: p.x, z: p.z, r: .5, kind: 'barrel' }); }
     const cart = ostelPoint(-26, 24), cartY = groundHeight(cart.x, cart.z);
     const wagon = new THREE.Group(); wagon.position.set(cart.x, cartY + .72, cart.z);
     wagon.rotation.y = Math.atan2(OSTEL.along.x, OSTEL.along.z); group.add(wagon);
     box(woodLight, 0, 0, 0, 1.9, .18, 3.6, wagon);
-    for (const side of [-1, 1]) for (const along of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (const along of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const wheel = mesh(new THREE.TorusGeometry(.6, .09, 5, 12), darkWood, side * 1.05, -.08, along * .95, 1, 1, 1, wagon);
       wheel.rotation.y = Math.PI / 2;
-    }
-    for (let i = 0; i < 4; i++) crate(cart.x, cart.z, .62, cartY + .92 + (i % 2) * .64, group);
+    } }
+    for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield; crate(cart.x, cart.z, .62, cartY + .92 + (i % 2) * .64, group); }
     colliders.push({ x: cart.x, z: cart.z, r: 1.9, kind: 'cart' });
   }
 
@@ -413,12 +418,12 @@ export function createAmodScenery(kit) {
     const t = TIR_OSTEL;
     // The best-kept wall in the valley, along the downhill edge, and the dead behind it looking down the water.
     const facing = Math.atan2(OSTEL.along.x, OSTEL.along.z);
-    for (let i = -5; i <= 5; i++) {
+    for (let i = -5; i <= 5; i++) { if (++buildWork % 32 === 0) yield;
       const x = t.x + OSTEL.along.x * i * 2.2, z = t.z + OSTEL.along.z * i * 2.2, y = groundHeight(x, z);
       const stone = box(dressedStone, x + OSTEL.across.x * 5, y + .65, z + OSTEL.across.z * 5, 2.3, 1.3, .72, group);
       stone.rotation.y = facing;
     }
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 14; i++) { if (++buildWork % 32 === 0) yield;
       const a = (i % 7 - 3) * 2.4, across = -2 + Math.floor(i / 7) * 3.2;
       const x = t.x + OSTEL.along.x * a + OSTEL.across.x * across, z = t.z + OSTEL.along.z * a + OSTEL.across.z * across;
       const y = groundHeight(x, z), h = range(.5, .95);
@@ -431,7 +436,7 @@ export function createAmodScenery(kit) {
   // -------------------------------------------------------------------------
   // Vessen, three roofs and a springhouse on the western flank
   // -------------------------------------------------------------------------
-  for (const [dx, dz, width, storeys] of [[0, 0, 6.0, 2], [8, 5, 5.4, 2], [-6, 7, 5.6, 3]]) {
+  for (const [dx, dz, width, storeys] of [[0, 0, 6.0, 2], [8, 5, 5.4, 2], [-6, 7, 5.6, 3]]) { if (++buildWork % 32 === 0) yield;
     terraceHouse({ id: `vessen-${dx}`, x: VESSEN.x + dx, z: VESSEN.z + dz, b: 8,
       width, depth: width * .88, storeys, roof: '#6f5744', wall: '#b1a68a' });   // Ostel's own quarry and kiln
   }
@@ -441,7 +446,7 @@ export function createAmodScenery(kit) {
     mesh(roofGeometry(3.0, 2.8, .8), slate, x, y + 1.6, z, 1, 1, 1, group);
     colliders.push({ x, z, r: 1.6, kind: 'springhouse' });
     // The first chestnuts of the year, left at the spring.
-    for (let i = 0; i < 6; i++) pebble(material('#6d4b32'), x + range(-.7, .7), y + .1, z + 1.5 + range(-.4, .4), .09, .07, .09, group);
+    for (let i = 0; i < 6; i++) { if (++buildWork % 32 === 0) yield; pebble(material('#6d4b32'), x + range(-.7, .7), y + .1, z + 1.5 + range(-.4, .4), .09, .07, .09, group); }
   }
 
   // -------------------------------------------------------------------------
@@ -450,7 +455,7 @@ export function createAmodScenery(kit) {
   const landmark = id => AMOD_LANDMARKS.find(place => place.id === id);
   {
     const spot = landmark('amod-pass-stones');
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
       const x = spot.x + Math.sin(i * 1.7) * 3.4, z = spot.z + Math.cos(i * 1.7) * 3.0, y = groundHeight(x, z);
       const h = range(1.7, 2.4);
       const stone = box(i % 2 ? dryStone : darkStone, x, y + h / 2 - .2, z, .72, h, .5, group);
@@ -458,7 +463,7 @@ export function createAmodScenery(kit) {
       colliders.push({ x, z, r: .55, kind: 'pass-stone' });
       // The offerings: a sprig of herb in a cleft, chestnuts at the foot.
       if (i === 0) post(material('#5f7a48'), x, y + h - .1, z + .2, .018, .3, group);
-      if (i === 2) for (let k = 0; k < 5; k++) pebble(material('#6d4b32'), x + range(-.4, .4), y + .08, z + range(.2, .7), .08, .06, .08, group);
+      if (i === 2) for (let k = 0; k < 5; k++) { if (++buildWork % 32 === 0) yield; pebble(material('#6d4b32'), x + range(-.4, .4), y + .08, z + range(.2, .7), .08, .06, .08, group); }
     }
   }
   {
@@ -475,7 +480,7 @@ export function createAmodScenery(kit) {
   {
     // The first terrace, with its western end open and half rebuilt.
     const spot = landmark('amod-first-terrace');
-    for (let i = -6; i <= 6; i++) {
+    for (let i = -6; i <= 6; i++) { if (++buildWork % 32 === 0) yield;
       const x = spot.x + i * 2.4, z = spot.z + i * .5, y = groundHeight(x, z);
       const built = i > 1;
       const h = built ? range(.5, .8) : 1.3;
@@ -483,7 +488,7 @@ export function createAmodScenery(kit) {
       wall.rotation.y = .2;
     }
     // The stones the wall-wright has sorted out and not yet put back.
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 9; i++) { if (++buildWork % 32 === 0) yield;
       const x = spot.x + range(-9, -3), z = spot.z + range(-4, 2);
       pebble(dryStone, x, groundHeight(x, z) + .16, z, range(.25, .45), range(.15, .3), range(.2, .4), group);
     }
@@ -491,9 +496,9 @@ export function createAmodScenery(kit) {
   {
     // The culvert: a stone mouth under the road, and the hook leaning on it.
     const spot = landmark('amod-culvert'), y = groundHeight(spot.x, spot.z);
-    for (const side of [-1, 1]) box(dressedStone, spot.x + side * .9, y + .35, spot.z, .45, .9, 2.4, group);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(dressedStone, spot.x + side * .9, y + .35, spot.z, .45, .9, 2.4, group); }
     box(dressedStone, spot.x, y + .82, spot.z, 2.3, .26, 2.4, group);
-    for (let i = 0; i < 7; i++) pebble(darkStone, spot.x + range(-1.6, 1.6), y + .06, spot.z + range(1.2, 3.2), range(.18, .38), .14, range(.18, .35), group);
+    for (let i = 0; i < 7; i++) { if (++buildWork % 32 === 0) yield; pebble(darkStone, spot.x + range(-1.6, 1.6), y + .06, spot.z + range(1.2, 3.2), range(.18, .38), .14, range(.18, .35), group); }
     const hook = post(wood, spot.x + 1.6, y + 1.0, spot.z + .6, .045, 2.6, group);
     hook.rotation.set(.35, .4, .2);
     colliders.push({ x: spot.x, z: spot.z, r: 1.2, kind: 'culvert' });
@@ -503,17 +508,17 @@ export function createAmodScenery(kit) {
     // across the way west, with a pole laid over the gap the road would go through.
     // The road runs east and west here, so the wall and its collider run along z.
     const k = KELMOD_ROAD_END, y = groundHeight(k.x, k.z);
-    for (let i = -8; i <= 8; i++) {
+    for (let i = -8; i <= 8; i++) { if (++buildWork % 32 === 0) yield;
       const x = k.x + i * .15, z = k.z + i * 2.4;
       if (Math.abs(z - k.z) < 2.8) continue;
       const stone = box(dryStone, x, groundHeight(x, z) + .5, z, .6, 1.0, 2.5, group);
       stone.rotation.y = .04 * i;
     }
-    for (const side of [-1, 1]) post(wood, k.x, groundHeight(k.x, k.z + side * 2.6) + .7, k.z + side * 2.6, .1, 1.4, group);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, k.x, groundHeight(k.x, k.z + side * 2.6) + .7, k.z + side * 2.6, .1, 1.4, group); }
     box(woodLight, k.x, y + 1.05, k.z, .14, .14, 5.4, group).name = 'Kelmod road bar';
     colliders.push({ x: k.x, z: k.z, hx: .2, hz: k.halfWidth, kind: 'frontier' });
   }
-  for (const sign of AMOD_SIGNS) trailSign(sign.x, sign.z, 1, sign.label, sign.yaw, sign.returnLabel, root);
+  for (const sign of AMOD_SIGNS) { if (++buildWork % 32 === 0) yield; trailSign(sign.x, sign.z, 1, sign.label, sign.yaw, sign.returnLabel, root); }
 
   // -------------------------------------------------------------------------
   // Scatter: chestnut and walnut above, orchard and vine on the treads below
@@ -554,11 +559,11 @@ export function createAmodScenery(kit) {
   const cells = [...REGION_CELLS.Amod].sort((a, c) => a.z - c.z || a.x - c.x);
   const BLOCK = Math.max(1, Math.round(6 / (WORLD_SCALE * WORLD_SCALE)));
   const tuftsPerHex = Math.round(26 * WORLD_SCALE * WORLD_SCALE);
-  for (let start = 0; start < cells.length; start += BLOCK) {
+  for (let start = 0; start < cells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = cells.slice(start, start + BLOCK), trees = [], orchard = [], vines = [], rocks = [], tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       const density = woodland(cell.x, cell.z), attempts = Math.round(density * 1.6);
-      for (let i = 0; i < attempts; i++) {
+      for (let i = 0; i < attempts; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-52, 52), z = cell.z + range(-58, 58);
         if (random() * 1.5 > woodland(x, z) / Math.max(1, density)) continue;
         if (hexOwnerAt(x, z) !== 'Amod' || clearOf(x, z, 2.5)) continue;
@@ -568,7 +573,7 @@ export function createAmodScenery(kit) {
         trees.push({ x, z, walnut, s: range(.8, 1.3), h: walnut ? range(8, 11) : range(10, 15), rot: range(0, 6.28) });
       }
       // Orchard and vine only on the terraces, which is the only ground worth the work.
-      for (let i = 0; i < 90; i++) {
+      for (let i = 0; i < 90; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (amodShaping(x, z) < .5 || hexOwnerAt(x, z) !== 'Amod' || clearOf(x, z, 2)) continue;
         if (trees.some(tree => Math.hypot(tree.x - x, tree.z - z) < 4)) continue;
@@ -578,12 +583,12 @@ export function createAmodScenery(kit) {
         list.push({ x, z, s: range(.8, 1.2), rot: range(0, 6.28) });
       }
       const stony = terrainAt(cell.x, cell.z) === 'grassland' ? 26 : 58;
-      for (let i = 0; i < stony; i++) {
+      for (let i = 0; i < stony; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Amod' || clearOf(x, z, 1.5)) continue;
         rocks.push({ x, z, s: range(.4, terrainAt(x, z) === 'grassland' ? 1.1 : 2.4), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < tuftsPerHex; i++) {
+      for (let i = 0; i < tuftsPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Amod' || roadDistance(x, z) < 2.2) continue;
         tufts.push({ x, z, s: range(.7, 1.5), rot: range(0, 6.28) });
@@ -593,14 +598,14 @@ export function createAmodScenery(kit) {
       const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
       const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, Math.max(1, trees.length * 3));
       let crownIndex = 0;
-      trees.forEach((tree, index) => {
+      yield* forEachBuild(trees, function* (tree, index) {
         const y = groundHeight(tree.x, tree.z), height = tree.h * tree.s;
         dummy.position.set(tree.x, y + height * .34, tree.z); dummy.rotation.set(0, tree.rot, 0);
         dummy.scale.set(tree.s, height * .68, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
         trunks.setColorAt(index, color.setHSL(.09, range(.1, .18), range(.24, .33)));
         const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .5 * tree.s, kind: 'region-tree' }; colliders.push(collider);
-        for (let c = 0; c < 3; c++) {
+        for (let c = 0; c < 3; c++) { if (++buildWork % 32 === 0) yield;
           const a = tree.rot + c * 2.1, spread = c === 2 ? 0 : height * .16;
           dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (c === 2 ? .88 : .68), tree.z + Math.cos(a) * spread);
           dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
@@ -615,13 +620,13 @@ export function createAmodScenery(kit) {
         registerWorldTree(colliders,{id:worldTreeId('amod',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:tree.walnut?'black-walnut':'sweet-chestnut'},parts,collider);
       });
       crowns.count = crownIndex;
-      for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
+      for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
       metrics.trees += trees.length;
     }
     if (orchard.length) {
       const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, orchard.length);
       const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, orchard.length);
-      orchard.forEach((tree, index) => {
+      yield* forEachBuild(orchard, function* (tree, index) {
         const y = groundHeight(tree.x, tree.z), height = 3.4 * tree.s;
         dummy.position.set(tree.x, y + height * .3, tree.z); dummy.rotation.set(0, tree.rot, 0);
         dummy.scale.set(tree.s * .7, height * .6, tree.s * .7); dummy.updateMatrix();
@@ -633,12 +638,12 @@ export function createAmodScenery(kit) {
         crowns.setColorAt(index, color.setHSL(range(.19, .25), range(.24, .34), range(.34, .44)));
         registerWorldTree(colliders,{id:worldTreeId('amod-orchard',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:'apple'},[{mesh:trunks,index},{mesh:crowns,index}]);
       });
-      for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
+      for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
       metrics.orchard += orchard.length;
     }
     if (vines.length) {
       const batch = new THREE.InstancedMesh(vineGeometry, leafMaterial, vines.length);
-      vines.forEach((vine, index) => {
+      yield* forEachBuild(vines, function* (vine, index) {
         dummy.position.set(vine.x, groundHeight(vine.x, vine.z) + .5 * vine.s, vine.z);
         dummy.rotation.set(0, vine.rot, 0); dummy.scale.set(.5 * vine.s, 1.0 * vine.s, .42 * vine.s); dummy.updateMatrix();
         batch.setMatrixAt(index, dummy.matrix);
@@ -649,7 +654,7 @@ export function createAmodScenery(kit) {
     }
     if (rocks.length) {
       const batch = new THREE.InstancedMesh(round, stoneMaterial, rocks.length);
-      rocks.forEach((rock, index) => {
+      yield* forEachBuild(rocks, function* (rock, index) {
         dummy.position.set(rock.x, groundHeight(rock.x, rock.z) + rock.s * .24, rock.z);
         dummy.rotation.set(range(-.16, .16), rock.rot, range(-.16, .16));
         dummy.scale.set(rock.s, rock.s * range(.4, .7), rock.s * range(.75, 1.2)); dummy.updateMatrix();
@@ -662,7 +667,7 @@ export function createAmodScenery(kit) {
     }
     if (tufts.length) {
       const batch = new THREE.InstancedMesh(grassGeometry, grassMaterial, tufts.length);
-      tufts.forEach((tuft, index) => {
+      yield* forEachBuild(tufts, function* (tuft, index) {
         dummy.position.set(tuft.x, groundHeight(tuft.x, tuft.z) + .02, tuft.z);
         dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
         batch.setMatrixAt(index, dummy.matrix);

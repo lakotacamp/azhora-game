@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {BALDRO_WILDLIFE_ZONES} from './baldro-wildlife.js';
 import { GROVE_WILDLIFE } from './ibenwood-pilot.js';
 import { IBENWOOD_LIFE_ZONES } from './ibenwood-life.js';
 import { canStand, canSwim } from './game-state.js';
@@ -22,9 +23,9 @@ import { SELEMIS_WILDLIFE_ZONES } from './selemis-wildlife.js';
 /**
  * The animals of the four western regions.
  *
- * Built on the same plan as `road-life.js`: every kind's parts are merged once
- * into vertex-coloured geometry and then instanced, each herd or pair keeps a
- * range it will not leave, and the whole group is hidden past a hundred metres.
+ * Every kind's parts are merged on first approach, then shared by nearby
+ * instanced herds. Distant instance buffers are released; the stable resident
+ * records keep their own home ranges and simulation state while unseen.
  * They are ambient: they cannot be attacked, collected, or asked anything.
  *
  * Every animal here is one the lore names, and the notes on each range say
@@ -96,7 +97,7 @@ function wader(t) {
   };
 }
 
-function models() {
+function modelFactories() {
   const dark = 0x241f1a;
   return {
     /**
@@ -107,7 +108,7 @@ function models() {
      * is about. Nesdor's cattle are the same animal drawn smaller: the lore
      * introduces them by saying they are not this one.
      */
-    longhorn: {
+    longhorn: () => ({
       body: geometry([
         S(0x6d452c, [0, 1.06, -.04], [.42, .46, .84]),
         // The shoulder and the neck: a longhorn is heaviest in front, and its head
@@ -132,7 +133,7 @@ function models() {
         ...both(side => C(0xe3dac0, [side * .52, .41, .06], [.030, .20, .030], [0, 0, side * .38])),
       ]),
       leg: geometry([Y(0x5b3924, [0, -.23, 0], [.09, .46, .092]), B(0x2e211a, [0, -.46, .03], [.15, .10, .20])]),
-    },
+    }),
 
     /**
      * The Nethrani beast: "a compact, short-legged breed adapted to wet ground". Not the
@@ -160,7 +161,7 @@ function models() {
      * and forward, and `GRAZER_RIG`'s `neck` and `high` are that joint rather than the base
      * of a skull: the swing turns the whole of it, which is what a neck does.
      */
-    'nethrani-cattle': {
+    'nethrani-cattle': () => ({
       body: geometry([
         S(0x8a7f6e, [0, .80, -.04], [.42, .35, .84]),
         S(0x978b78, [0, .87, .42], [.40, .33, .34]),
@@ -185,7 +186,7 @@ function models() {
         ...both(side => C(0xe8e0c8, [side * .275, .40, .52], [.042, .12, .042], [-.55, 0, side * .55])),
       ]),
       leg: geometry([Y(0x6b6154, [0, -.16, 0], [.105, .32, .107]), B(0x3c352d, [0, -.32, .03], [.16, .10, .20])]),
-    },
+    }),
 
     /**
      * **The frostback buffalo**, and the one new rig the Mithala plain asked for. The fauna overview
@@ -214,7 +215,7 @@ function models() {
      * would otherwise float in front of its own chest, so `GRAZER_RIG`'s `neck` and `high` are the
      * shoulder joint at the top of the hump and the swing turns the whole of it.
      */
-    frostback: {
+    frostback: () => ({
       body: geometry([
         // The hump: dense shoulder muscle under long hair, and the highest point of the animal.
         S(0x4a382b, [0, 1.18, .30], [.40, .40, .44]),
@@ -244,7 +245,7 @@ function models() {
         ...both(side => C(0x796d5a, [side * .30, -.10, .60], [.046, .13, .046], [-.90, 0, side * .55])),
       ]),
       leg: geometry([Y(0x2d221b, [0, -.17, 0], [.098, .34, .100]), B(0x1f1814, [0, -.34, .03], [.15, .10, .19])]),
-    },
+    }),
 
     /**
      * The harrier over Nethereum's meadow. An extension, and flagged as one on its range:
@@ -258,7 +259,7 @@ function models() {
      * the four-legged tail of `render` asks an instanced mesh that was never made for it and
      * takes the render loop down; that is what the vulture did the first time.
      */
-    harrier: {
+    harrier: () => ({
       body: geometry([
         S(0x8e97a0, [0, 0, -.02], [.065, .062, .22]),
         S(0xe6e6df, [0, -.022, .04], [.055, .045, .15]),
@@ -273,14 +274,14 @@ function models() {
         S(0xa7b0b8, [.58, -.004, -.03], [.30, .014, .07]),
         S(0x1d1f22, [.86, -.008, -.07], [.16, .012, .045]),
       ]),
-    },
+    }),
 
     /**
      * Hill sheep for Meneth's ridge commons and Nesdor's margins: the lore of
      * both puts sheep on the open grazing and says nothing else about them, so
      * this is an upland sheep and not a breed.
      */
-    'hill-sheep': {
+    'hill-sheep': () => ({
       body: geometry([
         S(0xcfc6ab, [0, .60, 0], [.35, .35, .58]), S(0xbdb298, [-.16, .68, -.26], [.22, .23, .27]),
         S(0xbdb298, [.14, .67, .19], [.24, .24, .26]), S(0xd4ccb2, [0, .60, -.55], [.12, .12, .21]),
@@ -292,9 +293,9 @@ function models() {
         ...both(side => S(dark, [side * .145, .015, .175], [.02, .023, .023])),
       ]),
       leg: geometry([Y(0x6b6154, [0, -.18, 0], [.066, .36, .068]), B(0x4c443a, [0, -.35, .025], [.12, .11, .16])]),
-    },
+    }),
 
-    'oremindi-snowgoat': {
+    'oremindi-snowgoat': () => ({
       // The lore's wild alpine animal, in its patchy grey-white summer coat.
       // Upright black horns, a beard, deep shoulders and split hooves distinguish
       // it from the domestic hill sheep. One shared body/head/leg rig per band.
@@ -321,11 +322,11 @@ function models() {
         Y(0xb7bcaf, [0, -.24, 0], [.053, .48, .056]),
         ...both(side => B(0x343a34, [side * .03, -.49, .025], [.049, .085, .14])),
       ]),
-    },
+    }),
 
     /** The vel-caric: a long, low river-margin carnivore, rust over cream,
      * with a narrow face and a full tail ending in black. */
-    'river-fox': {
+    'river-fox': () => ({
       body: geometry([
         S(0x9a5c33, [0, .27, -.02], [.115, .125, .30]),
         S(0xc08a52, [0, .26, .21], [.098, .105, .11]),
@@ -343,10 +344,10 @@ function models() {
         ...both(side => S(0xe0d3b6, [side * .035, -.048, .10], [.028, .022, .03])),
       ]),
       leg: geometry([Y(0x8a5330, [0, -.075, 0], [.026, .155, .027]), B(0x1d1a17, [0, -.155, .012], [.05, .035, .07])]),
-    },
+    }),
 
     /** The Carica's otters, which the lore has sharing the corridor with the fox. */
-    otter: {
+    otter: () => ({
       body: geometry([
         S(0x6b503a, [0, .21, 0], [.125, .115, .34]),
         S(0x8e7255, [0, .19, .25], [.10, .095, .11]),
@@ -358,7 +359,7 @@ function models() {
         ...both(side => S(0x0f0d0c, [side * .045, .03, .06], [.015, .016, .014])),
         ...both(side => S(0x5b4534, [side * .06, .06, -.005], [.028, .025, .018]))]),
       leg: geometry([Y(0x5b4534, [0, -.06, 0], [.028, .12, .028]), B(0x3a2d22, [0, -.12, .015], [.06, .03, .075])]),
-    },
+    }),
 
     /**
      * The upland hare. The fauna overview documents "upland hares" for the
@@ -366,7 +367,7 @@ function models() {
      * animal carried south onto the nearest cold grassland, and is an extension
      * rather than a placement the lore makes.
      */
-    'upland-hare': {
+    'upland-hare': () => ({
       body: geometry([
         S(0x9c8763, [0, .23, 0], [.16, .19, .30]), S(0xb6a079, [0, .21, .20], [.135, .155, .165]),
         S(0xe2dac0, [0, .23, -.28], [.072, .068, .082]),
@@ -377,9 +378,9 @@ function models() {
         ...both(side => S(0x131110, [side * .108, .02, .07], [.019, .026, .021])),
         S(0x6a5947, [0, -.018, .195], [.022, .017, .016])]),
       ear: geometry([S(0x86704f, [0, .12, 0], [.04, .17, .036]), S(0xbda88c, [0, .125, .024], [.019, .128, .012])]),
-    },
+    }),
 
-    'oremindi-mountain-eagle': {
+    'oremindi-mountain-eagle': () => ({
       // Named by the Oremindi fauna draft. Broad fingered wings and a gold nape
       // distinguish this bird from the small plateau hawk without a new controller.
       body: geometry([
@@ -397,11 +398,11 @@ function models() {
         ...Array.from({ length: 5 }, (_, i) => S(0x342f27, [.99 + i * .042, -.016, -.13 + i * .065],
           [.19, .014, .037], [0, -.36 + i * .15, 0])),
       ]),
-    },
+    }),
 
     /** The dry-plateau hawk of the East Pyros uplands, extended to Vastos's
      * western plain. Drawn for the only way it is seen here: in the air. */
-    'plateau-hawk': {
+    'plateau-hawk': () => ({
       body: geometry([
         S(0x7d6347, [0, 0, -.02], [.075, .075, .20]),
         S(0xd9cbab, [0, -.025, .05], [.062, .05, .13]),
@@ -415,7 +416,7 @@ function models() {
         S(0x8b7255, [.62, -.004, -.03], [.30, .017, .085]),
         S(0x4c3d30, [.88, -.006, -.07], [.13, .013, .05]),
       ]),
-    },
+    }),
 
     /**
      * A wading bird for the Lizeem's tributaries. The fauna overview calls the
@@ -430,7 +431,7 @@ function models() {
      * the two geometries to the same vertex count so a change to one is a change to
      * both on purpose rather than by accident.
      */
-    'wading-bird': wader({ body: 0x8c9aa0, neck: 0xb9c2bd, head: 0xc9cfc6, bill: 0xd8c163, crest: 0x3a423f,
+    'wading-bird': () => wader({ body: 0x8c9aa0, neck: 0xb9c2bd, head: 0xc9cfc6, bill: 0xd8c163, crest: 0x3a423f,
       tail: 0x5e6b6c, wingIn: 0x67757a, wingOut: 0x4e5b62, legUp: 0x7c7448, foot: 0x8a8154 }),
     // White, but not one white. Photographed on its own channel the first egret was a
     // blob: every piece of it was within four values of every other, so flat shading
@@ -438,7 +439,7 @@ function models() {
     // body stays near-white and everything that folds over it steps down a little —
     // which is what a white bird actually looks like, because the parts of it that
     // face the sky are not the parts that face you.
-    egret: wader({ body: 0xf4f3ec, neck: 0xf7f6f0, head: 0xf9f8f3, bill: 0x1a1a18, crest: 0xd7d6cb,
+    egret: () => wader({ body: 0xf4f3ec, neck: 0xf7f6f0, head: 0xf9f8f3, bill: 0x1a1a18, crest: 0xd7d6cb,
       tail: 0xc9c8bd, wingIn: 0xdedcd1, wingOut: 0xb9b8ad, legUp: 0x2a2a26, foot: 0xcaa24e }),
 
     /**
@@ -448,7 +449,7 @@ function models() {
      * of it put together, which is the entire reason it can work water a heron
      * cannot be bothered with.
      */
-    stilt: {
+    stilt: () => ({
       body: geometry([
         S(0xf2f0e9, [0, .40, 0], [.072, .080, .155]),
         S(0x1d1f22, [0, .448, -.05], [.062, .036, .135]),
@@ -462,7 +463,7 @@ function models() {
       // Thin, but not two centimetres thin: at that radius the one thing the bird is
       // named for was three pixels of pink against sand and did not read at all.
       leg: geometry([Y(0xd4576e, [0, -.17, 0], [.017, .34, .017]), B(0xc44a60, [0, -.34, .02], [.035, .014, .06])]),
-    },
+    }),
 
     /**
      * Red deer, and the animal Isareos is for. The lore names nothing wild in that
@@ -487,7 +488,7 @@ function models() {
      * neck up and forward, and the grazing swing turns the whole of it about that
      * joint — which is what a neck does.
      */
-    'red-deer': {
+    'red-deer': () => ({
       body: geometry([
         S(0x8a6a48, [0, .95, -.05], [.25, .29, .58]),
         S(0x96764f, [0, 1.00, .30], [.23, .26, .22]),
@@ -525,7 +526,7 @@ function models() {
         ...both(side => S(0x120f0e, [side * .070, .36, .30], [.017, .018, .014])),
       ]),
       leg: geometry([Y(0x7a5c3e, [0, -.30, 0], [.052, .60, .054]), B(0x241f1a, [0, -.60, .02], [.09, .07, .13])]),
-    },
+    }),
 
     /**
      * The turkey vulture over the Isareos hills. The game already names the species
@@ -540,7 +541,7 @@ function models() {
      * the shape in the sky is the same shape — held out flat, barely moving, and
      * circling a long way up.
      */
-    'turkey-vulture': {
+    'turkey-vulture': () => ({
       body: geometry([
         S(0x2f2925, [0, 0, -.03], [.095, .095, .26]),
         S(0x241f1c, [0, -.03, .06], [.082, .068, .17]),
@@ -554,7 +555,7 @@ function models() {
         S(0x3a322c, [.88, -.004, -.04], [.42, .019, .105]),
         S(0x1c1815, [1.26, -.008, -.10], [.17, .015, .058]),
       ]),
-    },
+    }),
 
     /**
      * **The bone-bird**, and the one new rig the southwestern block asked for. The fauna overview
@@ -581,7 +582,7 @@ function models() {
      * heavy does not rock. Everything below the neck is the vulture's own build at a larger size,
      * because it is a vulture relative and should read as one.
      */
-    'bone-bird': {
+    'bone-bird': () => ({
       body: geometry([
         S(0x3a332c, [0, 0, -.04], [.125, .120, .33]),
         S(0x2c2622, [0, -.04, .08], [.108, .088, .22]),
@@ -600,7 +601,7 @@ function models() {
         S(0x453c33, [1.06, -.005, -.05], [.50, .022, .125]),
         S(0x211c19, [1.52, -.010, -.12], [.20, .017, .066]),
       ]),
-    },
+    }),
 
     /**
      * **The forest edge-cat**, and it is one of job 4's two new rigs. The fauna overview names it and
@@ -628,7 +629,7 @@ function models() {
      * Drawn to read in the dimmest light in the game: dark olive-brown broken with darker rosettes, a
      * pale throat and a pale tail tip. Under a closed canopy a uniform animal is a hole in the ground.
      */
-    'forest-cat': {
+    'forest-cat': () => ({
       body: geometry([
         S(0x4c4433, [0, .40, -.02], [.155, .165, .42]),
         S(0x3d3728, [0, .38, .24], [.135, .145, .15]),
@@ -650,7 +651,7 @@ function models() {
         ...both(side => S(0xb4a98c, [side * .045, -.058, .115], [.032, .026, .03])),
       ]),
       leg: geometry([Y(0x443c2c, [0, -.095, 0], [.038, .195, .039]), B(0x1b1814, [0, -.195, .015], [.07, .045, .09])]),
-    },
+    }),
 
     /**
      * **The Iberos albatross**, job 4's second new rig, and the fauna overview puts it exactly where this
@@ -670,7 +671,7 @@ function models() {
      * the identification: everything else in this sky works at staying up. White body, dark upper wings
      * with a white inner third, and a heavy pale bill.
      */
-    albatross: {
+    albatross: () => ({
       body: geometry([
         S(0xf6f5f1, [0, 0, -.02], [.125, .120, .40]),
         S(0xeceae2, [0, -.035, .06], [.105, .078, .28]),
@@ -685,7 +686,7 @@ function models() {
         S(0x4a4a48, [.94, -.004, -.03], [.50, .016, .084]),
         S(0x25252a, [1.56, -.009, -.08], [.34, .013, .058]),
       ]),
-    },
+    }),
 
     /**
      * **The Great White Sea-plunger**, the gannet-relative the fauna overview catalogues on "certain
@@ -700,7 +701,7 @@ function models() {
      * the tips. It soars on the hawk's rig and does the one thing no other bird here does
      * (`zone.plunge`): folds and falls straight into the sea, and comes up again.
      */
-    'sea-plunger': {
+    'sea-plunger': () => ({
       body: geometry([
         S(0xf4f3ee, [0, 0, 0], [.1, .095, .36]),
         S(0xe8e6de, [0, -.03, .02], [.085, .06, .28]),
@@ -715,7 +716,7 @@ function models() {
         S(0xeeede6, [.72, -.004, -.03], [.34, .014, .075]),
         S(0x161616, [1.02, -.008, -.06], [.16, .012, .05]),
       ]),
-    },
+    }),
 
     /**
      * Grey dolphins off the Eer shore. The fauna overview documents them "in the
@@ -728,7 +729,7 @@ function models() {
      * of the animal, for a traveler on the shore, is the thing coming up and going
      * down again some way out.
      */
-    dolphin: {
+    dolphin: () => ({
       body: geometry([
         S(0x6f7c84, [0, 0, -.06], [.26, .28, .92]),
         S(0xc3cbce, [0, -.14, .02], [.20, .13, .68]),
@@ -737,7 +738,7 @@ function models() {
         S(0x5b686f, [0, -.02, -.94], [.055, .065, .20]),
         ...both(side => S(0x5b686f, [side * .24, -.05, -1.04], [.19, .034, .095], [0, 0, side * .26])),
       ]),
-    },
+    }),
 
     /**
      * Eer's duck, for the slow water of the Lizeem's last channels — mallard, and
@@ -754,7 +755,7 @@ function models() {
      * middle of the drake. A separate head belongs to the animals that swing one down
      * to graze, and a duck does not.
      */
-    duck: {
+    duck: () => ({
       body: geometry([
         S(0x6b5b45, [0, .22, -.02], [.13, .105, .25]),
         S(0xbfb49a, [0, .175, .01], [.115, .072, .215]),
@@ -768,7 +769,7 @@ function models() {
       ]),
       leg: geometry([Y(0xc0913f, [0, -.05, 0], [.016, .10, .016]), B(0xd0a24c, [0, -.10, .022], [.055, .018, .075])]),
       wing: geometry([S(0x7a6a52, [.09, 0, -.02], [.11, .026, .13]), S(0x4d6f7a, [.15, .004, -.08], [.05, .020, .045])]),
-    },
+    }),
 
     /**
      * The black migratory goose, for Gala's river mouths: "the black migratory geese that appear on
@@ -783,7 +784,7 @@ function models() {
      * dark grey-brown back over paler barred flanks, and a white stern that is the last thing seen of
      * a flock going away. Legs and bill black.
      */
-    goose: {
+    goose: () => ({
       body: geometry([
         S(0x4c4842, [0, .30, -.03], [.18, .135, .34]),
         S(0x8b8479, [0, .25, .0], [.165, .095, .30]),
@@ -798,7 +799,7 @@ function models() {
       ]),
       leg: geometry([Y(0x1d1c1b, [0, -.075, 0], [.018, .15, .018]), B(0x1d1c1b, [0, -.15, .026], [.066, .02, .092])]),
       wing: geometry([S(0x4c4842, [.13, 0, -.03], [.165, .03, .19]), S(0x2a2826, [.225, .005, -.12], [.085, .022, .075])]),
-    },
+    }),
 
     /**
      * The wild boar of the tamarisk and the cushion scrub. Not the lore's "river
@@ -816,7 +817,7 @@ function models() {
      * now, and the ridge is well clear of the shoulder it stands on, so what reads
      * at twenty metres is a boar and not a hole in the ground.
      */
-    boar: {
+    boar: () => ({
       body: geometry([
         S(0x6b5943, [0, .50, .10], [.27, .30, .34]),
         S(0x5b4c3a, [0, .43, -.22], [.22, .23, .30]),
@@ -834,7 +835,7 @@ function models() {
         ...both(side => C(0xe6dec6, [side * .062, -.075, .345], [.017, .085, .016], [-.55, 0, side * .30])),
       ]),
       leg: geometry([Y(0x4a3e30, [0, -.17, 0], [.055, .34, .056]), B(0x2b2319, [0, -.33, .02], [.10, .07, .13])]),
-    },
+    }),
 
     /**
      * Gulls on the Eer shore. The game already names the species — Drent's bird
@@ -845,7 +846,7 @@ function models() {
      * It is the only animal in the west that is placed on a country's shore rather
      * than on its ground, which is why it is here and not in Peblos's salt islands.
      */
-    gull: {
+    gull: () => ({
       body: geometry([
         S(0xf1efe8, [0, .40, 0], [.115, .125, .24]),
         S(0x9aa3a8, [0, .455, -.07], [.10, .055, .21]),
@@ -856,7 +857,7 @@ function models() {
       ]),
       wing: geometry([S(0x9aa3a8, [.20, 0, 0], [.26, .032, .16]), S(0x3d454a, [.40, -.008, -.06], [.16, .024, .10])]),
       leg: geometry([Y(0xc4a05a, [0, -.11, 0], [.016, .22, .016]), B(0xbe9a56, [0, -.22, .03], [.05, .02, .09])]),
-    },
+    }),
 
     /**
      * **The ghubr — the Ganesh dustback.** Three builders refused this animal because they went
@@ -893,7 +894,7 @@ function models() {
      * it never stands still out on the open floor, and where it is seen resting is its own patch of
      * scrub, which in the Ganesh is the only shade there is.
      */
-    ghubr: {
+    ghubr: () => ({
       body: geometry([
         // A trunk carried level, which is what a running ground bird is and what a duck is not.
         S(0x8d8368, [0, .255, -.015], [.073, .063, .150]),
@@ -913,7 +914,7 @@ function models() {
       ]),
       wing: geometry([S(0x8a8065, [.145, 0, 0], [.185, .022, .096]), S(0x5f5747, [.300, -.006, -.040], [.120, .017, .062])]),
       leg: geometry([Y(0x9d8d63, [0, -.085, 0], [.012, .170, .012]), B(0x94845d, [0, -.170, .022], [.034, .015, .056])]),
-    },
+    }),
 
     /**
      * **The canyon tortoise**, and the fauna overview both names it and describes it: "the **canyon
@@ -933,7 +934,7 @@ function models() {
      * of it. Shut, the head and the four legs are drawn pulled in under the dome (`render`), which at any
      * distance is a stone with a pattern on it — and that is the whole point of the animal.
      */
-    'canyon-tortoise': {
+    'canyon-tortoise': () => ({
       body: geometry([
         // The dome, in two shells so the back is higher than the haunch: a desert tortoise is steepest over the shoulder.
         S(0x5a5140, [0, .225, .02], [.230, .205, .300]),
@@ -967,7 +968,7 @@ function models() {
       ]),
       // Short, heavy, scaled and splayed, with a flat sole: an animal built to carry a shell and not to run.
       leg: geometry([Y(0x5f5744, [0, -.048, 0], [.052, .096, .052], [.22, 0, 0]), B(0x4a4336, [0, -.098, .018], [.078, .028, .090])]),
-    },
+    }),
   };
 }
 
@@ -1267,6 +1268,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...OVES_WILDLIFE_ZONES,
   ...WEST_LOTHARN_WILDLIFE_ZONES,
   ...SOUTH_OREMINDI_WILDLIFE_ZONES,
+  ...BALDRO_WILDLIFE_ZONES,
   ...YUNETHRE_WILDLIFE_ZONES,
   ...GROVE_WILDLIFE,
   ...IBENWOOD_LIFE_ZONES,
@@ -1400,7 +1402,7 @@ const BIRD_RIG = Object.freeze({
 
 /** Ambient creatures only: they cannot be attacked, collected or block a quest. */
 export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
-  const shapes = models(), flocks = [], creatures = [];
+  const factories = modelFactories(), shapes = new Map(), flocks = [], creatures = [];
   const dummy = new THREE.Object3D(), rootMatrix = new THREE.Matrix4(), resultMatrix = new THREE.Matrix4();
   const rotation = new THREE.Quaternion(), unit = new THREE.Vector3(1, 1, 1);
   let updates = 0, disposed = false;
@@ -1465,8 +1467,15 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   const woodlandSites = [...Object.values(world.npcPositions ?? {}), ...Object.values(world.journeySites ?? {}),
     ...Object.values(world.storySites ?? {}), ...(world.firePits ?? []), ...(world.repairBenches ?? [])]
     .filter(p => Number.isFinite(p?.x) && Number.isFinite(p?.z));
-  const woodlandRoads = (world.paths ?? []).flatMap(path => path.slice(1).map((b, i) => ({ a: path[i], b, half: (path.width ?? 2) / 2 })));
+  let roadCount = -1, roadRevision = -1, woodlandRoads = [];
+  function refreshRoads() {
+    const revision = world.loading?.revision ?? world.revision ?? 0;
+    if (roadCount === (world.paths?.length ?? 0) && roadRevision === revision) return;
+    woodlandRoads = (world.paths ?? []).flatMap(path => path.slice(1).map((b, i) => ({ a: path[i], b, half: (path.width ?? 2) / 2 })));
+    roadCount = world.paths?.length ?? 0; roadRevision = revision;
+  }
   function suitableHome(x, z, zone) {
+    refreshRoads();
     if (!valid(x, z, zone)) return false;
     if (!resident(zone)) return true;
     if (woodlandSites.some(p => Math.hypot(x - p.x, z - p.z) < 8)) return false;
@@ -1509,20 +1518,46 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
       });
     }
     creatures.push(...animals);
-    const shape = shapes[zone.species];
+    flocks.push({ zone, group, animals, meshes: null, ticks: 0,
+      centre: { x: (zone.minX + zone.maxX) / 2, z: (zone.minZ + zone.maxZ) / 2 } });
+  }
+
+  // Keep every resident's home, identity and simulation state, but allocate GPU
+  // instances and species geometry only when somebody can actually see them.
+  // Geometry is shared by loaded bands of one species and retained until this
+  // controller is disposed; unloading one band must never dispose another's mesh.
+  function ensureVisuals(flock) {
+    if (flock.meshes || !flock.animals.length) return;
+    const { zone, group, animals } = flock;
+    let shape = shapes.get(zone.species);
+    if (!shape) { shape = factories[zone.species](); shapes.set(zone.species, shape); }
     const meshes = { body: instances(group, `${zone.species} bodies`, shape.body, animals.length) };
-    // A band of hinds is the same animal with nothing on its head, which is a second
-    // head geometry and not a second species: one range of red deer carries antlers
-    // and the other does not, and a herd in which every beast has the same head on it
-    // is a herd of one beast repeated.
+    // Hornless deer use the alternate head from the same shared species rig.
     const headShape = zone.hornless && shape.hornless ? shape.hornless : shape.head;
     if (headShape) meshes.head = instances(group, `${zone.species} heads`, headShape, animals.length);
     if (shape.leg) meshes.legs = instances(group, `${zone.species} legs`, shape.leg,
       animals.length * (BIRD_RIG[zone.species] ? 2 : 4));
     if (shape.ear) meshes.ears = instances(group, `${zone.species} ears`, shape.ear, animals.length * 2);
     if (shape.wing) meshes.wings = instances(group, `${zone.species} wings`, shape.wing, animals.length * 2);
-    flocks.push({ zone, group, animals, meshes, ticks: 0,
-      centre: { x: (zone.minX + zone.maxX) / 2, z: (zone.minZ + zone.maxZ) / 2 } });
+    flock.meshes = meshes;
+  }
+
+  function releaseVisuals(flock) {
+    if (!flock.meshes) return;
+    for (const mesh of Object.values(flock.meshes)) { mesh.removeFromParent(); mesh.dispose(); }
+    flock.meshes = null;
+  }
+
+  // A wider release radius prevents allocation churn at the visibility edge.
+  // Flight and F8 jumps enter through these same checks on their next update.
+  const visualDistance = (flock, position) => Math.hypot(position.x - flock.centre.x, position.z - flock.centre.z);
+  const visualReach = flock => LIFE_REACH + (flock.zone.air ? (flock.zone.circle ?? CIRCLE_RADIUS) + (flock.zone.quarter ?? 0) : 0);
+  function observe(flock, position) {
+    const distance = visualDistance(flock, position), reach = visualReach(flock);
+    flock.group.visible = distance <= reach;
+    if (flock.group.visible) ensureVisuals(flock);
+    else if (distance > reach + 40) releaseVisuals(flock);
+    return flock.group.visible;
   }
 
   // Woodland residents remember the clear route they actually used. Retracing it
@@ -1751,7 +1786,12 @@ const RETURN = {
 
   /** The water an otter can reach: the deep-water colliders in and about its range, found once. */
   const waterByZone = new Map();
+  let waterColliderCount = -1, waterRevision = -1;
   function waterOf(zone) {
+    const revision = world.loading?.revision ?? world.revision ?? 0;
+    if (waterColliderCount !== (world.colliders?.length ?? 0) || waterRevision !== revision) {
+      waterByZone.clear(); waterColliderCount = world.colliders?.length ?? 0; waterRevision = revision;
+    }
     if (!waterByZone.has(zone.id)) waterByZone.set(zone.id, (world.colliders ?? []).filter(c => /water/.test(c.kind ?? '')
       && c.x > zone.minX - 30 && c.x < zone.maxX + 30 && c.z > zone.minZ - 30 && c.z < zone.maxZ + 30));
     return waterByZone.get(zone.id);
@@ -2169,6 +2209,7 @@ const RETURN = {
   }
 
   function render(flock) {
+    if (!flock.meshes) return;
     const species = flock.zone.species;
     flock.animals.forEach((animal, i) => {
       // Only a plunging bird ever pitches; for everything else this is the yaw it has always been.
@@ -2274,9 +2315,6 @@ const RETURN = {
     for (const mesh of Object.values(flock.meshes)) mesh.instanceMatrix.needsUpdate = true;
   }
 
-  for (const flock of flocks) render(flock);
-
-  const REACH = LIFE_REACH;
   let clock = 0, lastPlayer = null;
   function update(dt, player, active = true) {
     if (disposed || !active || !Number.isFinite(dt) || dt <= 0 || !Number.isFinite(player?.x) || !Number.isFinite(player?.z)) return;
@@ -2286,10 +2324,7 @@ const RETURN = {
     const motion = strode < 6 ? { vx: (player.x - lastPlayer.x) / step, vz: (player.z - lastPlayer.z) / step } : { vx: 0, vz: 0 };
     lastPlayer = { x: player.x, z: player.z };
     for (const flock of flocks) {
-      const aloft = flock.zone.air ? (flock.zone.circle ?? CIRCLE_RADIUS) + (flock.zone.quarter ?? 0) : 0;
-      const near = Math.hypot(player.x - flock.centre.x, player.z - flock.centre.z) <= REACH + aloft;
-      flock.group.visible = near;
-      if (!near) continue;
+      if (!observe(flock, player)) continue;
       if (flock.seen !== undefined && clock - flock.seen > 1) settle(flock, clock - flock.seen);
       flock.seen = clock; flock.ticks++;
       flock.cx = flock.animals.reduce((sum, animal) => sum + animal.x, 0) / Math.max(1, flock.animals.length);
@@ -2306,8 +2341,10 @@ const RETURN = {
   /** Developer flight looks at the same paused world from somewhere else. */
   function setObserver(position) {
     if (disposed || !Number.isFinite(position?.x) || !Number.isFinite(position?.z)) return false;
-    for (const flock of flocks)
-      flock.group.visible = Math.hypot(position.x - flock.centre.x, position.z - flock.centre.z) <= REACH;
+    for (const flock of flocks) {
+      const previousMeshes = flock.meshes;
+      if (observe(flock, position) && flock.meshes !== previousMeshes) render(flock);
+    }
     return true;
   }
 
@@ -2348,8 +2385,15 @@ const RETURN = {
     disposed = true;
     for (const flock of flocks) {
       flock.group.removeFromParent();
-      for (const mesh of Object.values(flock.meshes)) mesh.dispose();
+      releaseVisuals(flock);
     }
+    for (const shape of shapes.values()) for (const part of new Set(Object.values(shape))) part.dispose();
+    shapes.clear();
+  }
+
+  function visualStats() {
+    return { totalGroups: flocks.length, loadedGroups: flocks.filter(flock => flock.meshes).length,
+      loadedSpecies: shapes.size, meshes: flocks.reduce((n, flock) => n + Object.keys(flock.meshes ?? {}).length, 0) };
   }
 
   function calm(id, seconds = 8) {
@@ -2360,5 +2404,5 @@ const RETURN = {
     animal.action = 'graze'; animal.timer = 3; animal.speed = 0;
     return true;
   }
-  return { update, setObserver, snapshot, state: () => liveState, calm, dispose };
+  return { update, setObserver, snapshot, state: () => liveState, visualStats, calm, dispose };
 }

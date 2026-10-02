@@ -1,9 +1,14 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, landDistance } from './region-world.js';
 import { ISCARE_REGION, ISCARE_ISLANDS, ZECRON, ZECRON_BUILDINGS, ISCARE_RUIN_SITES, ISCARE_WILDLIFE_ZONES, iscareClear } from './iscare-world.js';
 
-export function createIscareScenery({ root, material, mesh, box, post, pebble, groundHeight, colliders, round, wornPatch }) {
+export function createIscareScenery(...args) { return finishBuild(createIscareScenerySteps(...args)); }
+
+export function* createIscareScenerySteps({ root, material, mesh, box, post, pebble, groundHeight, colliders, round, wornPatch }) {
+  let buildWork = 0;
   const group = new THREE.Group(); group.name = 'Iscare Archipelago'; root.add(group);
   const stone = material('#9b9786'), pale = material('#c1b8a0'), ash = material('#625e55'), char = material('#353532');
   const scrub = material('#65704b'), trunk = material('#72624c');
@@ -29,9 +34,9 @@ export function createIscareScenery({ root, material, mesh, box, post, pebble, g
     metrics.ruinedBuildings++;
   }
   ZECRON_BUILDINGS.forEach(ruin);
-  for (const site of ISCARE_RUIN_SITES.slice(1)) {
+  for (const site of ISCARE_RUIN_SITES.slice(1)) { if (++buildWork % 32 === 0) yield;
     wornPatch(site.x, site.z, site.radius - 1, '#6f6858', .75, group);
-    [[-9, -4], [7, -6], [3, 8]].forEach(([dx, dz], i) => ruin({ id: `${site.id}-home-${i + 1}`, x: site.x + dx, z: site.z + dz, width: 5, depth: 5, height: 1 + i * .55 }));
+    yield* forEachBuild([[-9, -4], [7, -6], [3, 8]], function* ([dx, dz], i) { return ruin({ id: `${site.id}-home-${i + 1}`, x: site.x + dx, z: site.z + dz, width: 5, depth: 5, height: 1 + i * .55 }); });
   }
   wornPatch(ZECRON.x, ZECRON.z, 34, '#8b806c', .6, group);
   // The old lighthouse survives as an unmistakable stump, with the lantern fallen alongside.
@@ -42,12 +47,12 @@ export function createIscareScenery({ root, material, mesh, box, post, pebble, g
   const lamp = box(char, light.x + 5, groundHeight(light.x + 5, light.z) + .8, light.z, 2, 1.6, 2, group); lamp.rotation.z = .6;
   colliders.push({ x: light.x + 5, z: light.z, r: 1.4, kind: 'fallen-lantern' });
   // A burned quay ends in broken piles at the waterline; no surviving ferry or residents.
-  for (let i = 0; i < 10; i++) for (const side of [-1, 1]) {
+  for (let i = 0; i < 10; i++) { if (++buildWork % 32 === 0) yield; for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     const x = ZECRON.x + side * 2, z = ZECRON.z + 30 + i * 2.2, gy = groundHeight(x, z);
     post(char, x, Math.max(gy, -1) + .7, z, .22, 1.4, group);
-  }
-  for (const island of ISCARE_ISLANDS) {
-    for (let i = 0; i < 150; i++) {
+  } }
+  for (const island of ISCARE_ISLANDS) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 150; i++) { if (++buildWork % 32 === 0) yield;
       const x = island.x + (random() - .5) * 101, z = island.z + (random() - .5) * 109;
       if (hexOwnerAt(x, z) !== ISCARE_REGION || landDistance(x, z) < 1 || iscareClear(x, z, 2)
         || ISCARE_WILDLIFE_ZONES.some(zone => zone.sites.some(([sx, sz]) => Math.hypot(x - sx, z - sz) < 3))) continue;

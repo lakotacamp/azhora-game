@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { yunethreReserved } from './yunethre-world.js';
 import { menoraReserved } from './menora-city.js';
@@ -30,7 +32,10 @@ import { WEST_PROFILES, poolSurface, westWaterSurface, westGroundAt, menethBand,
  *
  * No people, no building, no bridge: these regions are terrain and wildlife.
  */
-export function createWestScenery(kit) {
+export function createWestScenery(...args) { return finishBuild(createWestScenerySteps(...args)); }
+
+export function* createWestScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, mesh, pebble, groundHeight, colliders, wornPatch, dummy, color, round } = kit;
   let seed = 4470913;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
@@ -61,7 +66,7 @@ export function createWestScenery(kit) {
    * back through it. A tapering beck has no channel left at its end, so it has
    * no water there either: `westWaterSurface` is the one authority for both.
    */
-  function ribbon(samples, parent, name, halfOf = sample => sample.half) {
+  function* ribbon(samples, parent, name, halfOf = sample => sample.half) {
     const widthAt = typeof halfOf === 'number' ? () => halfOf : halfOf;
     let run = [];
     const flush = () => {
@@ -81,7 +86,7 @@ export function createWestScenery(kit) {
       sheet.name = name; parent.add(sheet); metrics.water++;
       run = [];
     };
-    for (const sample of samples) {
+    for (const sample of samples) { if (++buildWork % 32 === 0) yield;
       const y = westWaterSurface(sample.x, sample.z);
       if (y === null) { flush(); continue; }
       run.push({ ...sample, y });
@@ -132,10 +137,10 @@ export function createWestScenery(kit) {
   const sedgeMaterial = material('#ffffff', { side: THREE.DoubleSide });
 
   /** Sedge and rush along a waterline: the one green thing on this plain that is not grass. */
-  function sedgeBatch(spots, parent, name) {
+  function* sedgeBatch(spots, parent, name) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(sedgeGeometry, sedgeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, groundHeight(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0); dummy.scale.set(spot.s, spot.s * range(.85, 1.3), spot.s);
       dummy.updateMatrix(); batch.setMatrixAt(index, dummy.matrix);
@@ -146,10 +151,10 @@ export function createWestScenery(kit) {
   }
 
   /** Water-worn stone: flat, pale, and lying the way the current left it. */
-  function gravelBatch(spots, parent, name) {
+  function* gravelBatch(spots, parent, name) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(round, material('#a7a496'), spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, groundHeight(spot.x, spot.z) + spot.s * .12, spot.z);
       dummy.rotation.set(range(-.1, .1), spot.rot, range(-.1, .1));
       dummy.scale.set(spot.s, spot.s * range(.22, .38), spot.s * range(.7, 1.25));
@@ -166,11 +171,11 @@ export function createWestScenery(kit) {
   const vastos = district('Vastos');
   const inVastos = (x, z) => hexOwnerAt(x, z) === 'Vastos';
 
-  ribbon(WEST_PROFILES.get(VASTOS_RIVER.id), vastos, 'The Vastos River');
-  ribbon(WEST_PROFILES.get(VASTOS_BECK.id), vastos, 'The snowmelt beck');
-  braidThreads(WEST_BRAIDS[0]).forEach((thread, index) => ribbon(thread, vastos, `Vastos braid thread ${index + 1}`, VASTOS_BRAID.half));
-  for (const pan of VASTOS_PANS) sheet(pan, vastos, `Watering pan: ${pan.id}`);
-  for (const basin of VASTOS_BASINS) sheet(basin, vastos, `Eastern basin: ${basin.id}`);
+  (yield* ribbon(WEST_PROFILES.get(VASTOS_RIVER.id), vastos, 'The Vastos River'));
+  (yield* ribbon(WEST_PROFILES.get(VASTOS_BECK.id), vastos, 'The snowmelt beck'));
+  yield* forEachBuild(braidThreads(WEST_BRAIDS[0]), function* (thread, index) { return (yield* ribbon(thread, vastos, `Vastos braid thread ${index + 1}`, VASTOS_BRAID.half)); });
+  for (const pan of VASTOS_PANS) { if (++buildWork % 32 === 0) yield; sheet(pan, vastos, `Watering pan: ${pan.id}`); }
+  for (const basin of VASTOS_BASINS) { if (++buildWork % 32 === 0) yield; sheet(basin, vastos, `Eastern basin: ${basin.id}`); }
 
   /**
    * Sedge stands where water is shallow and still. That is every pan and the
@@ -178,21 +183,21 @@ export function createWestScenery(kit) {
    * every spring and nothing gets a root down.
    */
   const panSedge = [];
-  for (const pool of [...VASTOS_PANS, ...VASTOS_BASINS]) {
-    for (let i = 0; i < 90; i++) {
+  for (const pool of [...VASTOS_PANS, ...VASTOS_BASINS]) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 90; i++) { if (++buildWork % 32 === 0) yield;
       const angle = random() * Math.PI * 2, radius = pool.radius + range(-2.5, 3.5);
       const x = pool.x + Math.sin(angle) * radius, z = pool.z + Math.cos(angle) * radius;
       if (!inVastos(x, z)) continue;
       panSedge.push({ x, z, s: range(.7, 1.5), rot: random() * 6.28 });
     }
   }
-  sedgeBatch(panSedge, vastos, 'Vastos pan sedge');
+  (yield* sedgeBatch(panSedge, vastos, 'Vastos pan sedge'));
 
   const riverSedge = [], riverGravel = [], thorn = [];
-  for (const sample of WEST_PROFILES.get(VASTOS_RIVER.id)) {
+  for (const sample of WEST_PROFILES.get(VASTOS_RIVER.id)) { if (++buildWork % 32 === 0) yield;
     const along = sample.index / (WEST_PROFILES.get(VASTOS_RIVER.id).length - 1);
     const braided = along >= VASTOS_BRAID.from && along <= VASTOS_BRAID.to;
-    for (let i = 0; i < (braided ? 5 : 3); i++) {
+    for (let i = 0; i < (braided ? 5 : 3); i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1;
       // Gravel lies out across the braided reach's bars; elsewhere it stays on the bank.
       const offset = braided ? range(2, VASTOS_BRAID.offset + 9) : VASTOS_RIVER.halfWidth + range(.3, 2.6);
@@ -208,8 +213,8 @@ export function createWestScenery(kit) {
       if (inVastos(x, z) && !westBareGround(x, z, 1)) thorn.push({ x, z, s: range(.75, 1.5), rot: random() * 6.28 });
     }
   }
-  sedgeBatch(riverSedge, vastos, 'Vastos river sedge');
-  gravelBatch(riverGravel, vastos, 'Vastos braid gravel');
+  (yield* sedgeBatch(riverSedge, vastos, 'Vastos river sedge'));
+  (yield* gravelBatch(riverGravel, vastos, 'Vastos braid gravel'));
 
   /**
    * The thorn: low, dark, wind-shaped and nowhere near tall enough to be a tree.
@@ -220,9 +225,9 @@ export function createWestScenery(kit) {
   if (thorn.length) {
     const batch = new THREE.InstancedMesh(round, material('#4f5b3f', { flatShading: true }), thorn.length * 3);
     let at = 0;
-    for (const bush of thorn) {
+    for (const bush of thorn) { if (++buildWork % 32 === 0) yield;
       const y = groundHeight(bush.x, bush.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .5 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * (lobe === 2 ? .72 : .46), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.2, .2));
@@ -242,13 +247,13 @@ export function createWestScenery(kit) {
    * are placed off the hex grid, so they never line up with a cell's middle.
    */
   const erratics = [];
-  for (let i = 0; i < 26 && erratics.length < 14; i++) {
+  for (let i = 0; i < 26 && erratics.length < 14; i++) { if (++buildWork % 32 === 0) yield;
     const x = -1780 + random() * 520, z = -560 + random() * 480;
     if (!inVastos(x, z) || westBareGround(x, z, 6)) continue;
     if (erratics.some(other => Math.hypot(other.x - x, other.z - z) < 70)) continue;
     erratics.push({ x, z, s: range(1.5, 3.6), rot: random() * 6.28 });
   }
-  for (const stone of erratics) {
+  for (const stone of erratics) { if (++buildWork % 32 === 0) yield;
     const y = groundHeight(stone.x, stone.z);
     const rock = pebble(material('#8d9083'), stone.x, y + stone.s * .34, stone.z, stone.s, stone.s * .72, stone.s * .86, vastos);
     rock.rotation.set(.12, stone.rot, -.09);
@@ -269,13 +274,13 @@ export function createWestScenery(kit) {
    */
   const sinterGroup = new THREE.Group(); sinterGroup.name = 'The sulfur ground'; vastos.add(sinterGroup);
   wornPatch(VASTOS_SINTER.x, VASTOS_SINTER.z, VASTOS_SINTER.radius * .72, '#cfc7a4', 1, sinterGroup);
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 9; i++) { if (++buildWork % 32 === 0) yield;
     const angle = random() * Math.PI * 2, radius = random() * VASTOS_SINTER.radius * .64;
     wornPatch(VASTOS_SINTER.x + Math.sin(angle) * radius, VASTOS_SINTER.z + Math.cos(angle) * radius,
       range(4, 9), i % 3 ? '#ddd6b0' : '#c6b482', range(.7, 1.3), sinterGroup);
   }
   sheet(WEST_POOLS.find(pool => pool.id === 'sulfur-pool'), sinterGroup, 'The warm pool');
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 40; i++) { if (++buildWork % 32 === 0) yield;
     const angle = random() * Math.PI * 2, radius = VASTOS_SINTER.pool.radius + random() * 14;
     const x = VASTOS_SINTER.pool.x + Math.sin(angle) * radius, z = VASTOS_SINTER.pool.z + Math.cos(angle) * radius;
     const y = groundHeight(x, z), size = range(.25, .8);
@@ -284,12 +289,12 @@ export function createWestScenery(kit) {
   }
   const steamMaterial = material('#e9e5d6', { transparent: true, opacity: .26, depthWrite: false, roughness: 1 });
   const plumes = [];
-  for (const vent of VASTOS_SINTER.vents) {
+  for (const vent of VASTOS_SINTER.vents) { if (++buildWork % 32 === 0) yield;
     const y = groundHeight(vent.x, vent.z);
     pebble(material('#b8a06a'), vent.x, y + .12, vent.z, 1.5, .28, 1.5, sinterGroup);
     pebble(material('#8f7c52'), vent.x, y + .06, vent.z, .62, .2, .62, sinterGroup);
     const plume = new THREE.Group(); plume.name = 'Vent steam'; plume.position.set(vent.x, y, vent.z); sinterGroup.add(plume);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
       const puff = mesh(round, steamMaterial, 0, .5 + i * .9, 0, .5 + i * .35, .4 + i * .3, .5 + i * .35, plume);
       puff.castShadow = false; puff.receiveShadow = false;
     }
@@ -301,18 +306,18 @@ export function createWestScenery(kit) {
   // Meneth: three bands of growing on every ridge face, and a beck on every floor
   // -------------------------------------------------------------------------
   const meneth = district('Meneth');
-  for (const beck of MENETH_BECKS) ribbon(WEST_PROFILES.get(beck.id), meneth, beck.name);
+  for (const beck of MENETH_BECKS) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(beck.id), meneth, beck.name)); }
   const becksedge = [];
-  for (const beck of MENETH_BECKS) for (const sample of WEST_PROFILES.get(beck.id)) {
+  for (const beck of MENETH_BECKS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(beck.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.index % 2) continue;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const offset = beck.halfWidth + range(.2, 1.9);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (hexOwnerAt(x, z) !== 'Meneth' || westWaterSurface(x, z) !== null) continue;
       becksedge.push({ x, z, s: range(.5, 1.1), rot: random() * 6.28 });
     }
-  }
-  sedgeBatch(becksedge, meneth, 'Meneth beck rushes');
+  } }
+  (yield* sedgeBatch(becksedge, meneth, 'Meneth beck rushes'));
 
   /**
    * Meneth's own scatter, in three bands read off the ridge field.
@@ -355,18 +360,18 @@ export function createWestScenery(kit) {
    * woodland is told from another's; `kind` is the collider tag, so a test can
    * ask where a region's trees actually stand.
    */
-  function woodBatch(trees, parent, tint, kind) {
+  function* woodBatch(trees, parent, tint, kind) {
     if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
     const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, trees.length * 3);
     let crownIndex = 0;
-    trees.forEach((tree, index) => {
+    yield* forEachBuild(trees, function* (tree, index) {
       const y = groundHeight(tree.x, tree.z), height = tree.h * tree.s;
       dummy.position.set(tree.x, y + height * .38, tree.z); dummy.rotation.set(0, tree.rot, 0);
       dummy.scale.set(tree.s, height * .76, tree.s); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
       const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .48 * tree.s, kind }; colliders.push(collider);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * (tree.wide ? .17 : .11);
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? .92 : .74), tree.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.18, .18), a, range(-.16, .16));
@@ -384,22 +389,22 @@ export function createWestScenery(kit) {
         :index%2?'beech':'white-oak';
       if(frontierReserved(tree.x,tree.z)){
         const at=colliders.indexOf(collider);if(at>=0)colliders.splice(at,1);
-        dummy.scale.setScalar(0);dummy.updateMatrix();for(const part of parts)part.mesh.setMatrixAt(part.index,dummy.matrix);
+        dummy.scale.setScalar(0);dummy.updateMatrix();for(const part of parts){ if (++buildWork % 32 === 0) yield; part.mesh.setMatrixAt(part.index,dummy.matrix); }
         return;
       }
       registerWorldTree(colliders,{id:worldTreeId(kind,tree.x,tree.z),x:tree.x,z:tree.z,y,height,species},parts,collider);
     });
-    for (const batch of [trunks, crowns]) {
+    for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield;
       batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); parent.add(batch);
     }
     metrics.trees += trees.length;
   }
 
   /** Loose stone, lying the way weather left it. */
-  function rockBatch(rocks, parent) {
+  function* rockBatch(rocks, parent) {
     if (!rocks.length) return;
     const batch = new THREE.InstancedMesh(round, stoneMaterial, rocks.length);
-    rocks.forEach((rock, index) => {
+    yield* forEachBuild(rocks, function* (rock, index) {
       dummy.position.set(rock.x, groundHeight(rock.x, rock.z) + rock.s * .24, rock.z);
       dummy.rotation.set(range(-.16, .16), rock.rot, range(-.16, .16));
       dummy.scale.set(rock.s, rock.s * range(.4, .7), rock.s * range(.75, 1.25)); dummy.updateMatrix();
@@ -412,10 +417,10 @@ export function createWestScenery(kit) {
   }
 
   /** Ground cover, tinted by whatever the region says about the ground it is on. */
-  function tuftBatch(tufts, parent, tint) {
+  function* tuftBatch(tufts, parent, tint) {
     if (!tufts.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, tuftMaterial, tufts.length);
-    tufts.forEach((tuft, index) => {
+    yield* forEachBuild(tufts, function* (tuft, index) {
       dummy.position.set(tuft.x, groundHeight(tuft.x, tuft.z) + .02, tuft.z);
       dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
@@ -427,10 +432,10 @@ export function createWestScenery(kit) {
   }
 
   const menethCells = [...REGION_CELLS.Meneth].sort((a, b) => a.z - b.z || a.x - b.x);
-  for (let start = 0; start < menethCells.length; start += BLOCK) {
+  for (let start = 0; start < menethCells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = menethCells.slice(start, start + BLOCK), trees = [], rocks = [], tufts = [];
-    for (const cell of block) {
-      for (let i = 0; i < 150; i++) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
+      for (let i = 0; i < 150; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Meneth' || westBareGround(x, z, 3)) continue;
         const band = menethBand(x, z);
@@ -443,12 +448,12 @@ export function createWestScenery(kit) {
         trees.push({ x, z, wide: grove, s: range(.82, 1.24), h: grove ? range(7.5, 10.5) : range(9, 13.5), rot: range(0, 6.28) });
       }
       // Stone shows on the crests, where the soil is thinnest, and nowhere else.
-      for (let i = 0; i < 28; i++) {
+      for (let i = 0; i < 28; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Meneth' || westBareGround(x, z, 2) || menethBand(x, z) !== 'wood') continue;
         rocks.push({ x, z, s: range(.4, 1.5), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < tuftsPerHex; i++) {
+      for (let i = 0; i < tuftsPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Meneth' || westBareGround(x, z, 1.5)) continue;
         tufts.push({ x, z, s: range(.7, 1.6), rot: range(0, 6.28), floor: menethBand(x, z) === 'floor' });
@@ -457,22 +462,22 @@ export function createWestScenery(kit) {
     // Chestnut and walnut are a warmer, yellower green than the hardwood above them.
     // Both are given as hex: setHSL is read in the renderer's working colour space,
     // and a lightness picked for sRGB comes back two stops paler than it was meant.
-    woodBatch(trees, meneth, tree => tree.wide
+    (yield* woodBatch(trees, meneth, tree => tree.wide
       ? color.set('#87a052').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.05, .05))
       : color.set('#4a6a43').offsetHSL(range(-.03, .03), range(-.05, .06), range(-.07, .06)),
-      'meneth-tree');
-    rockBatch(rocks, meneth);
+      'meneth-tree'));
+    (yield* rockBatch(rocks, meneth));
     // Hay meadow on the floor is paler and taller than the grazed ridge turf above it.
-    tuftBatch(tufts, meneth, tuft => tuft.floor
+    (yield* tuftBatch(tufts, meneth, tuft => tuft.floor
       ? color.setHSL(range(.14, .19), range(.26, .38), range(.44, .56))
-      : color.setHSL(range(.20, .28), range(.24, .38), range(.32, .46)));
+      : color.setHSL(range(.20, .28), range(.24, .38), range(.32, .46))));
   }
 
   // -------------------------------------------------------------------------
   // Caricas: two rivers, and a corridor of woodland nobody has ever cleared
   // -------------------------------------------------------------------------
   const caricas = district('Caricas');
-  for (const course of [LIZEEM, CARICA]) ribbon(WEST_PROFILES.get(course.id), caricas, course.name);
+  for (const course of [LIZEEM, CARICA]) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(course.id), caricas, course.name)); }
 
   /**
    * The Carica's upper section is "quick, cold, running over rock and gravel":
@@ -481,9 +486,9 @@ export function createWestScenery(kit) {
    * not shingle.
    */
   const caricaGravel = [], caricaSedge = [];
-  for (const sample of WEST_PROFILES.get(CARICA.id)) {
+  for (const sample of WEST_PROFILES.get(CARICA.id)) { if (++buildWork % 32 === 0) yield;
     const upper = sample.along < CARICA_CORRIDOR.from;
-    for (let i = 0; i < (upper ? 5 : 3); i++) {
+    for (let i = 0; i < (upper ? 5 : 3); i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(.2, upper ? 4.5 : 3);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (westWaterSurface(x, z) !== null) continue;
@@ -491,19 +496,19 @@ export function createWestScenery(kit) {
       else caricaSedge.push({ x, z, s: range(.7, 1.6), rot: random() * 6.28 });
     }
   }
-  gravelBatch(caricaGravel, caricas, 'Upper Carica gravel');
-  sedgeBatch(caricaSedge, caricas, 'Carica corridor sedge');
+  (yield* gravelBatch(caricaGravel, caricas, 'Upper Carica gravel'));
+  (yield* sedgeBatch(caricaSedge, caricas, 'Carica corridor sedge'));
   const lizeemSedge = [];
-  for (const sample of WEST_PROFILES.get(LIZEEM.id)) {
+  for (const sample of WEST_PROFILES.get(LIZEEM.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.index % 3) continue;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half + range(.3, 3.4);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (westWaterSurface(x, z) !== null) continue;
       lizeemSedge.push({ x, z, s: range(.8, 1.8), rot: random() * 6.28 });
     }
   }
-  sedgeBatch(lizeemSedge, caricas, 'Lizeem bank reeds');
+  (yield* sedgeBatch(lizeemSedge, caricas, 'Lizeem bank reeds'));
 
   /**
    * Caricas's own scatter, which is the whole argument of the region. The lore:
@@ -527,9 +532,9 @@ export function createWestScenery(kit) {
    * bank the closed canopy the lore insists nobody has ever cut.
    */
   const corridorTrees = [];
-  for (const sample of WEST_PROFILES.get(CARICA.id)) {
+  for (const sample of WEST_PROFILES.get(CARICA.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.along < CARICA_CORRIDOR.from || sample.along > CARICA_CORRIDOR.to) continue;
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0; i < 34; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(1.5, CARICA_CORRIDOR.bankReach);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (hexOwnerAt(x, z) !== 'Caricas' || westBareGround(x, z, 2.5)) continue;
@@ -537,7 +542,7 @@ export function createWestScenery(kit) {
       corridorTrees.push({ x, z, old: true, wide: false, s: range(.9, 1.5), h: range(12, 18), rot: range(0, 6.28) });
     }
   }
-  woodBatch(corridorTrees, caricas, oldGrowthTint, 'caricas-tree');
+  (yield* woodBatch(corridorTrees, caricas, oldGrowthTint, 'caricas-tree'));
 
   const caricasWood = (x, z) => {
     const corridor = caricaCorridorDistance(x, z);
@@ -549,10 +554,10 @@ export function createWestScenery(kit) {
     return 3 * (1 - smooth(-2000, -1750, x));
   };
   const caricasCells = [...REGION_CELLS.Caricas].sort((a, b) => a.z - b.z || a.x - b.x);
-  for (let start = 0; start < caricasCells.length; start += BLOCK) {
+  for (let start = 0; start < caricasCells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = caricasCells.slice(start, start + BLOCK), trees = [], rocks = [], tufts = [];
-    for (const cell of block) {
-      for (let i = 0; i < 110; i++) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
+      for (let i = 0; i < 110; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Caricas' || westBareGround(x, z, 3)) continue;
         const here = caricasWood(x, z);
@@ -562,23 +567,23 @@ export function createWestScenery(kit) {
         trees.push({ x, z, old: false, wide: true, s: range(.85, 1.2), h: range(8.5, 12.5), rot: range(0, 6.28) });
       }
       // Stone belongs to the shelf, which the lore calls rougher and less well-watered.
-      for (let i = 0; i < 34; i++) {
+      for (let i = 0; i < 34; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Caricas' || westBareGround(x, z, 2)) continue;
         if (random() > smooth(-2050, -1780, x)) continue;
         rocks.push({ x, z, s: range(.4, 1.7), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < tuftsPerHex; i++) {
+      for (let i = 0; i < tuftsPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Caricas' || westBareGround(x, z, 1.5)) continue;
         tufts.push({ x, z, s: range(.7, 1.6), rot: range(0, 6.28), floor: caricaCorridorDistance(x, z) < CARICA_CORRIDOR.woodReach });
       }
     }
-    woodBatch(trees, caricas, workedTint, 'caricas-tree');
-    rockBatch(rocks, caricas);
-    tuftBatch(tufts, caricas, tuft => tuft.floor
+    (yield* woodBatch(trees, caricas, workedTint, 'caricas-tree'));
+    (yield* rockBatch(rocks, caricas));
+    (yield* tuftBatch(tufts, caricas, tuft => tuft.floor
       ? color.setHSL(range(.22, .30), range(.28, .42), range(.24, .36))
-      : color.setHSL(range(.14, .21), range(.16, .28), range(.40, .54)));
+      : color.setHSL(range(.14, .21), range(.16, .28), range(.40, .54))));
   }
 
   /**
@@ -602,7 +607,7 @@ export function createWestScenery(kit) {
   //
   // **Nothing in this loop draws from the seeded stream**, so the array can be added to without
   // moving a single thing already built.
-  for (const course of [LIZEEM, CARICA, LIZEEM_REACH, ISAREOS_RIVER, NETH]) for (const sample of WEST_PROFILES.get(course.id)) {
+  for (const course of [LIZEEM, CARICA, LIZEEM_REACH, ISAREOS_RIVER, NETH]) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.ford) continue;
     // Samples are five metres apart, so each blocker has to be wide enough to
     // meet the one in front of it as well as the ones beside it. A gap of even a
@@ -611,25 +616,25 @@ export function createWestScenery(kit) {
     const radius = sample.half / (step + .5) + 1.4;
     // Deep water occupies the channel below its surface, never the air above a bridge.
     const surface = westWaterSurface(sample.x, sample.z);
-    for (let k = -step; k <= step; k++) {
+    for (let k = -step; k <= step; k++) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half * (k / (step + .5));
       colliders.push({ x: sample.x + sample.nx * offset, z: sample.z + sample.nz * offset,
         r: radius, kind: 'west-deep-water', ...(surface !== null ? { surface, maxY: surface } : {}) });
     }
-  }
+  } }
 
   // -------------------------------------------------------------------------
   // Nesdor: the Flats, the braided water on them, and one wooded valley head
   // -------------------------------------------------------------------------
   const nesdor = district('Nesdor');
-  for (const course of [ELA_SOUTH_REACH, NESDOR_BECK]) ribbon(WEST_PROFILES.get(course.id), nesdor, course.name);
+  for (const course of [ELA_SOUTH_REACH, NESDOR_BECK]) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(course.id), nesdor, course.name)); }
   // Named, not filtered. This used to read `WEST_BRAIDS.filter(id !== 'vastos')`, which was
   // true of exactly Nesdor's two until Eer added a pair of its own — and had it stayed,
   // Eer's braids would have been drawn into Nesdor's district and, worse, drawn from
   // Nesdor's own place in this module's one seeded stream, moving every tree after them.
   const NESDOR_BRAIDS = WEST_BRAIDS.filter(item => item.id === 'ela-south' || item.id === 'nesdor-beck');
   for (const braid of NESDOR_BRAIDS)
-    braidThreads(braid).forEach((thread, index) => ribbon(thread, nesdor, `${braid.course.name} thread ${index + 1}`, braid.half));
+    { if (++buildWork % 32 === 0) yield; yield* forEachBuild(braidThreads(braid), function* (thread, index) { return (yield* ribbon(thread, nesdor, `${braid.course.name} thread ${index + 1}`, braid.half)); }); }
 
   /**
    * Sand, not gravel. The lore is specific about what the Flats are made of —
@@ -638,11 +643,11 @@ export function createWestScenery(kit) {
    * between the channels rather than banks of shingle.
    */
   const flatsSand = [], flatsSedge = [];
-  for (const braid of NESDOR_BRAIDS) {
-    for (const sample of WEST_PROFILES.get(braid.course.id)) {
+  for (const braid of NESDOR_BRAIDS) { if (++buildWork % 32 === 0) yield;
+    for (const sample of WEST_PROFILES.get(braid.course.id)) { if (++buildWork % 32 === 0) yield;
       const offset = braidThreadOffset(braid, sample.along);
       if (offset === null) continue;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 6; i++) { if (++buildWork % 32 === 0) yield;
         const side = random() < .5 ? -1 : 1, out = range(sample.half + .5, offset + braid.half + 7);
         const x = sample.x + sample.nx * out * side, z = sample.z + sample.nz * out * side;
         if (hexOwnerAt(x, z) !== 'Nesdor' || westWaterSurface(x, z) !== null) continue;
@@ -651,8 +656,8 @@ export function createWestScenery(kit) {
       }
     }
   }
-  gravelBatch(flatsSand, nesdor, 'Nesdor sand bars');
-  sedgeBatch(flatsSedge, nesdor, 'Nesdor braid sedge');
+  (yield* gravelBatch(flatsSand, nesdor, 'Nesdor sand bars'));
+  (yield* sedgeBatch(flatsSedge, nesdor, 'Nesdor braid sedge'));
 
   /**
    * What grows on the Flats is grass and nothing else, and the atlas already says
@@ -665,11 +670,11 @@ export function createWestScenery(kit) {
   const nesdorTerrain = new Map(SURVEY.regions.find(region => region.name === 'Nesdor')
     .cells.map(cell => [`${cell.q},${cell.r}`, cell.terrain]));
   const nesdorTerrainAt = (x, z) => { const home = hexAt(x, z); return nesdorTerrain.get(`${home.q},${home.r}`) ?? 'plains'; };
-  for (let start = 0; start < nesdorCells.length; start += BLOCK) {
+  for (let start = 0; start < nesdorCells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = nesdorCells.slice(start, start + BLOCK), trees = [], tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       const wooded = cell.terrain === 'forest' ? 58 : cell.terrain === 'grassland' ? 20 : 0;
-      for (let i = 0; i < wooded * 2; i++) {
+      for (let i = 0; i < wooded * 2; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Nesdor' || westBareGround(x, z, 4)) continue;
         const kind = nesdorTerrainAt(x, z);
@@ -679,7 +684,7 @@ export function createWestScenery(kit) {
         const oak = random() < .34;
         trees.push({ x, z, oak, wide: oak, s: range(.8, oak ? 1.3 : 1), h: oak ? range(11, 15) : range(6, 8.5), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < tuftsPerHex + 6; i++) {
+      for (let i = 0; i < tuftsPerHex + 6; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Nesdor' || westBareGround(x, z, 1.5)) continue;
         tufts.push({ x, z, s: range(.7, 1.7), rot: range(0, 6.28), floor: nesdorTerrainAt(x, z) === 'plains' });
@@ -687,13 +692,13 @@ export function createWestScenery(kit) {
     }
     // Hazel is a lighter, yellower leaf than oak, and both are given as hex for the
     // same reason the Meneth crowns are.
-    woodBatch(trees, nesdor, tree => tree.oak
+    (yield* woodBatch(trees, nesdor, tree => tree.oak
       ? color.set('#4f6b3e').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.05, .06))
-      : color.set('#7d9a4f').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.05, .05)), 'nesdor-tree');
+      : color.set('#7d9a4f').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.05, .05)), 'nesdor-tree'));
     // The Flats are paler and drier than the valley head, and shade toward the Moros.
-    tuftBatch(tufts, nesdor, tuft => tuft.floor
+    (yield* tuftBatch(tufts, nesdor, tuft => tuft.floor
       ? color.setHSL(range(.13, .18), range(.24, .36), range(.44, .58))
-      : color.setHSL(range(.19, .26), range(.26, .40), range(.34, .48)));
+      : color.setHSL(range(.19, .26), range(.26, .40), range(.34, .48))));
   }
 
   // -------------------------------------------------------------------------
@@ -705,14 +710,14 @@ export function createWestScenery(kit) {
    * herd waters at a pan by standing in it. The two eastern basins are three
    * metres deep and the warm pool is hot, and neither is somewhere to walk.
    */
-  for (const pool of [...VASTOS_BASINS, WEST_POOLS.find(item => item.id === 'sulfur-pool')]) {
+  for (const pool of [...VASTOS_BASINS, WEST_POOLS.find(item => item.id === 'sulfur-pool')]) { if (++buildWork % 32 === 0) yield;
     const surface = poolSurface(pool), step = pool.radius > 10 ? 3.4 : 2.2;
     for (let x = pool.x - pool.radius; x <= pool.x + pool.radius; x += step)
-      for (let z = pool.z - pool.radius; z <= pool.z + pool.radius; z += step) {
+      { if (++buildWork % 32 === 0) yield; for (let z = pool.z - pool.radius; z <= pool.z + pool.radius; z += step) { if (++buildWork % 32 === 0) yield;
         if (Math.hypot(x - pool.x, z - pool.z) > pool.radius - 1) continue;
         if (surface - westGroundAt(x, z) < .75) continue;
         colliders.push({ x, z, r: step * .72, kind: 'west-deep-water' });
-      }
+      } }
   }
 
   // -------------------------------------------------------------------------
@@ -778,11 +783,11 @@ export function createWestScenery(kit) {
   const eerPlantable = (x, z, margin) => hexOwnerAt(x, z) === 'Eer'
     && !westBareGround(x, z, margin) && westWaterSurface(x, z) === null && landDistance(x, z) > 1.5;
 
-  ribbon(WEST_PROFILES.get(LIZEEM_REACH.id), eer, LIZEEM_REACH.name);
-  for (const channel of EER_CHANNELS) ribbon(WEST_PROFILES.get(channel.id), eer, channel.name);
+  (yield* ribbon(WEST_PROFILES.get(LIZEEM_REACH.id), eer, LIZEEM_REACH.name));
+  for (const channel of EER_CHANNELS) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(channel.id), eer, channel.name)); }
   const EER_BRAIDS = WEST_BRAIDS.filter(item => item.id === 'eer-north' || item.id === 'eer-south');
   for (const braid of EER_BRAIDS)
-    braidThreads(braid).forEach((thread, index) => ribbon(thread, eer, `${braid.course.name} thread ${index + 1}`, braid.half));
+    { if (++buildWork % 32 === 0) yield; yield* forEachBuild(braidThreads(braid), function* (thread, index) { return (yield* ribbon(thread, eer, `${braid.course.name} thread ${index + 1}`, braid.half)); }); }
 
   /**
    * Sand on the braid bars and sedge at the waterlines, as on the Flats upstream —
@@ -791,30 +796,30 @@ export function createWestScenery(kit) {
    * it: these channels are within sight of the sea.
    */
   const eerSand = [], eerSedge = [];
-  for (const braid of EER_BRAIDS) for (const sample of WEST_PROFILES.get(braid.course.id)) {
+  for (const braid of EER_BRAIDS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(braid.course.id)) { if (++buildWork % 32 === 0) yield;
     const offset = braidThreadOffset(braid, sample.along);
     if (offset === null) continue;
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 7; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, out = range(sample.half + .5, offset + braid.half + 8);
       const x = sample.x + sample.nx * out * side, z = sample.z + sample.nz * out * side;
       if (hexOwnerAt(x, z) !== 'Eer' || westWaterSurface(x, z) !== null) continue;
       if (i < 4) eerSand.push({ x, z, s: range(.25, .8), rot: random() * 6.28 });
       else eerSedge.push({ x, z, s: range(.9, 1.9), rot: random() * 6.28 });
     }
-  }
+  } }
   // The Lizeem's own bank, which carries the reeds the fauna overview's "richest avian
   // assemblage documented on the continent" stands in.
-  for (const sample of WEST_PROFILES.get(LIZEEM_REACH.id)) {
+  for (const sample of WEST_PROFILES.get(LIZEEM_REACH.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.index % 3) continue;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half + range(.4, 4);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (hexOwnerAt(x, z) !== 'Eer' || westWaterSurface(x, z) !== null) continue;
       eerSedge.push({ x, z, s: range(1, 2.1), rot: random() * 6.28 });
     }
   }
-  gravelBatch(eerSand, eer, 'Eer channel sand');
-  sedgeBatch(eerSedge, eer, 'Eer channel sedge');
+  (yield* gravelBatch(eerSand, eer, 'Eer channel sand'));
+  (yield* sedgeBatch(eerSedge, eer, 'Eer channel sedge'));
 
   /**
    * The galleries. The atlas gives Eer no `forest` hex, so nothing here is woodland,
@@ -841,8 +846,8 @@ export function createWestScenery(kit) {
    * under trees and not through them.
    */
   const galleryTrees = [];
-  for (const channel of EER_CHANNELS) for (const sample of WEST_PROFILES.get(channel.id)) {
-    for (let i = 0; i < 5; i++) {
+  for (const channel of EER_CHANNELS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(channel.id)) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 5; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(.8, 7);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       // `westBareGround` measures from a course's own centre line and knows nothing
@@ -860,15 +865,15 @@ export function createWestScenery(kit) {
       galleryTrees.push({ x, z, scrubby, wide: scrubby, s: range(.8, scrubby ? 1.1 : 1.35),
         h: scrubby ? range(4.5, 7) : range(9, 14), rot: range(0, 6.28) });
     }
-  }
+  } }
   // Alder and willow are a deep cool green; tamarisk and oleander are grey-green and
   // dusty, which is the single most Mediterranean thing a plant can be. Hex, not
   // setHSL: a lightness picked for sRGB comes back two stops paler through the
   // renderer's working space (docs/four-regions-brief.md).
-  woodBatch(galleryTrees, eer, tree => tree.scrubby
+  (yield* woodBatch(galleryTrees, eer, tree => tree.scrubby
     ? color.set('#8b9a6d').offsetHSL(range(-.02, .02), range(-.06, .05), range(-.05, .06))
     : color.set('#41633a').offsetHSL(range(-.03, .03), range(-.05, .06), range(-.06, .06)),
-    'eer-tree');
+    'eer-tree'));
 
   /**
    * Eer's open ground, which is nearly all of Eer. Three things grow on it and the
@@ -890,12 +895,12 @@ export function createWestScenery(kit) {
   const eerCells = [...REGION_CELLS.Eer].sort((a, b) => a.z - b.z || a.x - b.x);
   const oliveTint = () => color.set('#8e9a72').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06));
   const eerScrub = [], standingTrees = [];
-  for (let start = 0; start < eerCells.length; start += BLOCK) {
+  for (let start = 0; start < eerCells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = eerCells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       // The standing trees: an attempt every few dozen metres, and a spacing rule that
       // means most of them fail. What survives is a scatter nothing in it touches.
-      for (let i = 0; i < 26; i++) {
+      for (let i = 0; i < 26; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!eerPlantable(x, z, 4)) continue;
         const seaward = eerSeaward(x, z);
@@ -910,7 +915,7 @@ export function createWestScenery(kit) {
       // Photographed from the shore, the first pass's thirty attempts a hex left the
       // ground behind the bays bare — a bush every six hundred square metres is not a
       // scrub, it is an accident — so there are enough of them now to walk through.
-      for (let i = 0; i < 90; i++) {
+      for (let i = 0; i < 90; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!eerPlantable(x, z, 2)) continue;
         // Weighted hard toward the coast, because that is where the lore puts it:
@@ -921,7 +926,7 @@ export function createWestScenery(kit) {
         if (eerScrub.some(bush => Math.hypot(bush.x - x, bush.z - z) < 4.4)) continue;
         eerScrub.push({ x, z, s: range(.55, 1.2), rot: random() * 6.28, seaward });
       }
-      for (let i = 0; i < tuftsPerHex + 44; i++) {
+      for (let i = 0; i < tuftsPerHex + 44; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!eerPlantable(x, z, 1.5)) continue;
         const seaward = eerSeaward(x, z);
@@ -931,16 +936,16 @@ export function createWestScenery(kit) {
     // The one continuous thing in the country: deep green and knee-high on the loam,
     // short and tawny on the sea. The height is the wetness as much as the colour is —
     // "the grass on it stands to the knee", and it does not on the dry half.
-    tuftBatch(tufts, eer, tuft => color.setHSL(
+    (yield* tuftBatch(tufts, eer, tuft => color.setHSL(
       .26 - tuft.seaward * .11 + range(-.015, .015),
       .38 - tuft.seaward * .12 + range(-.05, .05),
-      .26 + tuft.seaward * .24 + range(-.04, .04)));
+      .26 + tuft.seaward * .24 + range(-.04, .04))));
   }
   // Holm oak is dark and heavy; a wild olive is pale, grey and open. Both wide-crowned,
   // because a tree that has never had a neighbour grows out rather than up.
-  woodBatch(standingTrees, eer, tree => tree.holm
+  (yield* woodBatch(standingTrees, eer, tree => tree.holm
     ? color.set('#3f5733').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05))
-    : oliveTint(), 'eer-tree');
+    : oliveTint(), 'eer-tree'));
 
   /**
    * The cushion scrub itself: three low lobes, grey-green, aromatic, and never more
@@ -951,9 +956,9 @@ export function createWestScenery(kit) {
   if (eerScrub.length) {
     const batch = new THREE.InstancedMesh(round, material('#7f8a63', { flatShading: true }), eerScrub.length * 3);
     let at = 0;
-    for (const bush of eerScrub) {
+    for (const bush of eerScrub) { if (++buildWork % 32 === 0) yield;
       const y = groundHeight(bush.x, bush.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .42 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * (lobe === 2 ? .40 : .26), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.16, .16), a, range(-.16, .16));
@@ -984,13 +989,13 @@ export function createWestScenery(kit) {
   const isareos = district('Isareos');
   /** Ground left plain for Isamouth, which is a town and is therefore not built. */
   const atIsamouth = (x, z) => Math.hypot(x - ISAMOUTH_GROUND.x, z - ISAMOUTH_GROUND.z) < ISAMOUTH_GROUND.radius;
-  ribbon(WEST_PROFILES.get(ISAREOS_RIVER.id), isareos, ISAREOS_RIVER.name);
-  for (const beck of ISAREOS_BECKS) ribbon(WEST_PROFILES.get(beck.id), isareos, beck.name);
+  (yield* ribbon(WEST_PROFILES.get(ISAREOS_RIVER.id), isareos, ISAREOS_RIVER.name));
+  for (const beck of ISAREOS_BECKS) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(beck.id), isareos, beck.name)); }
 
   const isareosSedge = [], isareosGravel = [];
-  for (const course of [ISAREOS_RIVER, ...ISAREOS_BECKS]) for (const sample of WEST_PROFILES.get(course.id)) {
+  for (const course of [ISAREOS_RIVER, ...ISAREOS_BECKS]) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.index % 2) continue;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half + range(.3, 2.4);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (hexOwnerAt(x, z) !== 'Isareos' || westWaterSurface(x, z) !== null) continue;
@@ -998,9 +1003,9 @@ export function createWestScenery(kit) {
       if (course === ISAREOS_RIVER && sample.along < ISAREOS_RIVER.fordUntil) isareosGravel.push({ x, z, s: range(.2, .62), rot: random() * 6.28 });
       else isareosSedge.push({ x, z, s: range(.6, 1.3), rot: random() * 6.28 });
     }
-  }
-  gravelBatch(isareosGravel, isareos, 'Isareos ford gravel');
-  sedgeBatch(isareosSedge, isareos, 'Isareos water rushes');
+  } }
+  (yield* gravelBatch(isareosGravel, isareos, 'Isareos ford gravel'));
+  (yield* sedgeBatch(isareosSedge, isareos, 'Isareos water rushes'));
 
   /**
    * The gallery, planted off the water and not off the hex grid — the Carica's
@@ -1010,9 +1015,9 @@ export function createWestScenery(kit) {
    * stream galleries" and hazel is what a gallery is cut for.
    */
   const isareosGallery = [];
-  for (const course of [ISAREOS_RIVER, ...ISAREOS_BECKS]) {
+  for (const course of [ISAREOS_RIVER, ...ISAREOS_BECKS]) { if (++buildWork % 32 === 0) yield;
     const narrow = course !== ISAREOS_RIVER;
-    for (const sample of WEST_PROFILES.get(course.id)) for (let i = 0; i < 5; i++) {
+    for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < 5; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(.8, narrow ? 5 : 8);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (hexOwnerAt(x, z) !== 'Isareos' || westBareGround(x, z, 2) || westWaterSurface(x, z) !== null) continue;
@@ -1022,12 +1027,12 @@ export function createWestScenery(kit) {
       const hazel = random() < .38;
       isareosGallery.push({ x, z, hazel, wide: hazel, s: range(.85, hazel ? 1.05 : 1.3),
         h: hazel ? range(5.5, 7.5) : range(10, 15), rot: range(0, 6.28) });
-    }
+    } }
   }
-  woodBatch(isareosGallery, isareos, tree => tree.hazel
+  (yield* woodBatch(isareosGallery, isareos, tree => tree.hazel
     ? color.set('#7d9a4f').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.05, .05))
     : color.set('#42663c').offsetHSL(range(-.03, .03), range(-.05, .06), range(-.06, .06)),
-    'isareos-tree');
+    'isareos-tree'));
 
   /**
    * The thorn, and the grass. `isareosLie` says where a point stands between the
@@ -1050,10 +1055,10 @@ export function createWestScenery(kit) {
     .cells.map(cell => [`${cell.q},${cell.r}`, cell.terrain]));
   const onRim = (x, z) => { const home = hexAt(x, z); return isareosTerrain.get(`${home.q},${home.r}`) === 'plains'; };
   const hollowThorn = [];
-  for (let start = 0; start < isareosCells.length; start += BLOCK) {
+  for (let start = 0; start < isareosCells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = isareosCells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
-      for (let i = 0; i < 46; i++) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
+      for (let i = 0; i < 46; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Isareos' || westBareGround(x, z, 3) || westWaterSurface(x, z) !== null) continue;
         if (atIsamouth(x, z)) continue;
@@ -1073,7 +1078,7 @@ export function createWestScenery(kit) {
         // actually has.
         const clump = random() < .45 ? 1 + Math.floor(random() * 3) : 0;
         hollowThorn.push({ x, z, s: range(.85, 1.6), rot: random() * 6.28 });
-        for (let k = 0; k < clump; k++) {
+        for (let k = 0; k < clump; k++) { if (++buildWork % 32 === 0) yield;
           const a = random() * 6.28, out = range(3.4, 5.2);
           const bx = x + Math.sin(a) * out, bz = z + Math.cos(a) * out;
           if (hexOwnerAt(bx, bz) !== 'Isareos' || westBareGround(bx, bz, 2) || westWaterSurface(bx, bz) !== null) continue;
@@ -1087,7 +1092,7 @@ export function createWestScenery(kit) {
           hollowThorn.push({ x: bx, z: bz, s: range(.7, 1.3), rot: random() * 6.28 });
         }
       }
-      for (let i = 0; i < tuftsPerHex + 30; i++) {
+      for (let i = 0; i < tuftsPerHex + 30; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (hexOwnerAt(x, z) !== 'Isareos' || westBareGround(x, z, 1.5) || westWaterSurface(x, z) !== null) continue;
         const lie = isareosLie(x, z), rim = onRim(x, z);
@@ -1095,10 +1100,10 @@ export function createWestScenery(kit) {
       }
     }
     // Deep humid green on the floors, harder and paler on the tops, greyer on the rim.
-    tuftBatch(tufts, isareos, tuft => color.setHSL(
+    (yield* tuftBatch(tufts, isareos, tuft => color.setHSL(
       (tuft.rim ? .21 : .27) - tuft.lie * .04 + range(-.015, .015),
       (tuft.rim ? .18 : .36) - tuft.lie * .07 + range(-.05, .05),
-      (tuft.rim ? .40 : .26) + tuft.lie * .10 + range(-.04, .04)));
+      (tuft.rim ? .40 : .26) + tuft.lie * .10 + range(-.04, .04))));
   }
 
   /**
@@ -1109,10 +1114,10 @@ export function createWestScenery(kit) {
   if (hollowThorn.length) {
     const batch = new THREE.InstancedMesh(round, material('#46603c', { flatShading: true }), hollowThorn.length * 3);
     let at = 0;
-    for (const bush of hollowThorn) {
+    for (const bush of hollowThorn) { if (++buildWork % 32 === 0) yield;
       const reserved = frontierReserved(bush.x, bush.z);
       const y = groundHeight(bush.x, bush.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .58 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * (lobe === 2 ? .96 : .62), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.2, .2));
@@ -1158,7 +1163,7 @@ export function createWestScenery(kit) {
     && !westBareGround(x, z, margin) && westWaterSurface(x, z) === null && !atIsamouth(x, z);
 
   const NETHEREUM_WATER = [NETH_HEAD, NETH, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS];
-  for (const course of NETHEREUM_WATER) ribbon(WEST_PROFILES.get(course.id), nethereum, course.name);
+  for (const course of NETHEREUM_WATER) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(course.id), nethereum, course.name)); }
 
   /**
    * Rush and sedge at every waterline, and gravel on the Neth's ford, which is gravel by
@@ -1169,21 +1174,21 @@ export function createWestScenery(kit) {
    * they stand on. The river was built with Isareos and is not rebuilt here.
    */
   const nethSedge = [], nethGravel = [];
-  for (const course of [...NETHEREUM_WATER, ISAREOS_RIVER]) for (const sample of WEST_PROFILES.get(course.id)) {
+  for (const course of [...NETHEREUM_WATER, ISAREOS_RIVER]) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
     const ford = course === NETH && sample.ford;
     if (!ford && sample.index % 2) continue;
     // The ford is the one thing in this country a traveler has to be able to find, so it is
     // sown at every sample and four deep rather than at every other one and two: photographed
     // from the bank at the same rate as a waterline, twenty-three stones over a hundred metres
     // of crossing read as a few pebbles and not as a place anybody walks through.
-    for (const side of ford ? [-1, -1, 1, 1] : [-1, 1]) {
+    for (const side of ford ? [-1, -1, 1, 1] : [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half + range(.3, ford ? 3.4 : 2.6);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!inNethereum(x, z) || westWaterSurface(x, z) !== null) continue;
       if (ford) nethGravel.push({ x, z, s: range(.2, .7), rot: random() * 6.28 });
       else nethSedge.push({ x, z, s: range(.8, 1.7), rot: random() * 6.28 });
     }
-  }
+  } }
 
   /**
    * **The wet threads**, which are the thing this country has instead of a lake.
@@ -1200,12 +1205,12 @@ export function createWestScenery(kit) {
    * goes. Nothing is cut and nothing stands in water: the ground under them is the ordinary
    * floor of the hollow.
    */
-  for (const stream of NETHEREUM_STREAMS) {
+  for (const stream of NETHEREUM_STREAMS) { if (++buildWork % 32 === 0) yield;
     const end = WEST_PROFILES.get(stream.id).at(-1);
     const toward = Math.atan2(NETHEREUM_HOLLOW.x - end.x, NETHEREUM_HOLLOW.z - end.z);
-    for (let along = 4; along < 150; along += 3.5) {
+    for (let along = 4; along < 150; along += 3.5) { if (++buildWork % 32 === 0) yield;
       const fray = 2.2 + along * .035;
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield;
         const across = range(-fray, fray);
         const x = end.x + Math.sin(toward) * along + Math.cos(toward) * across;
         const z = end.z + Math.cos(toward) * along - Math.sin(toward) * across;
@@ -1216,8 +1221,8 @@ export function createWestScenery(kit) {
       }
     }
   }
-  gravelBatch(nethGravel, nethereum, 'Neth ford gravel');
-  sedgeBatch(nethSedge, nethereum, 'Nethereum rush and sedge');
+  (yield* gravelBatch(nethGravel, nethereum, 'Neth ford gravel'));
+  (yield* sedgeBatch(nethSedge, nethereum, 'Nethereum rush and sedge'));
 
   /**
    * The gallery: willow and alder on the water and nowhere else, which on the atlas's
@@ -1231,9 +1236,9 @@ export function createWestScenery(kit) {
    * grass carries a willow here and there, not a ribbon.
    */
   const nethGallery = [];
-  for (const course of [ISAREOS_RIVER, NETH, NETH_HEAD, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS]) {
+  for (const course of [ISAREOS_RIVER, NETH, NETH_HEAD, NETHEREUM_OUTLET, ...NETHEREUM_STREAMS]) { if (++buildWork % 32 === 0) yield;
     const narrow = course !== ISAREOS_RIVER && course !== NETH;
-    for (const sample of WEST_PROFILES.get(course.id)) for (let i = 0; i < (narrow ? 2 : 5); i++) {
+    for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < (narrow ? 2 : 5); i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(.8, narrow ? 4.5 : 8);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!nethPlantable(x, z, 2)) continue;
@@ -1242,15 +1247,15 @@ export function createWestScenery(kit) {
       const willow = random() < .55;
       nethGallery.push({ x, z, willow, wide: willow, s: range(.85, willow ? 1.15 : 1.3),
         h: willow ? range(6.5, 9) : range(10, 14.5), rot: range(0, 6.28) });
-    }
+    } }
   }
   // Willow is a paler, greyer, yellower green than alder, which is about as dark as a
   // broadleaf gets. Hex rather than setHSL, for the reason every crown out here is: a
   // lightness picked for sRGB comes back two stops paler through the working colour space.
-  woodBatch(nethGallery, nethereum, tree => tree.willow
+  (yield* woodBatch(nethGallery, nethereum, tree => tree.willow
     ? color.set('#7f9a58').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.05, .05))
     : color.set('#3e5f38').offsetHSL(range(-.03, .03), range(-.05, .06), range(-.06, .06)),
-    'nethereum-tree');
+    'nethereum-tree'));
 
   /**
    * The meadow, which is nearly the whole of Nethereum. One number decides all of it —
@@ -1283,9 +1288,9 @@ export function createWestScenery(kit) {
   const nethereumTerrain = new Map(SURVEY.regions.find(region => region.name === 'Nethereum')
     .cells.map(cell => [`${cell.q},${cell.r}`, cell.terrain]));
   const onDryCorner = (x, z) => { const home = hexAt(x, z); return nethereumTerrain.get(`${home.q},${home.r}`) === 'plains'; };
-  for (let start = 0; start < nethereumCells.length; start += BLOCK) {
+  for (let start = 0; start < nethereumCells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = nethereumCells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       /**
        * **Three times what Isareos carries, and the count is the wetness.** Photographed from
        * the northern shoulder at a hundred and forty-four tufts a hex — half again as much as
@@ -1295,7 +1300,7 @@ export function createWestScenery(kit) {
        * fifty-eight and the floor takes all of them while the rim takes half, which puts the
        * density where the water is and is the one thing that tells the two apart at a distance.
        */
-      for (let i = 0; i < tuftsPerHex * 3; i++) {
+      for (let i = 0; i < tuftsPerHex * 3; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!nethPlantable(x, z, 1.5)) continue;
         const wet = nethereumWet(x, z), dry = onDryCorner(x, z);
@@ -1307,10 +1312,10 @@ export function createWestScenery(kit) {
     // and the step between them is wide on purpose. At four hundredths of lightness the floor
     // and the rim were the same colour from a hundred metres and the dish had nothing to be
     // seen by; at fifteen the wet ground reads as wet ground from the shoulder above it.
-    tuftBatch(tufts, nethereum, tuft => color.setHSL(
+    (yield* tuftBatch(tufts, nethereum, tuft => color.setHSL(
       (tuft.dry ? .18 : .27) + tuft.wet * .03 + range(-.015, .015),
       (tuft.dry ? .17 : .31) + tuft.wet * .16 + range(-.05, .05),
-      (tuft.dry ? .44 : .34) - tuft.wet * .11 + range(-.04, .04)));
+      (tuft.dry ? .44 : .34) - tuft.wet * .11 + range(-.04, .04))));
   }
 
   function update(time) {

@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, Selemi: 52 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, 'West Baldro Mountains': 52, 'East Baldro Mountains': 53, Selemi: 54 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -143,6 +143,10 @@ export const VILLAGE_LOCAL_BOX = Object.freeze({ minX: -112, maxX: 112, minZ: -1
 // Terrain: a base level and relief per biome, blended between neighbouring hexes
 // ---------------------------------------------------------------------------
 export const REGION_TERRAIN = Object.freeze({
+  // Keep the former outland profile at the boundary. The Baldro heightfield
+  // builds connected mountain ground only inside the two authored footprints.
+  'West Baldro Mountains': Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
+  'East Baldro Mountains': Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
   // Keep the former outland contribution: authored plains relief only changes owned ground.
   Yunethre: Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#a4a363' }),
   // Registration keeps the exact former outland contribution to Ibenwood's blended ground.
@@ -606,6 +610,9 @@ export const REGION_TERRAIN = Object.freeze({
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
 const cellProfile = (name, terrain) => REGION_TERRAIN[name].byTerrain?.[terrain] ?? REGION_TERRAIN[name];
+// Keep the public weights object complete, including zeroes, without allocating
+// a name/pair array for every profile at every terrain vertex.
+const EMPTY_TERRAIN_WEIGHTS = Object.freeze(Object.fromEntries(Object.keys(REGION_TERRAIN).map(name => [name, 0])));
 
 /** Suval's hills use every hex in the blend's reach. The old seven-cell stencil changes
  * abruptly when the containing hex changes, leaving artificial steps across mountain faces.
@@ -654,7 +661,7 @@ export function seamlessTerrainMix(x, z) {
 function blendHexes(x, z, offsets) {
   const home = hexAt(x, z);
   let total = 0, base = 0, amp = 0, wave = 0;
-  const weights = Object.fromEntries(Object.keys(REGION_TERRAIN).map(name => [name, 0]));
+  const weights = { ...EMPTY_TERRAIN_WEIGHTS }, touched = [];
   const grounds = {};
   for (const [dq, dr] of offsets) {
     const q = home.q + dq, r = home.r + dr, centre = hexCentre(q, r);
@@ -663,11 +670,12 @@ function blendHexes(x, z, offsets) {
     const name = cellRegion.get(key(q, r)) ?? 'outland';
     const terrain = cellProfile(name, cellTerrain.get(key(q, r)));
     total += weight; base += terrain.base * weight; amp += terrain.amp * weight; wave += terrain.wave * weight;
+    if (!weights[name]) touched.push(name);
     weights[name] += weight;
     grounds[terrain.ground] = (grounds[terrain.ground] ?? 0) + weight;
   }
   if (!total) return { base: REGION_TERRAIN.outland.base, amp: REGION_TERRAIN.outland.amp, wave: REGION_TERRAIN.outland.wave, weights, grounds };
-  for (const name of Object.keys(weights)) weights[name] /= total;
+  for (const name of touched) weights[name] /= total;
   for (const ground of Object.keys(grounds)) grounds[ground] /= total;
   return { base: base / total, amp: amp / total, wave: wave / total, weights, grounds };
 }
@@ -1069,6 +1077,8 @@ function outlineBounds(loops) {
 
 const REGION_TEXT = {
   Yunethre: { subtitle: 'The grass passage between the mountains', spawn: hexCentre(-14, 102), description: 'Independent centaur plains between the Lotharn and Oremindi, a lakeside free town and the nomadic camp. The neutral town welcomes humans, elves and centaurs.', palette: { ground: '#a4a363', accent: '#e4d8ae', fog: '#cbd1ad', sky: 0xb3cbd3, haze: 0xcbd1ad, hazeDensity: .0017 }, npcIds: [], landmarks: [] },
+  'West Baldro Mountains': { subtitle: 'The exposed ridges above the West Hold', spawn: hexCentre(46, 68), description: 'Cold ridges and rock basins above one of the two surviving independent dwarf city kingdoms. The West Hold belongs to the confederation of Dwarfland, with working halls beside closed and abandoned districts. Its gate opens to travelers who have earned the kingdom\'s trust.', palette: { ground: '#818575', accent: '#b4b5a4', fog: '#bdc8c8', sky: 0xa9bdcb, haze: 0xbdc8c8, hazeDensity: .0021 }, npcIds: [], landmarks: [] },
+  'East Baldro Mountains': { subtitle: 'The wooded valleys above the East Hold', spawn: hexCentre(51, 70), description: 'Sheltered cold woods rise into joined mountain shoulders above the other surviving independent dwarf city kingdom. The East Hold belongs to Dwarfland while keeping its own sovereignty, with busy workshops and silent old quarters beneath the range. Entry must be earned here separately.', palette: { ground: '#718065', accent: '#adb497', fog: '#b8c8c0', sky: 0xafc5ce, haze: 0xb8c8c0, hazeDensity: .0025 }, npcIds: [], landmarks: [] },
   'South Oremindi Mountains': { subtitle: 'The high range above Ibenwood', spawn: hexCentre(-19, 102), description: 'High mountains and cold hill approaches above Ibenwood, with alpine lake basins, tundra and permanent ice. This environment preview builds the terrain and wildlife; Sevron, the sage and the campaign chapter remain unfinished.', palette: { ground: '#89908f', accent: '#e2e7df', fog: '#c7d4d8', sky: 0xb2c9d7, haze: 0xc7d4d8, hazeDensity: .0018 }, npcIds: [], landmarks: [] },
   'East Ibenwood': { subtitle: 'The eastern woodland margin', spawn: hexCentre(-19, 110), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#617548', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },
   'North Ibenwood': { subtitle: 'The cold northern boughs', spawn: hexCentre(-21, 105), description: 'Dense ancient forest and separated elven groves. Persistent rangers defend the marked inner belt; exceptional stealth can bypass them. Permission quests, dimensional withdrawal and civilian life remain unfinished.', palette: { ground: '#627951', accent: '#d8d4ae', fog: '#a1b59b', sky: 0xabc6bb, haze: 0xa1b59b, hazeDensity: .0036 }, npcIds: [], landmarks: [] },

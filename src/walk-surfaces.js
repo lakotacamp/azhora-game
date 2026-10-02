@@ -12,7 +12,10 @@ export function colliderOverlapsHeight(collider, feetY, bodyHeight = 1.75) {
 }
 
 export function createWalkSurfaces(surfaces = [], groundHeightAt) {
-  const frames = surfaces.map(surface => {
+  let frames = [], indexedCount = -1;
+  function refresh() {
+  if (indexedCount === surfaces.length) return;
+  const next = surfaces.map(surface => {
     const { a, b, width } = surface;
     if (!validWalkSurfaceId(surface.id) || !['deck', 'ramp'].includes(surface.kind)
       || !a || !b || ![a.x, a.y, a.z, b.x, b.y, b.z, width].every(Number.isFinite) || width <= 0)
@@ -21,7 +24,10 @@ export function createWalkSurfaces(surfaces = [], groundHeightAt) {
     if (length < .001) throw new Error(`Walking surface ${surface.id} has no length`);
     return { ...surface, dx: dx / length, dz: dz / length, length };
   });
-  if (new Set(frames.map(s => s.id)).size !== frames.length) throw new Error('Walking surface IDs must be unique');
+  if (new Set(next.map(s => s.id)).size !== next.length) throw new Error('Walking surface IDs must be unique');
+  frames = next; indexedCount = surfaces.length;
+  }
+  refresh();
   function sample(surface, x, z) {
     const dx = x - surface.a.x, dz = z - surface.a.z;
     const along = dx * surface.dx + dz * surface.dz, across = dx * -surface.dz + dz * surface.dx;
@@ -31,6 +37,7 @@ export function createWalkSurfaces(surfaces = [], groundHeightAt) {
       slope: Math.abs(grade), gradient: { x: surface.dx * sign, z: surface.dz * sign } };
   }
   function supportAt(x, z, { maxY = -Infinity, stepUp = 0, surfaceId, groundSlope = true } = {}) {
+    refresh();
     if (surfaceId !== undefined) {
       const surface = frames.find(s => s.id === surfaceId);
       return surface ? sample(surface, x, z) : null;

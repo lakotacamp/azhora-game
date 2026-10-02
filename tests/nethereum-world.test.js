@@ -342,7 +342,10 @@ test('every hex of Nethereum is honest ground, and nobody is sealed in', () => {
   // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
   // (docs/southwest-2-report.md), which this country is nowhere near either.
   // ...and 54.316 since Trogo carried it south again to z = 3264.426 (docs/southwest-4-report.md).
-  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(2)} hexes`);
+  // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
+  assert.ok(Math.abs(tall - 71.637) < .01, `north to south is ${tall.toFixed(2)} hexes`);
   assert.ok(Math.abs(Math.min(...cells.map(cell => cell.x)) - -2900) < 1,
     'and the hex that spends it is the one `plains` corner at x = -2900');
 });

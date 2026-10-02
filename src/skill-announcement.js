@@ -2,6 +2,9 @@ import { SKILLS } from './skills.js';
 import { skillIconSVG } from './skill-icons.js';
 
 const LESSONS = {
+  dwarvenSmithing: { title: 'Dwarven Smithing · first technique',
+    text: 'The West Hold artisan has shared repair-riveting: controlled heat, fit and peen the joint, then quench. Other dwarven techniques still require their own lessons and trust.',
+    controls: 'J → Skills → Smithing → Dwarven Smithing for the technique record' },
   fire:{text:'Ben has taught you Fireball. Aim carefully: fire can hurt friends as well as enemies.',controls:'Z to cast - N to change spells - I to equip a wand'},
   beast:{text:'Liz has taught you to summon a swarm of bees to harry your enemies.',controls:'Z to cast - N to change spells - Keep your wand equipped'},
   mind:{text:'Troy has taught you Mind Read. Stand close to someone to hear an unspoken thought.',controls:'Z to read a nearby mind - N to change spells'},
@@ -62,6 +65,7 @@ export function createSkillAnnouncement({ mount, onOpen = () => {}, onShow = () 
       const lesson = queue.tick(dt, eligible);
       if (!lesson) { hide(); return; }
       if (showing !== lesson.id) {
+        mount.querySelector('.eyebrow').textContent = SKILLS[lesson.id]?.parent ? `${SKILLS[SKILLS[lesson.id].parent].name.toUpperCase()} SPECIALIZATION` : 'NEW SKILL LEARNED';
         mount.querySelector('.skill-intro-icon').innerHTML = skillIconSVG(lesson.id);
         mount.querySelector('h2').textContent = lesson.title;
         mount.querySelector('.skill-intro-description').textContent = lesson.text;

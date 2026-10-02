@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import { REGION_CELLS, hexOwnerAt, hexAtlasCorners, TRANSFORM } from './region-world.js';
 import { IBENWOOD_RIVER_EDGES } from './ibenwood-rivers.js';
 
@@ -112,12 +113,14 @@ export function ibenwoodTreeSpecies(region,x,z,roll) {
   const list=ibenwoodProtected(x,z)?IBENWOOD_SPECIES:outer[region]??outer['West Ibenwood'];
   return list[Math.min(list.length-1,Math.floor(roll*list.length))];
 }
-export function ibenwoodForestTrees({waterClear=ibenwoodWaterClear}={}) {
+export function ibenwoodForestTrees(options) { return finishBuild(ibenwoodForestTreesSteps(options)); }
+export function* ibenwoodForestTreesSteps({waterClear=ibenwoodWaterClear}={}) {
   const trees=[],grid=new Map(),spacing=2.5;
   for(const region of IBENWOOD_NAMES)for(const c of cells(region)) {
     let seed=(Math.imul(c.q,73856093)^Math.imul(c.r,19349663)^903021)>>>0;
     const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
     for(let i=0;i<250;i++) {
+      if(i%32===0)yield;
       const x=c.x+(random()-.5)*100,z=c.z+(random()-.5)*115.47,size=random(),choice=random();
       if(hexOwnerAt(x,z)!==region||!ibenwoodFeatureClear(x,z,1.1)||!waterClear(x,z,4))continue;
       // Dense regeneration patches and open old stands, with no regular trunk grid.

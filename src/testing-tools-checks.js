@@ -68,6 +68,10 @@ export async function runTestingToolsChecks(h) {
       check(kind==='drent'?q.ambushDefeated&&!q.accepted&&!q.outcome:['unmet','peaceful'].includes(q.soldier)&&!q.introduced&&!q.republicContact,`${kind} begins with fresh quest state`);
       check(h.resume()&&h.autoplay.id===`civil-${kind}`,`${kind} resumes its own quest before acceptance`);h.stop();unchanged(`${kind} silver playtest`);
     }
+    await open();control('test-dwarf-autoplay').click();
+    check(h.autoplay.active&&h.autoplay.id==='dwarf'&&h.state().testingEnabled,'Dwarfland starts its dedicated city-entry and smithing autoplay');
+    h.stop();await h.frames(2);
+    check(h.resume()&&h.autoplay.id==='dwarf','Dwarfland resumes before accepting the introductory task');h.stop();unchanged('Dwarfland introduction');
     for (const [kind, npc] of [['ben', BEN], ['liz', LIZ], ['troy', TROY], ['cagney', CAGNEY], ['jesse', JESSE], ['catie', KATY], ['race', KAYLA], ['cub', CUB]]) {
       await open();
       control(`test-${kind==='race'?'kayla':kind}-autoplay`).click();

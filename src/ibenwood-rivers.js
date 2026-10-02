@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 /** The two Ibenwood watercourses, derived only from the authored atlas edges.
  * Heights, widths and beds are the game's interpretation; the map supplies no
  * river names or elevations. North and East Ibenwood have no mapped river.
@@ -167,8 +168,10 @@ export function createIbenwoodRiverSystem({ groundHeight }) {
 /** Rendering uses exactly the triangles queried by rivers.waterAt. Water has no
  * solid colliders; normal heightAt/waterAt movement supplies swimming behavior.
  */
-export function createIbenwoodRiverScenery({ THREE, parent, rivers, terrainRoot, heightAt }) {
-  const terrain = terrainRoot ? refineIbenwoodRiverGround({ THREE, terrainRoot, rivers, heightAt }) : null;
+export function createIbenwoodRiverScenery(...args) { return finishBuild(createIbenwoodRiverScenerySteps(...args)); }
+export function* createIbenwoodRiverScenerySteps({ THREE, parent, rivers, terrainRoot, heightAt }) {
+  let buildWork = 0;
+  const terrain = terrainRoot ? (yield* refineIbenwoodRiverGroundSteps({ THREE, terrainRoot, rivers, heightAt })) : null;
   const material = new THREE.MeshStandardMaterial({ color: '#527e78', roughness: .3, metalness: .06 });
   const meshes = rivers.ribbons.map((ribbon, i) => {
     const geometry = new THREE.BufferGeometry();
@@ -187,50 +190,53 @@ export function createIbenwoodRiverScenery({ THREE, parent, rivers, terrainRoot,
  * buffers, and their outer 6m retain the original face planes for a closed seam.
  * A common subdivision count keeps shared edges conforming across tile borders.
  */
-export function refineIbenwoodRiverGround({ THREE, terrainRoot, rivers, heightAt }) {
+export function refineIbenwoodRiverGround(...args) { return finishBuild(refineIbenwoodRiverGroundSteps(...args)); }
+export function* refineIbenwoodRiverGroundSteps({ THREE, terrainRoot, rivers, heightAt }) {
+  let buildWork = 0;
   if (typeof heightAt !== 'function') throw new TypeError('River terrain refinement requires final heightAt.');
   const tiles = [], corridors = rivers.courses.map(course => course.bounds);
   let longest = 0, removedTriangles = 0;
-  terrainRoot.traverse(mesh => {
-    if (!mesh.isMesh || mesh.userData.ibenwoodRiverGround || mesh.userData.ibenwoodRiverRefined) return;
+  const sourceMeshes = []; terrainRoot.traverse(mesh => sourceMeshes.push(mesh));
+  for (const mesh of sourceMeshes) { if ((++buildWork & 31) === 0) yield;
+    if (!mesh.isMesh || mesh.userData.ibenwoodRiverGround || mesh.userData.ibenwoodRiverRefined) continue;
     const geometry = mesh.geometry, position = geometry.attributes.position, index = geometry.index;
-    if (!index || !position) return;
+    if (!index || !position) continue;
     const box = geometry.boundingBox;
     if (box && !corridors.some(b => box.max.x >= b.minX - REACH && box.min.x <= b.maxX + REACH
-      && box.max.z >= b.minZ - REACH && box.min.z <= b.maxZ + REACH)) return;
+      && box.max.z >= b.minZ - REACH && box.min.z <= b.maxZ + REACH)) continue;
     const keep = [], faces = [];
-    for (let i = 0; i < index.count; i += 3) {
+    for (let i = 0; i < index.count; i += 3) { if ((++buildWork & 31) === 0) yield;
       const ids = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
       const p = ids.map(id => ({ x: position.getX(id), y: position.getY(id), z: position.getZ(id) }));
       const x = (p[0].x + p[1].x + p[2].x) / 3, z = (p[0].z + p[1].z + p[2].z) / 3;
       const radius = Math.max(...p.map(v => Math.hypot(v.x - x, v.z - z)));
       if (!rivers.nearest(x, z, REACH + radius)) { keep.push(...ids); continue; }
       faces.push({ ids, p });
-      for (let j = 0; j < 3; j++) longest = Math.max(longest, Math.hypot(p[j].x - p[(j + 1) % 3].x, p[j].z - p[(j + 1) % 3].z));
+      for (let j = 0; j < 3; j++) { if ((++buildWork & 31) === 0) yield; longest = Math.max(longest, Math.hypot(p[j].x - p[(j + 1) % 3].x, p[j].z - p[(j + 1) % 3].z)); }
     }
     if (faces.length) tiles.push({ mesh, geometry, keep, faces });
-  });
+  }
   const divisions = Math.max(1, Math.ceil(longest / 2)), patches = [];
-  for (const { mesh, geometry, keep, faces } of tiles) {
+  for (const { mesh, geometry, keep, faces } of tiles) { if ((++buildWork & 31) === 0) yield;
     const position = [], color = [], indices = [], sourceColor = geometry.attributes.color;
-    for (const { ids, p: [a, b, c] } of faces) {
+    for (const { ids, p: [a, b, c] } of faces) { if ((++buildWork & 31) === 0) yield;
       const rows = [];
-      for (let i = 0; i <= divisions; i++) {
+      for (let i = 0; i <= divisions; i++) { if ((++buildWork & 31) === 0) yield;
         rows.push(position.length / 3);
-        for (let j = 0; j <= divisions - i; j++) {
+        for (let j = 0; j <= divisions - i; j++) { if ((++buildWork & 31) === 0) yield;
           const u = i / divisions, v = j / divisions, w = 1 - u - v;
           const x = a.x * w + b.x * u + c.x * v, z = a.z * w + b.z * u + c.z * v;
           const plane = a.y * w + b.y * u + c.y * v, near = rivers.nearest(x, z);
           const strength = near ? 1 - smooth(REACH - 6, REACH, near.distance) : 0;
           position.push(x, strength ? lerp(plane, heightAt(x, z), strength) : plane, z);
-          if (sourceColor) for (let k = 0; k < 3; k++) color.push(sourceColor.array[ids[0] * 3 + k] * w
-            + sourceColor.array[ids[1] * 3 + k] * u + sourceColor.array[ids[2] * 3 + k] * v);
+          if (sourceColor) for (let k = 0; k < 3; k++) { if ((++buildWork & 31) === 0) yield; color.push(sourceColor.array[ids[0] * 3 + k] * w
+            + sourceColor.array[ids[1] * 3 + k] * u + sourceColor.array[ids[2] * 3 + k] * v); }
         }
       }
-      for (let i = 0; i < divisions; i++) for (let j = 0; j < divisions - i; j++) {
+      for (let i = 0; i < divisions; i++) { if ((++buildWork & 31) === 0) yield; for (let j = 0; j < divisions - i; j++) { if ((++buildWork & 31) === 0) yield;
         indices.push(rows[i] + j, rows[i + 1] + j, rows[i] + j + 1);
         if (j < divisions - i - 1) indices.push(rows[i + 1] + j, rows[i + 1] + j + 1, rows[i] + j + 1);
-      }
+      } }
     }
     const fine = new THREE.BufferGeometry();
     fine.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));

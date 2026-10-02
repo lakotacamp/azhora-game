@@ -13,3 +13,10 @@ contextBridge.exposeInMainWorld('azhoraRoadStorage', Object.freeze({
   setItem(key, value) { request('set', key, value); },
   removeItem(key) { request('remove', key); },
 }));
+
+// Derived terrain only; no renderer-controlled paths and no access to game saves.
+let terrainVersion=null;
+contextBridge.exposeInMainWorld('azhoraTerrainCache',Object.freeze({
+  async read(){const result=await ipcRenderer.invoke('azhora:terrain-cache','read');terrainVersion=result?.version??null;return result?.entry??null;},
+  write(value){return ipcRenderer.invoke('azhora:terrain-cache','write',{version:terrainVersion,entry:value});},
+}));

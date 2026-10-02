@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, landDistance, REGION_CELLS } from './region-world.js';
@@ -28,7 +30,10 @@ const smooth = (a, b, x) => { const v = Math.min(1, Math.max(0, (x - a) / (b - a
  * the water". Imlamdris is old and quiet, "its streets wider than Solis's, its building less
  * frantic", and it faces the water: every door and window in it is on the lake side.
  */
-export function createSouthSuvalScenery(kit) {
+export function createSouthSuvalScenery(...args) { return finishBuild(createSouthSuvalScenerySteps(...args)); }
+
+export function* createSouthSuvalScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, mesh, box, post, pebble, groundHeight, colliders, dummy, color, cylinder, round, roofGeometry, wornPatch } = kit;
   const group = new THREE.Group(); group.name = 'South Suval scenery'; root.add(group);
   let seed = 7720341;
@@ -58,7 +63,7 @@ export function createSouthSuvalScenery(kit) {
   const waterMaterial = new THREE.MeshStandardMaterial({ color: 0x5b817d, roughness: .16, metalness: .08, transparent: true, opacity: .9 });
   {
     const positions = [STILLWATER.centre.x, STILLWATER_SURFACE + .02, STILLWATER.centre.z], indices = [];
-    STILLWATER_SHORE.forEach((p, i) => {
+    yield* forEachBuild(STILLWATER_SHORE, function* (p, i) {
       // A metre past the shore, under the bank, so there is never a dry seam at the water's edge.
       const dx = p.x - STILLWATER.centre.x, dz = p.z - STILLWATER.centre.z, n = Math.hypot(dx, dz);
       positions.push(p.x + dx / n * 1.1, STILLWATER_SURFACE + .02, p.z + dz / n * 1.1);
@@ -78,11 +83,11 @@ export function createSouthSuvalScenery(kit) {
    */
   {
     const c = STILLWATER.centre, reach = 60;
-    for (let x = c.x - reach; x <= c.x + reach; x += 5) for (let z = c.z - reach; z <= c.z + reach; z += 5) {
+    for (let x = c.x - reach; x <= c.x + reach; x += 5) { if (++buildWork % 32 === 0) yield; for (let z = c.z - reach; z <= c.z + reach; z += 5) { if (++buildWork % 32 === 0) yield;
       if (stillwaterDistance(x, z) > -.5) continue;
       push({ x, z, r: 3.8, kind: 'pond-water', surface: STILLWATER_SURFACE }); metrics.waterColliders++;
-    }
-    for (let i = 0; i < STILLWATER_SHORE.length; i++) {
+    } }
+    for (let i = 0; i < STILLWATER_SHORE.length; i++) { if (++buildWork % 32 === 0) yield;
       const p = STILLWATER_SHORE[i], dx = p.x - c.x, dz = p.z - c.z, n = Math.hypot(dx, dz);
       push({ x: p.x - dx / n * 1.5, z: p.z - dz / n * 1.5, r: 3, kind: 'pond-water', surface: STILLWATER_SURFACE }); metrics.waterColliders++;
     }
@@ -143,7 +148,7 @@ export function createSouthSuvalScenery(kit) {
     const PAVED = new Set(['lake-walk', 'temple-terrace', 'star-terrace']);
     let jitter = 51277;
     const shade = () => { jitter = (Math.imul(jitter, 1664525) + 1013904223) >>> 0; return .955 + jitter / 4294967296 * .09; };
-    for (let j = 0; j < rows; j++) for (let i = 0; i < columns; i++) {
+    for (let j = 0; j < rows; j++) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < columns; i++) { if (++buildWork % 32 === 0) yield;
       const a = lines.a[i], b = lines.b[j], p = cityPoint(a, b), index = j * columns + i;
       positions.set([p.x, gy(p.x, p.z), p.z], index * 3);
       groundTint(color, p.x, p.z, THREE);
@@ -154,13 +159,13 @@ export function createSouthSuvalScenery(kit) {
       }
       color.multiplyScalar(shade());
       colours.set([color.r, color.g, color.b], index * 3);
-    }
+    } }
     // Wound for the city frame, whose `a` runs across and `b` up: the other way round from the world's x and z.
     const indices = [];
-    for (let j = 0; j < rows - 1; j++) for (let i = 0; i < columns - 1; i++) {
+    for (let j = 0; j < rows - 1; j++) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < columns - 1; i++) { if (++buildWork % 32 === 0) yield;
       const k = j * columns + i;
       indices.push(k, k + 1, k + columns, k + 1, k + columns + 1, k + columns);
-    }
+    } }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
@@ -198,13 +203,13 @@ export function createSouthSuvalScenery(kit) {
       metrics.walls++;
     }
   }
-  for (let i = 1; i < TERRACES.length; i++) retainingWall(TERRACES[i].from, TERRACES[i - 1].level, TERRACES[i].level);
+  for (let i = 1; i < TERRACES.length; i++) { if (++buildWork % 32 === 0) yield; retainingWall(TERRACES[i].from, TERRACES[i - 1].level, TERRACES[i].level); }
 
   /** The stairs: a step every thirty centimetres of rise, laid on the ramp the ground already is. */
-  for (const stair of STAIRS) for (const wall of stair.walls) {
+  for (const stair of STAIRS) { if (++buildWork % 32 === 0) yield; for (const wall of stair.walls) { if (++buildWork % 32 === 0) yield;
     const low = cityLevel(stair.a, wall - stair.run - .01), high = cityLevel(stair.a, wall + stair.run + .01);
     const steps = Math.max(2, Math.round((high - low) / .3));
-    for (let s = 0; s < steps; s++) {
+    for (let s = 0; s < steps; s++) { if (++buildWork % 32 === 0) yield;
       const b = wall + stair.run - (s + .5) * (stair.run * 2 / steps), y = cityLevel(stair.a, b);
       const g = cityGroup(stair.a, b, y, `Imlamdris ${stair.id}`);
       box(s % 2 ? ashlarPale : ashlar, 0, -.08, 0, stair.half * 2, .2, stair.run * 2 / steps + .04, g);
@@ -212,24 +217,24 @@ export function createSouthSuvalScenery(kit) {
     // Cheek walls up both sides of each flight above the lowest terrace, so a stair reads as cut
     // through its wall rather than laid against it.
     if (wall === 8 && stair.id === 'temple-steps') continue;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const cheekA = stair.a + side * (stair.half + .3);
       const g = cityGroup(cheekA, wall, low, `Imlamdris ${stair.id} cheek`);
       box(coping, 0, (high - low) / 2 + .4, 0, .5, high - low + .8, stair.run * 2, g).rotation.x = Math.atan2(high - low, stair.run * 2);
       // Solid up its length, so a flight is walked up its middle and not through its side.
-      for (let b = wall - stair.run + .6; b <= wall + stair.run; b += 1.2) { const p = cityPoint(cheekA, b); push({ x: p.x, z: p.z, r: .3, kind: 'imlamdris-wall' }); }
+      for (let b = wall - stair.run + .6; b <= wall + stair.run; b += 1.2) { if (++buildWork % 32 === 0) yield; const p = cityPoint(cheekA, b); push({ x: p.x, z: p.z, r: .3, kind: 'imlamdris-wall' }); }
     }
-  }
+  } }
 
   // The Lake Walk: its paving, a low parapet along the water, and three flights down into it.
   {
     const half = halfWidth(3);
-    for (let a = -half + 2; a <= half - 2; a += 7) {
+    for (let a = -half + 2; a <= half - 2; a += 7) { if (++buildWork % 32 === 0) yield;
       const p = cityPoint(a, 1.5); wornPatch(p.x, p.z, 4.6, '#cdc3a6', .7, group);
     }
     const open = a => WATER_STEPS.some(step => Math.abs(a - step.a) < step.half + .2);
     const edge = a => { let b = -8; while (b < 6 && stillwaterDistance(cityPoint(a, b).x, cityPoint(a, b).z) < .55) b += .1; return b; };
-    for (let a = -half; a < half; a += 1.2) {
+    for (let a = -half; a < half; a += 1.2) { if (++buildWork % 32 === 0) yield;
       if (open(a) || open(a + 1.2)) continue;
       const b = edge(a + .6), p = cityPoint(a + .6, b), y = gy(p.x, p.z);
       const g = cityGroup(a + .6, b, y, 'Lake Walk parapet');
@@ -242,16 +247,16 @@ export function createSouthSuvalScenery(kit) {
       push({ x: p.x, z: p.z, r: .55, kind: 'lake-parapet' });
     }
     // The steps go down past the shore and under the water, which is the only thing a lake stair is for.
-    for (const step of WATER_STEPS) {
+    for (const step of WATER_STEPS) { if (++buildWork % 32 === 0) yield;
       const top = edge(step.a);
-      for (let s = 0; s < 6; s++) {
+      for (let s = 0; s < 6; s++) { if (++buildWork % 32 === 0) yield;
         const b = top - .2 - s * .55, y = STILLWATER_SURFACE + 1.05 - s * .3;
         const g = cityGroup(step.a, b, y, 'Lake Walk water steps');
         // Walked down and swum over, never walked into: they stand a metre off the lake bed, which
         // is where world.js looks for things a person would strike.
         box(s < 3 ? ashlar : ashlarWarm, 0, -.1, 0, step.half * 2, .22, .6, g).userData.passable = true;
       }
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
         const p = cityPoint(step.a + side * (step.half + .35), top - .8), g = cityGroup(step.a + side * (step.half + .35), top - .8, STILLWATER_SURFACE, 'Lake Walk water steps cheek');
         box(coping, 0, .55, 0, .45, 1.9, 2.4, g);
         push({ x: p.x, z: p.z, r: .5, kind: 'lake-parapet' });
@@ -260,9 +265,9 @@ export function createSouthSuvalScenery(kit) {
   }
 
   // The streets, worn paler down their middles: the Wide Street and the Upper City's.
-  for (const [b, level, width] of [[37.5, 24.2, 9], [56.5, 29.2, 7]]) {
+  for (const [b, level, width] of [[37.5, 24.2, 9], [56.5, 29.2, 7]]) { if (++buildWork % 32 === 0) yield;
     const half = halfWidth(b);
-    for (let a = -half + 3; a <= half - 3; a += 6) { const p = cityPoint(a, b); wornPatch(p.x, p.z, width * .55, '#cbc1a4', .62, group); }
+    for (let a = -half + 3; a <= half - 3; a += 6) { if (++buildWork % 32 === 0) yield; const p = cityPoint(a, b); wornPatch(p.x, p.z, width * .55, '#cbc1a4', .62, group); }
   }
 
   /** The Blood Prince's sack left foundations, ragged ashlar and charred roof beams.
@@ -300,18 +305,18 @@ export function createSouthSuvalScenery(kit) {
     const T = STILLWATER_TEMPLE, y = cityLevel(T.a, T.b), g = cityGroup(T.a, T.b, y, 'Stillwater Temple ruins');
     const W = T.width, D = T.depth, front = D / 2;
     box(templeStone, 0, .03, 0, W + 1.2, .12, D + 1.2, g).userData.passable = true;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       box(ash, side * (W / 2 - .45), 1.3, -.3, .9, 2.6, D - .6, g);
-      for (let s = -front + .4; s <= front - 1.2; s += 1.4) {
+      for (let s = -front + .4; s <= front - 1.2; s += 1.4) { if (++buildWork % 32 === 0) yield;
         const p = cityPoint(T.a + side * (W / 2 - .45), T.b - s); push({ x: p.x, z: p.z, r: .6, kind: 'temple-wall' });
       }
     }
     // Broken back wall leaves the old doorway and a wider blast breach open.
-    for (const [x, width, height] of [[-8, 5, 2.8], [6, 5, 1.5]]) {
+    for (const [x, width, height] of [[-8, 5, 2.8], [6, 5, 1.5]]) { if (++buildWork % 32 === 0) yield;
       box(ashlarWarm, x, height / 2, -front + .45, width, height, .9, g);
       cityLine(x - width / 2, x + width / 2, T.b + front - .45, .6, 'temple-wall');
     }
-    for (let i = 0; i < T.columns; i++) {
+    for (let i = 0; i < T.columns; i++) { if (++buildWork % 32 === 0) yield;
       const cx = -W / 2 + .9 + i * (W - 1.8) / (T.columns - 1), height = .8 + (i % 3) * 1.3;
       post(column, cx, height / 2, front - .6, .42, height, g);
       box(templeStone, cx, .18, front - .6, 1.1, .36, 1.1, g);
@@ -321,7 +326,7 @@ export function createSouthSuvalScenery(kit) {
         fallen.userData.passable = true;
       }
     }
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 6; i++) { if (++buildWork % 32 === 0) yield;
       const beam = box(burned, -7 + i * 2.7, .28, -2 + i % 3, .3, .45, 6, g); beam.rotation.y = i * .57;
       beam.userData.passable = true;
     }
@@ -339,27 +344,27 @@ export function createSouthSuvalScenery(kit) {
     box(coping, 0, .2, 0, 2.6, .4, 2.6, base); box(ashlar, 0, .55, 0, 1.7, .3, 1.7, base);
     mesh(new THREE.CylinderGeometry(.11, .36, 1, 4), gnomonStone, 0, .7 + G.height / 2, 0, 1, G.height, 1, base).rotation.y = Math.PI / 4;
     push({ x: G.x, z: G.z, r: 1.3, kind: 'star-gnomon' });
-    for (const stone of STAR_TERRACE.stones) {
+    for (const stone of STAR_TERRACE.stones) { if (++buildWork % 32 === 0) yield;
       const g = cityGroup(stone.a, stone.b, level, 'Star Terrace sighting stone');
       g.rotation.y = FACING_LAKE + Math.atan2(G.a - stone.a, -(G.b - stone.b));
       box(gnomonStone, 0, stone.height / 2, 0, .55, stone.height, .28, g);
       push({ x: stone.x, z: stone.z, r: .4, kind: 'sighting-stone' }); metrics.stones++;
     }
     const table = cityGroup(STAR_TERRACE.table.a, STAR_TERRACE.table.b, level, 'Star Terrace table');
-    for (const side of [-1, 1]) box(coping, side * .9, .38, 0, .35, .76, .7, table);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(coping, side * .9, .38, 0, .35, .76, .7, table); }
     box(ashlarPale, 0, .82, 0, 2.6, .14, 1.1, table);
     push({ x: STAR_TERRACE.table.x, z: STAR_TERRACE.table.z, r: 1.2, kind: 'star-table' });
     // The back wall and the gate.
     const back = TERRACES[TERRACES.length - 1].to, half = halfWidth(back - 1.5);
     const gate = LANDWARD_GATE.a, opening = PASS_ROAD_HALF + .4;
-    for (const [a0, a1] of [[-half, gate - opening], [gate + opening, half]]) {
+    for (const [a0, a1] of [[-half, gate - opening], [gate + opening, half]]) { if (++buildWork % 32 === 0) yield;
       if (a1 - a0 < .6) continue;
       const g = cityGroup((a0 + a1) / 2, back, level, 'Imlamdris back wall');
       box(ashlar, 0, 1.2, 0, a1 - a0, 2.4, .8, g); box(coping, 0, 2.45, 0, a1 - a0 + .1, .14, .95, g);
       cityLine(a0, a1, back, .65, 'imlamdris-wall');
     }
     const arch = cityGroup(gate, back, level, 'The Landward Gate');
-    for (const side of [-1, 1]) box(ashlarWarm, side * (opening + .45), 2.1, 0, .9, 4.2, 1.2, arch);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(ashlarWarm, side * (opening + .45), 2.1, 0, .9, 4.2, 1.2, arch); }
     box(ashlar, 0, 4.45, 0, opening * 2 + 1.9, .7, 1.3, arch);
     box(coping, 0, 4.88, 0, opening * 2 + 2.1, .16, 1.45, arch);
     metrics.buildings++;
@@ -405,24 +410,24 @@ export function createSouthSuvalScenery(kit) {
   const cells = [...REGION_CELLS['South Suval']].filter(cell => cell.terrain !== 'lake').sort((p, q) => p.r - q.r || p.q - q.q);
   const ours = (x, z) => hexOwnerAt(x, z) === 'South Suval';
   const clear = (x, z, margin) => southSuvalClear(x, z, margin) || suvalHighlandClear(x, z, margin) || suvalFalsePassClear(x, z, margin) || Math.hypot(x - IMLAMDRIS_REBUILD.centre.x, z - IMLAMDRIS_REBUILD.centre.z) < 31 + margin;
-  for (let index = 0; index < cells.length; index += 2) {
+  for (let index = 0; index < cells.length; index += 2) { if (++buildWork % 32 === 0) yield;
     const block = cells.slice(index, index + 2);
     const rocks = [], scrub = [], tufts = [], trees = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       const climate = SOUTH_SUVAL_CLIMATE[`${cell.q},${cell.r}`] ?? 'Csa', habit = HABIT[climate];
       const sample = () => ({ x: cell.x + range(-52, 52), z: cell.z + range(-58, 58) });
-      for (let i = 0; i < per(habit.rocks); i++) {
+      for (let i = 0; i < per(habit.rocks); i++) { if (++buildWork % 32 === 0) yield;
         const { x, z } = sample();
         if (!ours(x, z) || landDistance(x, z) < .5 || clear(x, z, 1.5)) continue;
         const high = gy(x, z) > 34;
         rocks.push({ x, z, s: range(.4, high || climate === 'Csc' ? 2.7 : 1.4), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < per(habit.scrub); i++) {
+      for (let i = 0; i < per(habit.scrub); i++) { if (++buildWork % 32 === 0) yield;
         const { x, z } = sample();
         if (!ours(x, z) || landDistance(x, z) < 1 || clear(x, z, 1.2)) continue;
         scrub.push({ x, z, s: range(.5, 1.5), rot: range(0, 6.28), flower: random() < (climate === 'Csa' ? .4 : .18) });
       }
-      for (let i = 0; i < per(habit.tufts); i++) {
+      for (let i = 0; i < per(habit.tufts); i++) { if (++buildWork % 32 === 0) yield;
         const { x, z } = sample();
         if (!ours(x, z) || landDistance(x, z) < 1 || clear(x, z, .6)) continue;
         // Green where the mist lies: the Cfb hexes and anything within forty metres of the lake.
@@ -430,7 +435,7 @@ export function createSouthSuvalScenery(kit) {
         tufts.push({ x, z, s: range(.6, 1.5), rot: range(0, 6.28), green });
       }
       const wanted = per(habit.trees);
-      for (let i = 0, planted = 0; i < wanted * 6 && planted < wanted; i++) {
+      for (let i = 0, planted = 0; i < wanted * 6 && planted < wanted; i++) { if (++buildWork % 32 === 0) yield;
         const { x, z } = sample();
         if (!ours(x, z) || landDistance(x, z) < 14 || clear(x, z, 4)) continue;
         // Olive and fig "in the warmer microclimates": low, sheltered ground and not the ridge.
@@ -442,7 +447,7 @@ export function createSouthSuvalScenery(kit) {
     }
     if (rocks.length) {
       const batch = new THREE.InstancedMesh(round, rockMaterial, rocks.length);
-      rocks.forEach((rock, i) => {
+      yield* forEachBuild(rocks, function* (rock, i) {
         dummy.position.set(rock.x, gy(rock.x, rock.z) + rock.s * .2, rock.z);
         dummy.rotation.set(range(-.22, .22), rock.rot, range(-.22, .22));
         dummy.scale.set(rock.s, rock.s * range(.4, .8), rock.s * range(.7, 1.4)); dummy.updateMatrix();
@@ -455,7 +460,7 @@ export function createSouthSuvalScenery(kit) {
     }
     if (scrub.length) {
       const batch = new THREE.InstancedMesh(round, cushionMaterial, scrub.length);
-      scrub.forEach((bush, i) => {
+      yield* forEachBuild(scrub, function* (bush, i) {
         dummy.position.set(bush.x, gy(bush.x, bush.z) + bush.s * .13, bush.z);
         dummy.rotation.set(range(-.15, .15), bush.rot, range(-.15, .15));
         dummy.scale.set(bush.s * .62, bush.s * .32, bush.s * .58); dummy.updateMatrix();
@@ -469,7 +474,7 @@ export function createSouthSuvalScenery(kit) {
     }
     if (tufts.length) {
       const batch = new THREE.InstancedMesh(grassGeometry, grassMaterial, tufts.length);
-      tufts.forEach((tuft, i) => {
+      yield* forEachBuild(tufts, function* (tuft, i) {
         dummy.position.set(tuft.x, gy(tuft.x, tuft.z) + .02, tuft.z);
         dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
         batch.setMatrixAt(i, dummy.matrix);
@@ -483,7 +488,7 @@ export function createSouthSuvalScenery(kit) {
       const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
       const crowns = new THREE.InstancedMesh(round, crownMaterial, trees.length * 3);
       let crown = 0;
-      trees.forEach((tree, i) => {
+      yield* forEachBuild(trees, function* (tree, i) {
         const y = gy(tree.x, tree.z), height = tree.h * tree.s;
         dummy.position.set(tree.x, y + height * .3, tree.z);
         dummy.rotation.set(.08, tree.rot, .06);
@@ -492,7 +497,7 @@ export function createSouthSuvalScenery(kit) {
         // An olive is a loose grey-silver crown in lumps; a fig is one broad dark dome.
         const firstCrown = crown;
         const lumps = tree.fig ? 1 : 3;
-        for (let c = 0; c < lumps; c++) {
+        for (let c = 0; c < lumps; c++) { if (++buildWork % 32 === 0) yield;
           const off = tree.fig ? 0 : (c - 1) * .7;
           dummy.position.set(tree.x + off * tree.s, y + height * (tree.fig ? .78 : .74 + (c % 2) * .1), tree.z - off * .5 * tree.s);
           dummy.rotation.set(.1, tree.rot + c, .08);
@@ -506,7 +511,7 @@ export function createSouthSuvalScenery(kit) {
           [{ mesh: trunks, index: i }, ...Array.from({ length: crown - firstCrown }, (_, c) => ({ mesh: crowns, index: firstCrown + c }))], collider);
       });
       crowns.count = crown;
-      for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
+      for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
       metrics.trees += trees.length;
     }
   }
@@ -518,7 +523,7 @@ export function createSouthSuvalScenery(kit) {
    */
   {
     const reeds = [];
-    for (let i = 0; i < 900 && reeds.length < 420; i++) {
+    for (let i = 0; i < 900 && reeds.length < 420; i++) { if (++buildWork % 32 === 0) yield;
       const t = random() * Math.PI * 2, c = STILLWATER.centre;
       const x = c.x + Math.cos(t) * range(30, 60), z = c.z + Math.sin(t) * range(30, 60);
       const d = stillwaterDistance(x, z);
@@ -530,14 +535,14 @@ export function createSouthSuvalScenery(kit) {
     if (reeds.length) {
       const batch = new THREE.InstancedMesh(reedGeometry, reedMaterial, reeds.length * 3);
       let k = 0;
-      for (const reed of reeds) for (let s = 0; s < 3; s++) {
+      for (const reed of reeds) { if (++buildWork % 32 === 0) yield; for (let s = 0; s < 3; s++) { if (++buildWork % 32 === 0) yield;
         const x = reed.x + range(-.35, .35), z = reed.z + range(-.35, .35);
         const y = Math.max(gy(x, z), STILLWATER_SURFACE - .6);
         dummy.position.set(x, y + reed.h / 2, z); dummy.rotation.set(reed.lean, reed.rot, reed.lean * .6);
         dummy.scale.set(1, reed.h * range(.8, 1.1), 1); dummy.updateMatrix();
         batch.setMatrixAt(k, dummy.matrix);
         batch.setColorAt(k++, color.setHSL(range(.16, .22), range(.3, .44), range(.36, .5)));
-      }
+      } }
       batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
       metrics.reeds += reeds.length; metrics.batches++;
     }
@@ -553,9 +558,9 @@ export function createSouthSuvalScenery(kit) {
     const hill = REGION_CELLS['South Suval'].find(cell => cell.q === 7 && cell.r === 120);
     const vines = [], stakes = [];
     const rowYaw = FACING_LAKE + Math.PI / 2, rx = Math.sin(rowYaw), rz = Math.cos(rowYaw);
-    for (let row = -5; row <= 5; row++) {
+    for (let row = -5; row <= 5; row++) { if (++buildWork % 32 === 0) yield;
       const ox = hill.x + CITY_UP.x * row * 3.6 + 8, oz = hill.z + CITY_UP.z * row * 3.6 - 6;
-      for (let s = -20; s <= 20; s += 1.6) {
+      for (let s = -20; s <= 20; s += 1.6) { if (++buildWork % 32 === 0) yield;
         const x = ox + rx * s, z = oz + rz * s;
         if (!ours(x, z) || clear(x, z, 1) || landDistance(x, z) < 8 || gy(x, z) < STILLWATER_SURFACE + 1.5) continue;
         vines.push({ x, z, s: range(.8, 1.1) });
@@ -564,7 +569,7 @@ export function createSouthSuvalScenery(kit) {
     }
     if (vines.length) {
       const batch = new THREE.InstancedMesh(round, cushionMaterial, vines.length);
-      vines.forEach((vine, i) => {
+      yield* forEachBuild(vines, function* (vine, i) {
         dummy.position.set(vine.x, gy(vine.x, vine.z) + .55 * vine.s, vine.z);
         dummy.rotation.set(0, rowYaw, 0); dummy.scale.set(.75 * vine.s, .5 * vine.s, .42 * vine.s); dummy.updateMatrix();
         batch.setMatrixAt(i, dummy.matrix);
@@ -572,7 +577,7 @@ export function createSouthSuvalScenery(kit) {
       });
       batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
       metrics.vines += vines.length; metrics.batches++;
-      for (const stake of stakes) post(material('#6e5a44'), stake.x, gy(stake.x, stake.z) + .6, stake.z, .04, 1.2, group);
+      for (const stake of stakes) { if (++buildWork % 32 === 0) yield; post(material('#6e5a44'), stake.x, gy(stake.x, stake.z) + .6, stake.z, .04, 1.2, group); }
     }
   }
 
@@ -583,7 +588,7 @@ export function createSouthSuvalScenery(kit) {
    */
   {
     const boulders = [];
-    for (let i = 0; i < 9000 && boulders.length < 520; i++) {
+    for (let i = 0; i < 9000 && boulders.length < 520; i++) { if (++buildWork % 32 === 0) yield;
       const x = range(-330, 230), z = range(900, 1420);
       if (!onCliffFoot(x, z)) continue;
       const d = landDistance(x, z);
@@ -592,7 +597,7 @@ export function createSouthSuvalScenery(kit) {
     }
     if (boulders.length) {
       const batch = new THREE.InstancedMesh(round, rockMaterial, boulders.length);
-      boulders.forEach((rock, i) => {
+      yield* forEachBuild(boulders, function* (rock, i) {
         dummy.position.set(rock.x, gy(rock.x, rock.z) - rock.s * .25, rock.z);
         dummy.rotation.set(range(-.4, .4), rock.rot, range(-.4, .4));
         dummy.scale.set(rock.s, rock.s * range(.7, 1.3), rock.s * range(.8, 1.3)); dummy.updateMatrix();

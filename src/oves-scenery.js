@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, relief } from './region-world.js';
@@ -44,7 +46,10 @@ import {
  * one seeded stream of its own drawn after Gala's, so nothing already built anywhere else moves by a
  * centimetre for it.
  */
-export function createOvesScenery(kit) {
+export function createOvesScenery(...args) { return finishBuild(createOvesScenerySteps(...args)); }
+
+export function* createOvesScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, groundHeight, colliders, dummy, color, round } = kit;
   const group = new THREE.Group(); group.name = 'Oves scenery'; root.add(group);
   let seed = 5170933;
@@ -72,7 +77,7 @@ export function createOvesScenery(kit) {
     fragmentShader: 'uniform float time; varying vec3 p; void main(){float w=sin(p.x*.40-time*1.35+p.z*1.08)*sin(p.x*.17+p.z*1.22);vec3 c=vec3(.28,.35,.30)+vec3(.15,.15,.12)*pow(max(w,0.),8.);gl_FragColor=vec4(c,1.);}',
   });
   /** A ribbon over a line of samples, broken wherever the ground rises through it. */
-  function ribbon(samples, name) {
+  function* ribbon(samples, name) {
     let run = [];
     const flush = () => {
       if (run.length < 2) { run = []; return; }
@@ -89,14 +94,14 @@ export function createOvesScenery(kit) {
       sheet.name = name; group.add(sheet); metrics.water++;
       run = [];
     };
-    for (const sample of samples) {
+    for (const sample of samples) { if (++buildWork % 32 === 0) yield;
       const y = westWaterSurface(sample.x, sample.z);
       if (y === null) { flush(); continue; }
       run.push({ ...sample, y });
     }
     flush();
   }
-  for (const course of OVES_RIVERS) ribbon(WEST_PROFILES.get(course.id), course.name);
+  for (const course of OVES_RIVERS) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(course.id), course.name)); }
 
   /**
    * **The Oveth through the Sorten is a wall**, as every deep western river is: laid along the water
@@ -110,10 +115,10 @@ export function createOvesScenery(kit) {
    * than at the mouth: the last twenty-five metres narrow over the rock Gala's own ford is on, so the
    * two builders' fords meet at the three-country corner instead of a wall meeting a ford there.
    */
-  for (const sample of WEST_PROFILES.get(OVETH_UPPER.id)) {
+  for (const sample of WEST_PROFILES.get(OVETH_UPPER.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.ford || sample.along > OVETH_WALL.to) continue;
     const step = Math.max(1, Math.round(sample.half / 3.2)), radius = sample.half / (step + .5) + 1.4;
-    for (let k = -step; k <= step; k++) {
+    for (let k = -step; k <= step; k++) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half * (k / (step + .5));
       colliders.push({ x: sample.x + sample.nx * offset, z: sample.z + sample.nz * offset, r: radius, kind: 'west-deep-water' });
       metrics.blockers++;
@@ -124,10 +129,10 @@ export function createOvesScenery(kit) {
   // Stone: the channels' floors, the rock pavement, and the rises
   // -------------------------------------------------------------------------
   const stoneMaterial = material('#ffffff', { flatShading: true });
-  function stoneBatch(spots, name, tint, lift = .12) {
+  function* stoneBatch(spots, name, tint, lift = .12) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(round, stoneMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + spot.s * lift, spot.z);
       dummy.rotation.set(range(-.16, .16), spot.rot, range(-.16, .16));
       dummy.scale.set(spot.s, spot.s * (spot.flat ?? range(.25, .45)), spot.s * range(.7, 1.25)); dummy.updateMatrix();
@@ -143,18 +148,18 @@ export function createOvesScenery(kit) {
    * moved it has gone, and these have been dry for years.
    */
   const channelGravel = [], channelBoulders = [];
-  for (const ch of OVES_CHANNELS) {
-    for (let i = 1; i < ch.points.length; i++) {
+  for (const ch of OVES_CHANNELS) { if (++buildWork % 32 === 0) yield;
+    for (let i = 1; i < ch.points.length; i++) { if (++buildWork % 32 === 0) yield;
       const a = ch.points[i - 1], b = ch.points[i], length = Math.hypot(b.x - a.x, b.z - a.z);
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += 1.1) for (let k = 0; k < 3; k++) {
+      for (let d = 0; d < length; d += 1.1) { if (++buildWork % 32 === 0) yield; for (let k = 0; k < 3; k++) { if (++buildWork % 32 === 0) yield;
         const t = d / length, across = range(-ch.floor - .8, ch.floor + .8);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !onChannelFloor(x, z, .8)) continue;
         channelGravel.push({ x, z, s: range(.14, .48), rot: random() * 6.28 });
-      }
+      } }
       // Boulders: bigger than a step and a reason to look where you are going, in the bed and on the cuts.
-      for (let d = 0; d < length; d += 5) {
+      for (let d = 0; d < length; d += 5) { if (++buildWork % 32 === 0) yield;
         const t = d / length, side = random() < .5 ? -1 : 1, across = side * range(0, ch.bank * .92);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !channelPlace(ch, x, z)) continue;
@@ -162,8 +167,8 @@ export function createOvesScenery(kit) {
       }
     }
   }
-  stoneBatch(channelGravel, 'Oves channel gravel', () => color.set('#8b8474').offsetHSL(0, range(-.03, .03), range(-.06, .06)), .08);
-  stoneBatch(channelBoulders, 'Oves channel boulders', () => color.set('#7b7466').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .22);
+  (yield* stoneBatch(channelGravel, 'Oves channel gravel', () => color.set('#8b8474').offsetHSL(0, range(-.03, .03), range(-.06, .06)), .08));
+  (yield* stoneBatch(channelBoulders, 'Oves channel boulders', () => color.set('#7b7466').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .22));
   metrics.gravel += channelGravel.length; metrics.boulders += channelBoulders.length;
 
   /**
@@ -171,15 +176,15 @@ export function createOvesScenery(kit) {
    * steppe river runs over is the stuff it has brought down.
    */
   const fordGravel = [];
-  for (const sample of WEST_PROFILES.get(OVETH_UPPER.id)) {
-    for (let i = 0; i < 3; i++) {
+  for (const sample of WEST_PROFILES.get(OVETH_UPPER.id)) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = range(0, sample.half + 3);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z)) continue;
       fordGravel.push({ x, z, s: range(.15, .52), rot: random() * 6.28, flat: range(.3, .55) });
     }
   }
-  stoneBatch(fordGravel, 'Oveth bed gravel', () => color.set('#80796e').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .1);
+  (yield* stoneBatch(fordGravel, 'Oveth bed gravel', () => color.set('#80796e').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .1));
   metrics.gravel += fordGravel.length;
 
   // -------------------------------------------------------------------------
@@ -200,10 +205,10 @@ export function createOvesScenery(kit) {
     return geometry;
   })();
   const bladeMaterial = material('#ffffff', { side: THREE.DoubleSide });
-  function reedBatch(spots, name) {
+  function* reedBatch(spots, name) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(reedGeometry, bladeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0); dummy.scale.set(spot.s, spot.s * range(.85, 1.35), spot.s); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
@@ -213,15 +218,15 @@ export function createOvesScenery(kit) {
     metrics.reeds += spots.length;
   }
   const reeds = [];
-  for (const course of OVES_RIVERS) for (const sample of WEST_PROFILES.get(course.id)) {
-    for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+  for (const course of OVES_RIVERS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half + range(.2, 3.4);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z) || westWaterSurface(x, z) !== null) continue;
       reeds.push({ x, z, s: range(.7, 1.5), rot: random() * 6.28 });
-    }
-  }
-  reedBatch(reeds, 'Oves reed and sedge');
+    } }
+  } }
+  (yield* reedBatch(reeds, 'Oves reed and sedge'));
 
   // -------------------------------------------------------------------------
   // What grows
@@ -230,18 +235,18 @@ export function createOvesScenery(kit) {
   const crownGeometry = new THREE.IcosahedronGeometry(1, 0);
   const barkMaterial = material('#6d5b44'), leafMaterial = material('#ffffff', { flatShading: true });
   /** Trunks and three crown lobes each, as the west's trees are drawn; `kind` tags the collider. */
-  function treeBatch(trees, name, tint, kind) {
+  function* treeBatch(trees, name, tint, kind) {
     if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
     const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, trees.length * 3);
     let at = 0;
-    trees.forEach((tree, index) => {
+    yield* forEachBuild(trees, function* (tree, index) {
       const y = gy(tree.x, tree.z), height = tree.h * tree.s;
       dummy.position.set(tree.x, y + height * tree.bole * .5, tree.z); dummy.rotation.set(range(-.05, .05), tree.rot, range(-.05, .05));
       dummy.scale.set(tree.s * tree.girth, height * tree.bole, tree.s * tree.girth); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
       const parts = [{mesh:trunks,index}], collider = { x: tree.x, z: tree.z, r: .42 * tree.s * tree.girth, kind }; colliders.push(collider);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * tree.spread;
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? tree.top : tree.top - .16), tree.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
@@ -252,17 +257,17 @@ export function createOvesScenery(kit) {
       registerWorldTree(colliders,{id:worldTreeId(kind,tree.x,tree.z),x:tree.x,z:tree.z,y,height,species:name.includes('tamarisk')?'tamarisk':tree.poplar?'white-poplar':'black-willow'},parts,collider);
     });
     trunks.name = `${name} trunks`; crowns.name = `${name} crowns`;
-    for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
+    for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
     metrics.trees += trees.length;
   }
   /** A low bush of three lobes: wormwood, saltbush and the desert's perennial scrub are all this shape. */
-  function bushBatch(bushes, name, tint, collide = null) {
+  function* bushBatch(bushes, name, tint, collide = null) {
     if (!bushes.length) return;
     const batch = new THREE.InstancedMesh(round, leafMaterial, bushes.length * 3);
     let at = 0;
-    for (const bush of bushes) {
+    for (const bush of bushes) { if (++buildWork % 32 === 0) yield;
       const y = gy(bush.x, bush.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .42 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * bush.h * (lobe === 2 ? .62 : .42), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.16, .16), a, range(-.16, .16));
@@ -286,10 +291,10 @@ export function createOvesScenery(kit) {
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     return geometry;
   })();
-  function tuftBatch(tufts, name, tint) {
+  function* tuftBatch(tufts, name, tint) {
     if (!tufts.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, bladeMaterial, tufts.length);
-    tufts.forEach((tuft, index) => {
+    yield* forEachBuild(tufts, function* (tuft, index) {
       dummy.position.set(tuft.x, gy(tuft.x, tuft.z) + .02, tuft.z);
       dummy.rotation.set(0, tuft.rot, 0); dummy.scale.set(tuft.s * tuft.wide, tuft.s, tuft.s * tuft.wide); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix); batch.setColorAt(index, tint(tuft));
@@ -298,10 +303,10 @@ export function createOvesScenery(kit) {
     metrics.tufts += tufts.length;
   }
   /** Dead annual seed-heads: a bleached stalk with nothing on it, drawn as a thin pale tuft. */
-  function stubbleBatch(spots, name) {
+  function* stubbleBatch(spots, name) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, bladeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0); dummy.scale.set(spot.s * .5, spot.s * 1.5, spot.s * .5); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
@@ -319,10 +324,10 @@ export function createOvesScenery(kit) {
    * on the Ovesian bank more thickly than on the desert's, because the bench is where the soil is.
    */
   const gallery = [], tamarisk = [];
-  for (const course of OVES_RIVERS) for (const sample of WEST_PROFILES.get(course.id)) {
+  for (const course of OVES_RIVERS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
     const border = course.id === OVES_BORDER_STREAM.id;
     if (sample.index % (border ? 4 : 2)) continue;
-    for (let i = 0; i < (border ? 2 : 4); i++) {
+    for (let i = 0; i < (border ? 2 : 4); i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(2.4, border ? 7 : 12);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!plantable(x, z, 2.2)) continue;
@@ -342,12 +347,12 @@ export function createOvesScenery(kit) {
           wide: poplar ? .17 : .34, deep: poplar ? .5 : .26 });
       }
     }
-  }
+  } }
   // Poplar is tall, narrow and a brighter green; willow broader, greyer and lower over the water.
-  treeBatch(gallery, 'Oveth gallery', tree => tree.poplar
+  (yield* treeBatch(gallery, 'Oveth gallery', tree => tree.poplar
     ? color.set('#5f7a41').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06))
-    : color.set('#74875a').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05)), 'oves-tree');
-  treeBatch(tamarisk, 'Oveth tamarisk', () => color.set('#889274').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'oves-tree');
+    : color.set('#74875a').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05)), 'oves-tree'));
+  (yield* treeBatch(tamarisk, 'Oveth tamarisk', () => color.set('#889274').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'oves-tree'));
   metrics.tamarisk = tamarisk.length;
 
   /**
@@ -358,12 +363,12 @@ export function createOvesScenery(kit) {
   const dampScrub = [], dampTrees = [];
   {
     const ch = OVES_CHANNELS.find(c => c.id === OVES_DAMP.channel);
-    for (let i = 1; i < ch.points.length; i++) {
+    for (let i = 1; i < ch.points.length; i++) { if (++buildWork % 32 === 0) yield;
       const a = ch.points[i - 1], b = ch.points[i], length = Math.hypot(b.x - a.x, b.z - a.z);
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += .9) {
+      for (let d = 0; d < length; d += .9) { if (++buildWork % 32 === 0) yield;
         const t = d / length;
-        for (let k = 0; k < 2; k++) {
+        for (let k = 0; k < 2; k++) { if (++buildWork % 32 === 0) yield;
           const across = range(-OVES_DAMP.reach, OVES_DAMP.reach);
           const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
           const damp = dampReach(x, z);
@@ -379,8 +384,8 @@ export function createOvesScenery(kit) {
       }
     }
   }
-  bushBatch(dampScrub, 'Oves damp-reach scrub', () => color.set('#4f6b3f').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), .42);
-  treeBatch(dampTrees, 'Oves damp-reach tamarisk', () => color.set('#7e8d68').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'oves-tree');
+  (yield* bushBatch(dampScrub, 'Oves damp-reach scrub', () => color.set('#4f6b3f').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), .42));
+  (yield* treeBatch(dampTrees, 'Oves damp-reach tamarisk', () => color.set('#7e8d68').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'oves-tree'));
   metrics.tamarisk += dampTrees.length;
 
   /**
@@ -394,14 +399,14 @@ export function createOvesScenery(kit) {
   const perHex = Math.round(27 * WORLD_SCALE * WORLD_SCALE);
   const rise = (x, z) => relief(x, z, .7, 320) / .7;   // -1 in a hollow, 1 on a rise
   const shrubs = [], scrub = [], stubble = [], stones = [], pavement = [];
-  for (let start = 0; start < cells.length; start += BLOCK) {
+  for (let start = 0; start < cells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = cells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       const north = cell.terrain === 'grassland';                       // Ovesos's northern two rows
       const desert = hexOwnerAt(cell.x, cell.z) === 'Oves Desert';
       // Grass. Three times the west's usual count, as Gala's is: open plain with nothing else on it
       // reads as bare sand at this density and the first Gala render proved it.
-      for (let i = 0; i < perHex * 3; i++) {
+      for (let i = 0; i < perHex * 3; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.2)) continue;
         const soil = onSorten(x, z) ? 1 : 0;
@@ -414,7 +419,7 @@ export function createOvesScenery(kit) {
       // Sub-shrubs: Ovesos's wormwood and saltbush where the grass gives out, and the desert's own
       // perennial scrub, which is "the community's drought-tolerant tail" — the same plants half the
       // size and twice as far apart. Nobody walks round a sub-shrub, so neither carries a collider.
-      for (let i = 0; i < 140; i++) {
+      for (let i = 0; i < 140; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.5)) continue;
         if (inDesert(x, z)) {
@@ -430,7 +435,7 @@ export function createOvesScenery(kit) {
       }
       if (desert) {
         // The seed bank as a dry year leaves it: bleached annual stalks in the low-gradient pockets.
-        for (let i = 0; i < 220; i++) {
+        for (let i = 0; i < 220; i++) { if (++buildWork % 32 === 0) yield;
           const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
           if (!plantable(x, z, .8)) continue;
           if (random() > (1 - ovesLie(x, z)) * .5 * (1 - onRim(x, z))) continue;
@@ -438,7 +443,7 @@ export function createOvesScenery(kit) {
         }
         // Gravel pavement wherever the rock is up — "absent on the ridge exposures" is the soil, not
         // the stone — and on the rim's tops, which are the baldest ground in either country.
-        for (let i = 0; i < 300; i++) {
+        for (let i = 0; i < 300; i++) { if (++buildWork % 32 === 0) yield;
           const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
           if (!plantable(x, z, .5)) continue;
           if (random() > ovesLie(x, z) * .55 + onRim(x, z) * .5) continue;
@@ -446,7 +451,7 @@ export function createOvesScenery(kit) {
         }
       } else {
         // Stones on Ovesos's rises, where the soil gives out. Fewer on the grass than on the plain.
-        for (let i = 0; i < 44; i++) {
+        for (let i = 0; i < 44; i++) { if (++buildWork % 32 === 0) yield;
           const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
           if (!plantable(x, z, 1) || onSorten(x, z)) continue;
           if (random() > smooth(0, .8, rise(x, z)) * (north ? .5 : .95)) continue;
@@ -454,7 +459,7 @@ export function createOvesScenery(kit) {
         }
       }
     }
-    tuftBatch(tufts, 'Oves grass', tuft => {
+    (yield* tuftBatch(tufts, 'Oves grass', tuft => {
       // Buff on the steppe, greener and darker on the Sorten's bottomland, greyer and paler on the
       // desert's pockets. Hex would not carry the Sorten's one green note, so this one is HSL and the
       // lightnesses are chosen low for it (the renderer's working space: the old Meneth lesson).
@@ -462,17 +467,17 @@ export function createOvesScenery(kit) {
       const sat = (tuft.desert ? .20 : .29 + tuft.soil * .06) + range(-.04, .04);
       const light = (tuft.desert ? .50 : tuft.north ? .52 : .53) - tuft.soil * .06 + range(-.035, .035);
       return color.setHSL(hue + range(-.012, .012), sat, light);
-    });
+    }));
   }
-  bushBatch(shrubs, 'Oves wormwood and saltbush', bush => bush.salt
+  (yield* bushBatch(shrubs, 'Oves wormwood and saltbush', bush => bush.salt
     ? color.set('#8b9591').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05))
-    : color.set('#999b85').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05)));
-  bushBatch(scrub, 'Oves desert scrub', bush => bush.grey
+    : color.set('#999b85').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05))));
+  (yield* bushBatch(scrub, 'Oves desert scrub', bush => bush.grey
     ? color.set('#8e9083').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
-    : color.set('#7f8a6c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
-  stubbleBatch(stubble, 'Oves seed-bank stubble');
-  stoneBatch(stones, 'Oves steppe stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
-  stoneBatch(pavement, 'Oves gravel pavement', spot => (spot.bald ? color.set('#928c7d') : color.set('#877f70')).offsetHSL(0, range(-.03, .03), range(-.05, .06)), .05);
+    : color.set('#7f8a6c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05))));
+  (yield* stubbleBatch(stubble, 'Oves seed-bank stubble'));
+  (yield* stoneBatch(stones, 'Oves steppe stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16));
+  (yield* stoneBatch(pavement, 'Oves gravel pavement', spot => (spot.bald ? color.set('#928c7d') : color.set('#877f70')).offsetHSL(0, range(-.03, .03), range(-.05, .06)), .05));
   metrics.shrubs = shrubs.length; metrics.scrub = scrub.length; metrics.stones += stones.length; metrics.pavement = pavement.length;
 
   return {

@@ -61,7 +61,7 @@ export const RIVER_REGIONS = ['Pueth', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   // added, no existing chain loses its key, changes a point or gains a confluence, and the nearest
   // built water is the Vaellir, six hundred metres north-west of Marosh's northern tip.
   'Marosh', 'Trogo',
-    'North Ibenwood', 'East Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre'];
+    'North Ibenwood', 'East Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'West Baldro Mountains', 'East Baldro Mountains'];
 const NEIGHBORS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const SIZES = new Set(['small', 'medium', 'large']);
 

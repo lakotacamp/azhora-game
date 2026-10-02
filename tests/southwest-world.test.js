@@ -220,8 +220,11 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // block's: its rim at x = -4550 stands two hundred and fifty metres past Cape Heth's, so the edge is
   // -4610.002 and the world 52.20 hexes wide. The block's own reach west is still Cape Heth's -4300.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
-  assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
-  assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
+  // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
+  assert.ok(Math.abs(WORLD_BOUNDS.maxX - 2209.9980720608737) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
+  assert.ok(Math.abs(WORLD_BOUNDS.minZ - -3899.2468035704924) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   // **South again, for job 4, and job 2 predicted the number a job and a half in advance.** Trogo's
   // southernmost hexes are (-29,142), (-28,142) and (-27,142), centres at z = 3146.69 and lower
   // vertices a circumradius (57.735 m) past that at 3204.43, so `maxZ` goes from 3177.824 to
@@ -232,8 +235,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   // 49.70 was this block's own doing; the other two and a half hexes are West Ibenwood's (see minX above).
-  assert.ok(Math.abs(wide - 52.20) < .01, `east to west is ${wide.toFixed(2)} hexes`);
-  assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(wide - 68.20) < .01, `east to west is ${wide.toFixed(2)} hexes`);
+  assert.ok(Math.abs(tall - 71.637) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // **Cape Heth alone spends the west now**, and the Ganesh Desert alone spent it before: no other
   // country in eleven reaches past -3900, which is the Dinelv Highlands' own western row.
   const westmost = Object.fromEntries(BLOCK.map(name => [name, Math.min(...cellsOf(name).map(cell => cell.x))]));
@@ -277,8 +280,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // box that no country stands in. The two columns it adds hold no claimed hex, and the generated
   // survey is byte-identical either way.
   assert.equal(WINDOW.minQ, -52);
-  assert.equal(WINDOW.maxQ, 34);
-  assert.equal(WINDOW.minR, 79);
+  assert.equal(WINDOW.maxQ, 60);
+  assert.equal(WINDOW.minR, 59);
   assert.equal(WINDOW.maxR, 145);
   const CELL = 4, MARGIN = 96, PHASE = { x: -1556.0019279391274, z: -704.3502691896258 };
   const snap = (value, phase) => phase + Math.floor((value - phase) / CELL + 1e-9) * CELL;
@@ -309,7 +312,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // clear days." It stands at x = 650, z = 3406 - two thousand eight hundred metres out from Trogo's
   // nearest hex and past `maxX` - so it is horizon and nothing else. That is the smallest widening this
   // window has ever had: job 1's bought 71 hexes, job 2's 143, job 3's none and job 4's one.
-  assert.equal(LAND_HEXES.length, 2079, 'job 4 turns one hex of sea into land, and it is the Azhor Stones');
+  // 2,079 until the Baldro Mountains carried the window to maxQ 60 and minR 59: 903 more claimed hexes are inside it.
+  assert.equal(LAND_HEXES.length, 2982, 'job 4 turns one hex of sea into land, and it is the Azhor Stones');
   assert.ok(land.has('1,145'), 'the Azhor Stones hex row 145 is the one the widening bought');
   assert.equal(hexCentre(1, 145).x > 600 && hexCentre(1, 145).z > 3400, true, 'and it is out past the eastern edge');
   for (const name of EDGE) for (const cell of cellsOf(name))
@@ -2105,7 +2109,8 @@ test('seventeen ranges over forty-seven hexes, and the rainforest is the densest
     assert.equal(existed, !['forest-cat', 'albatross'].includes(name),
       `${name} is ${existed ? 'already' : 'not'} an animal this game had`);
   }
-  assert.ok(life.includes("'forest-cat': {") && life.includes('albatross: {'), 'the two new rigs are not built');
+  // A rig is a factory now (`'forest-cat': () => ({`), built when its country is first loaded; either spelling is a rig.
+  assert.ok(/'forest-cat': (?:\(\) => \()?\{/.test(life) && /albatross: (?:\(\) => \()?\{/.test(life), 'the two new rigs are not built');
   // **One refusal of job 4's three still stands, and it is the one that was never about the lore**:
   // nothing in this block is anybody's stock. The other two were the user's to decide and were decided on
   // 2026-10-01 - the Ganesh dustback is the ghubr in job 1's desert and the canyon tortoise is in job 3's

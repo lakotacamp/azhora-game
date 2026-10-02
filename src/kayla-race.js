@@ -64,7 +64,7 @@ export function createKaylaRace({ onEvent = () => {} } = {}) {
   }
   function abandon(reason = 'You left the race.') {
     if (!mountedStage(s.stage)) return false;
-    finish(false, reason); return true;
+    finish(false, typeof reason === 'string' ? reason.slice(0, 160) : 'You left the race.'); return true;
   }
   function retry() {
     if (s.stage !== 'lost') return false;

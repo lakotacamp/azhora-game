@@ -218,12 +218,13 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    */
   assert.deepEqual(worldBoundsFor(survey, HEX_WORLD_TRANSFORM, PLAYABLE_REGIONS.filter(name => name !== 'Selemi')), bounds,
     'the island across the channel from the Ascarth tip moves the world box');
-  assert.ok(bounds.maxX - bounds.minX < 52.3 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
-  assert.ok(bounds.maxZ - bounds.minZ < 55 * METRES_PER_HEX, 'and north to south');
+  // Baldro extends the north-east corner: 68.2 hexes wide and 71.6367 tall.
+  assert.ok(bounds.maxX - bounds.minX < 68.3 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
+  assert.ok(bounds.maxZ - bounds.minZ < 71.7 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
-  assert.ok(bounds.maxX - bounds.minX > 52.1 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
-  assert.ok(bounds.maxZ - bounds.minZ > 54.2 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxX - bounds.minX > 68.1 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 71.5 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 
 /**

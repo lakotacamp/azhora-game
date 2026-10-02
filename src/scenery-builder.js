@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 
 /**
@@ -123,10 +124,13 @@ export function createSceneryBuilder(name = 'Hand-built place') {
       });
     },
     /** A ground-hugging patch following the terrain: worn earth, a ditch floor, a paved court. */
-    patch(tint, heightAt, x, z, width, depth, yaw = 0, lift = .035, cells = 4) {
+    patch(...args) { return finishBuild(api.patchSteps(...args)); },
+    *patchSteps(tint, heightAt, x, z, width, depth, yaw = 0, lift = .035, cells = 4) {
+      let work = 0;
       const c = Math.cos(yaw), s = Math.sin(yaw);
       const at = (u, v) => { const px = x + u * c + v * s, pz = z - u * s + v * c; return [px, heightAt(px, pz) + lift, pz]; };
       for (let i = 0; i < cells; i++) for (let j = 0; j < cells; j++) {
+        if (++work % 32 === 0) yield;
         const u0 = -width / 2 + width * i / cells, u1 = -width / 2 + width * (i + 1) / cells;
         const v0 = -depth / 2 + depth * j / cells, v1 = -depth / 2 + depth * (j + 1) / cells;
         const a = at(u0, v0), b = at(u0, v1), c2 = at(u1, v1), d = at(u1, v0);
@@ -135,13 +139,19 @@ export function createSceneryBuilder(name = 'Hand-built place') {
     },
     get vertexCount() { return positions.length / 3; },
     /** Adds the merged mesh to `parent` and returns it, or null when nothing was built. */
-    finish(parent, { castShadow = true } = {}) {
+    finish(...args) { return finishBuild(api.finishSteps(...args)); },
+    *finishSteps(parent, { castShadow = true } = {}) {
       if (!positions.length) return null;
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      geometry.computeBoundingSphere();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); yield;
+      geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3)); yield;
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); yield;
+      // Match Three's box-centred sphere while allowing large merged cities to yield.
+      const attribute=geometry.attributes.position, bounds=new THREE.Box3(), point=new THREE.Vector3();
+      for(let i=0;i<attribute.count;i++){if(i&&i%1024===0)yield;point.fromBufferAttribute(attribute,i);bounds.expandByPoint(point);}
+      const sphere=new THREE.Sphere();bounds.getCenter(sphere.center);let radiusSq=0;
+      for(let i=0;i<attribute.count;i++){if(i&&i%1024===0)yield;point.fromBufferAttribute(attribute,i);radiusSq=Math.max(radiusSq,sphere.center.distanceToSquared(point));}
+      sphere.radius=Math.sqrt(radiusSq);geometry.boundingSphere=sphere;
       const mesh = new THREE.Mesh(geometry, sharedMaterial());
       mesh.name = name; mesh.castShadow = castShadow; mesh.receiveShadow = true;
       parent.add(mesh);

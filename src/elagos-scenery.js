@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { createSceneryBuilder } from './scenery-builder.js';
@@ -57,7 +59,10 @@ export function masonryAt(a, b) {
 
 const PAVING = Object.freeze({ 'lake-stone': MASONRY.lake.paving, imperial: MASONRY.imperial.paving, patched: MASONRY.patched.paving, new: MASONRY.new.paving });
 
-export function createElagosScenery({ parent, heightAt, colliders, signs, roadDistance }) {
+export function createElagosScenery(...args) { return finishBuild(createElagosScenerySteps(...args)); }
+
+export function* createElagosScenerySteps({ parent, heightAt, colliders, signs, roadDistance }) {
+  let buildWork = 0;
   // Named apart from world-regions.js's own 'Elagos scenery' group, which holds the region's scatter.
   const district = new THREE.Group(); district.name = 'Ambron and the lakes of Elagos'; parent.add(district);
   const metrics = { buildings: 0, towers: AMBRON_CIRCUIT.towers.length, waterMeshes: 0, colliders: 0, props: 0, vertices: 0 };
@@ -98,36 +103,36 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   // Basins that share a name and a shore are drawn as one mesh: the Thelas chain is
   // three basins but one draw call, and a lake a traveler cannot see is not submitted.
   const basinGroups = new Map();
-  for (const water of ELAGOS_BASINS) {
+  for (const water of ELAGOS_BASINS) { if (++buildWork % 8 === 0) yield;
     const key = water.id.startsWith('thelas') ? 'The Thelas chain' : water.name;
     if (!basinGroups.has(key)) basinGroups.set(key, []);
     basinGroups.get(key).push(water);
   }
-  for (const [name, group] of basinGroups) {
+  for (const [name, group] of basinGroups) { if (++buildWork % 8 === 0) yield;
     // A fan from the middle: every basin is a turned ellipse, so a fan closes it.
     const positions = [], indices = [];
-    for (const water of group) {
+    for (const water of group) { if (++buildWork % 8 === 0) yield;
       const base = positions.length / 3;
       positions.push(water.centre.x, water.surface, water.centre.z);
-      water.shore.forEach(p => positions.push(p.x, water.surface, p.z));
-      for (let i = 0; i < water.shore.length; i++) indices.push(base, base + 1 + i, base + 1 + (i + 1) % water.shore.length);
+      yield* forEachBuild(water.shore, function* (p) { return positions.push(p.x, water.surface, p.z); });
+      for (let i = 0; i < water.shore.length; i++) { if (++buildWork % 8 === 0) yield; indices.push(base, base + 1 + i, base + 1 + (i + 1) % water.shore.length); }
     }
     waterMesh(name, positions, indices);
   }
   const reachSamples = {};
-  for (const course of ELAGOS_REACHES) {
+  for (const course of ELAGOS_REACHES) { if (++buildWork % 8 === 0) yield;
     const positions = [], indices = [], samples = [];
     const points = course.points;
-    for (let i = 1; i < points.length; i++) {
+    for (let i = 1; i < points.length; i++) { if (++buildWork % 8 === 0) yield;
       const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.z - a.z), steps = Math.max(1, Math.round(length / 6));
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let s = i === 1 ? 0 : 1; s <= steps; s++) {
+      for (let s = i === 1 ? 0 : 1; s <= steps; s++) { if (++buildWork % 8 === 0) yield;
         const t = s / steps;
         samples.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t, nx, nz,
           half: a.half + (b.half - a.half) * t, surface: a.surface + (b.surface - a.surface) * t });
       }
     }
-    samples.forEach((s, index) => {
+    yield* forEachBuild(samples, function* (s, index) {
       positions.push(s.x - s.nx * s.half, s.surface, s.z - s.nz * s.half, s.x + s.nx * s.half, s.surface, s.z + s.nz * s.half);
       if (index) { const v = index * 2; indices.push(v - 2, v, v - 1, v - 1, v, v + 1); }
     });
@@ -146,25 +151,25 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     if (openWater(x, z)) return;
     push({ x, z, r: WATER_R, kind: 'lake-water' });
   }
-  for (const water of ELAGOS_BASINS) {
+  for (const water of ELAGOS_BASINS) { if (++buildWork % 8 === 0) yield;
     const shore = water.shore;
-    for (let i = 0; i < shore.length; i++) {
+    for (let i = 0; i < shore.length; i++) { if (++buildWork % 8 === 0) yield;
       const a = shore[i], b = shore[(i + 1) % shore.length], length = Math.hypot(b.x - a.x, b.z - a.z);
       const steps = Math.max(1, Math.round(length / WATER_STEP));
-      for (let s = 0; s < steps; s++) {
+      for (let s = 0; s < steps; s++) { if (++buildWork % 8 === 0) yield;
         const t = s / steps, px = a.x + (b.x - a.x) * t, pz = a.z + (b.z - a.z) * t;
         const dx = water.centre.x - px, dz = water.centre.z - pz, l = Math.hypot(dx, dz) || 1;
         blockWater(px + dx / l * (WATER_R - .2), pz + dz / l * (WATER_R - .2));
       }
     }
   }
-  for (const [id, samples] of Object.entries(reachSamples)) {
+  for (const [id, samples] of Object.entries(reachSamples)) { if (++buildWork % 8 === 0) yield;
     void id;
-    for (let i = 0; i < samples.length; i += 1) {
+    for (let i = 0; i < samples.length; i += 1) { if (++buildWork % 8 === 0) yield;
       const s = samples[i];
       if (i && Math.hypot(s.x - samples[i - 1].x, s.z - samples[i - 1].z) < WATER_STEP * .6) continue;
       const inset = Math.max(0, s.half - WATER_R + .2);
-      for (const side of [-1, 1]) blockWater(s.x + s.nx * inset * side, s.z + s.nz * inset * side);
+      for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; blockWater(s.x + s.nx * inset * side, s.z + s.nz * inset * side); }
     }
   }
 
@@ -186,26 +191,26 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     return shades.get(key);
   }
   /** A ground-hugging paved ribbon along a world polyline. */
-  function ribbon(b, tint, points, width, lift = .065) {
-    for (let i = 1; i < points.length; i++) {
+  function* ribbon(b, tint, points, width, lift = .065) {
+    for (let i = 1; i < points.length; i++) { if (++buildWork % 8 === 0) yield;
       const a = points[i - 1], c = points[i], length = Math.hypot(c.x - a.x, c.z - a.z);
       if (length < .01) continue;
       const steps = Math.max(1, Math.round(length / 6)), yaw = Math.atan2(c.x - a.x, c.z - a.z);
-      for (let s = 0; s < steps; s++) {
+      for (let s = 0; s < steps; s++) { if (++buildWork % 8 === 0) yield;
         const t = (s + .5) / steps;
-        b.patch(shade(tint, i * 3 + s * 2), heightAt, a.x + (c.x - a.x) * t, a.z + (c.z - a.z) * t, width, length / steps + .3, yaw, lift, 2);
+        (yield* b.patchSteps(shade(tint, i * 3 + s * 2), heightAt, a.x + (c.x - a.x) * t, a.z + (c.z - a.z) * t, width, length / steps + .3, yaw, lift, 2));
       }
     }
   }
   /** A paved field, in slabs of about six metres, in the city's frame. */
-  function pavedField(b, tint, minA, maxA, minB, maxB, lift = .045) {
+  function* pavedField(b, tint, minA, maxA, minB, maxB, lift = .045) {
     const columns = Math.max(1, Math.round((maxA - minA) / 6)), rows = Math.max(1, Math.round((maxB - minB) / 6));
-    for (let i = 0; i < columns; i++) for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < columns; i++) { if (++buildWork % 8 === 0) yield; for (let j = 0; j < rows; j++) { if (++buildWork % 8 === 0) yield;
       const a = minA + (maxA - minA) * (i + .5) / columns, bb = minB + (maxB - minB) * (j + .5) / rows;
       const spot = P(a, bb);
-      b.patch(shade(tint, i * 2 + j * 3 + (i % 2)), heightAt, spot.x, spot.z,
-        (maxA - minA) / columns + .25, (maxB - minB) / rows + .25, 0, lift, 2);
-    }
+      (yield* b.patchSteps(shade(tint, i * 2 + j * 3 + (i % 2)), heightAt, spot.x, spot.z,
+        (maxA - minA) / columns + .25, (maxB - minB) / rows + .25, 0, lift, 2));
+    } }
   }
   /** Colliders for an axis-aligned box in the city frame. */
   const boxCollider = (a, b2, w, d, kind, id = undefined) => push({ ...P(a, b2), hx: w / 2, hz: d / 2, kind, ...(id ? { id } : {}) });
@@ -217,11 +222,11 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   const S = AMBRON_STANDARD, T = S.wallThickness / 2, HALF_TOWER = S.towerSize / 2;
   const cityFrame = (x, z) => ({ a: x - AMBRON.centre.x, b: z - AMBRON.centre.z });
 
-  for (const run of AMBRON_CIRCUIT.runs) {
+  for (const run of AMBRON_CIRCUIT.runs) { if (++buildWork % 8 === 0) yield;
     const edge = AMBRON_CIRCUIT.edges[run.edge], length = run.to - run.from;
     if (length < .1) continue;
     const pieces = Math.max(1, Math.ceil(length / 5)), turn = Math.atan2(edge.dir.x, edge.dir.z);
-    for (let k = 0; k < pieces; k++) {
+    for (let k = 0; k < pieces; k++) { if (++buildWork % 8 === 0) yield;
       const a0 = run.from + length * k / pieces, a1 = run.from + length * (k + 1) / pieces, mid = (a0 + a1) / 2, span = a1 - a0;
       const m = AMBRON_CIRCUIT.pointOn(edge, mid, 0), local = cityFrame(m.x, m.z), M = masonryAt(local.a, local.b);
       const ground = cityGround(local.a);
@@ -247,7 +252,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   }
 
   // Towers: square, a storey above the wall, with a steep lake-country roof.
-  for (const tower of AMBRON_CIRCUIT.towers) {
+  for (const tower of AMBRON_CIRCUIT.towers) { if (++buildWork % 8 === 0) yield;
     const edge = AMBRON_CIRCUIT.edges[tower.edge], local = cityFrame(tower.x, tower.z), M = masonryAt(local.a, local.b);
     const ground = cityGround(local.a), top = S.towerPlatform;
     const chainTower = Math.abs(local.a) > 20 && Math.abs(local.a) < 32 && local.b > 60;
@@ -269,7 +274,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   }
 
   // The land gates: an arch, a gallery over the passage, leaves drawn back, a board.
-  for (const gate of AMBRON_CIRCUIT.gates) {
+  for (const gate of AMBRON_CIRCUIT.gates) { if (++buildWork % 8 === 0) yield;
     const spec = AMBRON_GATES.find(entry => entry.id === gate.id);
     if (spec.kind !== 'gate') continue;
     const edge = AMBRON_CIRCUIT.edges[gate.edge], turn = Math.atan2(edge.dir.x, edge.dir.z);
@@ -296,12 +301,12 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   }
 
   // The water gates: no wall over the channel, two great towers each side, and the chain in the south one.
-  for (const gate of AMBRON_CIRCUIT.gates) {
+  for (const gate of AMBRON_CIRCUIT.gates) { if (++buildWork % 8 === 0) yield;
     const spec = AMBRON_GATES.find(entry => entry.id === gate.id);
     if (spec.kind !== 'water') continue;
     const b = spec.face === 'south' ? AMBRON.halfB : -AMBRON.halfB;
     // A stone sill across the channel floor, and the mooring rings the waiting boats take.
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const spot = P(side * (CHANNEL.half + 1.2), b);
       walls.block(MASONRY.lake.dark, spot.x, CHANNEL.surface - 1.2, spot.z, 3.0, 3.6, S.wallThickness + 2, 0);
       walls.cylinder(IRON, spot.x, CHANNEL.surface + .3, spot.z, .22, .5, 0, 7);
@@ -313,21 +318,21 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       const a = -span + span * 2 * t, spot = P(a, b);
       return [spot.x, AMBRON_CHAIN.ringY - (AMBRON_CHAIN.ringY - AMBRON_CHAIN.sagY) * Math.sin(t * Math.PI), spot.z];
     };
-    for (let i = 0; i < links; i++) walls.beam(i % 2 ? IRON : '#3b3934', at(i / links), at((i + 1) / links), .32, .22);
+    for (let i = 0; i < links; i++) { if (++buildWork % 8 === 0) yield; walls.beam(i % 2 ? IRON : '#3b3934', at(i / links), at((i + 1) / links), .32, .22); }
     // The eyes it is made fast to, in the face of each chain tower.
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const eye = P(side * (span + 1.4), b);
       walls.cylinder(IRON, eye.x, AMBRON_CHAIN.ringY - .4, eye.z, .45, .8, 0, 7);
     }
   }
 
   // The ditch, wherever it is not standing in the lake.
-  for (const piece of AMBRON_CIRCUIT.ditch) {
+  for (const piece of AMBRON_CIRCUIT.ditch) { if (++buildWork % 8 === 0) yield;
     const length = Math.hypot(piece.b.x - piece.a.x, piece.b.z - piece.a.z);
     if (length < .6) continue;
     const steps = Math.max(1, Math.ceil(length / 4));
     const mix = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, z: p.z + (q.z - p.z) * f });
-    for (let k = 0; k < steps; k++) {
+    for (let k = 0; k < steps; k++) { if (++buildWork % 8 === 0) yield;
       const f0 = k / steps, f1 = (k + 1) / steps;
       const i0 = mix(piece.inner[0], piece.inner[1], f0), i1 = mix(piece.inner[0], piece.inner[1], f1);
       const o0 = mix(piece.outer[0], piece.outer[1], f0), o1 = mix(piece.outer[0], piece.outer[1], f1);
@@ -342,15 +347,15 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     }
   }
   // Causeway slabs before each land gate.
-  for (const gate of AMBRON_CIRCUIT.gates) {
+  for (const gate of AMBRON_CIRCUIT.gates) { if (++buildWork % 8 === 0) yield;
     const spec = AMBRON_GATES.find(entry => entry.id === gate.id);
     if (spec.kind !== 'gate') continue;
     const out = gate.inward, spot = { x: gate.centre.x - out.x * (T + S.berm + S.ditchWidth / 2), z: gate.centre.z - out.z * (T + S.berm + S.ditchWidth / 2) };
-    walls.patch(MASONRY.imperial.paving, heightAt, spot.x, spot.z, S.causewayHalf * 2, S.ditchWidth + 3.4, Math.atan2(out.x, out.z), .1, 3);
+    (yield* walls.patchSteps(MASONRY.imperial.paving, heightAt, spot.x, spot.z, S.causewayHalf * 2, S.ditchWidth + 3.4, Math.atan2(out.x, out.z), .1, 3));
   }
   metrics.vertices += walls.vertexCount;
-  walls.finish(district);
-  for (const collider of ambronColliders()) push({ ...collider });
+  (yield* walls.finishSteps(district));
+  for (const collider of ambronColliders()) { if (++buildWork % 8 === 0) yield; push({ ...collider }); }
 
   // =========================================================================
   // Ambron: the streets, the quays and the two banks
@@ -358,29 +363,29 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   const town = createSceneryBuilder('Ambron, the banks');
 
   for (const street of AMBRON_STREETS)
-    ribbon(town, PAVING[street.layer], street.points.map(p => P(p.a, p.b)), street.width);
+    { if (++buildWork % 8 === 0) yield; (yield* ribbon(town, PAVING[street.layer], street.points.map(p => P(p.a, p.b)), street.width)); }
   // The market of the narrows: the widened street, in the oldest paving the city has.
-  pavedField(town, MASONRY.lake.paving, AMBRON_MARKET.minA, AMBRON_MARKET.maxA, AMBRON_MARKET.minB, AMBRON_MARKET.maxB);
+  (yield* pavedField(town, MASONRY.lake.paving, AMBRON_MARKET.minA, AMBRON_MARKET.maxA, AMBRON_MARKET.minB, AMBRON_MARKET.maxB));
 
   // The quays: a paved apron on each bank, a kerb at the water, steps down, bollards and cranes.
-  for (const quay of AMBRON_QUAYS) {
+  for (const quay of AMBRON_QUAYS) { if (++buildWork % 8 === 0) yield;
     const inner = quay.side > 0 ? quay.to : quay.from, edge = quay.side > 0 ? quay.from : quay.to;
-    pavedField(town, MASONRY.lake.paving, Math.min(quay.from, quay.to), Math.max(quay.from, quay.to), quay.minB, quay.maxB, .035);
+    (yield* pavedField(town, MASONRY.lake.paving, Math.min(quay.from, quay.to), Math.max(quay.from, quay.to), quay.minB, quay.maxB, .035));
     void inner;
     // The quay face: a wall of lake-stone from the paving down past the waterline.
-    for (let b = quay.minB; b < quay.maxB; b += 6) {
+    for (let b = quay.minB; b < quay.maxB; b += 6) { if (++buildWork % 8 === 0) yield;
       const spot = P(edge + quay.side * .6, b + 3), top = cityGround(edge);
       town.block(MASONRY.lake.dark, spot.x, CHANNEL.surface - 2.4, spot.z, 1.2, top - CHANNEL.surface + 2.5, 6.1);
       town.box(MASONRY.lake.cap, spot.x, top + .12, spot.z, 1.3, .24, 6.1);
     }
-    for (const b of quay.steps) {
+    for (const b of quay.steps) { if (++buildWork % 8 === 0) yield;
       // Water steps: five courses down from the quay into the lake.
-      for (let s = 0; s < 5; s++) {
+      for (let s = 0; s < 5; s++) { if (++buildWork % 8 === 0) yield;
         const spot = P(edge - quay.side * (.4 + s * .7), b);
         town.block(MASONRY.lake.face, spot.x, cityGround(edge) - .35 - s * .62, spot.z, .75, .62, 3.4);
       }
     }
-    for (const b of quay.cranes) {
+    for (const b of quay.cranes) { if (++buildWork % 8 === 0) yield;
       // A timber jib crane on a stone pad: how the barges are emptied.
       const base = P(quay.side > 0 ? quay.from + 3.6 : quay.to - 3.6, b), ground = y(base.x, base.z);
       town.block(MASONRY.lake.dark, base.x, ground, base.z, 2.6, .35, 2.6);
@@ -392,7 +397,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       push({ x: base.x, z: base.z, r: 1.5, kind: 'quay-crane' });
       metrics.props++;
     }
-    for (let b = quay.minB + 5; b < quay.maxB; b += 9) {
+    for (let b = quay.minB + 5; b < quay.maxB; b += 9) { if (++buildWork % 8 === 0) yield;
       const spot = P(edge + quay.side * 1.6, b);
       town.cylinder(MASONRY.lake.cap, spot.x, cityGround(edge) + .1, spot.z, .28, .8, 0, 7);
       push({ x: spot.x, z: spot.z, r: .4, kind: 'bollard' });
@@ -485,7 +490,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
         }
       }
     });
-    metrics.vertices += detail.vertexCount; detail.finish(district);
+    metrics.vertices += detail.vertexCount; (yield* detail.finishSteps(district));
 
     // A real letterbox stands beside the entry, never across the three-metre walk in.
     const mail = CAGNEY_RESIDENCE.mailbox, ground = y(mail.x, mail.z);
@@ -498,7 +503,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       box.roof(rose, 0, 1.66, 0, .97, .65, .19, 0, roseLight);
       box.rock(BRONZE, .30, 1.31, -.27, .035, .055, .025);
     });
-    metrics.vertices += box.vertexCount; box.finish(district);
+    metrics.vertices += box.vertexCount; (yield* box.finishSteps(district));
     push({ x: mail.x, z: mail.z, r: .49, kind: 'cagney-mailbox' });
     metrics.props++;
     // Lettering is only a small painted plate, not a destination sign or quest marker.
@@ -518,12 +523,12 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
 
   // Existing houses now belong to Ben and Troy. Their small frontages face the
   // cross-lanes, with usable thresholds and mailboxes tucked beside the walk in.
-  function questHomeExterior(home, palette) {
+  function* questHomeExterior(home, palette) {
     const building = AMBRON_BUILDINGS.find(entry => entry.id === home.buildingId);
     const base = cityGround(building.a) - .3;
     const detail = createSceneryBuilder(`${home.name}'s home frontage`);
     const path = [home.entry, home.porch];
-    ribbon(detail, palette.paving, path, 1.8, .075);
+    (yield* ribbon(detail, palette.paving, path, 1.8, .075));
     detail.frame(home.facade.x, base, home.facade.z, home.yaw, () => {
       detail.block(palette.door, 0, 1.1, -.13, 1.52, 2.4, .12);
       for (const x of [-.88, .88]) detail.block(LIME, x, 1.03, -.18, .14, 2.58, .18);
@@ -566,7 +571,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
         }
       }
     });
-    metrics.vertices += detail.vertexCount; detail.finish(district);
+    metrics.vertices += detail.vertexCount; (yield* detail.finishSteps(district));
 
     const mail = home.mailbox, ground = y(mail.x, mail.z);
     const box = createSceneryBuilder(`${home.name} mailbox`);
@@ -578,7 +583,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       box.roof(palette.roof, 0, 1.66, 0, .97, .65, .19, 0, palette.trim);
       box.rock(BRONZE, .30, 1.31, -.27, .035, .055, .025);
     });
-    metrics.vertices += box.vertexCount; box.finish(district);
+    metrics.vertices += box.vertexCount; (yield* box.finishSteps(district));
     push({ x: mail.x, z: mail.z, r: .49, kind: `${home.name.toLowerCase()}-mailbox`, homeId: home.homeId });
     metrics.props++;
     let material = new THREE.MeshStandardMaterial({ color: '#ead9bd', roughness: .95 });
@@ -596,30 +601,30 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     plate.position.set(mail.x - Math.sin(home.yaw) * .269, ground + 1.35, mail.z - Math.cos(home.yaw) * .269);
     plate.userData.homeId = home.homeId; district.add(plate);
   }
-  questHomeExterior(BEN_HOME, { door: '#7c5238', trim: '#b38755', shutter: '#705975', roof: '#877043', paving: '#a99a80' });
-  questHomeExterior(TROY_HOME, { door: '#526c6a', trim: '#849a8d', shutter: '#667d75', roof: '#515d6c', paving: '#aaa391' });
+  (yield* questHomeExterior(BEN_HOME, { door: '#7c5238', trim: '#b38755', shutter: '#705975', roof: '#877043', paving: '#a99a80' }));
+  (yield* questHomeExterior(TROY_HOME, { door: '#526c6a', trim: '#849a8d', shutter: '#667d75', roof: '#515d6c', paving: '#aaa391' }));
 
-  questHomeExterior(AMBRON_CARPENTERS_GUILD, {door:'#766047',trim:'#b49a66',shutter:'#738279',roof:'#5b6665',paving:'#a99b80'});
+  (yield* questHomeExterior(AMBRON_CARPENTERS_GUILD, {door:'#766047',trim:'#b49a66',shutter:'#738279',roof:'#5b6665',paving:'#a99b80'}));
   // The guild's open work apron: a wheel in progress and stacked squared timber.
   // Props flank the doorway and leave Jesse's cart parking/approach clear.
   {
     const guild = AMBRON_CARPENTERS_GUILD, base=y(guild.house.x,guild.house.z), x=guild.house.x-6,z=guild.house.z-9;
     town.box(WOOD_LIGHT,x,base+1,z,2.7,.18,1.1);
-    for(const dx of [-1,1])for(const dz of [-.4,.4])town.block(WOOD_DARK,x+dx,base,z+dz,.13,1,.13);
-    for(let k=0;k<6;k++){const a=k*Math.PI/3;town.beam(WOOD,[x,base+1.7,z],[x+Math.cos(a)*.67,base+1.7+Math.sin(a)*.67,z],.07);}
-    for(let k=0;k<12;k++){const a=k*Math.PI/6,b=(k+1)*Math.PI/6;town.beam(WOOD_LIGHT,[x+Math.cos(a)*.67,base+1.7+Math.sin(a)*.67,z],[x+Math.cos(b)*.67,base+1.7+Math.sin(b)*.67,z],.1);}
-    for(let k=0;k<5;k++)town.box(WOOD_LIGHT,guild.house.x+6,base+.25+k*.2,guild.house.z-9.3,2.2,.18,.36);
+    for(const dx of [-1,1]){ if (++buildWork % 8 === 0) yield; for(const dz of [-.4,.4]){ if (++buildWork % 8 === 0) yield; town.block(WOOD_DARK,x+dx,base,z+dz,.13,1,.13); } }
+    for(let k=0;k<6;k++){ if (++buildWork % 8 === 0) yield;const a=k*Math.PI/3;town.beam(WOOD,[x,base+1.7,z],[x+Math.cos(a)*.67,base+1.7+Math.sin(a)*.67,z],.07);}
+    for(let k=0;k<12;k++){ if (++buildWork % 8 === 0) yield;const a=k*Math.PI/6,b=(k+1)*Math.PI/6;town.beam(WOOD_LIGHT,[x+Math.cos(a)*.67,base+1.7+Math.sin(a)*.67,z],[x+Math.cos(b)*.67,base+1.7+Math.sin(b)*.67,z],.1);}
+    for(let k=0;k<5;k++){ if (++buildWork % 8 === 0) yield; town.box(WOOD_LIGHT,guild.house.x+6,base+.25+k*.2,guild.house.z-9.3,2.2,.18,.36); }
   }
 
   // The Lord Marshal's Seat: a colonnade and a standard over the plaza.
   {
     const seat = AMBRON_BUILDINGS.find(entry => entry.id === 'legate-seat');
     const base = cityGround(seat.a) - .3, front = seat.a - seat.w / 2;
-    for (let s = 0; s < 3; s++) {
+    for (let s = 0; s < 3; s++) { if (++buildWork % 8 === 0) yield;
       const spot = P(front - .7 - s * .8, seat.b);
       town.block(MASONRY.imperial.cap, spot.x, base + .1 - s * .1, spot.z, .8, .34, seat.d + 1.6);
     }
-    for (let k = 0; k < 7; k++) {
+    for (let k = 0; k < 7; k++) { if (++buildWork % 8 === 0) yield;
       const spot = P(front - 1.6, seat.b - seat.d / 2 + 2.2 + k * (seat.d - 4.4) / 6);
       town.cylinder(MASONRY.imperial.cap, spot.x, base + .6, spot.z, .58, 7.6, 0, 7);
       push({ x: spot.x, z: spot.z, r: .6, kind: 'seat-column' });
@@ -640,18 +645,18 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   {
     const toll = AMBRON_BUILDINGS.find(entry => entry.id === 'toll-house');
     const base = cityGround(toll.a) - .3, front = toll.b - toll.d / 2;
-    for (let s = 0; s < 3; s++) {
+    for (let s = 0; s < 3; s++) { if (++buildWork % 8 === 0) yield;
       const spot = P(toll.a, front - .6 - s * .7);
       town.block(MASONRY.lake.cap, spot.x, base + .2 - s * .12, spot.z, toll.w - 2, .3, .7);
     }
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const spot = P(toll.a + side * 4.4, front - .3);
       town.cylinder(MASONRY.lake.cap, spot.x, base + 1.1, spot.z, .52, 5.2, 0, 7);
       push({ x: spot.x, z: spot.z, r: .55, kind: 'toll-column' });
     }
     const board = P(toll.a, front - .1);
     town.block(WOOD_DARK, board.x, base + 3.1, board.z, toll.w - 3, 2.6, .2);
-    for (let line = 0; line < 7; line++) town.block(PAPER, board.x, base + 3.4 + line * .32, board.z - .14, toll.w - 4.4, .16, .04);
+    for (let line = 0; line < 7; line++) { if (++buildWork % 8 === 0) yield; town.block(PAPER, board.x, base + 3.4 + line * .32, board.z - .14, toll.w - 4.4, .16, .04); }
     // The new proclamation, nailed over the old notices and not yet weathered.
     town.block(LIME, board.x + 2.2, base + 4.6, board.z - .2, 1.1, 1.5, .04);
   }
@@ -690,7 +695,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     push({ x: anvil.x, z: anvil.z, r: .45, kind: 'ambron-anvil' });
     // A rack of bar stock leaning in the west corner, out of everybody's way.
     const rack = at(-5.2, 4.2), ry = y(rack.x, rack.z);
-    for (const [da, h] of [[-.24, 1.6], [0, 1.85], [.24, 1.5]]) town.cylinder(IRON, rack.x + da, ry, rack.z, .045, h, 0, 4);
+    for (const [da, h] of [[-.24, 1.6], [0, 1.85], [.24, 1.5]]) { if (++buildWork % 8 === 0) yield; town.cylinder(IRON, rack.x + da, ry, rack.z, .045, h, 0, 4); }
     push({ x: rack.x, z: rack.z, r: .35, kind: 'bar-stock' });
     // The quench barrel by the door, with its iron hoop.
     const quench = at(1.8, 4.4), qy = y(quench.x, quench.z);
@@ -700,7 +705,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     // A mail shirt and a cap on a rail at the street end: what he is actually selling, hung
     // where a man walking up the raft way can see it without stopping.
     const rail = at(3.0, 4.0), ly = y(rail.x, rail.z);
-    for (const side of [-1, 1]) town.cylinder(WOOD, rail.x + side * .8, ly, rail.z, .07, 2.0, 0, 4);
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; town.cylinder(WOOD, rail.x + side * .8, ly, rail.z, .07, 2.0, 0, 4); }
     town.beam(WOOD, [rail.x - .9, ly + 2.0, rail.z], [rail.x + .9, ly + 2.0, rail.z], .07);
     town.block(IRON, rail.x - .4, ly + .9, rail.z, .8, 1.0, .3);
     town.cone(IRON, rail.x + .6, ly + 1.55, rail.z, .28, .42, 0, 7);
@@ -715,15 +720,15 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   if (CHANNEL.enabled) {
     const spot = P(AMBRON_CHAIN.capstan.a, AMBRON_CHAIN.capstan.b), ground = y(spot.x, spot.z);
     town.cylinder(WOOD_DARK, spot.x, ground, spot.z, 1.35, 1.5, 0, 7);
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < 6; k++) { if (++buildWork % 8 === 0) yield;
       const angle = k / 6 * Math.PI * 2;
       town.beam(WOOD, [spot.x, ground + 1.1, spot.z], [spot.x + Math.sin(angle) * 3.1, ground + 1.05, spot.z + Math.cos(angle) * 3.1], .16);
     }
     town.cylinder(IRON, spot.x, ground + 1.5, spot.z, .5, .4, 0, 7);
     const tally = P(AMBRON_CHAIN.tally.a, AMBRON_CHAIN.tally.b), ty = y(tally.x, tally.z);
-    for (const side of [-1, 1]) town.cylinder(WOOD, tally.x, ty, tally.z + side * 1.2, .1, 2.3, 0, 4);
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; town.cylinder(WOOD, tally.x, ty, tally.z + side * 1.2, .1, 2.3, 0, 4); }
     town.block(WOOD_LIGHT, tally.x, ty + 1.3, tally.z, .14, 1.2, 2.6);
-    for (let line = 0; line < 5; line++) town.block('#2c2721', tally.x - .1, ty + 1.5 + line * .2, tally.z, .03, .07, 2.0);
+    for (let line = 0; line < 5; line++) { if (++buildWork % 8 === 0) yield; town.block('#2c2721', tally.x - .1, ty + 1.5 + line * .2, tally.z, .03, .07, 2.0); }
     push({ x: tally.x, z: tally.z, r: .5, kind: 'tally-board' });
   }
 
@@ -748,29 +753,29 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       });
       metrics.props++;
     };
-    [-46, -28, 20, 36, 52].forEach((b, index) => barge(CHANNEL.half - 2.3 - (index % 2) * 3.9, b, loads[index], (index % 2 - .5) * .04));
-    [-34, 28].forEach((b, index) => barge(-CHANNEL.half + 2.4, b, loads[5 + index], .03));
+    yield* forEachBuild([-46, -28, 20, 36, 52], function* (b, index) { return barge(CHANNEL.half - 2.3 - (index % 2) * 3.9, b, loads[index], (index % 2 - .5) * .04); });
+    yield* forEachBuild([-34, 28], function* (b, index) { return barge(-CHANNEL.half + 2.4, b, loads[5 + index], .03); });
     // Below the chain, the water is empty but for one that has paid, waiting for the Stair.
     barge(-6, 88, 'grain', .08);
   }
 
   // The market: stalls, the well, and a cart with the barley still on it.
-  for (const [index, stall] of AMBRON_STALLS.entries()) {
+  for (const [index, stall] of AMBRON_STALLS.entries()) { if (++buildWork % 8 === 0) yield;
     const spot = P(stall.a, stall.b), ground = y(spot.x, spot.z);
-    for (const sa of [-1, 1]) for (const sb of [-1, 1]) town.cylinder(WOOD, spot.x + sa * 1.35, ground, spot.z + sb * .95, .07, 2.3, 0, 4);
+    for (const sa of [-1, 1]) { if (++buildWork % 8 === 0) yield; for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield; town.cylinder(WOOD, spot.x + sa * 1.35, ground, spot.z + sb * .95, .07, 2.3, 0, 4); } }
     town.roof(['#8d5a44', '#b3a279', '#5d6f7a', '#9a7a48'][index % 4], spot.x, ground + 2.25, spot.z, 2.4, 3.3, .5, Math.PI / 2);
     town.block(WOOD_LIGHT, spot.x, ground + .82, spot.z + (stall.b < -8 ? .7 : -.7), 2.8, .14, .7);
     for (let k = 0; k < 4; k++)
-      town.rock(['#c08a3c', '#8ba14e', '#a8523c', '#cbb976'][(k + index) % 4], spot.x - 1.0 + k * .68, ground + 1.05, spot.z + (stall.b < -8 ? .7 : -.7), .19, .14, .19, k);
+      { if (++buildWork % 8 === 0) yield; town.rock(['#c08a3c', '#8ba14e', '#a8523c', '#cbb976'][(k + index) % 4], spot.x - 1.0 + k * .68, ground + 1.05, spot.z + (stall.b < -8 ? .7 : -.7), .19, .14, .19, k); }
     metrics.props++;
   }
   {
     const well = P(AMBRON_WELL.a, AMBRON_WELL.b), ground = y(well.x, well.z);
-    for (let k = 0; k < 8; k++) {
+    for (let k = 0; k < 8; k++) { if (++buildWork % 8 === 0) yield;
       const angle = k / 8 * Math.PI * 2;
       town.block(MASONRY.lake.face, well.x + Math.sin(angle) * AMBRON_WELL.r, ground, well.z + Math.cos(angle) * AMBRON_WELL.r, 1.5, .85, .4, angle);
     }
-    for (const side of [-1, 1]) town.cylinder(WOOD, well.x + side * 1.9, ground + .8, well.z, .1, 2.4, 0, 4);
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; town.cylinder(WOOD, well.x + side * 1.9, ground + .8, well.z, .1, 2.4, 0, 4); }
     town.box(WOOD_LIGHT, well.x, ground + 3.1, well.z, 4.0, .16, .22);
     town.roof(SHINGLE, well.x, ground + 3.2, well.z, 4.4, 2.2, .8, 0);
   }
@@ -778,13 +783,13 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   if (CHANNEL.enabled) {
     const spot = P(AMBRON_GAUGE.a, AMBRON_GAUGE.b), ground = y(spot.x, spot.z);
     town.block(LIME, spot.x, ground, spot.z, .34, 3.4, .34);
-    for (let k = 0; k < 9; k++) town.block('#33302a', spot.x, ground + .4 + k * .32, spot.z - .18, .36, .06, .04);
+    for (let k = 0; k < 9; k++) { if (++buildWork % 8 === 0) yield; town.block('#33302a', spot.x, ground + .4 + k * .32, spot.z - .18, .36, .06, .04); }
     push({ x: spot.x, z: spot.z, r: .35, kind: 'lake-gauge' });
   }
   // Sledge runners and ice-road stakes stacked against the granary all summer.
   {
     const spot = P(AMBRON_SLEDGES.a, AMBRON_SLEDGES.b), ground = y(spot.x, spot.z);
-    for (let k = 0; k < 7; k++) {
+    for (let k = 0; k < 7; k++) { if (++buildWork % 8 === 0) yield;
       town.beam(WOOD_DARK, [spot.x - .8 + k * .26, ground + .1, spot.z - 1.6], [spot.x - .4 + k * .26, ground + 2.4, spot.z - .6], .12, .3);
       town.beam(WOOD_LIGHT, [spot.x + 1.4, ground + .1, spot.z - 1.4 + k * .22], [spot.x + 1.9, ground + 2.6, spot.z - .6 + k * .22], .07);
     }
@@ -798,17 +803,17 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   // Ambron's specialists work in these twenty paces.
   {
     const G = PHYSIC_GARDEN, M = masonryAt(G.minA, G.minB);
-    pavedField(town, M.paving, G.minA, G.maxA, G.minB, G.maxB, .045);
-    for (const [a0, a1, b0, b1] of [[G.minA, G.maxA, G.minB - .3, G.minB + .3], [G.minA, G.maxA, G.maxB - .3, G.maxB + .3], [G.maxA - .3, G.maxA + .3, G.minB, G.maxB]]) {
+    (yield* pavedField(town, M.paving, G.minA, G.maxA, G.minB, G.maxB, .045));
+    for (const [a0, a1, b0, b1] of [[G.minA, G.maxA, G.minB - .3, G.minB + .3], [G.minA, G.maxA, G.maxB - .3, G.maxB + .3], [G.maxA - .3, G.maxA + .3, G.minB, G.maxB]]) { if (++buildWork % 8 === 0) yield;
       const spot = P((a0 + a1) / 2, (b0 + b1) / 2);
       town.block(M.face, spot.x, cityGround((a0 + a1) / 2) - .1, spot.z, a1 - a0, 1.3, b1 - b0);
       town.box(M.cap, spot.x, cityGround((a0 + a1) / 2) + 1.26, spot.z, a1 - a0 + .2, .16, b1 - b0 + .2);
     }
-    for (const [index, bed] of G.beds.entries()) {
+    for (const [index, bed] of G.beds.entries()) { if (++buildWork % 8 === 0) yield;
       const spot = P(bed.a, bed.b), ground = cityGround(bed.a);
       town.block(MASONRY.lake.dark, spot.x, ground, spot.z, 4.4, .5, 3.0);
       town.block('#5f5138', spot.x, ground + .5, spot.z, 4.0, .18, 2.6);
-      for (let k = 0; k < 9; k++) {
+      for (let k = 0; k < 9; k++) { if (++buildWork % 8 === 0) yield;
         const px = spot.x - 1.7 + (k % 3) * 1.7, pz = spot.z - .9 + Math.floor(k / 3) * .9;
         town.rock(['#5d7a45', '#6f8a4e', '#4f6b46', '#7d8f56'][(k + index) % 4], px, ground + .78, pz, .42, .38, .42, k);
       }
@@ -816,7 +821,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       town.block(WOOD_DARK, spot.x - 2.0, ground + .68, spot.z - 1.3, .1, .5, .1);
       town.block(PAPER, spot.x - 2.0, ground + 1.1, spot.z - 1.3, .42, .3, .03);
     }
-    for (const tree of G.trees) {
+    for (const tree of G.trees) { if (++buildWork % 8 === 0) yield;
       const spot = P(tree.a, tree.b), ground = cityGround(tree.a);
       town.cylinder(BARK, spot.x, ground, spot.z, .26, 3.0, 0, 7);
       town.rock(LEAF_DARK, spot.x, ground + 4.0, spot.z, 2.0, 1.5, 2.0, 1);
@@ -829,7 +834,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     {
       const w = G.specimenWall, spot = P(w.a, w.b), ground = cityGround(w.a);
       const courses = [MASONRY.lake, MASONRY.imperial, MASONRY.patched, MASONRY.new];
-      for (let k = 0; k < 16; k++) {
+      for (let k = 0; k < 16; k++) { if (++buildWork % 8 === 0) yield;
         const course = courses[Math.floor(k / 4)];
         town.block(k % 2 ? course.face : course.dark, spot.x - 3.4 + (k % 4) * 1.9, ground + 1.35 + Math.floor(k / 4) * .62, spot.z, 1.7, .58, .9);
       }
@@ -839,7 +844,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     {
       const d = G.dovecote, spot = P(d.a, d.b), ground = cityGround(d.a);
       town.block(M.face, spot.x, ground, spot.z, 2.6, 5.6, 2.6);
-      for (let k = 0; k < 9; k++) town.block('#241f1b', spot.x - .9 + (k % 3) * .9, ground + 3.6 + Math.floor(k / 3) * .6, spot.z - 1.32, .38, .34, .1);
+      for (let k = 0; k < 9; k++) { if (++buildWork % 8 === 0) yield; town.block('#241f1b', spot.x - .9 + (k % 3) * .9, ground + 3.6 + Math.floor(k / 3) * .6, spot.z - 1.32, .38, .34, .1); }
       town.cone(SHINGLE, spot.x, ground + 5.6, spot.z, 2.1, 1.9, Math.PI / 4, 4);
       push({ x: spot.x, z: spot.z, r: 1.5, kind: 'dovecote' });
     }
@@ -847,11 +852,11 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
 
   // The timber strand on the west bank: stacked lake-timber, rafts drawn up, sawpits, a slip.
   if (CHANNEL.enabled) {
-    for (const [ai, bi, count] of [[-40, -38, 6], [-40, -8, 5], [-40, 30, 6], [-56, 56, 4]]) {
-      for (let k = 0; k < count; k++) {
+    for (const [ai, bi, count] of [[-40, -38, 6], [-40, -8, 5], [-40, 30, 6], [-56, 56, 4]]) { if (++buildWork % 8 === 0) yield;
+      for (let k = 0; k < count; k++) { if (++buildWork % 8 === 0) yield;
         const spot = P(ai + (k % 2) * 2.4, bi + Math.floor(k / 2) * 2.6), ground = y(spot.x, spot.z);
         // Cut lake timber lies along the strand, two courses of it on skids.
-        for (let log = 0; log < 4; log++) {
+        for (let log = 0; log < 4; log++) { if (++buildWork % 8 === 0) yield;
           const level = ground + .35 + Math.floor(log / 2) * .62, shift = (log % 2) * .66 - .33;
           town.beam(log % 2 ? BARK : WOOD_LIGHT, [spot.x + shift, level, spot.z - 3.2], [spot.x + shift, level, spot.z + 3.2], .6);
         }
@@ -860,24 +865,24 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       metrics.props++;
     }
     // Two rafts drawn half out of the water on the strand, and the sawpits behind them.
-    for (const b of [-16, 24]) {
+    for (const b of [-16, 24]) { if (++buildWork % 8 === 0) yield;
       const spot = P(-27.5, b), ground = CHANNEL.surface;
       // A raft drawn half out of the water: nine logs lashed across two binders.
       for (let k = 0; k < 9; k++)
-        town.beam(k % 2 ? BARK : WOOD_LIGHT, [spot.x - 4.6, ground + .2, spot.z - 5.6 + k * 1.4], [spot.x + 4.6, ground + .2, spot.z - 5.6 + k * 1.4], .66);
-      for (const across of [-3.4, 3.4]) town.beam(WOOD_DARK, [spot.x + across, ground + .55, spot.z - 6], [spot.x + across, ground + .55, spot.z + 6], .2);
+        { if (++buildWork % 8 === 0) yield; town.beam(k % 2 ? BARK : WOOD_LIGHT, [spot.x - 4.6, ground + .2, spot.z - 5.6 + k * 1.4], [spot.x + 4.6, ground + .2, spot.z - 5.6 + k * 1.4], .66); }
+      for (const across of [-3.4, 3.4]) { if (++buildWork % 8 === 0) yield; town.beam(WOOD_DARK, [spot.x + across, ground + .55, spot.z - 6], [spot.x + across, ground + .55, spot.z + 6], .2); }
       metrics.props++;
     }
-    for (const b of [-34, -20]) {
+    for (const b of [-34, -20]) { if (++buildWork % 8 === 0) yield;
       const spot = P(-36, b), ground = y(spot.x, spot.z);
-      town.patch(EARTH_DARK, heightAt, spot.x, spot.z, 3.4, 8.0, 0, .04, 3);
-      for (const side of [-1, 1]) town.beam(WOOD, [spot.x + side * 1.6, ground + .4, spot.z - 4], [spot.x + side * 1.6, ground + .4, spot.z + 4], .22);
+      (yield* town.patchSteps(EARTH_DARK, heightAt, spot.x, spot.z, 3.4, 8.0, 0, .04, 3));
+      for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; town.beam(WOOD, [spot.x + side * 1.6, ground + .4, spot.z - 4], [spot.x + side * 1.6, ground + .4, spot.z + 4], .22); }
       town.beam(WOOD_LIGHT, [spot.x - 2.4, ground + .5, spot.z + 1.2], [spot.x + 2.4, ground + .5, spot.z + 1.2], .26, .18);
       push({ x: spot.x, z: spot.z, hx: 1.9, hz: 4.2, kind: 'sawpit' });
     }
   }
   metrics.vertices += town.vertexCount;
-  town.finish(district);
+  (yield* town.finishSteps(district));
 
   // =========================================================================
   // The causeway
@@ -885,13 +890,13 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   if (CHANNEL.enabled) {
     const cause = createSceneryBuilder('The Ambron causeway');
     const deck = CAUSEWAY.deckY;
-    for (const pier of CAUSEWAY.piers) {
+    for (const pier of CAUSEWAY.piers) { if (++buildWork % 8 === 0) yield;
       const spot = P(pier, CAUSEWAY.b);
       cause.block(MASONRY.lake.dark, spot.x, CHANNEL.surface - 3.2, spot.z, 3.6, deck - CHANNEL.surface + 2.4, 7.2);
       // A cutwater on the upstream face: the old piers nobody alive knows how to make.
       cause.block(MASONRY.lake.dark, spot.x, CHANNEL.surface - 1.2, spot.z - 4.4, 2.4, 3.6, 2.6, Math.PI / 4);
     }
-    for (let a = -CAUSEWAY.foot; a < CAUSEWAY.foot; a += 3) {
+    for (let a = -CAUSEWAY.foot; a < CAUSEWAY.foot; a += 3) { if (++buildWork % 8 === 0) yield;
       const a0 = a, a1 = Math.min(CAUSEWAY.foot, a + 3);
       const mid = (a0 + a1) / 2, spot = P(mid, CAUSEWAY.b);
       const level = Math.abs(mid) <= CAUSEWAY.level ? deck
@@ -906,21 +911,21 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
         // The intrados: highest at mid-span, springing from near the water at each pier.
         const drop = (1 - Math.sqrt(Math.max(0, 1 - ((gap - halfSpan) / halfSpan) ** 2))) * 1.6;
         for (const side of [-1, 1])
-          cause.block(MASONRY.lake.dark, spot.x, level - 1.35 - drop, spot.z + side * (CAUSEWAY.halfWidth - .1), a1 - a0 + .05, .3 + drop, .7);
+          { if (++buildWork % 8 === 0) yield; cause.block(MASONRY.lake.dark, spot.x, level - 1.35 - drop, spot.z + side * (CAUSEWAY.halfWidth - .1), a1 - a0 + .05, .3 + drop, .7); }
       }
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
         cause.block(MASONRY.imperial.face, spot.x, level, spot.z + side * (CAUSEWAY.halfWidth + .05), a1 - a0 + .05, .95, .5);
         cause.box(MASONRY.imperial.cap, spot.x, level + 1.0, spot.z + side * (CAUSEWAY.halfWidth + .05), a1 - a0 + .05, .14, .62);
       }
     }
     // Lamp irons on the parapet, and the middle arch's keystone bosses.
-    for (const a of [-24, -12, 0, 12, 24]) for (const side of [-1, 1]) {
+    for (const a of [-24, -12, 0, 12, 24]) { if (++buildWork % 8 === 0) yield; for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const spot = P(a, CAUSEWAY.b + side * (CAUSEWAY.halfWidth + .1));
       cause.cylinder(IRON, spot.x, deck + 1.05, spot.z, .06, 1.5, 0, 4);
       cause.block(BRONZE, spot.x, deck + 2.4, spot.z, .34, .42, .34);
-    }
+    } }
     metrics.vertices += cause.vertexCount;
-    cause.finish(district);
+    (yield* cause.finishSteps(district));
   }
 
   // =========================================================================
@@ -944,10 +949,10 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
 
   // Three modest roadside cottages: a stopping place along Cagney's shorter
   // escort approach, not a second named town or an invented set of residents.
-  for(const [i,h] of CAGNEY_ROADSIDE_HAMLET.buildings.entries()){
+  for(const [i,h] of CAGNEY_ROADSIDE_HAMLET.buildings.entries()){ if (++buildWork % 8 === 0) yield;
     lakeHouse(h.x,h.z,h.w,h.d,h.h,Math.PI,{roof:i===1?THATCH:SHINGLE,wall:['#b0a78e','#97967d','#b7ab93'][i]});
-    country.patch('#a99775',heightAt,h.x,h.z+9,2.0,11,0,.045,4);
-    for(const dx of [-h.w/2+1,h.w/2-1])country.block(WOOD_LIGHT,h.x+dx,y(h.x+dx,h.z+4.3)+1.1,h.z+4.3,1.4,.32,.55);
+    (yield* country.patchSteps('#a99775',heightAt,h.x,h.z+9,2.0,11,0,.045,4));
+    for(const dx of [-h.w/2+1,h.w/2-1]){ if (++buildWork % 8 === 0) yield; country.block(WOOD_LIGHT,h.x+dx,y(h.x+dx,h.z+4.3)+1.1,h.z+4.3,1.4,.32,.55); }
   }
 
   // Nemmel: six roofs on the shore, drying frames, boats hauled up, and the smoke shed.
@@ -956,27 +961,27 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     for (const [dx, dz, w, d, h, yaw] of [
       [10, -12, 8, 6.5, 3.2, 0], [14, 2, 7.5, 6, 3.0, 0], [17, 16, 8.5, 6.5, 3.2, 0],
       [-2, -18, 7, 6, 3.0, Math.PI / 2], [-4, 20, 7.5, 6, 3.1, Math.PI / 2], [22, -4, 6.5, 5.5, 2.9, 0],
-    ]) lakeHouse(n.x + dx, n.z + dz, w, d, h, yaw);
+    ]) { if (++buildWork % 8 === 0) yield; lakeHouse(n.x + dx, n.z + dz, w, d, h, yaw); }
     // The smoke shed works all year: dark timber, a low door and a lid of turf.
     lakeHouse(n.x + 11, n.z - 4, 6, 5, 2.6, 0, { roof: '#5a5346', wall: '#6d6152' });
     // Drying frames stand on the beach between the road and the water, wherever
     // there is room for one: the shore is not straight and the road is not either.
-    for (let k = 0; k < 7; k++) {
+    for (let k = 0; k < 7; k++) { if (++buildWork % 8 === 0) yield;
       const z = n.z - 13 + k * 5;
       let x = n.x + 2;
-      while (x > n.x - 34 && elagosWaterDistance(x, z) > 6) x -= 1;
+      while (x > n.x - 34 && elagosWaterDistance(x, z) > 6) { if (++buildWork % 8 === 0) yield; x -= 1; }
       x += 2;
       if (elagosWaterDistance(x, z) < 2 || roadDistance(x, z) < 4) continue;
       const ground = y(x, z);
-      for (const side of [-1, 1]) country.cylinder(WOOD, x, ground, z + side * 1.9, .09, 2.1, 0, 4);
+      for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; country.cylinder(WOOD, x, ground, z + side * 1.9, .09, 2.1, 0, 4); }
       country.box(WOOD_LIGHT, x, ground + 2.0, z, .1, .1, 4.0);
-      for (let f = 0; f < 6; f++) country.block('#a9a189', x, ground + 1.45, z - 1.6 + f * .64, .2, .5, .1);
+      for (let f = 0; f < 6; f++) { if (++buildWork % 8 === 0) yield; country.block('#a9a189', x, ground + 1.45, z - 1.6 + f * .64, .2, .5, .1); }
       push({ x, z, r: .4, kind: 'drying-frame' });
     }
     // Boats on the shingle, and the nets over them.
-    for (let k = 0; k < 4; k++) {
+    for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield;
       let x = n.x - 4, z = n.z - 10 + k * 7;
-      while (elagosWaterDistance(x, z) > 1.5 && x > n.x - 34) x -= 1;
+      while (elagosWaterDistance(x, z) > 1.5 && x > n.x - 34) { if (++buildWork % 8 === 0) yield; x -= 1; }
       const ground = y(x + 4, z), yaw = Math.PI / 2 + range(-.3, .3);
       country.frame(x + 3, ground + .3, z, yaw, () => {
         country.block(WOOD_LIGHT, 0, 0, 0, 1.5, .6, 5.2);
@@ -986,19 +991,19 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       push({ x: x + 3, z, hx: 2.7, hz: .9, kind: 'lake-boat' });
       metrics.props++;
     }
-    country.patch('#a09a7e', heightAt, n.x + 4, n.z, 30, 44, 0, .04, 6);
+    (yield* country.patchSteps('#a09a7e', heightAt, n.x + 4, n.z, 30, 44, 0, .04, 6));
   }
 
   // The ice-road stone, the warden's hut, and the stakes cut and waiting for autumn.
   {
     const s = ICE_ROAD_STONE, ground = y(s.x, s.z);
     country.block(LIME, s.x, ground, s.z, .8, 2.6, .5);
-    for (let k = 0; k < 7; k++) country.block('#2f2c27', s.x, ground + .45 + k * .28, s.z - .27, .84, .07, .03);
+    for (let k = 0; k < 7; k++) { if (++buildWork % 8 === 0) yield; country.block('#2f2c27', s.x, ground + .45 + k * .28, s.z - .27, .84, .07, .03); }
     country.block(MASONRY.lake.dark, s.x, ground - .2, s.z, 1.4, .45, 1.1);
     push({ x: s.x, z: s.z, r: .6, kind: 'ice-road-stone' });
     lakeHouse(s.x + 13, s.z + 5, 6, 5, 2.6, Math.PI / 2, { roof: THATCH, wall: '#8e8878' });
     // The stakes are cut in the autumn and stacked behind the hut, off the road.
-    for (let k = 0; k < 22; k++) {
+    for (let k = 0; k < 22; k++) { if (++buildWork % 8 === 0) yield;
       const x = s.x + 15 + (k % 11) * .35, z = s.z - 3 + Math.floor(k / 11) * 1.2, ground2 = y(x, z);
       country.beam(WOOD_LIGHT, [x, ground2, z], [x + .5, ground2 + 2.5, z + range(-.2, .2)], .07);
     }
@@ -1013,9 +1018,9 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     country.block('#1f2420', s.x, ground + .8, s.z - .5, 1.0, 1.2, .2);
     country.cone(MASONRY.lake.cap, s.x, ground + 2.5, s.z, 1.5, 1.1, Math.PI / 4, 4);
     country.cylinder(MASONRY.lake.cap, s.x, ground + .3, s.z - 1.7, .6, .5, 0, 7);
-    for (let k = 0; k < 5; k++) country.rock([BRONZE, IRON, '#b7ad8c'][k % 3], s.x + range(-.4, .4), ground + .85, s.z - 1.7 + range(-.3, .3), .09, .05, .09, k);
+    for (let k = 0; k < 5; k++) { if (++buildWork % 8 === 0) yield; country.rock([BRONZE, IRON, '#b7ad8c'][k % 3], s.x + range(-.4, .4), ground + .85, s.z - 1.7 + range(-.3, .3), .09, .05, .09, k); }
     push({ x: s.x, z: s.z, r: 1.5, kind: 'lake-shrine' });
-    for (let k = 0; k < 9; k++) {
+    for (let k = 0; k < 9; k++) { if (++buildWork % 8 === 0) yield;
       const x = s.x + range(-9, 9), z = s.z + range(-7, 7);
       if (elagosWaterDistance(x, z) < .5) continue;
       country.rock(SHINGLE_ROCK, x, y(x, z) + .1, z, range(.3, .8), range(.2, .45), range(.3, .8), k);
@@ -1025,7 +1030,7 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   // The drowned causeway: eleven stumps of an older Ambron, in a line for the far bank.
   {
     const piers = DROWNED_CAUSEWAY.piers;
-    for (let k = 0; k < 11; k++) {
+    for (let k = 0; k < 11; k++) { if (++buildWork % 8 === 0) yield;
       const a = -21 + k * 4.2, x = piers.x + a, z = piers.z + Math.sin(k * .7) * .6;
       const surface = elagosWaterSurface(x, z) ?? CHANNEL.surface;
       // Stumps of lake-stone standing out of the water, each worn to its own height.
@@ -1035,17 +1040,17 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     }
     const marker = DROWNED_CAUSEWAY, ground = y(marker.x, marker.z);
     country.block(MASONRY.lake.dark, marker.x, ground - .1, marker.z, 3.4, .4, 2.4);
-    for (let k = 0; k < 4; k++) country.rock(MASONRY.lake.face, marker.x + range(-1.6, 1.6), ground + .3, marker.z + range(-1.2, 1.2), range(.5, .9), range(.3, .6), range(.5, .9), k);
+    for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield; country.rock(MASONRY.lake.face, marker.x + range(-1.6, 1.6), ground + .3, marker.z + range(-1.2, 1.2), range(.5, .9), range(.3, .6), range(.5, .9), k); }
     push({ x: marker.x, z: marker.z, r: 1.8, kind: 'drowned-causeway' });
   }
 
   // The Stair: four steps of shelved rock, white water, and the ox capstan that brings a barge up.
   {
     const head = THE_STAIR.head;
-    for (let k = 0; k < 4; k++) {
+    for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield;
       const z = head.z + 4 + k * 6, x = head.x - k * 2.4;
       const surface = elagosWaterSurface(x, z) ?? 12;
-      for (let s = -1; s <= 1; s++) {
+      for (let s = -1; s <= 1; s++) { if (++buildWork % 8 === 0) yield;
         country.block(SHINGLE_ROCK, x + s * 10, surface - 1.4, z, 11, 1.5, 3.4, .05 * s);
         country.rock(FOAM, x + s * 10 + range(-2, 2), surface + .08, z + 2.2, range(2.4, 4.0), .12, range(1.2, 2.2), k + s);
       }
@@ -1053,14 +1058,14 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
     const capstan = THE_STAIR.capstan, ground = y(capstan.x, capstan.z);
     country.block(MASONRY.lake.dark, capstan.x, ground - .15, capstan.z, 5.2, .4, 5.2);
     country.cylinder(WOOD_DARK, capstan.x, ground + .25, capstan.z, 1.2, 1.4, 0, 7);
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < 6; k++) { if (++buildWork % 8 === 0) yield;
       const angle = k / 6 * Math.PI * 2;
       country.beam(WOOD, [capstan.x, ground + 1.2, capstan.z], [capstan.x + Math.sin(angle) * 2.9, ground + 1.15, capstan.z + Math.cos(angle) * 2.9], .15);
     }
     push({ x: capstan.x, z: capstan.z, r: 3.1, kind: 'stair-capstan' });
     // The haul path down beside the water, worn to the rock.
-    country.patch('#8e8367', heightAt, capstan.x - 4, capstan.z + 16, 7, 40, .2, .04, 6);
-    for (let k = 0; k < 6; k++) {
+    (yield* country.patchSteps('#8e8367', heightAt, capstan.x - 4, capstan.z + 16, 7, 40, .2, .04, 6));
+    for (let k = 0; k < 6; k++) { if (++buildWork % 8 === 0) yield;
       const x = capstan.x - 2 - k, z = capstan.z + 6 + k * 7, g = y(x, z);
       country.cylinder(WOOD_DARK, x, g, z, .26, 1.1, 0, 7);
       push({ x, z, r: .35, kind: 'haul-bollard' });
@@ -1071,43 +1076,43 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
   // The Link crossing: three slabs of lake-stone on two piers.
   {
     const b = LINK_BRIDGE, along = Math.atan2(b.axis.x, b.axis.z);
-    for (const t of [-6, 6]) {
+    for (const t of [-6, 6]) { if (++buildWork % 8 === 0) yield;
       const x = b.crossing.x + b.axis.x * t, z = b.crossing.z + b.axis.z * t;
       const surface = elagosWaterSurface(x, z) ?? 15.6;
       country.block(MASONRY.lake.dark, x, surface - 2.2, z, 2.2, b.deckY - surface + 2.0, 3.0, along);
     }
-    for (let t = -b.halfSpan; t < b.halfSpan; t += 4) {
+    for (let t = -b.halfSpan; t < b.halfSpan; t += 4) { if (++buildWork % 8 === 0) yield;
       const t1 = Math.min(b.halfSpan, t + 4), mid = (t + t1) / 2;
       const x = b.crossing.x + b.axis.x * mid, z = b.crossing.z + b.axis.z * mid;
       country.block(MASONRY.lake.cap, x, b.deckY - .3, z, b.laneHalf * 2 + .6, .32, t1 - t + .05, along);
     }
-    for (const side of [-1, 1]) for (let t = -b.halfSpan; t <= b.halfSpan; t += 1.6) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; for (let t = -b.halfSpan; t <= b.halfSpan; t += 1.6) { if (++buildWork % 8 === 0) yield;
       const x = b.crossing.x + b.axis.x * t + b.side.x * side * (b.laneHalf + .35);
       const z = b.crossing.z + b.axis.z * t + b.side.z * side * (b.laneHalf + .35);
       if (Math.abs(t) < b.halfSpan - .1) country.cylinder(MASONRY.lake.face, x, b.deckY, z, .17, .8, 0, 4);
       push({ x, z, r: .55, kind: 'link-parapet' });
-    }
+    } }
   }
 
   // The Outside: the city's overflow along the haul road, kept, roofless and re-roofed.
-  for (const entry of AMBRON_OUTSIDE) {
+  for (const entry of AMBRON_OUTSIDE) { if (++buildWork % 8 === 0) yield;
     const spot = P(entry.a, entry.b);
     lakeHouse(spot.x, spot.z, entry.w, entry.d, entry.h, entry.a > 50 ? 0 : Math.PI,
       { roofless: entry.state === 'roofless', roof: entry.state === 'reroofed' ? THATCH : SHINGLE,
         wall: entry.state === 'reroofed' ? '#8e8878' : '#9a9686' });
-    if (entry.state === 'roofless') for (let k = 0; k < 5; k++) {
+    if (entry.state === 'roofless') for (let k = 0; k < 5; k++) { if (++buildWork % 8 === 0) yield;
       const x = spot.x + range(-entry.w, entry.w), z = spot.z + range(-entry.d, entry.d);
       country.rock(MASONRY.lake.dark, x, y(x, z) + .18, z, range(.4, .8), range(.25, .5), range(.4, .8), k);
     }
     if (entry.state !== 'roofless') {
       const stack = { x: spot.x + (entry.a > 50 ? 6.5 : -6.5), z: spot.z + 2 }, ground = y(stack.x, stack.z);
       for (let k = 0; k < 5; k++)
-        country.beam(k % 2 ? BARK : WOOD_LIGHT, [stack.x - 1.1, ground + .25 + k * .38, stack.z], [stack.x + 1.1, ground + .25 + k * .38, stack.z], .38);
+        { if (++buildWork % 8 === 0) yield; country.beam(k % 2 ? BARK : WOOD_LIGHT, [stack.x - 1.1, ground + .25 + k * .38, stack.z], [stack.x + 1.1, ground + .25 + k * .38, stack.z], .38); }
     }
   }
 
   // Reeds, boulders and lake-edge willows: the shore, wherever the scatter does not reach.
-  for (let k = 0; k < 520; k++) {
+  for (let k = 0; k < 520; k++) { if (++buildWork % 8 === 0) yield;
     const water = ELAGOS_BASINS[k % ELAGOS_BASINS.length];
     const shore = water.shore[Math.floor(random() * water.shore.length)];
     const dx = shore.x - water.centre.x, dz = shore.z - water.centre.z, l = Math.hypot(dx, dz) || 1;
@@ -1124,15 +1129,15 @@ export function createElagosScenery({ parent, heightAt, colliders, signs, roadDi
       push({ x, z, r: .3, kind: 'shore-willow' });
     } else {
       for (let r2 = 0; r2 < 4; r2++)
-        country.beam(REED, [x + range(-.5, .5), ground, z + range(-.5, .5)], [x + range(-.7, .7), ground + range(.9, 1.7), z + range(-.7, .7)], .04);
+        { if (++buildWork % 8 === 0) yield; country.beam(REED, [x + range(-.5, .5), ground, z + range(-.5, .5)], [x + range(-.7, .7), ground + range(.9, 1.7), z + range(-.7, .7)], .04); }
     }
     metrics.props++;
   }
   metrics.vertices += country.vertexCount;
-  country.finish(district);
+  (yield* country.finishSteps(district));
 
   // Signposts in the road's own language.
-  for (const sign of ELAGOS_SIGNS) {
+  for (const sign of ELAGOS_SIGNS) { if (++buildWork % 8 === 0) yield;
     const target = { x: sign.x - Math.sin(sign.yaw) * 22, z: sign.z - Math.cos(sign.yaw) * 22 };
     const back = { x: sign.x + Math.sin(sign.yaw) * 22, z: sign.z + Math.cos(sign.yaw) * 22 };
     signs.direction({ x: sign.x, z: sign.z, label: sign.label, toward: target, back, backLabel: sign.returnLabel, parent });

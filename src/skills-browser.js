@@ -5,6 +5,8 @@ export const SKILL_CATEGORIES = Object.freeze(['Combat', 'Exploration', 'Craftin
 const crafting = new Set(['cooking', 'firemaking', 'smithing', 'woodcutting', 'construction', 'farming']);
 
 export function skillCategory(skill) {
+  const parent = SKILLS[skill.id]?.parent;
+  if (parent) return skillCategory({ id: parent });
   const group = SKILLS[skill.id]?.group;
   if(skill.id==='husbandry')return 'Livestock';
   if(['acting','visualarts'].includes(skill.id))return 'Arts';
@@ -26,11 +28,18 @@ export function practicedSkill(skill) {
 
 export function filterSkills(skills, { scope = 'practiced', category = 'all', query = '' } = {}) {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  return skills.filter(skill => !SKILLS[skill.id]?.reserved && (scope === 'all' || practicedSkill(skill))
+  const matching = skills.filter(skill => !SKILLS[skill.id]?.reserved && (scope === 'all' || practicedSkill(skill))
     && (category === 'all' || skillCategory(skill) === category)
-    && words.every(word => `${skill.name} ${skillCategory(skill)}`.toLocaleLowerCase().includes(word)))
-    .slice().sort((a, b) => SKILL_CATEGORIES.indexOf(skillCategory(a)) - SKILL_CATEGORIES.indexOf(skillCategory(b))
-      || a.name.localeCompare(b.name));
+    && words.every(word => `${skill.name} ${skillCategory(skill)} ${SKILLS[SKILLS[skill.id]?.parent]?.name ?? ''}`.toLocaleLowerCase().includes(word)));
+  // A matching specialization carries its parent as context, including when a
+  // search matches only the child's name. It never becomes an unrelated row.
+  for (const skill of [...matching]) {
+    const parent = skills.find(entry => entry.id === SKILLS[skill.id]?.parent);
+    if (parent && !matching.includes(parent)) matching.push(parent);
+  }
+  return matching.sort((a, b) => SKILL_CATEGORIES.indexOf(skillCategory(a)) - SKILL_CATEGORIES.indexOf(skillCategory(b))
+    || (SKILLS[SKILLS[a.id]?.parent]?.name ?? a.name).localeCompare(SKILLS[SKILLS[b.id]?.parent]?.name ?? b.name)
+    || Number(!!SKILLS[a.id]?.parent) - Number(!!SKILLS[b.id]?.parent) || a.name.localeCompare(b.name));
 }
 
 const element = (tag, className, text) => {
@@ -118,6 +127,11 @@ export function createSkillsBrowser({ mount, icon, renderLog = () => {}, onSelec
       section.append(element('h3', 'skill-browser-group-title', group));
       for (const skill of rows) {
         const button = element('button', 'skill-browser-row'); button.type = 'button'; button.dataset.skill = skill.id;
+        const parent = SKILLS[skill.id]?.parent;
+        if (parent) {
+          button.dataset.parentSkill = parent;
+          button.setAttribute('aria-label', `${skill.name}, specialization of ${SKILLS[parent].name}`);
+        }
         button.setAttribute('aria-pressed', String(skill.id === selectedId));
         button.tabIndex = skill.id === selectedId ? 0 : -1;
         button.append(mark(skill), element('span', 'skill-browser-name', skill.name));
@@ -148,9 +162,23 @@ export function createSkillsBrowser({ mount, icon, renderLog = () => {}, onSelec
       empty.append(showAll); detail.append(empty); return;
     }
     const heading = element('header', 'skill-browser-heading'), names = element('div');
-    names.append(element('p', 'skill-browser-eyebrow', skillCategory(skill)), element('h3', '', skill.name));
+    const parent = SKILLS[skill.id]?.parent;
+    names.append(element('p', 'skill-browser-eyebrow', parent ? `${SKILLS[parent].name} specialization` : skillCategory(skill)), element('h3', '', skill.name));
     heading.append(mark(skill), names); detail.append(heading);
     detail.append(element('p', 'skill-browser-blurb', skill.blurb));
+    if (parent) {
+      const back = element('button', 'skill-browser-parent-link', `Back to ${SKILLS[parent].name}`); back.type = 'button';
+      back.onclick = () => select(parent); detail.append(back);
+    }
+    const branches = entries.filter(entry => SKILLS[entry.id]?.parent === skill.id);
+    if (branches.length) {
+      const section = element('section', 'skill-browser-specializations'); section.append(element('h4', '', 'Specializations'));
+      for (const branch of branches) {
+        const link = element('button', 'skill-browser-specialization-link', branch.name); link.type = 'button'; link.dataset.skill = branch.id;
+        link.onclick = () => select(branch.id); section.append(link, element('p', '', branch.learned ? 'First guarded technique learned.' : 'Locked until a dwarf artisan shares the first technique.'));
+      }
+      detail.append(section);
+    }
     if (practicedSkill(skill)) {
       const progress = element('section', 'skill-browser-progress'); progress.setAttribute('aria-label', 'Skill progress');
       const line = element('div', 'skill-browser-progress-line');
@@ -162,7 +190,16 @@ export function createSkillsBrowser({ mount, icon, renderLog = () => {}, onSelec
     } else {
       detail.append(element('p', 'skill-browser-status', skillCategory(skill) === 'Sorcery'
         ? `Level ${Math.max(1, skill.level)} · no sorcery experience yet`
-        : skill.learned ? 'Ready to try · no experience yet' : 'Not learned yet'));
+        : skill.learned ? 'Ready to try · no experience yet' : skill.requiresLesson ? 'Locked · a guarded lesson is required' : 'Not learned yet'));
+    }
+    if (skill.techniques?.length) {
+      const section = element('section', 'skill-browser-techniques'); section.append(element('h4', '', 'Guarded techniques'));
+      for (const technique of skill.techniques) {
+        const row = element('div', 'skill-browser-technique'); row.dataset.technique = technique.id; row.dataset.learned = String(technique.learned);
+        row.append(element('strong', '', technique.name), element('span', '', technique.learned ? 'Learned' : technique.future ? 'Locked · future quests' : 'Locked · first lesson'));
+        section.append(row, element('p', '', technique.detail));
+      }
+      detail.append(section);
     }
     const spells = schoolSpells(skill, getLearnedSpells());
     if (spells.length) {

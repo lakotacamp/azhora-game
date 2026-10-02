@@ -2,6 +2,12 @@
 
 Design draft for review — 29 September 2026. **This document does not authorize or implement the expansion.** West Lotharn integration is separate work. Proposed priorities and new gameplay ideas below need review together.
 
+## Current planning sequence
+
+**1 October update:** Ibenwood, South Oremindi and the western frontier have received subsequent implementation work; the inventory and proposed ordering below remain the dated 29 September audit, not a current build count. The user's next linked design sequence is **[Baldro Dwarfland](dwarfland-design-draft.md) first, then [West Oremindi and Sevron](sevron-west-oremindi-design.md)**. Baldro has now received its first playable regional and dwarf-city implementation; see [the build record](dwarfland-implementation.md). West Oremindi and Sevron remain design work for a later implementation.
+
+West Oremindi will be an extremely dangerous wilderness containing the hidden elven kingdom of Sevron within a drowned ancient dwarf capital. The Baldro dwarves remember that lost kingdom as their golden age. This supersedes the earlier placement of Sevron with South Oremindi; the South Oremindi campaign convergence and Inquest's cottage remain there.
+
 ## Recommendation
 
 Build a connected world in small geographic groups, with a recognizable landscape and a satisfying journey through each group. Finish a few coherent journeys before filling distant countries with scenery. A region should be recognizable from ground level without its HUD label: through its skyline, water, vegetation, wildlife, and how the player moves through it.
@@ -78,6 +84,8 @@ Start with South Oremindi because the existing campaign converges there. These m
 
 Design a complete ascent and safe descent before dressing a peak. Decide where climbing, rest ledges, supplies and cold exposure matter; then test with real stamina and collision. Preserve the distinctive Thalmagar prototype while preparing a separate terrain/ecology brief for its isolation and archaic fauna. Its high difficulty should not be reduced to a larger enemy health bar.
 
+The detailed [West Oremindi and Sevron plan](sevron-west-oremindi-design.md) now governs that region's future build, after Baldro Dwarfland. It preserves the actual western sea coast and separates the ancient drowned dwarf capital from the later hidden elven settlement.
+
 ### E. Northern interior — 20 regions
 
 **Acor Wetlands; North Acorwood, East Acordwood, South Acordwood, West Acorwood; North Endevor, East Endevor, South Endevor, West Endevor; North Lond, East Lond, South Lond, West Lond, Central Lond; North Ganun, East Ganun, South Ganun, West Ganun; North Nonoth, South Nonoth.**
@@ -104,7 +112,7 @@ Scythe's prose geography conflicts with its distant southern atlas placement; re
 
 ## Shared systems to prepare before multiplying the world
 
-The game currently builds the world up front and then culls distant objects. Culling is not loading and unloading regions. Wildlife and NPCs reduce distant activity, but their objects remain allocated. Expanding this architecture from 27 to 131 regions without measuring it is a significant risk.
+The world still builds static outdoor scenery before play, then culls distant objects. The October 2 startup pass caches base terrain on desktop, reduces repeated terrain and road calculations, stages loading with progress messages, defers named human rigs and dwarven interiors, and loads/unloads regional wildlife visuals by distance. Logical wildlife and quest state remain independent of those visuals. These are measured startup improvements, not full regional streaming; multiplying static scenery across all 131 regions still needs the work below.
 
 Proposed sequence:
 

@@ -88,7 +88,7 @@ const walked = flood(island.spawn);
  * (`tests/drawn-ground.test.js` has the whole argument). The terrain's tiles share one vertex buffer.
  */
 const drawnHeight = (() => {
-  const tile = scene.getObjectByName('The ground of the four regions').children.find(mesh => /^Terrain \d+:\d+$|^Whole-world terrain$/.test(mesh.name));
+  const tile = (scene.getObjectByName('The ground of Azhora') ?? scene.getObjectByName('The ground of the four regions')).children.find(mesh => /^Terrain \d+:\d+$|^Whole-world terrain$/.test(mesh.name));
   const position = tile.geometry.attributes.position;
   let columns = 1; while (columns < position.count && position.getX(columns) !== position.getX(0)) columns++;
   const rows = position.count / columns, xs = new Float64Array(columns), zs = new Float64Array(rows);

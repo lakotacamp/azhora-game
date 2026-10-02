@@ -28,6 +28,7 @@ import { menoraGround } from './menora-city.js';
 import { caricasSettlementGround } from './caricas-settlement.js';
 import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
 import { yunethreGround, yunethreTint } from './yunethre-world.js';
+import { baldroHeight, baldroTint } from './baldro-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const smooth = (a, b, x) => { const v = clamp((x - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
@@ -277,7 +278,8 @@ export function groundBeforeFeradom(x, z) {
   // Selemis lays its own ground last of all (src/selemis-world.js). It is an island with no land
   // border, so it has no seam with anything: it writes only where `regionAt` answers `Selemi` and the
   // coast field is positive, and answers with the ground it was handed everywhere else.
-  return selemisGround(x, z, yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))))))));
+  const regional = selemisGround(x, z, yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))))))));
+  return baldroHeight(x,z,regional);
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -348,10 +350,18 @@ export const SHORE_TINT_FAMILIES = Object.freeze(SHORE_TINTS.map(family => famil
 /** One row of the shore table asked on its own, for the guard. */
 export const shoreTintOf = (id, x, z, distance) => SHORE_TINTS.find(family => family.id === id)?.tint(x, z, distance) ?? null;
 
+// Tinting is synchronous; reuse scratch colours for each THREE namespace instead
+// of allocating four or more colours at every vertex of the whole-world grid.
+const tintScratch = new WeakMap();
 export function groundTint(color, x, z, THREE) {
   const mix = terrainMix(x, z), distance = landDistance(x, z);
-  const target = new THREE.Color(0, 0, 0);
-  const swatch = new THREE.Color();
+  let scratch = tintScratch.get(THREE);
+  if (!scratch) {
+    scratch = { target: new THREE.Color(), swatch: new THREE.Color(), sand: new THREE.Color('#cdb98a'), rock: new THREE.Color('#8a857a') };
+    tintScratch.set(THREE, scratch);
+  }
+  const { target, swatch, sand, rock } = scratch;
+  target.setRGB(0, 0, 0);
   let total = 0;
   // Colours by weight, so a cell whose atlas terrain refines its region's ground (Pueth's hills) is tinted as itself.
   // Gala's plains are the one ground the atlas's terrain field cannot colour: it calls the steppe and the
@@ -396,16 +406,17 @@ export function groundTint(color, x, z, THREE) {
       }
     }
   }
-  color.lerp(new THREE.Color('#cdb98a'), 1 - smooth(1, 15, distance));
+  color.lerp(sand, 1 - smooth(1, 15, distance));
   // The Ascarth cliffs were the one shore in the world that is not a beach: grass to the edge and
   // bare stone down the face (src/ascarth-world.js). Selemis's are the second (`SHORE_TINTS` above).
   // Everywhere else `cliff` is null and this is the same sand it has always been.
   let cliff = null;
   for (const family of SHORE_TINTS) { cliff = family.tint(x, z, distance); if (cliff) break; }
-  color.lerp(new THREE.Color('#cdb98a'), (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
-  if (cliff?.rock) color.lerp(new THREE.Color(cliff.stone ?? '#8a857a'), cliff.rock);
+  color.lerp(sand, (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
+  if (cliff?.rock) color.lerp(cliff.stone ? swatch.set(cliff.stone) : rock, cliff.rock);
   const oremindi=southOremindiTint(x,z);if(oremindi!==null)color.set(oremindi);
   const yunethre=yunethreTint(x,z);if(yunethre!==null)color.set(yunethre);
+  const baldro=baldroTint(x,z);if(baldro!==null)color.set(baldro);
   return color;
 }
 

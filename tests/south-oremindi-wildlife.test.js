@@ -99,7 +99,9 @@ test('all real-terrain homes instantiate, ground rigs animate and elevated ducks
       }
     }
     for (const species of ['oremindi-snowgoat', 'oremindi-mountain-eagle']) {
-      const zone = zones.find(z => z.species === species), group = scene.children.find(g => g.name === zone.id);
+      const zone = zones.find(z => z.species === species);
+      life.setObserver(centre(zone)); // Distant rigs are unloaded; inspect the herd from its own habitat.
+      const group = scene.children.find(g => g.name === zone.id);
       assert.ok(group.children.some(m => m.name === `${species} bodies`));
       assert.ok(group.children.some(m => m.name === `${species} ${species.endsWith('eagle') ? 'wings' : 'legs'}`));
       for (const mesh of group.children) assert.ok([...mesh.instanceMatrix.array].every(Number.isFinite));

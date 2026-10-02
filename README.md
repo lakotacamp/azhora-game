@@ -229,6 +229,90 @@ The spelling **Azhora**, **Drent**, **Luscia**, **Elagos**, **Izol**, and **Izol
 
 The first goblin encounter adapts the requested pacing of `../../cromonsters`: a village introduction, audible warning, visible goblin arrivals, readable combat, and a forgiving retry. The bramble raiders and these particular encounters are original procedural creatures and scenes.
 
+## Dwarfland in the Baldro Mountains
+
+For a guided introduction, use **F8 > Quest playtests > Silver > Dwarfland**.
+**A Place at the Forge** earns West Hold entry, walks into its underground city,
+and teaches repair-riveting, the first secret **Dwarven Smithing** specialization.
+Any key takes control; **P** resumes the focused quest, including inside the city.
+The playtest leaves your normal save unchanged. In a normal adventure, ask the
+western gatekeeper for a place at the forge; existing admitted visitors can ask
+the artisan directly. Further techniques and political branches are future arcs.
+
+
+West and East Baldro Mountains are now playable. Each holds an independent dwarf
+city kingdom within the Dwarfland confederation. Short, broad gatekeepers and
+civic residents inhabit underground hearths, workshops and memorial halls beside
+abandoned homes. Earn entry separately: restore three western route cairns or
+three eastern drainage works, then report to that kingdom's gatekeeper.
+
+Both regions include connected mountain paths, climbable rock faces, named tree
+species and persistent ground wildlife. Use **F8 > Go Anywhere** to visit either
+Baldro region. These first city districts are playable foundations; royal names,
+large city expansions and personal stories remain to be designed.
+
+See [the implementation record](docs/dwarfland-implementation.md). Run
+`npm run test:baldro` for focused checks or `npm run test:baldro:desktop` for the
+isolated desktop admission, traversal and climbing playtest.
+
+## Startup performance
+
+The desktop game caches the generated base terrain between launches. It checks
+the actual source and atlas inputs on every load, including renderer reloads, so
+editing the world automatically rebuilds the cache. Missing, corrupt or
+unwritable caches fall back to normal generation. This cache is separate from
+adventure saves; browser builds work without it.
+
+Loading now reports its current stage. Named human rigs are constructed when
+needed, regional wildlife loads nearby with separate load/unload distances, and
+the dwarven city interiors are built on first entry. Logical characters, animals,
+routes and quest progress remain present while their detailed visuals are absent.
+Full mode builds the complete outdoor world before play. At launch, Full is the
+first/default button and starts automatically after ten seconds; clicking it
+starts immediately. The second button selects experimental Fast mode for that
+launch only.
+
+Fast prepares Drent first, then builds nearby terrain and scenery in cooperative
+batches while play continues. The queue favors the current region, its neighbors,
+and the direction of travel; explicit travel destinations take priority. A small
+progress indicator disappears when construction finishes. F8 jumps, Continue,
+ferries, quest travel and flight wait safely if their destination is unfinished.
+Some shared scenery builders cover a group of neighboring regions; those regions
+become available together. The queue has one active build and a four-millisecond
+frame budget, though a single geometry operation or garbage collection can exceed
+that budget. Fast reads a compatible terrain cache but never writes a partial one.
+
+World metadata and quest state remain available throughout. Late trees preserve
+saved stumps, roads and collision queries see newly built objects, and elevated
+walkways join the live surface catalog. Switching loading modes does not reset an
+adventure or remember Fast as the next launch's default.
+
+On this Windows 10 development machine (Core i5-10600K, 16 GiB RAM), the isolated native comparison on October 2, 2026
+reached the initialized opening screen and two rendered frames in about 134
+seconds before this pass, 85 seconds with an empty terrain cache, and 64 seconds
+on a cached reload. These are single-run desktop measurements, not frame-rate
+claims. Source edits deliberately invalidate the terrain cache. Static scenery
+construction was the main remaining startup cost before the experimental mode.
+
+Run `npm run profile:startup` for an isolated native cold launch and cached reload,
+with JSON results under `tests/artifacts/startup.json`. It leaves the adventure
+save untouched. `npm run test:startup` checks cache invalidation, exact terrain and
+road-query behavior, loading choices, regional scheduling, and deferred visual lifecycles.
+Use `node scripts/launch.cjs --smoke-test --fast-load-checks` for actual Fast-mode
+travel, dwarf autoplay and whole-queue completion checks, or `--load-choice-checks`
+to validate and capture the startup chooser. All use isolated test saves.
+
+Validation before the regional loading experiment: 34 startup tests and 61 save/checkpoint/Kayla tests
+passed. Native checks passed for both Baldro cities (49 assertions), the complete
+dwarf autoplay (31), and Willowmere character loading and fishing (39), with no
+renderer errors. The dwarf run included mid-lesson save/resume and a fresh repeat.
+
+The loading-mode pass also passes 68 startup/scheduling/scenery tests and 59
+save, woodcutting, walk-surface and road tests. The native chooser confirms the
+button order, ten-second countdown and successful Fast launch. An isolated Full
+run took 96.4 seconds cold and 67.2 seconds with a cache hit, with no renderer
+errors (`tests/artifacts/loading-modes-full.json`).
+
 ## Code and validation
 
 New to the code? [docs/codebase-map.md](docs/codebase-map.md) is a guided map of it: how the page, the host and the pure modules fit together, one module and its test read line by line, a tour by area, and an index of every file in `src/`.
@@ -236,6 +320,8 @@ New to the code? [docs/codebase-map.md](docs/codebase-map.md) is a guided map of
 | Module | Responsibility |
 | --- | --- |
 | `src/world.js`, `src/regions.js` | Terrain, regional layouts, paths, props, collision, fishing banks, landmarks, and completed-site visuals |
+| `src/startup.js`, `scripts/terrain-cache.cjs`, `scripts/profile-startup.cjs` | Staged initialization, validated desktop terrain cache and isolated native cold/warm timing |
+| `src/lazy-character.js`, `src/road-distance-index.js`, `src/terrain-point-cache.js`, `src/hex-boundary-distance.js` | Deferred human rigs and exact indexed/cached terrain queries |
 | `src/characters.js` | Procedural traveler/NPC/goblin models, clothing, and articulated animation |
 | `src/game-state.js` | Movement, collision, and first-shore tutorial transitions |
 | `src/signs.js` | The one sign language: fingerposts, place boards, notice plaques, border stones and milestones from one lettering atlas |

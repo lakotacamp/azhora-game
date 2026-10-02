@@ -5,7 +5,7 @@ Design discussion, 30 September 2026. **The reviewed grove pilot has expanded in
 ## Confirmed direction
 
 - Humans arrived about 1,000 years ago. Their expansion and woodland clearance displaced elves from much of Azhora. Dwarves historically dominated mountains and hills; elves dominated the much more extensive forests.
-- Ibenwood is the last great elven refuge. Elfland is the continent's only independent elf country, ruled by a powerful sorcerer king and queen.
+- Ibenwood is the last great publicly known elven forest refuge, ruled by a powerful sorcerer king and queen. The 1 October Sevron brief introduces another, hidden elven kingdom inside West Oremindi. Reconcile the earlier "only independent elf country" description as the only publicly recognized one; Sevron's precise political relationship with Ibenwood remains open. See [Sevron and West Oremindi](sevron-west-oremindi-design.md).
 - Elfland controls Central Ibenwood and the inward-facing portions of its neighbors: southern North Ibenwood, western East Ibenwood, northern South Ibenwood, and eastern West Ibenwood.
 - **The outer forest in all four surrounding regions is explorable. A guarded inner belt protects Central Ibenwood.** East and South are not entirely closed regions.
 - **Visible boundary signs precede lethal arrows. There is no spoken warning.** Powerful, concealed elven ranger archers defend the boundary.
@@ -133,6 +133,8 @@ Presence and permission are separate. While the realm is present, an uninvited t
 One proposal is to separate the physical defended forest from the deeper dimensional threshold. The rangers protect real woodland and its inhabitants; the sovereigns can withdraw the heart beyond ordinary routes. The relationship between those two boundaries, the extent of withdrawal, and its limits are not settled. The existing lore's unreliable measured distances and navigation by water, growth, and sound supports the chosen direction. No portal destination, royal genealogy, time-travel rule, or mandatory Cromb Coo Coo connection is established.
 
 ## Questions and lore reconciliation
+
+The 1 October Sevron design establishes a hidden elven kingdom occupying a destroyed dwarven capital in West Oremindi. Do not automatically extend Ibenwood's sovereigns, dimensional withdrawal, ranger entry rules or forest settlements to Sevron. Its history and architecture have a separate brief.
 
 These questions have now been answered:
 

@@ -7,3 +7,21 @@
 /* Keep field actions and key hints from covering one another. */
 #controls{max-width:calc(100vw - 520px);flex-wrap:wrap;row-gap:6px}
 @media(max-width:900px){#controls{max-width:calc(100vw - 56px);bottom:66px}}
+
+#loading { flex-direction:column; gap:18px; }
+#loading-status { color:#efe2b9; font-size:14px; letter-spacing:.05em; text-align:center; }
+
+/* Startup mode choice keeps both actions visible on desktop and touch screens. */
+#loading.choosing-mode{overflow:auto;padding:24px 0;gap:18px}
+#loading.choosing-mode .opening-oak{width:min(420px,68vw);max-height:32vh;flex-shrink:1;min-height:0}
+#loading-choice{width:min(430px,calc(100vw - 48px));flex-shrink:0}
+#loading-choice[hidden]{display:none}
+#loading-choice h2{font:400 28px Adventure,Georgia,serif;text-align:center;margin-bottom:20px;color:#fff1d2}
+#loading-choice button{display:block;width:100%;text-align:left;padding:15px 18px;border:1px solid #e7d39166;border-radius:5px;min-height:76px;margin-top:12px;background:#244a43;color:#fff1d2;touch-action:manipulation}
+#loading-choice #loading-full{background:#f3daa0;color:#273e36;border-color:#f3daa0}
+#loading-choice strong{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px}
+#loading-choice strong span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+#loading-choice small{display:block;font-size:13px;line-height:1.5;margin-top:6px;opacity:.86}
+#loading-countdown{font-size:12px;text-align:center;color:#dfd6b5;margin-top:17px;min-height:18px}
+#loading.choosing-mode #loading-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(max-height:580px){#loading.choosing-mode .opening-oak{max-height:19vh}#loading.choosing-mode{gap:8px;padding:14px 0}#loading-choice h2{font-size:24px;margin-bottom:10px}#loading-choice button{min-height:66px;padding:11px 15px;margin-top:10px}}

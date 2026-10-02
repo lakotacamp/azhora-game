@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS } from './region-world.js';
@@ -25,7 +26,9 @@ import { nearestPlain } from './east-lotharn-caves.js';
  * people have kept open. Summer green: the autumn the lore makes so much of is a season the world
  * does not have yet.
  */
-export function createEastLotharnScenery(kit) {
+export function createEastLotharnScenery(...args) { return finishBuild(createEastLotharnScenerySteps(...args)); }
+export function* createEastLotharnScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, mesh, box, post, pebble, groundHeight, colliders, dummy, color, round, roofGeometry } = kit;
   const group = new THREE.Group(); group.name = 'East Lotharn scenery'; root.add(group);
   let seed = 3094417;
@@ -84,7 +87,7 @@ uniform float time; varying vec3 p; void main(){${body}
     }
     flush();
   }
-  for (const course of LOTHARN_WATERS) ribbon(course, course === STONEGATE_WATER ? whiteMaterial : waterMaterial);
+  for (const course of LOTHARN_WATERS) { if ((++buildWork & 31) === 0) yield; ribbon(course, course === STONEGATE_WATER ? whiteMaterial : waterMaterial); }
 
   // Rushes at the waterline of the slow water: Kemrath's floor and the border water's foot.
   {
@@ -102,20 +105,20 @@ uniform float time; varying vec3 p; void main(){${body}
       return geometry;
     })();
     const spots = [];
-    for (const course of [KEMRATH_WATER, LOTHARN_BORDER_WATER]) for (const sample of WEST_PROFILES.get(course.id)) {
+    for (const course of [KEMRATH_WATER, LOTHARN_BORDER_WATER]) { if ((++buildWork & 31) === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if ((++buildWork & 31) === 0) yield;
       if (sample.index % 2) continue;
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield;
         const offset = sample.half + range(.2, 1.6), x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
         if (!own(x, z) || westWaterSurface(x, z) !== null || passRoadAt(x, z).distance < PASS_ROAD_HALF + 1.5) continue;
         spots.push({ x, z, s: range(.55, 1.1), rot: range(0, 6.28) });
       }
-    }
+    } }
     if (spots.length) {
       const batch = new THREE.InstancedMesh(blade, material('#ffffff', { side: THREE.DoubleSide }), spots.length);
-      spots.forEach((spot, i) => {
+      for (const [i, spot] of spots.entries()) { if ((++buildWork & 31) === 0) yield;
         dummy.position.set(spot.x, gy(spot.x, spot.z), spot.z); dummy.rotation.set(0, spot.rot, 0); dummy.scale.setScalar(spot.s); dummy.updateMatrix();
         batch.setMatrixAt(i, dummy.matrix); batch.setColorAt(i, color.setHSL(range(.2, .26), range(.3, .42), range(.3, .42)));
-      });
+      }
       batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
       metrics.rushes = spots.length; metrics.batches++;
     }
@@ -135,17 +138,17 @@ uniform float time; varying vec3 p; void main(){${body}
     const { step, minX, minZ, maxX, maxZ } = MOUNTAIN_PATCH, TILE = 56;
     const cols = Math.floor((maxX - minX) / step) + 1, rows = Math.floor((maxZ - minZ) / step) + 1;
     const lift = new Float32Array(cols * rows), heights = new Float32Array(cols * rows).fill(NaN);
-    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) lift[j * cols + i] = peakLiftAt(minX + i * step, minZ + j * step);
+    for (let j = 0; j < rows; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < cols; i++) { if ((++buildWork & 31) === 0) yield; lift[j * cols + i] = peakLiftAt(minX + i * step, minZ + j * step); } }
     // A cell is drawn if any corner of it, or of a cell beside it, is lifted.
     const drawn = new Uint8Array((cols - 1) * (rows - 1));
-    for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+    for (let j = 0; j < rows - 1; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < cols - 1; i++) { if ((++buildWork & 31) === 0) yield;
       let any = false;
-      for (let b = -1; b <= 2 && !any; b++) for (let a = -1; a <= 2 && !any; a++) {
+      for (let b = -1; b <= 2 && !any; b++) { if ((++buildWork & 31) === 0) yield; for (let a = -1; a <= 2 && !any; a++) { if ((++buildWork & 31) === 0) yield;
         const ii = i + a, jj = j + b;
         if (ii >= 0 && jj >= 0 && ii < cols && jj < rows && lift[jj * cols + ii] > 0) any = true;
-      }
+      } }
       if (any) drawn[j * (cols - 1) + i] = 1;
-    }
+    } }
     const heightOf = (i, j) => {
       const k = j * cols + i;
       if (Number.isNaN(heights[k])) heights[k] = gy(minX + i * step, minZ + j * step);
@@ -177,16 +180,16 @@ uniform float time; varying vec3 p; void main(){${body}
       const x = minX + (i + .5) * step, z = minZ + (j + .5) * step;
       return mouthPoints.some(({ p }) => Math.abs(x - p.x) < MOUTH - 1.5 && Math.abs(z - p.z) < MOUTH - 1.5);
     };
-    for (let tj = 0; tj < rows - 1; tj += TILE) for (let ti = 0; ti < cols - 1; ti += TILE) {
+    for (let tj = 0; tj < rows - 1; tj += TILE) { if ((++buildWork & 31) === 0) yield; for (let ti = 0; ti < cols - 1; ti += TILE) { if ((++buildWork & 31) === 0) yield;
       const ci = Math.min(TILE, cols - 1 - ti), cj = Math.min(TILE, rows - 1 - tj), indices = [];
-      for (let j = 0; j < cj; j++) for (let i = 0; i < ci; i++) {
+      for (let j = 0; j < cj; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < ci; i++) { if ((++buildWork & 31) === 0) yield;
         if (!drawn[(tj + j) * (cols - 1) + ti + i] || (mouthPoints.length && underMouth(ti + i, tj + j))) continue;
         const a = j * (ci + 1) + i;
         indices.push(a, a + ci + 1, a + 1, a + 1, a + ci + 1, a + ci + 2);
-      }
+      } }
       if (!indices.length) continue;
       const positions = new Float32Array((ci + 1) * (cj + 1) * 3), colours = new Float32Array((ci + 1) * (cj + 1) * 3);
-      for (let j = 0; j <= cj; j++) for (let i = 0; i <= ci; i++) {
+      for (let j = 0; j <= cj; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i <= ci; i++) { if ((++buildWork & 31) === 0) yield;
         const gi = ti + i, gj = tj + j, x = minX + gi * step, z = minZ + gj * step, k = j * (ci + 1) + i;
         const used = [[0, 0], [-1, 0], [0, -1], [-1, -1]].some(([a, b]) => {
           const ii = gi + a, jj = gj + b;
@@ -199,7 +202,7 @@ uniform float time; varying vec3 p; void main(){${body}
         const north = heightOf(gi, Math.max(0, gj - 1)), south = heightOf(gi, Math.min(rows - 1, gj + 1));
         paint(x, z, y, Math.hypot(east - west, south - north) / (2 * step), lift[gj * cols + gi]);
         colours.set([shade.r, shade.g, shade.b], k * 3);
-      }
+      } }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
@@ -207,28 +210,28 @@ uniform float time; varying vec3 p; void main(){${body}
       const ground = new THREE.Mesh(geometry, material);
       ground.name = 'East Lotharn peaks ground'; ground.receiveShadow = true; group.add(ground);
       metrics.batches++;
-    }
+    } }
 
     // The ground round each mouth, thirty centimetres apart - a cliff is so steep that anything
     // coarser stands taller than the opening - with the passage's own section
     // taken out of it where the passage comes through: the opening in the cliff is the cave's shape.
     const FINE = .3;
-    for (const { cave, at, p } of mouthPoints) {
+    for (const { cave, at, p } of mouthPoints) { if ((++buildWork & 31) === 0) yield;
       const n = Math.round(MOUTH * 2 / FINE) + 1, x0 = p.x - MOUTH, z0 = p.z - MOUTH;
       const positions = new Float32Array(n * n * 3), colours = new Float32Array(n * n * 3), heightsHere = new Float32Array(n * n), indices = [];
-      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) heightsHere[j * n + i] = gy(x0 + i * FINE, z0 + j * FINE);
-      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < n; i++) { if ((++buildWork & 31) === 0) yield; heightsHere[j * n + i] = gy(x0 + i * FINE, z0 + j * FINE); } }
+      for (let j = 0; j < n; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < n; i++) { if ((++buildWork & 31) === 0) yield;
         const x = x0 + i * FINE, z = z0 + j * FINE, y = heightsHere[j * n + i], k = j * n + i;
         const east = heightsHere[j * n + Math.min(n - 1, i + 1)], west = heightsHere[j * n + Math.max(0, i - 1)];
         const north = heightsHere[Math.max(0, j - 1) * n + i], south = heightsHere[Math.min(n - 1, j + 1) * n + i];
         positions.set([x, y, z], k * 3);
         paint(x, z, y, Math.hypot(east - west, south - north) / (2 * FINE), peakLiftAt(x, z));
         colours.set([shade.r, shade.g, shade.b], k * 3);
-      }
+      } }
       // A triangle goes if any corner of it is inside the passage's rock near the opening; on a cliff
       // one that only touches the opening would otherwise hang in front of it as a sliver.
       const within = new Uint8Array(n * n);
-      for (let k = 0; k < n * n; k++) {
+      for (let k = 0; k < n * n; k++) { if ((++buildWork & 31) === 0) yield;
         const x = positions[k * 3], y = positions[k * 3 + 1], z = positions[k * 3 + 2], near = nearestPlain(cave.path, x, z);
         const inward = at === cave.portals[0] ? near.along - at : at - near.along;
         if (near.distance > cave.half(near.along) + .1 || inward < -1.2 || inward > 4.5) continue;
@@ -236,11 +239,11 @@ uniform float time; varying vec3 p; void main(){${body}
         if (y > floor - .3 && y < floor + cave.height(near.along) + .1) within[k] = 1;
       }
       const inside = (a, b, c) => within[a] || within[b] || within[c];
-      for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) {
+      for (let j = 0; j < n - 1; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < n - 1; i++) { if ((++buildWork & 31) === 0) yield;
         const a = j * n + i, b = a + n, c = a + 1, d = a + n + 1;
         if (!inside(a, b, c)) indices.push(a, b, c);
         if (!inside(c, b, d)) indices.push(c, b, d);
-      }
+      } }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
@@ -266,33 +269,33 @@ uniform float time; varying vec3 p; void main(){${body}
     const caveMaterial = kit.material('#ffffff', { vertexColors: true, flatShading: true, side: THREE.DoubleSide }), archMaterial = kit.material('#ffffff');
     // Round the passage, from the floor's left edge up over the roof and down to its right edge.
     const ring = [[-1, 0], [1, 0], [1, .42], [.9, .7], [.62, .9], [0, 1], [-.62, .9], [-.9, .7], [-1, .42]];
-    for (const cave of caves) {
+    for (const cave of caves) { if ((++buildWork & 31) === 0) yield;
       const [inAt, outAt] = cave.portals, end = cave.kind === 'chamber';
       const from = Math.max(0, inAt - 1.4), to = end ? cave.length : Math.min(cave.length, outAt + 1.4);
       const samples = [];
-      for (let s = from; s < to; s += 1.2) samples.push(s);
+      for (let s = from; s < to; s += 1.2) { if ((++buildWork & 31) === 0) yield; samples.push(s); }
       samples.push(to);
       const positions = [], colours = [], indices = [];
-      samples.forEach((s, k) => {
+      for (const [k, s] of samples.entries()) { if ((++buildWork & 31) === 0) yield;
         const p = cave.at(s), w = cave.half(s), h = cave.height(s), y = cave.floor(s);
-        ring.forEach(([a, b], r) => {
+        for (const [r, [a, b]] of ring.entries()) { if ((++buildWork & 31) === 0) yield;
           const bump = r > 1 ? Math.sin(s * 1.7 + r * 2.3) * .12 : 0;
           positions.push(p.x + p.nx * a * (w + bump), y + b * h + (r > 1 ? bump : 0), p.z + p.nz * a * (w + bump));
           tone.copy(r < 2 ? grit : wall[(k + r) % 3]).multiplyScalar(.9 + ((k * 7 + r * 3) % 5) * .04);
           colours.push(tone.r, tone.g, tone.b);
-        });
-        if (k === 0) return;
+        }
+        if (k === 0) continue;
         const a = (k - 1) * ring.length, b = k * ring.length;
-        for (let r = 0; r < ring.length; r++) {
+        for (let r = 0; r < ring.length; r++) { if ((++buildWork & 31) === 0) yield;
           const r2 = (r + 1) % ring.length;
           if (r === 0) { indices.push(a, b + 1, a + 1, a, b, b + 1); continue; }   // the floor, left edge to right
           indices.push(a + r, b + r, a + r2, a + r2, b + r, b + r2);
         }
-      });
+      }
       // A chamber's far wall.
       if (end) {
         const last = (samples.length - 1) * ring.length;
-        for (let r = 1; r < ring.length - 1; r++) indices.push(last, last + r, last + r + 1);
+        for (let r = 1; r < ring.length - 1; r++) { if ((++buildWork & 31) === 0) yield; indices.push(last, last + r, last + r + 1); }
       }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -304,18 +307,18 @@ uniform float time; varying vec3 p; void main(){${body}
       const mouths = end ? [inAt] : [inAt, outAt];
       // A collar of rock round each opening, just outside it: the passage's section and a larger one
       // joined in a face, carried back a few metres, covering the ragged edge of the ground's cut.
-      for (const at of mouths) {
+      for (const at of mouths) { if ((++buildWork & 31) === 0) yield;
         const outward = at === inAt ? -1 : 1, s0 = at + outward * 1.3, s1 = at - outward * 3;
         const frame = [], frameColours = [], frameIndex = [], w = cave.half(at), h = cave.height(at), y = cave.floor(at);
-        for (const s of [s0, s1]) {
+        for (const s of [s0, s1]) { if ((++buildWork & 31) === 0) yield;
           const p = cave.at(Math.max(0, Math.min(cave.length, s)));
-          for (const [grow, lift] of [[0, 0], [2.2, 3.4]]) ring.forEach(([a, b]) => {
+          for (const [grow, lift] of [[0, 0], [2.2, 3.4]]) { if ((++buildWork & 31) === 0) yield; for (const [buildIndex, [a, b]] of ring.entries()) { if ((++buildWork & 31) === 0) yield;
             frame.push(p.x + p.nx * a * (w + grow), y + b * (h + lift) - (b === 0 ? .5 : 0), p.z + p.nz * a * (w + grow));
             tone.copy(wall[frame.length % 3]); frameColours.push(tone.r, tone.g, tone.b);
-          });
+          } }
         }
         const n = ring.length, inner = (k, r) => k * 2 * n + r, outer = (k, r) => k * 2 * n + n + r;
-        for (let r = 1; r < n; r++) {
+        for (let r = 1; r < n; r++) { if ((++buildWork & 31) === 0) yield;
           const r2 = (r + 1) % n;
           frameIndex.push(inner(0, r), outer(0, r), inner(0, r2), inner(0, r2), outer(0, r), outer(0, r2));
           frameIndex.push(outer(0, r), outer(1, r), outer(0, r2), outer(0, r2), outer(1, r), outer(1, r2));
@@ -329,10 +332,10 @@ uniform float time; varying vec3 p; void main(){${body}
         metrics.batches++;
       }
       // The arch of stones round each mouth.
-      for (const at of mouths) {
+      for (const at of mouths) { if ((++buildWork & 31) === 0) yield;
         const p = cave.at(at), w = cave.half(at), h = cave.height(at), y = cave.floor(at);
         const stones = new THREE.InstancedMesh(round, archMaterial, 11);
-        for (let i = 0; i < 11; i++) {
+        for (let i = 0; i < 11; i++) { if ((++buildWork & 31) === 0) yield;
           const t = i / 10, a = Math.cos(Math.PI * t) * (w + .55), b = Math.sin(Math.PI * t) * (h + .35) * .98;
           dummy.position.set(p.x + p.nx * a, y + Math.max(.2, b), p.z + p.nz * a);
           dummy.rotation.set(range(-.3, .3), range(0, 6.28), range(-.3, .3));
@@ -383,18 +386,19 @@ uniform float time; varying vec3 p; void main(){${body}
   const tuftMaterial = material('#ffffff', { side: THREE.DoubleSide });
   const stoneMaterial = material('#8e8c80');
 
-  function woodBatch(trees) {
+  function* woodBatchSteps(trees) {
+    let buildWork = 0;
     if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
     const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, trees.length * 3);
     let crownIndex = 0;
-    trees.forEach((tree, index) => {
+    for (const [index, tree] of trees.entries()) { if ((++buildWork & 31) === 0) yield;
       const y = gy(tree.x, tree.z), height = tree.h, kind = tree.kind;
       dummy.position.set(tree.x, y + height * .36, tree.z); dummy.rotation.set(0, tree.rot, 0);
       dummy.scale.set(tree.s, height * .74, tree.s); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
       const parts = [{mesh:trunks,index}], collider = push({ x: tree.x, z: tree.z, r: .5 * tree.s, kind: 'lotharn-tree' });
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if ((++buildWork & 31) === 0) yield;
         const a = tree.rot + lobe * 2.1;
         if (kind.tall) {
           // A tall crown is a column: lobes one above another, narrowing upward.
@@ -414,29 +418,31 @@ uniform float time; varying vec3 p; void main(){${body}
       }
       const species = {oak:'white-oak',chestnut:'sweet-chestnut',maple:'red-maple',walnut:'black-walnut'}[kind.id]??kind.id;
       registerWorldTree(colliders,{id:worldTreeId('lotharn',tree.x,tree.z),x:tree.x,z:tree.z,y,height,species},parts,collider);
-    });
-    for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
+    }
+    for (const batch of [trunks, crowns]) { if ((++buildWork & 31) === 0) yield;  batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
     metrics.trees += trees.length; metrics.batches += 2;
   }
-  function tuftBatch(tufts, tint) {
+  function* tuftBatchSteps(tufts, tint) {
+    let buildWork = 0;
     if (!tufts.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, tuftMaterial, tufts.length);
-    tufts.forEach((tuft, index) => {
+    for (const [index, tuft] of tufts.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(tuft.x, gy(tuft.x, tuft.z) + .02, tuft.z); dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix); batch.setColorAt(index, tint(tuft));
-    });
+    }
     batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
     metrics.tufts += tufts.length; metrics.batches++;
   }
-  function rockBatch(rocks) {
+  function* rockBatchSteps(rocks) {
+    let buildWork = 0;
     if (!rocks.length) return;
     const batch = new THREE.InstancedMesh(round, stoneMaterial, rocks.length);
-    rocks.forEach((rock, index) => {
+    for (const [index, rock] of rocks.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(rock.x, gy(rock.x, rock.z) + rock.s * .2, rock.z);
       dummy.rotation.set(range(-.2, .2), rock.rot, range(-.2, .2));
       dummy.scale.set(rock.s, rock.s * range(.45, .75), rock.s * range(.75, 1.25)); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix); batch.setColorAt(index, color.setHSL(range(.08, .13), range(.05, .12), range(.4, .56)));
-    });
+    }
     batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
     metrics.rocks += rocks.length; metrics.batches++;
   }
@@ -448,10 +454,10 @@ uniform float time; varying vec3 p; void main(){${body}
   const cells = [...(REGION_CELLS[LOTHARN] ?? [])].sort((a, b) => a.z - b.z || a.x - b.x);
   const BLOCK = Math.max(1, Math.round(4 / (WORLD_SCALE * WORLD_SCALE)));
   const candidates = Math.round(190 * WORLD_SCALE * WORLD_SCALE);
-  for (let start = 0; start < cells.length; start += BLOCK) {
+  for (let start = 0; start < cells.length; start += BLOCK) { if ((++buildWork & 31) === 0) yield;
     const block = cells.slice(start, start + BLOCK), trees = [], floor = [], open = [], rocks = [];
-    for (const cell of block) {
-      for (let i = 0; i < candidates; i++) {
+    for (const cell of block) { if ((++buildWork & 31) === 0) yield;
+      for (let i = 0; i < candidates; i++) { if ((++buildWork & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-57, 57);
         if (!own(x, z) || lotharnOpen(x, z, 1.5) || inWestWater(x, z, 3) || atMouth(x, z)) continue;
         const y = gy(x, z);
@@ -465,23 +471,23 @@ uniform float time; varying vec3 p; void main(){${body}
         trees.push({ x, z, kind, h: range(...kind.h) * (y > 80 ? .82 : 1) * (y > 180 ? .75 : 1), s: range(.9, 1.35), rot: range(0, 6.28) });
       }
       // The forest floor: fern and sorrel in the shade, sparse; open ground grassed thick.
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 70; i++) { if ((++buildWork & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-57, 57);
         if (!own(x, z) || inWestWater(x, z, 1.5)) continue;
         if (lotharnOpen(x, z)) { if (kemrathFloorAt(x, z) === null) open.push({ x, z, s: range(.8, 1.6), rot: range(0, 6.28), bald: BALDS.some(b => Math.hypot(x - b.x, z - b.z) < b.radius) }); }
         else if (i % 3 === 0) floor.push({ x, z, s: range(.9, 1.7), rot: range(0, 6.28) });
       }
       // Stone shows where the soil is thin: on the balds, and on the steep ground of the tops.
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 16; i++) { if ((++buildWork & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-57, 57);
         if (!own(x, z) || inWestWater(x, z, 2) || gy(x, z) < 70 || passRoadAt(x, z).distance < PASS_ROAD_HALF + 3 || atMouth(x, z) || onRamp(x, z, 1)) continue;
         rocks.push({ x, z, s: range(.4, 1.5), rot: range(0, 6.28) });
       }
     }
-    woodBatch(trees);
-    tuftBatch(floor, () => color.setHSL(range(.24, .31), range(.3, .45), range(.2, .3)));
-    tuftBatch(open, tuft => tuft.bald ? color.setHSL(range(.13, .18), range(.25, .36), range(.4, .52)) : color.setHSL(range(.2, .26), range(.3, .42), range(.34, .46)));
-    rockBatch(rocks);
+    yield* woodBatchSteps(trees);
+    yield* tuftBatchSteps(floor, () => color.setHSL(range(.24, .31), range(.3, .45), range(.2, .3)));
+    yield* tuftBatchSteps(open, tuft => tuft.bald ? color.setHSL(range(.13, .18), range(.25, .36), range(.4, .52)) : color.setHSL(range(.2, .26), range(.3, .42), range(.34, .46)));
+    yield* rockBatchSteps(rocks);
   }
 
   // -------------------------------------------------------------------------
@@ -508,16 +514,16 @@ uniform float time; varying vec3 p; void main(){${body}
     ];
     const crops = [];
     let strip = 0;
-    for (let a0 = KEMRATH_FIELDS.from; a0 < KEMRATH_FIELDS.to; a0 += 30, strip++) for (const side of [-1, 1]) {
+    for (let a0 = KEMRATH_FIELDS.from; a0 < KEMRATH_FIELDS.to; a0 += 30, strip++) { if ((++buildWork & 31) === 0) yield; for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield;
       const crop = CROPS[(strip * 2 + (side > 0 ? 1 : 0) * 3) % CROPS.length];
       if (!crop) continue;
-      for (let offset = 5; offset < KEMRATH_FIELDS.half; offset += crop.rows) for (let along = a0 + 1; along < a0 + 29; along += crop.every) {
+      for (let offset = 5; offset < KEMRATH_FIELDS.half; offset += crop.rows) { if ((++buildWork & 31) === 0) yield; for (let along = a0 + 1; along < a0 + 29; along += crop.every) { if ((++buildWork & 31) === 0) yield;
         const p = pointAt(along), x = p.x + p.nx * offset * side + range(-.15, .15), z = p.z + p.nz * offset * side + range(-.15, .15);
         if (!own(x, z) || inWestWater(x, z, 1) || kemrathFloorAt(x, z) === null) continue;
         crops.push({ x, z, s: range(...crop.s), rot: range(0, 6.28), crop });
-      }
-    }
-    tuftBatch(crops, tuft => tuft.crop.tint());
+      } }
+    } }
+    yield* tuftBatchSteps(crops, tuft => tuft.crop.tint());
     metrics.crops = crops.length;
 
     // The strips themselves, under the crop: a field is its ground's colour as much as its crop's,
@@ -525,25 +531,25 @@ uniform float time; varying vec3 p; void main(){${body}
     {
       const positions = [], colours = [], indices = [], shade = new THREE.Color();
       let stripIndex = 0;
-      for (let a0 = KEMRATH_FIELDS.from; a0 < KEMRATH_FIELDS.to; a0 += 30, stripIndex++) for (const side of [-1, 1]) {
+      for (let a0 = KEMRATH_FIELDS.from; a0 < KEMRATH_FIELDS.to; a0 += 30, stripIndex++) { if ((++buildWork & 31) === 0) yield; for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield;
         const crop = CROPS[(stripIndex * 2 + (side > 0 ? 1 : 0) * 3) % CROPS.length];
         shade.set(crop ? crop.ground : '#7a6346');
         const cols = 11, rows = 11, base = positions.length / 3;
-        for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < cols; i++) { if ((++buildWork & 31) === 0) yield;
           const along = a0 + .5 + i * 29 / (cols - 1), offset = 4.5 + j * 15.5 / (rows - 1), p = pointAt(along);
           const x = p.x + p.nx * offset * side, z = p.z + p.nz * offset * side;
           positions.push(x, gy(x, z) + .05, z);
           const k = .94 + ((i * 7 + j * 3) % 5) * .025;
           colours.push(shade.r * k, shade.g * k, shade.b * k);
-        }
-        for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+        } }
+        for (let j = 0; j < rows - 1; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < cols - 1; i++) { if ((++buildWork & 31) === 0) yield;
           const q = base + j * cols + i, c = (q + 1 + cols) * 3;
           const cx = (positions[q * 3] + positions[c]) / 2, cz = (positions[q * 3 + 2] + positions[c + 2]) / 2;
           if (inWestWater(cx, cz, 1.2)) continue;
           if (side > 0) indices.push(q, q + cols, q + 1, q + 1, q + cols, q + cols + 1);
           else indices.push(q, q + 1, q + cols, q + 1, q + cols + 1, q + cols);
-        }
-      }
+        } }
+      } }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
@@ -554,20 +560,20 @@ uniform float time; varying vec3 p; void main(){${body}
 
     // The vines: a low block of rows on the south-facing foot of the north wall, on stakes.
     const vines = [], stakes = [];
-    for (let dz = -KEMRATH_VINES.depth / 2 + 1; dz <= KEMRATH_VINES.depth / 2 - 1; dz += 2.2) {
-      for (let dx = -KEMRATH_VINES.width / 2 + 1; dx <= KEMRATH_VINES.width / 2 - 1; dx += 1.4) {
+    for (let dz = -KEMRATH_VINES.depth / 2 + 1; dz <= KEMRATH_VINES.depth / 2 - 1; dz += 2.2) { if ((++buildWork & 31) === 0) yield;
+      for (let dx = -KEMRATH_VINES.width / 2 + 1; dx <= KEMRATH_VINES.width / 2 - 1; dx += 1.4) { if ((++buildWork & 31) === 0) yield;
         const x = KEMRATH_VINES.x + dx, z = KEMRATH_VINES.z + dz;
         vines.push({ x, z, s: range(.75, 1.05) });
         if (Math.round(dx / 1.4) % 4 === 0) stakes.push({ x: x + .35, z });
       }
     }
     const batch = new THREE.InstancedMesh(round, material('#4f7134', { flatShading: true }), vines.length);
-    vines.forEach((vine, i) => {
+    for (const [i, vine] of vines.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(vine.x, gy(vine.x, vine.z) + .72 * vine.s, vine.z); dummy.rotation.set(0, range(0, 6.28), 0);
       dummy.scale.set(.62 * vine.s, .5 * vine.s, .44 * vine.s); dummy.updateMatrix(); batch.setMatrixAt(i, dummy.matrix);
-    });
+    }
     batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
-    for (const stake of stakes) post(material('#6c5843'), stake.x, gy(stake.x, stake.z) + .65, stake.z, .04, 1.3, group);
+    for (const stake of stakes) { if ((++buildWork & 31) === 0) yield; post(material('#6c5843'), stake.x, gy(stake.x, stake.z) + .65, stake.z, .04, 1.3, group); }
     metrics.vines = vines.length; metrics.batches++;
   }
 
@@ -578,7 +584,7 @@ uniform float time; varying vec3 p; void main(){${body}
   {
     const fold = { x: OLVETH_PASTURE.x + 12, z: OLVETH_PASTURE.z + 8, r: 6.5 };
     const drystone = material('#8b8778', { flatShading: true });
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 26; i++) { if ((++buildWork & 31) === 0) yield;
       const a = i / 26 * Math.PI * 2;
       if (Math.abs(Math.sin(a)) < .2 && Math.cos(a) < 0) continue;   // the gate, on the south side
       const x = fold.x + Math.sin(a) * fold.r, z = fold.z + Math.cos(a) * fold.r;
@@ -616,10 +622,10 @@ uniform float time; varying vec3 p; void main(){${body}
   {
     const line = STONEGATE.line;
     let placed = 0;
-    for (let i = 3; i < line.points.length - 2; i += 3) {
+    for (let i = 3; i < line.points.length - 2; i += 3) { if ((++buildWork & 31) === 0) yield;
       const a = line.points[i - 1], b = line.points[i + 1], dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz) || 1;
       const nx = -dz / length, nz = dx / length;
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield;
         const reach = STONEGATE.half + range(4, 9), x = line.points[i].x + nx * reach * side, z = line.points[i].z + nz * reach * side;
         if (!own(x, z)) continue;
         const rise = gy(x, z) - stonegateFloor(nearestOn(line, x, z).along);
@@ -634,7 +640,7 @@ uniform float time; varying vec3 p; void main(){${body}
     const head = line.points[5], shellMaterial = material('#d9d1bd', { flatShading: true });
     const shelf = outcrop(head.x - 16, head.z + 2, Math.PI * .5, 6, 3.4, { tilt: .12 });
     const shell = new THREE.TorusGeometry(.09, .035, 5, 9);
-    for (let i = 0; i < 11; i++) mesh(shell, shellMaterial, range(-2.2, 2.2), range(1, 3), 1.05, 1, 1, 1, shelf).rotation.set(0, 0, range(0, 6.28));
+    for (let i = 0; i < 11; i++) { if ((++buildWork & 31) === 0) yield; mesh(shell, shellMaterial, range(-2.2, 2.2), range(1, 3), 1.05, 1, 1, 1, shelf).rotation.set(0, 0, range(0, 6.28)); }
   }
 
   // -------------------------------------------------------------------------
@@ -649,11 +655,11 @@ uniform float time; varying vec3 p; void main(){${body}
     box(rubble, 0, 1.6, 0, W, 3.2, D, g);                       // stone below: byre, store, the common room
     box(plaster, 0, 4.6, 0, W - .2, 2.8, D - .2, g);           // timber frame above: the rooms
     // The frame: posts, a rail at the floor and under the eaves, and the braces between.
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield;
       const face = side * (D / 2 - .06);
-      for (let px = -W / 2 + .2; px <= W / 2 - .2 + 1e-6; px += (W - .4) / 5) box(timber, px, 4.6, face, .2, 2.8, .12, g);
+      for (let px = -W / 2 + .2; px <= W / 2 - .2 + 1e-6; px += (W - .4) / 5) { if ((++buildWork & 31) === 0) yield; box(timber, px, 4.6, face, .2, 2.8, .12, g); }
       box(timber, 0, 3.28, face, W - .1, .2, .14, g); box(timber, 0, 5.92, face, W - .1, .2, .14, g);
-      for (let k = 0; k < 5; k += 2) {
+      for (let k = 0; k < 5; k += 2) { if ((++buildWork & 31) === 0) yield;
         const px = -W / 2 + .2 + (k + .5) * (W - .4) / 5, brace = box(timber, px, 4.6, face, .14, 2.9, .1, g);
         brace.rotation.z = k % 4 ? .62 : -.62;
       }
@@ -663,20 +669,20 @@ uniform float time; varying vec3 p; void main(){${body}
     box(rubble, W / 2 - 1, 7.1, 0, 1.1, 3.6, 1.1, g);
     // The door and windows face the road; shutters on the upper rooms.
     box(doorWood, 0, 1.15, D / 2 + .03, 1.4, 2.3, .1, g);
-    for (const px of [-3.4, 3.4]) box(dark, px, 1.7, D / 2 + .03, 1, .9, .08, g);
-    for (const px of [-3.2, 0, 3.2]) { box(dark, px, 4.7, D / 2 + .05, .8, .9, .06, g); box(timber, px - .6, 4.7, D / 2 + .07, .32, 1, .05, g); box(timber, px + .6, 4.7, D / 2 + .07, .32, 1, .05, g); }
+    for (const px of [-3.4, 3.4]) { if ((++buildWork & 31) === 0) yield; box(dark, px, 1.7, D / 2 + .03, 1, .9, .08, g); }
+    for (const px of [-3.2, 0, 3.2]) { if ((++buildWork & 31) === 0) yield;  box(dark, px, 4.7, D / 2 + .05, .8, .9, .06, g); box(timber, px - .6, 4.7, D / 2 + .07, .32, 1, .05, g); box(timber, px + .6, 4.7, D / 2 + .07, .32, 1, .05, g); }
     // Walls are walls: one line of colliders round the building.
     const at = (lx, lz) => { const c = Math.cos(I.facing), s = Math.sin(I.facing); return { x: I.x + lx * c + lz * s, z: I.z - lx * s + lz * c }; };
-    for (let lx = -W / 2; lx <= W / 2 + 1e-6; lx += 1.3) for (const lz of [-D / 2, D / 2]) { const p = at(lx, lz); push({ x: p.x, z: p.z, r: .7, kind: 'pass-inn' }); }
-    for (let lz = -D / 2; lz <= D / 2 + 1e-6; lz += 1.3) for (const lx of [-W / 2, W / 2]) { const p = at(lx, lz); push({ x: p.x, z: p.z, r: .7, kind: 'pass-inn' }); }
+    for (let lx = -W / 2; lx <= W / 2 + 1e-6; lx += 1.3) { if ((++buildWork & 31) === 0) yield; for (const lz of [-D / 2, D / 2]) { if ((++buildWork & 31) === 0) yield;  const p = at(lx, lz); push({ x: p.x, z: p.z, r: .7, kind: 'pass-inn' }); } }
+    for (let lz = -D / 2; lz <= D / 2 + 1e-6; lz += 1.3) { if ((++buildWork & 31) === 0) yield; for (const lx of [-W / 2, W / 2]) { if ((++buildWork & 31) === 0) yield;  const p = at(lx, lz); push({ x: p.x, z: p.z, r: .7, kind: 'pass-inn' }); } }
     const c = at(0, 0); push({ x: c.x, z: c.z, r: Math.min(W, D) * .45, kind: 'pass-inn' });
     // Across the yard: the mule shed, open on its yard side, and the trough.
     // The shed stands against the inn's end away from the road, open to the yard.
     const shed = new THREE.Group(); shed.position.set(-W / 2 - 3.4, 0, 1); shed.rotation.y = Math.PI / 2; g.add(shed);
-    for (const sx of [-3, 3]) for (const sz of [-1.8, 1.8]) {
+    for (const sx of [-3, 3]) { if ((++buildWork & 31) === 0) yield; for (const sz of [-1.8, 1.8]) { if ((++buildWork & 31) === 0) yield;
       post(timber, sx, 1.35, sz, .14, 2.7, shed);
       const p = at(-W / 2 - 3.4 - sz, 1 + sx); push({ x: p.x, z: p.z, r: .3, kind: 'pass-inn-shed' });
-    }
+    } }
     const shedRoof = mesh(roofGeometry(4.6, 7, 1.1), material('#6b5846'), 0, 2.7, 0, 1, 1, 1, shed); shedRoof.rotation.y = Math.PI / 2;
     box(trough, W / 2 + 2.2, .35, D / 2 + 4, .9, .7, 2.6, g);
     box(material('#50707a'), W / 2 + 2.2, .66, D / 2 + 4, .7, .04, 2.4, g);
@@ -697,18 +703,18 @@ uniform float time; varying vec3 p; void main(){${body}
     const timber = material('#4e3b2a'), dark = material('#141312'), rail = material('#4a4744'), cart = material('#5b4634');
     // The portal: set into the hill at the back of the bench, square-timbered, black inside.
     const back = -M.bench + .6;
-    for (const sx of [-1.25, 1.25]) box(timber, sx, 1.25, back, .32, 2.5, .32, g);
+    for (const sx of [-1.25, 1.25]) { if ((++buildWork & 31) === 0) yield; box(timber, sx, 1.25, back, .32, 2.5, .32, g); }
     box(timber, 0, 2.55, back, 3.2, .34, .4, g);
     box(dark, 0, 1.2, back - .25, 2.2, 2.4, .2, g).userData.passable = true;
     // Rails out across the bench to the tip, and a cart on them.
-    for (const sx of [-.45, .45]) box(rail, sx, .06, back + M.bench * .9, .08, .08, M.bench * 1.8, g);
-    for (let k = 0; k < 8; k++) box(timber, 0, .03, back + 1 + k * 1.9, 1.3, .06, .2, g);
+    for (const sx of [-.45, .45]) { if ((++buildWork & 31) === 0) yield; box(rail, sx, .06, back + M.bench * .9, .08, .08, M.bench * 1.8, g); }
+    for (let k = 0; k < 8; k++) { if ((++buildWork & 31) === 0) yield; box(timber, 0, .03, back + 1 + k * 1.9, 1.3, .06, .2, g); }
     box(cart, 0, .62, back + 6, 1.1, .7, 1.6, g);
     pebble(material('#5a3a2c', { flatShading: true }), 0, 1.02, back + 6, .5, .28, .7, g);   // ore in it, red-brown
-    for (const sx of [-.58, .58]) for (const sz of [-.5, .5]) post(dark, sx, .22, back + 6 + sz, .16, .08, g).rotation.z = Math.PI / 2;
+    for (const sx of [-.58, .58]) { if ((++buildWork & 31) === 0) yield; for (const sz of [-.5, .5]) { if ((++buildWork & 31) === 0) yield; post(dark, sx, .22, back + 6 + sz, .16, .08, g).rotation.z = Math.PI / 2; } }
     // The spoil tipped over the bench's lip, down the wall toward the floor.
     const spoil = material('#4d4640', { flatShading: true });
-    for (let k = 0; k < 7; k++) pebble(spoil, range(-3, 3), -.4 - k * .5, M.bench + 1 + k * 1.3, range(1.4, 2.4), range(.7, 1.1), range(1.2, 2), g);
+    for (let k = 0; k < 7; k++) { if ((++buildWork & 31) === 0) yield; pebble(spoil, range(-3, 3), -.4 - k * .5, M.bench + 1 + k * 1.3, range(1.4, 2.4), range(.7, 1.1), range(1.2, 2), g); }
     // The seam beside the portal: stone in courses, and the coal black in it.
     const seam = outcrop(M.x + 5.5, M.z - M.bench + 1.4, M.facing, 5, 4, { withCoal: true, tilt: .2 });
     seam.position.y = M.level - .4;
@@ -718,7 +724,7 @@ uniform float time; varying vec3 p; void main(){${body}
     pebble(material('#a07448'), -2.0, 1.0, back + .45, .18, .1, .13, g);
     pebble(material('#f1efe8'), -1.8, .96, back + .58, .08, .05, .08, g);
     const at = (lx, lz) => { const c = Math.cos(M.facing), s = Math.sin(M.facing); return { x: M.x + lx * c + lz * s, z: M.z - lx * s + lz * c }; };
-    for (const sx of [-1.25, 1.25]) { const p = at(sx, back); push({ x: p.x, z: p.z, r: .35, kind: 'iron-workings' }); }
+    for (const sx of [-1.25, 1.25]) { if ((++buildWork & 31) === 0) yield;  const p = at(sx, back); push({ x: p.x, z: p.z, r: .35, kind: 'iron-workings' }); }
     { const p = at(0, back + 6); push({ x: p.x, z: p.z, r: .9, kind: 'iron-workings' }); }
     metrics.buildings++;
   }

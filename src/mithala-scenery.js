@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { hexOwnerAt, REGION_CELLS, relief } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
@@ -50,7 +52,10 @@ import {
  * one seeded stream of its own drawn after the West Lotharn's, so nothing already built anywhere
  * else moves by a centimetre for it.
  */
-export function createMithalaScenery(kit) {
+export function createMithalaScenery(...args) { return finishBuild(createMithalaScenerySteps(...args)); }
+
+export function* createMithalaScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, groundHeight, colliders, dummy, color, round } = kit;
   const group = new THREE.Group(); group.name = 'Mithala scenery'; root.add(group);
   let seed = 8821477;
@@ -79,7 +84,7 @@ export function createMithalaScenery(kit) {
     fragmentShader: 'uniform float time; varying vec3 p; void main(){float w=sin(p.x*.26-time*.95+p.z*.72)*sin(p.x*.11+p.z*.83);vec3 c=vec3(.31,.38,.33)+vec3(.16,.17,.13)*pow(max(w,0.),8.);gl_FragColor=vec4(c,1.);}',
   });
   /** A ribbon over a line of samples, broken wherever the ground rises through it. */
-  function ribbon(samples, name, halfOf = sample => sample.half) {
+  function* ribbon(samples, name, halfOf = sample => sample.half) {
     let run = [];
     const flush = () => {
       if (run.length < 2) { run = []; return; }
@@ -97,14 +102,14 @@ export function createMithalaScenery(kit) {
       sheet.name = name; group.add(sheet); metrics.water++;
       run = [];
     };
-    for (const sample of samples) {
+    for (const sample of samples) { if (++buildWork % 32 === 0) yield;
       const y = westWaterSurface(sample.x, sample.z);
       if (y === null) { flush(); continue; }
       run.push({ ...sample, y });
     }
     flush();
   }
-  for (const course of MITHALA_RIVERS) ribbon(WEST_PROFILES.get(course.id), course.name);
+  for (const course of MITHALA_RIVERS) { if (++buildWork % 32 === 0) yield; (yield* ribbon(WEST_PROFILES.get(course.id), course.name)); }
 
   /**
    * **The braided reaches, which are what this plain is famous for.** A thread leaves the main line
@@ -120,7 +125,7 @@ export function createMithalaScenery(kit) {
     return { ...sample, x: sample.x + sample.nx * offset * side, z: sample.z + sample.nz * offset * side };
   }).filter(Boolean));
   for (const braid of MITHALA_BRAIDS)
-    braidThreads(braid).forEach((thread, index) => ribbon(thread, `${braid.course.name} thread ${index + 1}`, () => braid.half));
+    { if (++buildWork % 32 === 0) yield; yield* forEachBuild(braidThreads(braid), function* (thread, index) { return (yield* ribbon(thread, `${braid.course.name} thread ${index + 1}`, () => braid.half)); }); }
 
   /**
    * **The main channel is a wall below its first third**, which is the house rule for a medium river
@@ -129,10 +134,10 @@ export function createMithalaScenery(kit) {
    * not yet carrying what it carries below; from there to the sea nobody crosses it on foot. No other
    * channel on the plain is walled: a small river on ground this flat is waded anywhere.
    */
-  for (const sample of WEST_PROFILES.get(MITHALA_MAIN.id)) {
+  for (const sample of WEST_PROFILES.get(MITHALA_MAIN.id)) { if (++buildWork % 32 === 0) yield;
     if (sample.ford) continue;
     const step = Math.max(1, Math.round(sample.half / 3.2)), radius = sample.half / (step + .5) + 1.4;
-    for (let k = -step; k <= step; k++) {
+    for (let k = -step; k <= step; k++) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half * (k / (step + .5));
       colliders.push({ x: sample.x + sample.nx * offset, z: sample.z + sample.nz * offset, r: radius, kind: 'west-deep-water' });
       metrics.blockers++;
@@ -143,10 +148,10 @@ export function createMithalaScenery(kit) {
   // Silt: the bars in the braids, the summer channels' floors, and the levee crests
   // -------------------------------------------------------------------------
   const stoneMaterial = material('#ffffff', { flatShading: true });
-  function siltBatch(spots, name, tint, lift = .1) {
+  function* siltBatch(spots, name, tint, lift = .1) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(round, stoneMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + spot.s * lift, spot.z);
       dummy.rotation.set(range(-.1, .1), spot.rot, range(-.1, .1));
       dummy.scale.set(spot.s, spot.s * (spot.flat ?? range(.12, .26)), spot.s * range(.8, 1.4)); dummy.updateMatrix();
@@ -163,17 +168,17 @@ export function createMithalaScenery(kit) {
    * elevated patches between braids" that villages are built on.
    */
   const bars = [];
-  for (const braid of MITHALA_BRAIDS) for (const sample of WEST_PROFILES.get(braid.course.id)) {
+  for (const braid of MITHALA_BRAIDS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(braid.course.id)) { if (++buildWork % 32 === 0) yield;
     const offset = braidThreadOffset(braid, sample.along);
     if (offset === null || offset < braid.half * 2.2) continue;
-    for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield;
       const across = (braid.half + range(1.2, Math.max(1.4, offset - braid.half))) * side;
       const x = sample.x + sample.nx * across, z = sample.z + sample.nz * across;
       if (!own(x, z) || westWaterSurface(x, z) !== null) continue;
       bars.push({ x, z, s: range(.14, .46), rot: random() * 6.28, flat: range(.05, .12) });
-    }
-  }
-  siltBatch(bars, 'Mithala braid bars', () => color.set('#877f6a').offsetHSL(0, range(-.03, .03), range(-.05, .06)), .05);
+    } }
+  } }
+  (yield* siltBatch(bars, 'Mithala braid bars', () => color.set('#877f6a').offsetHSL(0, range(-.03, .03), range(-.05, .06)), .05));
   metrics.bars = bars.length;
 
   /**
@@ -182,19 +187,19 @@ export function createMithalaScenery(kit) {
    * lag a bed with, because the river dropped its gravel two hundred miles upstream.
    */
   const siltFloor = [];
-  for (const channel of MITHALA_SUMMER_CHANNELS) {
-    for (let i = 1; i < channel.points.length; i++) {
+  for (const channel of MITHALA_SUMMER_CHANNELS) { if (++buildWork % 32 === 0) yield;
+    for (let i = 1; i < channel.points.length; i++) { if (++buildWork % 32 === 0) yield;
       const a = channel.points[i - 1], b = channel.points[i], length = Math.hypot(b.x - a.x, b.z - a.z);
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += 1.3) for (let k = 0; k < 2; k++) {
+      for (let d = 0; d < length; d += 1.3) { if (++buildWork % 32 === 0) yield; for (let k = 0; k < 2; k++) { if (++buildWork % 32 === 0) yield;
         const t = d / length, across = range(-channel.floor - .6, channel.floor + .6);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !onSummerFloor(x, z, .6)) continue;
         siltFloor.push({ x, z, s: range(.22, .62), rot: random() * 6.28, flat: range(.04, .08) });
-      }
+      } }
     }
   }
-  siltBatch(siltFloor, 'Mithala summer-channel silt', () => color.set('#8d8467').offsetHSL(0, range(-.03, .02), range(-.05, .07)), .03);
+  (yield* siltBatch(siltFloor, 'Mithala summer-channel silt', () => color.set('#8d8467').offsetHSL(0, range(-.03, .02), range(-.05, .07)), .03));
   metrics.silt = siltFloor.length;
 
   // -------------------------------------------------------------------------
@@ -219,10 +224,10 @@ export function createMithalaScenery(kit) {
   /** **Tall grass, and it is tall on purpose**: six blades to a tuft standing 1.1-1.8 m before scale. */
   const grassGeometry = bladeGeometry(6, .12, .045, .62, .26);
   const sedgeGeometry = bladeGeometry(7, .1, .03, .34, .12);
-  function bladeBatch(geometry, spots, name, tint, tall = 1) {
+  function* bladeBatch(geometry, spots, name, tint, tall = 1) {
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(geometry, bladeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    yield* forEachBuild(spots, function* (spot, index) {
       dummy.position.set(spot.x, gy(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0);
       dummy.scale.set(spot.s * (spot.wide ?? 1), spot.s * tall * (spot.high ?? 1), spot.s * (spot.wide ?? 1));
@@ -234,15 +239,15 @@ export function createMithalaScenery(kit) {
 
   /** Reed at every channel's waterline, on both banks: the one place on the plain it grows. */
   const reeds = [];
-  for (const course of MITHALA_RIVERS) for (const sample of WEST_PROFILES.get(course.id)) {
-    for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+  for (const course of MITHALA_RIVERS) { if (++buildWork % 32 === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield;
       const offset = sample.half + range(.2, 4.2);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z) || westWaterSurface(x, z) !== null) continue;
       reeds.push({ x, z, s: range(.8, 1.7), rot: random() * 6.28 });
-    }
-  }
-  bladeBatch(reedGeometry, reeds, 'Mithala reed', () => color.setHSL(range(.17, .24), range(.24, .40), range(.30, .44)));
+    } }
+  } }
+  (yield* bladeBatch(reedGeometry, reeds, 'Mithala reed', () => color.setHSL(range(.17, .24), range(.24, .40), range(.30, .44))));
   metrics.reeds = reeds.length;
 
   // -------------------------------------------------------------------------
@@ -251,19 +256,19 @@ export function createMithalaScenery(kit) {
   const trunkGeometry = new THREE.CylinderGeometry(.16, .3, 1, 6);
   const crownGeometry = new THREE.IcosahedronGeometry(1, 0);
   const barkMaterial = material('#6a5a46'), leafMaterial = material('#ffffff', { flatShading: true });
-  function treeBatch(trees, name, tint, kind) {
+  function* treeBatch(trees, name, tint, kind) {
     if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
     const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, trees.length * 3);
     let at = 0;
-    trees.forEach((tree, index) => {
+    yield* forEachBuild(trees, function* (tree, index) {
       const y = gy(tree.x, tree.z), height = tree.h * tree.s;
       dummy.position.set(tree.x, y + height * tree.bole * .5, tree.z);
       dummy.rotation.set(range(-.05, .05), tree.rot, range(-.05, .05));
       dummy.scale.set(tree.s * tree.girth, height * tree.bole, tree.s * tree.girth); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
       colliders.push({ x: tree.x, z: tree.z, r: .42 * tree.s * tree.girth, kind });
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * tree.spread;
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? tree.top : tree.top - .16), tree.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
@@ -272,7 +277,7 @@ export function createMithalaScenery(kit) {
       }
     });
     trunks.name = `${name} trunks`; crowns.name = `${name} crowns`;
-    for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
+    for (const batch of [trunks, crowns]) { if (++buildWork % 32 === 0) yield; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
     metrics.trees += trees.length;
   }
 
@@ -289,11 +294,11 @@ export function createMithalaScenery(kit) {
    * river on ground where the river is invisible from a hundred paces.
    */
   const gallery = [];
-  for (const course of MITHALA_RIVERS) {
+  for (const course of MITHALA_RIVERS) { if (++buildWork % 32 === 0) yield;
     const main = course.id === MITHALA_MAIN.id;
-    for (const sample of WEST_PROFILES.get(course.id)) {
+    for (const sample of WEST_PROFILES.get(course.id)) { if (++buildWork % 32 === 0) yield;
       if (sample.index % (main ? 2 : 3)) continue;
-      for (let i = 0; i < (main ? 5 : 3); i++) {
+      for (let i = 0; i < (main ? 5 : 3); i++) { if (++buildWork % 32 === 0) yield;
         const side = random() < .5 ? -1 : 1, offset = sample.half + range(2.2, main ? 15 : 8);
         const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
         if (!plantable(x, z, 2.2)) continue;
@@ -313,12 +318,12 @@ export function createMithalaScenery(kit) {
       }
     }
   }
-  treeBatch(gallery, 'Mithala gallery', tree => (tree.poplar
+  (yield* treeBatch(gallery, 'Mithala gallery', tree => (tree.poplar
     ? color.set('#66813f')        // black poplar: tall, narrow, a brighter green, and the tallest thing on the plain
     : tree.willow
       ? color.set('#7f9060')      // willow: broad, grey-green, low over the water
       : color.set('#4f6c3e'))     // alder: dark, dense, and the one that stands in the water itself
-    .offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'mithala-tree');
+    .offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'mithala-tree'));
 
   /**
    * **The Acorwood coming over the horizon**, on the north-eastern margin of East and North Mithala.
@@ -330,8 +335,8 @@ export function createMithalaScenery(kit) {
    */
   const saplings = [];
   const FOREST = { fromX: -1700, toX: -1000, fromZ: -1500, toZ: -1950 };
-  for (const name of ['East Mithala', 'North Mithala']) for (const cell of REGION_CELLS[name] ?? []) {
-    for (let i = 0; i < 90; i++) {
+  for (const name of ['East Mithala', 'North Mithala']) { if (++buildWork % 32 === 0) yield; for (const cell of REGION_CELLS[name] ?? []) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 90; i++) { if (++buildWork % 32 === 0) yield;
       const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
       if (!plantable(x, z, 2)) continue;
       // Two gradients multiplied: nearer the north-east corner, and clear of the wetland margin,
@@ -343,21 +348,21 @@ export function createMithalaScenery(kit) {
       saplings.push({ x, z, s: range(.7, 1.15), h: range(4, 9.5) * (.5 + near * .8), rot: random() * 6.28,
         girth: 1, bole: .45, top: .76, spread: .2, wide: .3, deep: .3 });
     }
-  }
-  treeBatch(saplings, 'Mithala Acorwood margin', () => color.set('#3f5c36').offsetHSL(range(-.02, .02), range(-.04, .06), range(-.04, .05)), 'mithala-tree');
+  } }
+  (yield* treeBatch(saplings, 'Mithala Acorwood margin', () => color.set('#3f5c36').offsetHSL(range(-.02, .02), range(-.04, .06), range(-.04, .05)), 'mithala-tree'));
   metrics.saplings = saplings.length;
 
   // -------------------------------------------------------------------------
   // The open plain: tall grass, forbs, and the fen's sedge
   // -------------------------------------------------------------------------
   /** A low clump of three lobes: the prairie forbs, which is the one thing a Cfa meadow lacks. */
-  function forbBatch(clumps, name, tint) {
+  function* forbBatch(clumps, name, tint) {
     if (!clumps.length) return;
     const batch = new THREE.InstancedMesh(round, leafMaterial, clumps.length * 3);
     let at = 0;
-    for (const clump of clumps) {
+    for (const clump of clumps) { if (++buildWork % 32 === 0) yield;
       const y = gy(clump.x, clump.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if (++buildWork % 32 === 0) yield;
         const a = clump.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .3 * clump.s;
         dummy.position.set(clump.x + Math.sin(a) * spread, y + clump.s * clump.h * (lobe === 2 ? .8 : .52), clump.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.16, .16), a, range(-.16, .16));
@@ -381,15 +386,15 @@ export function createMithalaScenery(kit) {
   const perHex = Math.round(27 * WORLD_SCALE * WORLD_SCALE);
   const rise = (x, z) => relief(x, z, .5, 320) / .5;   // -1 in a hollow, 1 on a swell
   const forbs = [], sedge = [], stones = [];
-  for (let start = 0; start < cells.length; start += BLOCK) {
+  for (let start = 0; start < cells.length; start += BLOCK) { if (++buildWork % 32 === 0) yield;
     const block = cells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if (++buildWork % 32 === 0) yield;
       const older = cell.terrain === 'grassland';   // the rows that stand back from the braids
       const apron = cell.terrain === 'hills';       // South Mithala's four
       // **Grass, and a great deal of it.** Four times the west's usual count: an open plain at the
       // ordinary density reads as bare ground from standing height, which is the lesson Gala's first
       // render taught and the Oves repeated, and this is flatter and greener than either.
-      for (let i = 0; i < perHex * 4; i++) {
+      for (let i = 0; i < perHex * 4; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.1)) continue;
         const wet = mithalaWet(x, z);
@@ -403,7 +408,7 @@ export function createMithalaScenery(kit) {
       // "prairie forbs" and "drought-tolerant perennials adapted to the seasonal dry periods" the
       // flora document gives the continental plains, and the plant this plain has that no `Cfa` or
       // `Csa` country in the game does. Nobody walks round one, so none carries a collider.
-      for (let i = 0; i < 170; i++) {
+      for (let i = 0; i < 170; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.2)) continue;
         const wet = mithalaWet(x, z), bank = onLevee(x, z);
@@ -414,7 +419,7 @@ export function createMithalaScenery(kit) {
       }
       // **Sedge and rush on the fen margin**, where the plain stops being plain. It comes up through
       // the grass rather than replacing it at a line, which is the whole point of the margin.
-      for (let i = 0; i < 260; i++) {
+      for (let i = 0; i < 260; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, .8)) continue;
         const wet = mithalaWet(x, z), basin = inBackswamp(x, z);
@@ -423,14 +428,14 @@ export function createMithalaScenery(kit) {
       }
       // The only stone on the plain, and there is very little: a scatter on the apron's swells,
       // which is the Lotharn's own rubble brought down and the one ground here that is not silt.
-      if (apron) for (let i = 0; i < 60; i++) {
+      if (apron) for (let i = 0; i < 60; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1)) continue;
         if (random() > smooth(0, .8, rise(x, z)) * .7) continue;
         stones.push({ x, z, s: range(.2, .62), rot: random() * 6.28, flat: range(.35, .6) });
       }
     }
-    bladeBatch(grassGeometry, tufts, 'Mithala prairie grass', tuft => {
+    (yield* bladeBatch(grassGeometry, tufts, 'Mithala prairie grass', tuft => {
       // Green and rank in the backswamps, warmer and paler on the levee crests and on the older
       // rows, grey-green on the fen margin. HSL rather than hex, because the one note that has to
       // carry is the wet/dry difference and it is a saturation note (the Meneth lesson: choose the
@@ -439,17 +444,17 @@ export function createMithalaScenery(kit) {
       const sat = .36 + tuft.basin * .07 - tuft.bank * .07 - tuft.wet * .11 + range(-.04, .04);
       const light = .32 + tuft.bank * .07 - tuft.basin * .04 + tuft.wet * .04 + (tuft.apron ? .03 : 0) + range(-.035, .035);
       return color.setHSL(hue + range(-.012, .012), sat, light);
-    }, 1.35);
+    }, 1.35));
     metrics.grass += tufts.length;
   }
-  bladeBatch(sedgeGeometry, sedge, 'Mithala sedge and rush',
-    spot => color.setHSL(.19 + range(-.014, .014), .20 + spot.wet * .06 + range(-.03, .03), .40 + range(-.04, .04)));
+  (yield* bladeBatch(sedgeGeometry, sedge, 'Mithala sedge and rush',
+    spot => color.setHSL(.19 + range(-.014, .014), .20 + spot.wet * .06 + range(-.03, .03), .40 + range(-.04, .04))));
   metrics.sedge = sedge.length;
-  forbBatch(forbs, 'Mithala prairie forbs', clump => (clump.tall
+  (yield* forbBatch(forbs, 'Mithala prairie forbs', clump => (clump.tall
     ? color.set('#9a9146')     // the tall composites, going over to seed by midsummer
     : color.set('#57703c'))    // the low ones, still green in the grass
-    .offsetHSL(range(-.03, .03), range(-.05, .05), range(-.05, .06)));
-  siltBatch(stones, 'Mithala apron stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
+    .offsetHSL(range(-.03, .03), range(-.05, .05), range(-.05, .06))));
+  (yield* siltBatch(stones, 'Mithala apron stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16));
   metrics.stones = stones.length;
 
   return {

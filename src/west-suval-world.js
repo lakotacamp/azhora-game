@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { SOLIS, solisPoint, SOLIS_ROAD } from './region-world.js';
@@ -20,7 +22,10 @@ import { inSolisHarbor } from './solis-harbor.js';
  * batching pass; what changes hands (the camp, the banners, the standards) is
  * kept in moving groups so `setHolder` can show and hide it.
  */
-export function createWestSuvalScenery(kit) {
+export function createWestSuvalScenery(...args) { return finishBuild(createWestSuvalScenerySteps(...args)); }
+
+export function* createWestSuvalScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
     wood, woodLight, darkWood, cream, movingGroups, sign, roadDistance, signs, barrel } = kit;
   const district = new THREE.Group(); district.name = 'West Suval scenery'; root.add(district);
@@ -63,18 +68,18 @@ export function createWestSuvalScenery(kit) {
     }
   }
   /** A spill of broken stone about a point in the frame: `count` pieces within `spread` metres, the largest first. */
-  function rubbleHeap(a, b, spread, count, size = .5, parent = district) {
-    for (let k = 0; k < count; k++) {
+  function* rubbleHeap(a, b, spread, count, size = .5, parent = district) {
+    for (let k = 0; k < count; k++) { if (++buildWork % 8 === 0) yield;
       const u = roughRandom() * Math.PI * 2, r = Math.sqrt(roughRandom()) * spread, p = P(a + Math.cos(u) * r, b + Math.sin(u) * r), s = size * (1 - k / count * .6) * rough(.6, 1.2);
       pebble(rubble[k % rubble.length], p.x, gy(p.x, p.z) + s * .25, p.z, s, s * rough(.45, .75), s * rough(.7, 1.1), parent);
     }
   }
   /** Scaffolding along a line in the frame: standards, ledgers at two heights, a brace, from `(a0,b0)` to `(a1,b1)`. */
-  function scaffolding(a0, b0, a1, b1, height, base) {
+  function* scaffolding(a0, b0, a1, b1, height, base) {
     const length = Math.hypot(a1 - a0, b1 - b0), bays = Math.max(1, Math.round(length / 1.8)), alongA = Math.abs(a1 - a0) >= Math.abs(b1 - b0);
-    for (let k = 0; k <= bays; k++) { const p = P(a0 + (a1 - a0) * k / bays, b0 + (b1 - b0) * k / bays); post(timberNew, p.x, base + height / 2, p.z, .06, height, district); }
+    for (let k = 0; k <= bays; k++) { if (++buildWork % 8 === 0) yield; const p = P(a0 + (a1 - a0) * k / bays, b0 + (b1 - b0) * k / bays); post(timberNew, p.x, base + height / 2, p.z, .06, height, district); }
     const mid = P((a0 + a1) / 2, (b0 + b1) / 2);
-    for (const lift of [height * .42, height * .85]) box(woodLight, mid.x, base + lift, mid.z, alongA ? length : .55, .07, alongA ? .55 : length, district);
+    for (const lift of [height * .42, height * .85]) { if (++buildWork % 8 === 0) yield; box(woodLight, mid.x, base + lift, mid.z, alongA ? length : .55, .07, alongA ? .55 : length, district); }
     const brace = box(timberNew, mid.x, base + height * .45, mid.z, alongA ? length * 1.02 : .05, .06, alongA ? .05 : length * 1.02, district);
     brace.rotation[alongA ? 'z' : 'x'] = (alongA ? 1 : -1) * Math.atan2(height * .8, length);
   }
@@ -90,17 +95,17 @@ export function createWestSuvalScenery(kit) {
     return box(mat, p.x, y + h / 2, p.z, w, h, d, parent);
   };
   /** A flat paved quad draped over the ground on a grid, a few centimetres up. */
-  function pave(a0, a1, b0, b1, mat, lift = .035, cell = 3, parent = district) {
+  function* pave(a0, a1, b0, b1, mat, lift = .035, cell = 3, parent = district) {
     const nx = Math.max(1, Math.ceil((a1 - a0) / cell)), nz = Math.max(1, Math.ceil((b1 - b0) / cell));
     const positions = [], indices = [];
-    for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
+    for (let j = 0; j <= nz; j++) { if (++buildWork % 8 === 0) yield; for (let i = 0; i <= nx; i++) { if (++buildWork % 8 === 0) yield;
       const p = P(a0 + (a1 - a0) * i / nx, b0 + (b1 - b0) * j / nz);
       positions.push(p.x, gy(p.x, p.z) + lift, p.z);
-    }
-    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    } }
+    for (let j = 0; j < nz; j++) { if (++buildWork % 8 === 0) yield; for (let i = 0; i < nx; i++) { if (++buildWork % 8 === 0) yield;
       const k = j * (nx + 1) + i;
       indices.push(k, k + nx + 1, k + 1, k + 1, k + nx + 1, k + nx + 2);
-    }
+    } }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setIndex(indices); geometry.computeVertexNormals();
@@ -108,15 +113,15 @@ export function createWestSuvalScenery(kit) {
     return surface;
   }
   /** A ribbon of paving along a world polyline. */
-  function paveLine(points, width, mat, lift = .05) {
+  function* paveLine(points, width, mat, lift = .05) {
     const positions = [], indices = [];
     const samples = [];
-    for (let i = 1; i < points.length; i++) {
+    for (let i = 1; i < points.length; i++) { if (++buildWork % 8 === 0) yield;
       const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.z - a.z), steps = Math.max(1, Math.ceil(length / 2));
-      for (let s = i === 1 ? 0 : 1; s <= steps; s++) samples.push({ x: a.x + (b.x - a.x) * s / steps, z: a.z + (b.z - a.z) * s / steps, dx: (b.x - a.x) / length, dz: (b.z - a.z) / length });
+      for (let s = i === 1 ? 0 : 1; s <= steps; s++) { if (++buildWork % 8 === 0) yield; samples.push({ x: a.x + (b.x - a.x) * s / steps, z: a.z + (b.z - a.z) * s / steps, dx: (b.x - a.x) / length, dz: (b.z - a.z) / length }); }
     }
-    samples.forEach((s, index) => {
-      for (const side of [-1, 1]) { const x = s.x - s.dz * width / 2 * side, z = s.z + s.dx * width / 2 * side; positions.push(x, gy(x, z) + lift, z); }
+    yield* forEachBuild(samples, function* (s, index) {
+      for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; const x = s.x - s.dz * width / 2 * side, z = s.z + s.dx * width / 2 * side; positions.push(x, gy(x, z) + lift, z); }
       if (index) { const k = index * 2; indices.push(k - 2, k, k - 1, k - 1, k, k + 1); }
     });
     const geometry = new THREE.BufferGeometry();
@@ -140,9 +145,9 @@ export function createWestSuvalScenery(kit) {
   const coalitionBanners = holding('Solis: the contingents’ banners', coalitionHolds);
   const legionStandards = holding('Solis: the Marshal’s standards', empireHolds);
   /** A run of curtain wall in chunks that step with the ground, with a crenellated outer parapet and a low inner one. */
-  function wallRun(faceId, from, to) {
+  function* wallRun(faceId, from, to) {
     const face = SOLIS_FACES[faceId], length = to - from, chunks = Math.max(1, Math.round(length / 6)), sea = faceId === 'west';
-    for (let c = 0; c < chunks; c++) {
+    for (let c = 0; c < chunks; c++) { if (++buildWork % 8 === 0) yield;
       const a0 = from + length * c / chunks, a1 = from + length * (c + 1) / chunks, mid = (a0 + a1) / 2, span = a1 - a0 + .02;
       const centre = facePoint(faceId, mid), outer = facePoint(faceId, mid, t - .25), inner = facePoint(faceId, mid, -t + .15);
       const base = yAt(centre.a, centre.b) - .35;
@@ -151,19 +156,19 @@ export function createWestSuvalScenery(kit) {
       const [w, d] = along ? [span, FORT.thickness] : [FORT.thickness, span];
       if (state === 'breach') {
         // Thrown down to a ragged stump, and shut with a palisade of new stakes on the wall line; the rubble lies where it fell.
-        for (let k = 0; k < 3; k++) {
+        for (let k = 0; k < 3; k++) { if (++buildWork % 8 === 0) yield;
           const p0 = a0 + (a1 - a0) * k / 3, stump = facePoint(faceId, p0 + (a1 - a0) / 6), hgt = rough(.5, 2.1);
           block(k % 2 ? stoneBurnt : stone, stump.a, stump.b, along ? (a1 - a0) / 3 + .02 : FORT.thickness, hgt, along ? FORT.thickness : (a1 - a0) / 3 + .02, district, base);
           block(soot, stump.a, stump.b, along ? (a1 - a0) / 3 + .04 : FORT.thickness + .04, .3, along ? FORT.thickness + .04 : (a1 - a0) / 3 + .04, district, base + hgt - .28);
         }
-        for (let m = a0 + .19; m < a1; m += .38) {
+        for (let m = a0 + .19; m < a1; m += .38) { if (++buildWork % 8 === 0) yield;
           const stake = facePoint(faceId, m, rough(-.12, .12)), p = P(stake.a, stake.b), hgt = 4.4 + rough(-.3, .3);
           post(timberNew, p.x, base + .35 + hgt / 2, p.z, .17, hgt, district);
           mesh(cone6, timberNew, p.x, base + .35 + hgt + .18, p.z, .17, .36, .17, district);
         }
-        for (const lift of [1.4, 3.4]) { const rail = facePoint(faceId, mid, -.4); block(darkWood, rail.a, rail.b, along ? span : .14, .16, along ? .14 : span, district, base + lift); }
-        for (const out of [2.4, 5, 7.6]) { const heap = facePoint(faceId, mid + rough(-1.5, 1.5), t + out); rubbleHeap(heap.a, heap.b, 1.4, 5, .7 - out * .04); }
-        const inside = facePoint(faceId, mid, -t - 1.3); rubbleHeap(inside.a, inside.b, 1.2, 4, .45);
+        for (const lift of [1.4, 3.4]) { if (++buildWork % 8 === 0) yield; const rail = facePoint(faceId, mid, -.4); block(darkWood, rail.a, rail.b, along ? span : .14, .16, along ? .14 : span, district, base + lift); }
+        for (const out of [2.4, 5, 7.6]) { if (++buildWork % 8 === 0) yield; const heap = facePoint(faceId, mid + rough(-1.5, 1.5), t + out); (yield* rubbleHeap(heap.a, heap.b, 1.4, 5, .7 - out * .04)); }
+        const inside = facePoint(faceId, mid, -t - 1.3); (yield* rubbleHeap(inside.a, inside.b, 1.2, 4, .45));
         continue;
       }
       if (state === 'scaffold') {
@@ -173,9 +178,9 @@ export function createWestSuvalScenery(kit) {
         const boards = facePoint(faceId, mid, .3);
         block(timberNew, boards.a, boards.b, along ? span : .16, FORT.wallTop + .35 - courses, along ? .16 : span, district, base + courses);
         const s0 = facePoint(faceId, a0 + .2, t + 1.3), s1 = facePoint(faceId, a1 - .2, t + 1.3);
-        scaffolding(s0.a, s0.b, s1.a, s1.b, 5.2, base + .35);
+        (yield* scaffolding(s0.a, s0.b, s1.a, s1.b, 5.2, base + .35));
         const blocks = facePoint(faceId, mid, -t - 1.6);
-        for (let k = 0; k < 4; k++) block(stoneNew, blocks.a + (along ? (k - 1.5) * .7 : 0), blocks.b + (along ? 0 : (k - 1.5) * .7), .6, .4 * (1 + (k % 2)), .6, district, yAt(blocks.a, blocks.b));
+        for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield; block(stoneNew, blocks.a + (along ? (k - 1.5) * .7 : 0), blocks.b + (along ? 0 : (k - 1.5) * .7), .6, .4 * (1 + (k % 2)), .6, district, yAt(blocks.a, blocks.b)); }
         continue;
       }
       // The old sea wall has been patched so often that its courses no longer match. What the Empire rebuilt is new and pale.
@@ -183,7 +188,7 @@ export function createWestSuvalScenery(kit) {
       block(body, centre.a, centre.b, w, FORT.wallTop + .35, d, district, base);
       if (burnt) {
         // Black from the fire along its top, both faces, and streaked below the slits.
-        for (const side of [1, -1]) { const face2 = facePoint(faceId, mid, side * (t + .02)); sootLicks(face2.a, face2.b, along, span, base + FORT.wallTop + .4, 2.2, 4); }
+        for (const side of [1, -1]) { if (++buildWork % 8 === 0) yield; const face2 = facePoint(faceId, mid, side * (t + .02)); sootLicks(face2.a, face2.b, along, span, base + FORT.wallTop + .4, 2.2, 4); }
         const streak = facePoint(faceId, mid + rough(-1.5, 1.5), t + .02); block(sootLight, streak.a, streak.b, along ? .5 : .04, 1.6, along ? .04 : .5, district, base + 1.6);
       }
       // A battered plinth of big old blocks, the kingdom's first course.
@@ -192,7 +197,7 @@ export function createWestSuvalScenery(kit) {
       block(mortarLine, plinth.a, plinth.b, along ? span : .95, .08, along ? .95 : span, district, base, 2.6);
       // The outer parapet and its merlons; on a burnt stretch most of the merlons are gone.
       block(fresh ? stoneNew : burnt ? stoneBurnt : stone, outer.a, outer.b, along ? span : .5, .8, along ? .5 : span, district, base + FORT.wallTop + .35);
-      for (let m = a0 + 1, n = 0; m < a1 - .4; m += 2.1, n++) {
+      for (let m = a0 + 1, n = 0; m < a1 - .4; m += 2.1, n++) { if (++buildWork % 8 === 0) yield;
         if (burnt && n % 3 !== 1) continue;
         const merlon = facePoint(faceId, m, t - .25);
         block(fresh ? stoneNew : burnt ? stoneBurnt : stone, merlon.a, merlon.b, along ? 1.05 : .5, burnt ? rough(.3, .7) : .7, along ? .5 : 1.05, district, base + FORT.parapetTop + .35);
@@ -203,22 +208,22 @@ export function createWestSuvalScenery(kit) {
       if (c % 2 === 0) { const slit = facePoint(faceId, mid, t + .01); block(shadow, slit.a, slit.b, along ? .16 : .05, .9, along ? .05 : .16, district, base + 2.6); }
     }
   }
-  for (const faceId of Object.keys(SOLIS_FACES)) for (const [from, to] of wallRuns(faceId)) wallRun(faceId, from, to);
+  for (const faceId of Object.keys(SOLIS_FACES)) { if (++buildWork % 8 === 0) yield; for (const [from, to] of wallRuns(faceId)) { if (++buildWork % 8 === 0) yield; (yield* wallRun(faceId, from, to)); } }
 
-  function tower(entry, index) {
+  function* tower(entry, index) {
     const state = towerState(entry.id), base = yAt(entry.a, entry.b) - .45;
     if (state === 'broken') {
       // The crown thrown down: a ragged stump a little over the wall walk, black at its broken edge, its stones at its foot.
       const stump = FORT.wallTop + 1.4;
       block(stoneBurnt, entry.a, entry.b, FORT.towerSize, stump, FORT.towerSize, district, base);
       block(stoneDark, entry.a, entry.b, FORT.towerSize + .5, 1.4, FORT.towerSize + .5, district, base);
-      for (const sa of [-1, 1]) for (const sb of [-1, 1]) {
+      for (const sa of [-1, 1]) { if (++buildWork % 8 === 0) yield; for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield;
         const hgt = rough(.4, 2.4);
         block(stoneBurnt, entry.a + sa * (half - .7), entry.b + sb * (half - .7), 1.4, hgt, 1.4, district, base + stump);
         block(soot, entry.a + sa * (half - .7), entry.b + sb * (half - .7), 1.44, .3, 1.44, district, base + stump + hgt - .28);
-      }
+      } }
       const out = Math.abs(entry.b) > SOLIS_CIRCUIT.halfB ? { a: 0, b: Math.sign(entry.b) } : { a: Math.sign(entry.a), b: 0 };
-      rubbleHeap(entry.a + out.a * (half + 2.2), entry.b + out.b * (half + 2.2), 2.4, 9, .9);
+      (yield* rubbleHeap(entry.a + out.a * (half + 2.2), entry.b + out.b * (half + 2.2), 2.4, 9, .9));
       return base + stump;
     }
     const top = base + FORT.towerTop + .45, rebuilt = state === 'rebuilt', roofless = state === 'roofless';
@@ -230,29 +235,29 @@ export function createWestSuvalScenery(kit) {
     if (roofless) {
       // The cap burned and fell in: soot on the crown, and the charred rafters still standing up out of it.
       block(soot, entry.a, entry.b, FORT.towerSize + .54, .5, FORT.towerSize + .54, district, top - .5);
-      for (const [sa, sb] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      for (const [sa, sb] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { if (++buildWork % 8 === 0) yield;
         const p = P(entry.a + sa * (half - .6), entry.b + sb * (half - .6));
         const rafter = box(charred, p.x, top + 1.1, p.z, .16, 2.4 * rough(.5, 1), .16, district);
         rafter.rotation.set(sb * rough(.3, .6), 0, -sa * rough(.3, .6));
       }
-      for (const [da, db] of [[0, -half], [0, half], [-half, 0], [half, 0]]) block(stoneBurnt, entry.a + da, entry.b + db, da ? .5 : 1.4, rough(.3, .75), da ? 1.4 : .5, district, top + .3);
+      for (const [da, db] of [[0, -half], [0, half], [-half, 0], [half, 0]]) { if (++buildWork % 8 === 0) yield; block(stoneBurnt, entry.a + da, entry.b + db, da ? .5 : 1.4, rough(.3, .75), da ? 1.4 : .5, district, top + .3); }
       return top;
     }
-    for (const sa of [-1, 1]) for (const sb of [-1, 1]) block(stone, entry.a + sa * (half - .15), entry.b + sb * (half - .15), .8, 1.7, .8, district, top + .3);
-    for (const [da, db, wa, wb] of [[0, -half, 1.4, .5], [0, half, 1.4, .5], [-half, 0, .5, 1.4], [half, 0, .5, 1.4]]) block(stone, entry.a + da, entry.b + db, wa, .75, wb, district, top + .3);
+    for (const sa of [-1, 1]) { if (++buildWork % 8 === 0) yield; for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield; block(stone, entry.a + sa * (half - .15), entry.b + sb * (half - .15), .8, 1.7, .8, district, top + .3); } }
+    for (const [da, db, wa, wb] of [[0, -half, 1.4, .5], [0, half, 1.4, .5], [-half, 0, .5, 1.4], [half, 0, .5, 1.4]]) { if (++buildWork % 8 === 0) yield; block(stone, entry.a + da, entry.b + db, wa, .75, wb, district, top + .3); }
     const p = P(entry.a, entry.b);
     const cap = mesh(coneGeometry, rebuilt ? tileNew : index % 2 ? tile : tileDark, p.x, top + 2 + FORT.capRise / 2, p.z, (half + .75) * Math.SQRT2, FORT.capRise, (half + .75) * Math.SQRT2, district);
     cap.rotation.y = Math.PI / 4;
     block(tileRidge, entry.a, entry.b, .9, .4, .9, district, top + 2 + FORT.capRise - .1);
-    for (const [sa, sb] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) block(shadow, entry.a + sa * (half + .01), entry.b + sb * (half + .01), sb ? .18 : .05, 1.1, sa ? .18 : .05, district, base + 5.4);
+    for (const [sa, sb] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { if (++buildWork % 8 === 0) yield; block(shadow, entry.a + sa * (half + .01), entry.b + sb * (half + .01), sb ? .18 : .05, 1.1, sa ? .18 : .05, district, base + 5.4); }
     return top;
   }
-  const towerTops = new Map(SOLIS_TOWERS.map((entry, index) => [entry.id, tower(entry, index)]));
+  const towerTops = new Map(); for (const [index, entry] of SOLIS_TOWERS.entries()) towerTops.set(entry.id, yield* tower(entry, index));
 
   // Wall-walk stairs against the inner face.
-  for (const { face: faceId, from, to } of SOLIS_STAIRS) {
+  for (const { face: faceId, from, to } of SOLIS_STAIRS) { if (++buildWork % 8 === 0) yield;
     const face = SOLIS_FACES[faceId], steps = 9;
-    for (let s = 0; s < steps; s++) {
+    for (let s = 0; s < steps; s++) { if (++buildWork % 8 === 0) yield;
       const along = from + (to - from) * (s + .5) / steps, spot = facePoint(faceId, along, -t - .8), h = (s + 1) * (FORT.wallTop / steps);
       block(stoneWarm, spot.a, spot.b, face.axis === 'a' ? (to - from) / steps + .02 : 1.6, h, face.axis === 'a' ? 1.6 : (to - from) / steps + .02, district, yAt(spot.a, spot.b) - .2);
     }
@@ -261,10 +266,10 @@ export function createWestSuvalScenery(kit) {
 
   // The ditch: a dark trench between a spoil bank under the wall and a low lip outside, stakes in its floor.
   // The ground cannot be cut, so the trench is drawn: a dark floor, the banks either side of it, and the stakes.
-  for (const run of ditchRuns()) {
+  for (const run of ditchRuns()) { if (++buildWork % 8 === 0) yield;
     const face = SOLIS_FACES[run.face], along = face.axis === 'a', length = run.to - run.from;
     const pieces = Math.max(1, Math.round(length / 6));
-    for (let k = 0; k < pieces; k++) {
+    for (let k = 0; k < pieces; k++) { if (++buildWork % 8 === 0) yield;
       const m = run.from + length * (k + .5) / pieces, span = length / pieces + .05;
       const at = off => (along ? { a: m, b: run.line + Math.sign(run.line) * off } : { a: run.line + Math.sign(run.line) * off, b: m });
       const strip = (off, width, height, mat, sink) => {
@@ -275,14 +280,14 @@ export function createWestSuvalScenery(kit) {
       strip(FORT.ditchWidth / 2 - .3, .6, .16, earth, .05);
       strip(-FORT.ditchWidth / 2 - 1.5, 2.4, .5, earth, .12);                          // the spoil bank under the wall
       strip(FORT.ditchWidth / 2 + .5, 1.0, .32, earth, .1);                            // the lip outside
-      for (let s2 = 0; s2 < 2; s2++) {
+      for (let s2 = 0; s2 < 2; s2++) { if (++buildWork % 8 === 0) yield;
         const stake = at(range(-.9, .9)), shift = (s2 - .5) * span * .5, sp = P(stake.a + (along ? shift : 0), stake.b + (along ? 0 : shift));
         const spike = post(darkWood, sp.x, gy(sp.x, sp.z) + .45, sp.z, .07, 1.1, district); spike.rotation[along ? 'x' : 'z'] = (along ? -1 : 1) * Math.sign(run.line) * .45;
       }
     }
   }
   // Causeway slabs before each gate.
-  for (const gate of SOLIS_GATES) {
+  for (const gate of SOLIS_GATES) { if (++buildWork % 8 === 0) yield;
     const face = SOLIS_FACES[gate.face], along = face.axis === 'a', c = facePoint(gate.face, gate.along, FORT.ditchOffset);
     block(stoneDark, c.a, c.b, along ? FORT.causeway : FORT.ditchWidth + 2.4, .22, along ? FORT.ditchWidth + 2.4 : FORT.causeway, district, yAt(c.a, c.b) - .12);
   }
@@ -312,7 +317,7 @@ export function createWestSuvalScenery(kit) {
     }
     return horse;
   }
-  for (const gate of SOLIS_GATES) {
+  for (const gate of SOLIS_GATES) { if (++buildWork % 8 === 0) yield;
     const face = SOLIS_FACES[gate.face], along = face.axis === 'a', main = gate.id === 'sun-horses';
     const centre = facePoint(gate.face, gate.along, FORT.towerOut), base = yAt(centre.a, centre.b) - .3;
     const outward = Math.atan2(gate.out.a, gate.out.b);
@@ -324,14 +329,14 @@ export function createWestSuvalScenery(kit) {
     const arch = facePoint(gate.face, gate.along, FORT.towerOut + half + .02);
     block(stoneDark, arch.a, arch.b, along ? FORT.gateWidth + .6 : .12, .5, along ? .12 : FORT.gateWidth + .6, district, base + 4.9);
     // Open leaves along the passage sides, studded with bronze; the Sun Horses' burned, and their new oak is banded with iron.
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const leafSpot = facePoint(gate.face, gate.along + side * (FORT.gateWidth / 2 - .12), -.2);
       block(rebuilt ? timberNew : darkWood, leafSpot.a, leafSpot.b, along ? .2 : 2.3, 4.4, along ? 2.3 : .2, district, base + .3);
-      if (rebuilt) for (const lift of [.9, 2.4, 3.9]) {
+      if (rebuilt) for (const lift of [.9, 2.4, 3.9]) { if (++buildWork % 8 === 0) yield;
         const band = facePoint(gate.face, gate.along + side * (FORT.gateWidth / 2 - .23), -.2);
         block(iron, band.a, band.b, along ? .04 : 2.32, .16, along ? 2.32 : .04, district, base + .3 + lift);
       }
-      else for (let s = 0; s < 3; s++) {
+      else for (let s = 0; s < 3; s++) { if (++buildWork % 8 === 0) yield;
         const stud = facePoint(gate.face, gate.along + side * (FORT.gateWidth / 2 - .25), -.2 - .8 + s * .8);
         block(bronze, stud.a, stud.b, .12, .12, .12, district, base + 1.4 + s * 1.1);
       }
@@ -344,14 +349,14 @@ export function createWestSuvalScenery(kit) {
       // Two rearing bronze horses over the Gate of Sun Horses, and last summer's flowers at their feet. One is
       // still there; the other was pulled down in the sack and melted for coin, and only its hooves are left.
       const horseBase = base + 8.3;
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
         const spot = facePoint(gate.face, gate.along + side * 1.2, FORT.towerOut + 1.2), p = P(spot.a, spot.b);
         block(stoneDark, spot.a, spot.b, 1.5, .5, 2.2, district, horseBase - .5);
         if (SUN_HORSE_GATE.standing.includes(side)) { bronzeHorse(p.x, horseBase, p.z, outward + side * .22, side).scale.setScalar(1.35); continue; }
-        for (const [da, db] of [[-.35, -.75], [.35, -.75]]) { const hoof = P(spot.a + da, spot.b + db); mesh(cylinder, bronze, hoof.x, horseBase + .2, hoof.z, .16, .4, .16, district); }
+        for (const [da, db] of [[-.35, -.75], [.35, -.75]]) { if (++buildWork % 8 === 0) yield; const hoof = P(spot.a + da, spot.b + db); mesh(cylinder, bronze, hoof.x, horseBase + .2, hoof.z, .16, .4, .16, district); }
         block(soot, spot.a, spot.b, 1.52, .08, 2.22, district, horseBase - .06);
       }
-      for (let f = 0; f < 26; f++) {
+      for (let f = 0; f < 26; f++) { if (++buildWork % 8 === 0) yield;
         const side = f % 2 ? 1 : -1, spot = facePoint(gate.face, gate.along + side * range(2.6, 8), range(4.3, 5.6)), p = P(spot.a, spot.b);
         pebble(material(['#c9483a', '#e0b13a', '#e7dcc0', '#b86a8a'][f % 4]), p.x, gy(p.x, p.z) + .06, p.z, .12, .06, .12, district);
       }
@@ -366,7 +371,7 @@ export function createWestSuvalScenery(kit) {
   }
   // Contingent banners hung from the field faces of the towers.
   const banners = COALITION_CAMP.contingents;
-  SOLIS_TOWERS.forEach((entry, index) => {
+  yield* forEachBuild(SOLIS_TOWERS, function* (entry, index) {
     const out = Math.abs(entry.b) > SOLIS_CIRCUIT.halfB ? { a: 0, b: Math.sign(entry.b) } : { a: Math.sign(entry.a), b: 0 };
     const spot = P(entry.a + out.a * (half + .08), entry.b + out.b * (half + .08)), top = towerTops.get(entry.id);
     const group = banners[index % banners.length];
@@ -378,12 +383,12 @@ export function createWestSuvalScenery(kit) {
   // -------------------------------------------------------------------------
   // Solis: inside the walls
   // -------------------------------------------------------------------------
-  pave(-44.5, 4.5, -21, 5, paving, .04, 4);                                  // the market square
-  pave(4, 21, -9, 13, pavingLight, .045, 4);                                  // the plaza before the Court of Oaths
+  (yield* pave(-44.5, 4.5, -21, 5, paving, .04, 4));                                  // the market square
+  (yield* pave(4, 21, -9, 13, pavingLight, .045, 4));                                  // the plaza before the Court of Oaths
   // Ribbons are wound like the world's roads, so they are drawn from both sides.
   const ribbon = tint => material(tint, { side: THREE.DoubleSide });
-  for (const street of SOLIS_STREETS) if (street.id !== 'camp-spur') paveLine(street.points, street.width, ribbon(street.id === 'main-street' ? '#d8ccb0' : '#cbbd9c'));
-  paveLine(SOLIS_STREETS.find(street => street.id === 'camp-spur').points, 2.6, ribbon('#b3a77a'), .03);
+  for (const street of SOLIS_STREETS) { if (++buildWork % 8 === 0) yield; if (street.id !== 'camp-spur') (yield* paveLine(street.points, street.width, ribbon(street.id === 'main-street' ? '#d8ccb0' : '#cbbd9c'))); }
+  (yield* paveLine(SOLIS_STREETS.find(street => street.id === 'camp-spur').points, 2.6, ribbon('#b3a77a'), .03));
 
   const doorSide = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] };
   /**
@@ -391,12 +396,12 @@ export function createWestSuvalScenery(kit) {
    * empty window holes, no door, no roof; inside, the rubble and the roof beams that came down. A 'collapsed'
    * house is stumps and a heap; a 'scaffold' one has its new walls going up behind scaffolding.
    */
-  function burntHouse(entry, index, state, base) {
+  function* burntHouse(entry, index, state, base) {
     const { a, b, w, d, h } = entry, thick = .45, wallMat = entry.kind === 'warehouse' ? stoneBurnt : burntWalls[index % burntWalls.length];
     const collapsed = state === 'collapsed', rising = state === 'scaffold';
-    for (const [sa, sb] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+    for (const [sa, sb] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) { if (++buildWork % 8 === 0) yield;
       const length = sb ? w : d, pieces = Math.max(2, Math.round(length / 2.2));
-      for (let k = 0; k < pieces; k++) {
+      for (let k = 0; k < pieces; k++) { if (++buildWork % 8 === 0) yield;
         const u = (k + .5) / pieces - .5, corner = k === 0 || k === pieces - 1;
         const pa = sb ? a + u * w : a + sa * (w / 2 - thick / 2), pb = sb ? b + sb * (d / 2 - thick / 2) : b + u * d;
         const newWall = rising && sb === 1, hgt = newWall ? h + .3 : collapsed ? rough(.35, 1.5) : h * (corner ? rough(.85, 1) : rough(.5, .95));
@@ -405,7 +410,7 @@ export function createWestSuvalScenery(kit) {
         if (!newWall) {
           // Black along the broken top, and licking down both faces from it.
           block(soot, pa, pb, sb ? seg + .03 : thick + .04, .22, sb ? thick + .04 : seg + .03, district, base + hgt - .2);
-          for (const side of [1, -1]) {
+          for (const side of [1, -1]) { if (++buildWork % 8 === 0) yield;
             const fa = sb ? pa : pa + side * (thick / 2 + .02), fb = sb ? pb + side * (thick / 2 + .02) : pb;
             sootLicks(fa, fb, !!sb, seg, base + hgt, Math.min(h * .7, hgt * .8), 2);
           }
@@ -422,42 +427,42 @@ export function createWestSuvalScenery(kit) {
     const [da, db] = doorSide[entry.door ?? (b < 0 ? 'south' : 'north')];
     if (!collapsed) block(charred, a + da * (w / 2 + .03), b + db * (d / 2 + .03), da ? .1 : 1.3, 2.3, da ? 1.3 : .1, district, base + .4);
     // Inside: the fallen roof's rubble and its beams, lying where they came down.
-    rubbleHeap(a, b, Math.min(w, d) * .35, collapsed ? 16 : 9, collapsed ? 1.1 : .75);
-    for (let k = 0; k < (collapsed ? 4 : 3); k++) {
+    (yield* rubbleHeap(a, b, Math.min(w, d) * .35, collapsed ? 16 : 9, collapsed ? 1.1 : .75));
+    for (let k = 0; k < (collapsed ? 4 : 3); k++) { if (++buildWork % 8 === 0) yield;
       const p = P(a + rough(-w, w) * .2, b + rough(-d, d) * .2), longWay = w >= d;
       const beam = box(charred, p.x, base + .6 + rough(0, h * .35), p.z, longWay ? w * .8 : .2, .2, longWay ? .2 : d * .8, district);
       beam.rotation.set(rough(-.25, .25), rough(-.5, .5), rough(-.35, .35));
     }
     if (rising) {
       // The new front going up: scaffolding before it, a ladder, and dressed stone waiting in the street.
-      scaffolding(a - w / 2 + .2, b + d / 2 + 1.1, a + w / 2 - .2, b + d / 2 + 1.1, h + 1.2, base + .3);
-      for (let k = 0; k < 3; k++) block(stoneNew, a + w / 2 + .9, b + d / 2 - .5 - k * .75, .6, .45, .6, district, yAt(a + w / 2 + .9, b + d / 2 - .5 - k * .75));
+      (yield* scaffolding(a - w / 2 + .2, b + d / 2 + 1.1, a + w / 2 - .2, b + d / 2 + 1.1, h + 1.2, base + .3));
+      for (let k = 0; k < 3; k++) { if (++buildWork % 8 === 0) yield; block(stoneNew, a + w / 2 + .9, b + d / 2 - .5 - k * .75, .6, .45, .6, district, yAt(a + w / 2 + .9, b + d / 2 - .5 - k * .75)); }
     }
     // Stone and char spilled into the street along the house front.
     const front = { a: a + da * (w / 2 + .9), b: b + db * (d / 2 + .9) };
-    rubbleHeap(front.a + (db ? rough(-w, w) * .3 : 0), front.b + (da ? rough(-d, d) * .3 : 0), .8, 4, .35);
+    (yield* rubbleHeap(front.a + (db ? rough(-w, w) * .3 : 0), front.b + (da ? rough(-d, d) * .3 : 0), .8, 4, .35));
     metrics.buildings++; metrics.ruins++;
     push({ ...P(a, b), hx: w / 2 + .15, hz: d / 2 + .15, kind: 'solis-building', id: entry.id, ruin: state });
   }
   /** A house of Solis: whitewashed stone, a low red-tiled roof, shutters, and sometimes a roof garden. */
-  function townHouse(entry, index) {
+  function* townHouse(entry, index) {
     const { a, b, w, d, h } = entry, base = Math.min(yAt(a - w / 2, b), yAt(a + w / 2, b)) - .3;
     const wallMat = entry.kind === 'warehouse' ? stoneWarm : walls[index % walls.length];
     const state = buildingState(entry.id), rebuilt = state === 'rebuilt';
     block(stoneDark, a, b, w + .3, .75, d + .3, district, base);
-    if (state === 'shell' || state === 'collapsed' || state === 'scaffold') { burntHouse(entry, index, state, base); return; }
+    if (state === 'shell' || state === 'collapsed' || state === 'scaffold') { (yield* burntHouse(entry, index, state, base)); return; }
     block(wallMat, a, b, w, h + .3, d, district, base);
     const roofTop = base + h + .3;
     if (entry.garden) {
       // A flat roof terrace with its parapet and greenery hanging over the street: the hanging gardens.
       block(stoneWarm, a, b, w + .2, .5, d + .2, district, roofTop);
-      for (let g = 0; g < Math.round((w + d) * .9); g++) {
+      for (let g = 0; g < Math.round((w + d) * .9); g++) { if (++buildWork % 8 === 0) yield;
         const edge = g % 4, u = random() - .5, ga = edge < 2 ? a + u * w : a + (edge === 2 ? -1 : 1) * w / 2, gb = edge < 2 ? b + (edge === 0 ? -1 : 1) * d / 2 : b + u * d;
         const p = P(ga, gb);
         pebble(g % 3 ? leaf : leafDark, p.x, roofTop + .45 - range(0, 1.6), p.z, range(.35, .6), range(.5, 1.3), range(.35, .6), district);
       }
       const pergola = P(a, b);
-      for (const sa of [-1, 1]) post(wood, pergola.x + sa * w * .3, roofTop + 1.3, pergola.z, .07, 2, district);
+      for (const sa of [-1, 1]) { if (++buildWork % 8 === 0) yield; post(wood, pergola.x + sa * w * .3, roofTop + 1.3, pergola.z, .07, 2, district); }
       box(woodLight, pergola.x, roofTop + 2.3, pergola.z, w * .7, .1, 1.6, district);
     } else {
       // roofGeometry's ridge runs along its depth (world z); a turn puts it along a.
@@ -470,9 +475,9 @@ export function createWestSuvalScenery(kit) {
     const doorAt = { a: a + da * (w / 2 + .03), b: b + db * (d / 2 + .03) };
     block(darkWood, doorAt.a, doorAt.b, da ? .1 : 1.3, entry.kind === 'warehouse' ? 3.2 : 2.3, da ? 1.3 : .1, district, base + .4);
     const shutter = shutters[index % shutters.length];
-    for (const [sa, sb] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+    for (const [sa, sb] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) { if (++buildWork % 8 === 0) yield;
       const count = sb ? Math.max(1, Math.floor(w / 3.4)) : Math.max(1, Math.floor(d / 3.4));
-      for (let k = 0; k < count; k++) {
+      for (let k = 0; k < count; k++) { if (++buildWork % 8 === 0) yield;
         const u = (k + .5) / count - .5;
         const wa = sb ? a + u * w : a + sa * (w / 2 + .03), wb = sb ? b + sb * (d / 2 + .03) : b + u * d;
         if (Math.hypot(wa - doorAt.a, wb - doorAt.b) < 1.2) continue;
@@ -485,16 +490,16 @@ export function createWestSuvalScenery(kit) {
     metrics.buildings++;
     push({ ...P(a, b), hx: w / 2 + .15, hz: d / 2 + .15, kind: 'solis-building', id: entry.id });
   }
-  SOLIS_BUILDINGS.filter(entry => entry.kind !== 'temple' && entry.kind !== 'wine-attic').forEach(townHouse);
+  yield* forEachBuild(SOLIS_BUILDINGS.filter(entry => entry.kind !== 'temple' && entry.kind !== 'wine-attic'), townHouse);
   // The niche in the sea wall where the Prime Minister's cask for Ed is left every tenth night (src/ed.js).
   {
     const n = SEA_WALL_NICHE, base = gy(n.x, n.z), face = n.x - .45, seal = material('#3f6b3a');
     box(shadow, face + .03, base + .95, n.z, .06, 1.05, 1.25, district);
     box(stoneWhite, face + .07, base + 1.52, n.z, .14, .16, 1.5, district);
-    for (const side of [-1, 1]) box(stoneWhite, face + .07, base + .95, n.z + side * .66, .14, 1.2, .16, district);
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; box(stoneWhite, face + .07, base + .95, n.z + side * .66, .14, 1.2, .16, district); }
     box(stoneDark, face + .22, base + .38, n.z, .45, .1, 1.3, district);
     const cask = mesh(cylinder, woodLight, face + .26, base + .63, n.z, .22, .5, .22, district); cask.rotation.x = Math.PI / 2;
-    for (const end of [-1, 1]) { const hoop = mesh(cylinder, darkWood, face + .26, base + .63, n.z + end * .18, .228, .04, .228, district); hoop.rotation.x = Math.PI / 2; }
+    for (const end of [-1, 1]) { if (++buildWork % 8 === 0) yield; const hoop = mesh(cylinder, darkWood, face + .26, base + .63, n.z + end * .18, .228, .04, .228, district); hoop.rotation.x = Math.PI / 2; }
     mesh(round, seal, face + .26, base + .85, n.z, .05, .02, .05, district);
     push({ x: face + .26, z: n.z, r: .36, kind: 'solis-niche-cask' });
   }
@@ -509,37 +514,37 @@ export function createWestSuvalScenery(kit) {
     const tax = SOLIS_BUILDINGS.find(entry => entry.id === 'tax-house'), barracks = SOLIS_BUILDINGS.find(entry => entry.id === 'legion-barracks');
     const plaqueA = tax.a + tax.w / 2 + .06, plaqueY = yAt(tax.a, tax.b) + 3.4;
     block(material('#9b9a92'), plaqueA, tax.b - 2.2, .08, 1.0, 1.6, district, plaqueY - .5);
-    for (let k = 0; k < 3; k++) block(woodLight, plaqueA + .06, tax.b - 2.2, .06, .22, 1.9, district, plaqueY - .45 + k * .33).rotation.x = (k - 1) * .06;
+    for (let k = 0; k < 3; k++) { if (++buildWork % 8 === 0) yield; block(woodLight, plaqueA + .06, tax.b - 2.2, .06, .22, 1.9, district, plaqueY - .45 + k * .33).rotation.x = (k - 1) * .06; }
     const eagle = { a: barracks.a, b: barracks.b + barracks.d / 2 + .06 };
     block(material('#8f8e86'), eagle.a, eagle.b, 2.2, 1.2, .08, district, yAt(eagle.a, eagle.b) + 3.0);
-    for (let k = 0; k < 5; k++) block(shadow, eagle.a - .8 + k * .4, eagle.b + .02, .06, range(.4, .9), .06, district, yAt(eagle.a, eagle.b) + 3.2).rotation.z = range(-.5, .5);
-    for (let k = 0; k < 4; k++) { const wa = barracks.a - 6 + k * 4; block(woodLight, wa, eagle.b + .02, 1.0, .18, .06, district, yAt(wa, eagle.b) + 2.2).rotation.z = range(-.25, .25); }
+    for (let k = 0; k < 5; k++) { if (++buildWork % 8 === 0) yield; block(shadow, eagle.a - .8 + k * .4, eagle.b + .02, .06, range(.4, .9), .06, district, yAt(eagle.a, eagle.b) + 3.2).rotation.z = range(-.5, .5); }
+    for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield; const wa = barracks.a - 6 + k * 4; block(woodLight, wa, eagle.b + .02, 1.0, .18, .06, district, yAt(wa, eagle.b) + 2.2).rotation.z = range(-.25, .25); }
     // The paymaster's table and strongbox, and the notice board beside the door.
     const table = P(PAYMASTER_TABLE.a, PAYMASTER_TABLE.b), tableY = gy(table.x, table.z);
     box(woodLight, table.x, tableY + .8, table.z, .9, .12, 2.2, district);
-    for (const sb of [-1, 1]) post(wood, table.x, tableY + .4, table.z + sb * .9, .06, .8, district);
+    for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield; post(wood, table.x, tableY + .4, table.z + sb * .9, .06, .8, district); }
     box(material('#5d4a33'), table.x, tableY + 1.05, table.z - .5, .45, .38, .6, coalitionBanners);
-    for (let k = 0; k < 4; k++) pebble(material('#b57a45'), table.x + range(-.2, .2), tableY + .9, table.z + .3 + range(-.3, .3), .07, .025, .07, coalitionBanners);
+    for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield; pebble(material('#b57a45'), table.x + range(-.2, .2), tableY + .9, table.z + .3 + range(-.3, .3), .07, .025, .07, coalitionBanners); }
     push({ x: table.x, z: table.z, hx: PAYMASTER_TABLE.halfA, hz: PAYMASTER_TABLE.halfB, kind: 'paymaster-table' });
     const board = P(tax.a + tax.w / 2 + .1, tax.b + 2.3), boardY = gy(board.x, board.z);
     box(darkWood, board.x, boardY + 1.8, board.z, .1, 1.3, 1.9, district);
-    ['#efe7cf', '#e2d6a8', '#d6dde2'].forEach((tint, k) => box(material(tint), board.x + .07, boardY + 1.95 - (k % 2) * .35, board.z - .55 + k * .55, .03, .55, .42, coalitionBanners));
+    yield* forEachBuild(['#efe7cf', '#e2d6a8', '#d6dde2'], function* (tint, k) { return box(material(tint), board.x + .07, boardY + 1.95 - (k % 2) * .35, board.z - .55 + k * .55, .03, .55, .42, coalitionBanners); });
     box(material('#e9dfc2'), board.x + .07, boardY + 1.8, board.z, .03, .9, 1.4, legionStandards);
   }
 
   // The market square: stalls, the fountain, a cart, all at its edges.
-  SOLIS_STALLS.forEach((stall, index) => {
+  yield* forEachBuild(SOLIS_STALLS, function* (stall, index) {
     const p = P(stall.a, stall.b), y = gy(p.x, p.z), north = stall.b < SOLIS_SQUARE.b;
-    for (const sa of [-1, 1]) for (const sb of [-1, 1]) post(wood, p.x + sa * 1.45, y + 1.15, p.z + sb * 1.0, .07, 2.3, district);
+    for (const sa of [-1, 1]) { if (++buildWork % 8 === 0) yield; for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield; post(wood, p.x + sa * 1.45, y + 1.15, p.z + sb * 1.0, .07, 2.3, district); } }
     const awning = mesh(roofGeometry(2.5, 3.4, .55), material(['#b8543e', '#d9c28a', '#5f7f9a', '#c77a3a', '#7d8f5a', '#a8563f'][index % 6]), p.x, y + 2.3, p.z, 1, 1, 1, district);
     awning.rotation.y = Math.PI / 2;
     box(woodLight, p.x, y + .85, p.z + (north ? .75 : -.75), 3.0, .12, .7, district);
-    for (let k = 0; k < 4; k++) pebble(material(['#e08a2e', '#8a9a3c', '#c9483a', '#e0c070'][(k + index) % 4]), p.x - 1.1 + k * .72, y + 1.0, p.z + (north ? .75 : -.75), .2, .14, .2, district);
+    for (let k = 0; k < 4; k++) { if (++buildWork % 8 === 0) yield; pebble(material(['#e08a2e', '#8a9a3c', '#c9483a', '#e0c070'][(k + index) % 4]), p.x - 1.1 + k * .72, y + 1.0, p.z + (north ? .75 : -.75), .2, .14, .2, district); }
     push({ x: p.x, z: p.z, hx: 1.55, hz: 1.1, kind: 'market-stall' });
   });
   {
     const f = P(SOLIS_FOUNTAIN.a, SOLIS_FOUNTAIN.b), y = gy(f.x, f.z);
-    for (let k = 0; k < 8; k++) {
+    for (let k = 0; k < 8; k++) { if (++buildWork % 8 === 0) yield;
       const angle = k / 8 * Math.PI * 2, seg = box(stoneWhite, f.x + Math.sin(angle) * SOLIS_FOUNTAIN.r, y + .35, f.z + Math.cos(angle) * SOLIS_FOUNTAIN.r, 1.35, .7, .35, district);
       seg.rotation.y = angle;
     }
@@ -552,14 +557,14 @@ export function createWestSuvalScenery(kit) {
     const c = P(SOLIS_CART.a, SOLIS_CART.b), y = gy(c.x, c.z), cart = new THREE.Group();
     cart.position.set(c.x, y + .55, c.z); cart.rotation.y = SOLIS_CART.yaw; district.add(cart);
     box(woodLight, 0, 0, 0, 2.8, .18, 1.6, cart);
-    for (const side of [-1, 1]) { box(wood, 0, .35, side * .78, 2.8, .55, .1, cart); const wheel = mesh(new THREE.TorusGeometry(.55, .09, 5, 12), darkWood, .4, -.05, side * .95, 1, 1, 1, cart); wheel.rotation.y = 0; }
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; box(wood, 0, .35, side * .78, 2.8, .55, .1, cart); const wheel = mesh(new THREE.TorusGeometry(.55, .09, 5, 12), darkWood, .4, -.05, side * .95, 1, 1, 1, cart); wheel.rotation.y = 0; }
     box(wood, 2.1, -.1, 0, 1.6, .1, .12, cart);
-    for (let k = 0; k < 3; k++) pebble(material('#c9b27a'), -.8 + k * .8, .35, 0, .45, .35, .4, cart);
+    for (let k = 0; k < 3; k++) { if (++buildWork % 8 === 0) yield; pebble(material('#c9b27a'), -.8 + k * .8, .35, 0, .45, .35, .4, cart); }
     push({ x: c.x, z: c.z, r: 1.7, kind: 'cart' });
   }
 
   // The plaza of the old kings: bronze statues before the Court of Oaths.
-  for (const statue of SOLIS_STATUES) {
+  for (const statue of SOLIS_STATUES) { if (++buildWork % 8 === 0) yield;
     const p = P(statue.a, statue.b), y = gy(p.x, p.z);
     box(stoneWhite, p.x, y + .7, p.z, 1.6, 1.4, 1.6, district);
     box(stoneDark, p.x, y + .1, p.z, 2.0, .2, 2.0, district);
@@ -575,19 +580,19 @@ export function createWestSuvalScenery(kit) {
   {
     const court = COURT_OF_OATHS, base = yAt(court.front, (court.north + court.south) / 2) - .2, midB = (court.north + court.south) / 2;
     const depthA = court.back - court.front, spanB = court.south - court.north;
-    pave(court.front - .5, court.back, court.north, court.south, stoneWhite, .07, 4);
-    for (let s = 0; s < 3; s++) block(stoneWhite, court.front - 1 - s * .8, midB, .8, .35 - s * .11, spanB + 1, district, base);
+    (yield* pave(court.front - .5, court.back, court.north, court.south, stoneWhite, .07, 4));
+    for (let s = 0; s < 3; s++) { if (++buildWork % 8 === 0) yield; block(stoneWhite, court.front - 1 - s * .8, midB, .8, .35 - s * .11, spanB + 1, district, base); }
     block(stone, court.back, midB, .8, court.h, spanB, district, base + .3);
-    for (const side of [court.north, court.south]) block(stone, (court.front + court.back) / 2, side, depthA, court.h, .8, district, base + .3);
-    for (const pier of [court.north, court.south]) block(stoneWarm, court.front, pier, 1.2, court.h, 1.2, district, base + .3);
-    for (const cb of [...court.columns, ...court.door]) {
+    for (const side of [court.north, court.south]) { if (++buildWork % 8 === 0) yield; block(stone, (court.front + court.back) / 2, side, depthA, court.h, .8, district, base + .3); }
+    for (const pier of [court.north, court.south]) { if (++buildWork % 8 === 0) yield; block(stoneWarm, court.front, pier, 1.2, court.h, 1.2, district, base + .3); }
+    for (const cb of [...court.columns, ...court.door]) { if (++buildWork % 8 === 0) yield;
       if (court.door.includes(cb)) continue;
       const p = P(court.front, cb);
       post(stoneWhite, p.x, base + .3 + court.h / 2, p.z, .5, court.h, district);
       push({ x: p.x, z: p.z, r: .5, kind: 'court-column' });
     }
     // Door posts either side of the wide middle bay.
-    for (const cb of court.door) { const p = P(court.front, cb); post(stoneWhite, p.x, base + .3 + court.h / 2, p.z, .42, court.h, district); push({ x: p.x, z: p.z, r: .42, kind: 'court-column' }); }
+    for (const cb of court.door) { if (++buildWork % 8 === 0) yield; const p = P(court.front, cb); post(stoneWhite, p.x, base + .3 + court.h / 2, p.z, .42, court.h, district); push({ x: p.x, z: p.z, r: .42, kind: 'court-column' }); }
     block(stone, court.front, midB, 1.4, 1.0, spanB + 1.4, district, base + .3 + court.h);
     const roof = P((court.front + court.back) / 2, midB);
     mesh(roofGeometry(spanB + 2, depthA + 2.4, 2.6), tile, roof.x, base + 1.3 + court.h, roof.z, 1, 1, 1, district).rotation.y = Math.PI / 2;
@@ -596,13 +601,13 @@ export function createWestSuvalScenery(kit) {
     const relief = mesh(discGeometry, bronze, pediment.x, base + court.h + 2.1, pediment.z, .9, .12, .9, district); relief.rotation.z = Math.PI / 2;
     const table = P(court.table.a, court.table.b), ty = gy(table.x, table.z);
     box(darkWood, table.x, ty + .82, table.z, court.table.halfA * 2, .14, court.table.halfB * 2, district);
-    for (const sa of [-1, 1]) for (const sb of [-1, 1]) post(darkWood, table.x + sa * (court.table.halfA - .3), ty + .4, table.z + sb * (court.table.halfB - .25), .07, .8, district);
-    for (const sb of [-1, 1]) box(wood, table.x, ty + .45, table.z + sb * (court.table.halfB + .7), court.table.halfA * 1.8, .1, .45, district);
-    for (let k = 0; k < 6; k++) box(material('#efe7cf'), table.x - 3 + k * 1.2, ty + .9, table.z + range(-.5, .5), .4, .01, .5, district);
+    for (const sa of [-1, 1]) { if (++buildWork % 8 === 0) yield; for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield; post(darkWood, table.x + sa * (court.table.halfA - .3), ty + .4, table.z + sb * (court.table.halfB - .25), .07, .8, district); } }
+    for (const sb of [-1, 1]) { if (++buildWork % 8 === 0) yield; box(wood, table.x, ty + .45, table.z + sb * (court.table.halfB + .7), court.table.halfA * 1.8, .1, .45, district); }
+    for (let k = 0; k < 6; k++) { if (++buildWork % 8 === 0) yield; box(material('#efe7cf'), table.x - 3 + k * 1.2, ty + .9, table.z + range(-.5, .5), .4, .01, .5, district); }
     push({ x: table.x, z: table.z, hx: court.table.halfA, hz: court.table.halfB + .9, kind: 'council-table' });
     push({ ...P(court.back, midB), hx: .4, hz: spanB / 2, kind: 'court-wall' });
-    for (const side of [court.north, court.south]) push({ ...P((court.front + court.back) / 2, side), hx: depthA / 2, hz: .4, kind: 'court-wall' });
-    for (const pier of [court.north, court.south]) push({ ...P(court.front, pier), hx: .6, hz: .6, kind: 'court-pier' });
+    for (const side of [court.north, court.south]) { if (++buildWork % 8 === 0) yield; push({ ...P((court.front + court.back) / 2, side), hx: depthA / 2, hz: .4, kind: 'court-wall' }); }
+    for (const pier of [court.north, court.south]) { if (++buildWork % 8 === 0) yield; push({ ...P(court.front, pier), hx: .6, hz: .6, kind: 'court-pier' }); }
     // The Republic's banner behind the council, or the Marshal's standard where it flew.
     const hang = P(court.back - .45, midB);
     box(republic, hang.x, base + 4.4, hang.z, .06, 3.4, 2.2, coalitionBanners);
@@ -616,9 +621,9 @@ export function createWestSuvalScenery(kit) {
   {
     const temple = SOLIS_BUILDINGS.find(entry => entry.id === 'temple'), base = Math.min(yAt(temple.a - temple.w / 2, temple.b), yAt(temple.a + temple.w / 2, temple.b)) - .2;
     block(stoneWhite, temple.a, temple.b, temple.w + .6, 1.1, temple.d + .6, district, base);
-    for (let s = 0; s < 3; s++) block(stoneWhite, temple.a, temple.b - temple.d / 2 - .45 - s * .5, temple.w - 2, 1.0 - s * .33, .5, district, base);
+    for (let s = 0; s < 3; s++) { if (++buildWork % 8 === 0) yield; block(stoneWhite, temple.a, temple.b - temple.d / 2 - .45 - s * .5, temple.w - 2, 1.0 - s * .33, .5, district, base); }
     block(stoneWhite, temple.a, temple.b + 1.8, temple.w - 3, temple.h, temple.d - 4, district, base + 1.1);
-    for (let k = 0; k < 6; k++) { const p = P(temple.a - temple.w / 2 + 1.5 + k * (temple.w - 3) / 5, temple.b - temple.d / 2 + 1); post(stoneWhite, p.x, base + 1.1 + temple.h / 2, p.z, .42, temple.h, district); }
+    for (let k = 0; k < 6; k++) { if (++buildWork % 8 === 0) yield; const p = P(temple.a - temple.w / 2 + 1.5 + k * (temple.w - 3) / 5, temple.b - temple.d / 2 + 1); post(stoneWhite, p.x, base + 1.1 + temple.h / 2, p.z, .42, temple.h, district); }
     const roof = P(temple.a, temple.b);
     mesh(roofGeometry(temple.w + .8, temple.d + .8, 2.4), bronzeGreen, roof.x, base + 1.1 + temple.h, roof.z, 1, 1, 1, district);
     const sunDisc = P(temple.a, temple.b - temple.d / 2 - .45);
@@ -630,20 +635,20 @@ export function createWestSuvalScenery(kit) {
   // A walled court of orange trees in the upper town.
   {
     const court = ORANGE_COURT, base = yAt(court.a, court.b);
-    for (const [da, db, wa, wb] of [[0, -court.halfB, court.halfA * 2, .45], [-court.halfA, 0, .45, court.halfB * 2], [court.halfA, 0, .45, court.halfB * 2]]) {
+    for (const [da, db, wa, wb] of [[0, -court.halfB, court.halfA * 2, .45], [-court.halfA, 0, .45, court.halfB * 2], [court.halfA, 0, .45, court.halfB * 2]]) { if (++buildWork % 8 === 0) yield;
       block(stoneWarm, court.a + da, court.b + db, wa, 1.5, wb, district, base - .1);
       push({ ...P(court.a + da, court.b + db), hx: wa / 2, hz: wb / 2, kind: 'orange-court-wall' });
     }
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const w = court.halfA - (side < 0 ? -court.gap[0] : court.gap[1]), ca = court.a + side * (court.halfA - w / 2);
       block(stoneWarm, ca, court.b + court.halfB, w, 1.5, .45, district, base - .1);
       push({ ...P(ca, court.b + court.halfB), hx: w / 2, hz: .23, kind: 'orange-court-wall' });
     }
-    for (const [da, db] of court.trees) {
+    for (const [da, db] of court.trees) { if (++buildWork % 8 === 0) yield;
       const p = P(court.a + da, court.b + db), y = gy(p.x, p.z);
       const parts = [post(wood, p.x, y + .8, p.z, .12, 1.6, district),
         pebble(leafDark, p.x, y + 2.2, p.z, 1.15, 1.0, 1.15, district)];
-      for (let k = 0; k < 7; k++) parts.push(pebble(orange, p.x + range(-.9, .9), y + range(1.6, 2.8), p.z + range(-.9, .9), .12, .12, .12, district));
+      for (let k = 0; k < 7; k++) { if (++buildWork % 8 === 0) yield; parts.push(pebble(orange, p.x + range(-.9, .9), y + range(1.6, 2.8), p.z + range(-.9, .9), .12, .12, .12, district)); }
       const collider = { x: p.x, z: p.z, r: .35, kind: 'orange-tree' }; push(collider);
       registerWorldTree(colliders, { id: worldTreeId('solis-orange', p.x, p.z), ...p, y, species: 'sweet-orange', radius: .35 }, parts.map(mesh => ({ mesh })), collider);
     }
@@ -654,7 +659,7 @@ export function createWestSuvalScenery(kit) {
   // -------------------------------------------------------------------------
   {
     const hitch = P(SOLIS_HITCH.a, SOLIS_HITCH.b), y = gy(hitch.x, hitch.z);
-    for (let k = -1; k <= 1; k++) post(wood, hitch.x + k * 2.8, y + .55, hitch.z, .09, 1.1, district);
+    for (let k = -1; k <= 1; k++) { if (++buildWork % 8 === 0) yield; post(wood, hitch.x + k * 2.8, y + .55, hitch.z, .09, 1.1, district); }
     box(woodLight, hitch.x, y + 1.05, hitch.z, SOLIS_HITCH.halfA * 2, .1, .1, district);
     wornPatch(hitch.x, hitch.z + 1.4, 4, '#b0a276', .5, district);
     push({ x: hitch.x, z: hitch.z, hx: SOLIS_HITCH.halfA, hz: SOLIS_HITCH.halfB, kind: 'hitching-rail' });
@@ -669,14 +674,14 @@ export function createWestSuvalScenery(kit) {
   {
     const waterline = a => { const p = P(a, -8); return gy(p.x, p.z); };
     let edge = quay.a0;
-    for (let a = -58; a > -100; a -= .5) if (waterline(a) < .7) { edge = a + 1.5; break; }
+    for (let a = -58; a > -100; a -= .5) { if (++buildWork % 8 === 0) yield; if (waterline(a) < .7) { edge = a + 1.5; break; } }
     quay.a0 = Math.max(-90, edge);
-    pave(quay.a0, -56.5, -20, 4, stoneDark, .06, 2);
-    for (const tb of [-24, 8]) {
+    (yield* pave(quay.a0, -56.5, -20, 4, stoneDark, .06, 2));
+    for (const tb of [-24, 8]) { if (++buildWork % 8 === 0) yield;
       const p = P(quay.a0 + 2.5, tb), y = Math.max(.2, gy(p.x, p.z));
       mesh(cylinder, stone, p.x, y + 3.2, p.z, 2.6, 7.4, 2.6, district);
       mesh(cylinder, stoneDark, p.x, y + .4, p.z, 3.0, 1.6, 3.0, district);
-      for (let m = 0; m < 8; m++) { const angle = m / 8 * Math.PI * 2; box(stone, p.x + Math.sin(angle) * 2.3, y + 7.3, p.z + Math.cos(angle) * 2.3, .8, .8, .5, district).rotation.y = angle; }
+      for (let m = 0; m < 8; m++) { if (++buildWork % 8 === 0) yield; const angle = m / 8 * Math.PI * 2; box(stone, p.x + Math.sin(angle) * 2.3, y + 7.3, p.z + Math.cos(angle) * 2.3, .8, .8, .5, district).rotation.y = angle; }
       push({ x: p.x, z: p.z, r: 2.7, kind: 'harbour-tower' });
     }
     // The net loft on the quay.
@@ -684,7 +689,7 @@ export function createWestSuvalScenery(kit) {
     if (ly > 1) {
       box(stoneWarm, loft.x, ly + 1.8, loft.z, 5, 3.6, 7, district);
       mesh(roofGeometry(5.8, 7.8, 1.4), tileDark, loft.x, ly + 3.6, loft.z, 1, 1, 1, district);
-      for (let k = 0; k < 3; k++) rope([new THREE.Vector3(loft.x + 2.6, ly + 2.8 - k * .5, loft.z - 3), new THREE.Vector3(loft.x + 2.9, ly + 1.8 - k * .5, loft.z), new THREE.Vector3(loft.x + 2.6, ly + 2.8 - k * .5, loft.z + 3)], .03, material('#a59a78'), district);
+      for (let k = 0; k < 3; k++) { if (++buildWork % 8 === 0) yield; rope([new THREE.Vector3(loft.x + 2.6, ly + 2.8 - k * .5, loft.z - 3), new THREE.Vector3(loft.x + 2.9, ly + 1.8 - k * .5, loft.z), new THREE.Vector3(loft.x + 2.6, ly + 2.8 - k * .5, loft.z + 3)], .03, material('#a59a78'), district); }
       push({ x: loft.x, z: loft.z, hx: 2.6, hz: 3.6, kind: 'net-loft' });
       metrics.buildings++;
     }
@@ -693,7 +698,7 @@ export function createWestSuvalScenery(kit) {
     cylinder, colliders, wood, woodLight, darkWood });
   metrics.harbourDecks = harbour.decks; metrics.harbourBoats = harbour.boats;
   // White cliffs above the harbour, where the city's ground drops to the sea south and west of the walls.
-  for (let a = -96; a <= 70; a += 3.2) for (let b = -40; b <= 96; b += 3.2) {
+  for (let a = -96; a <= 70; a += 3.2) { if (++buildWork % 8 === 0) yield; for (let b = -40; b <= 96; b += 3.2) { if (++buildWork % 8 === 0) yield;
     const inside = Math.abs(a) < SOLIS_CIRCUIT.halfA + 16 && Math.abs(b) < SOLIS_CIRCUIT.halfB + 16;
     if (inside || (b < 20 && a > -60) || (a > quay.a0 - 6 && b > quay.b0 - 8 && b < quay.b1 + 6)) continue;
     const p = P(a, b), h = gy(p.x, p.z);
@@ -705,7 +710,7 @@ export function createWestSuvalScenery(kit) {
     const rock = pebble(stoneWhite, p.x + range(-.8, .8), h * .45, p.z + range(-.8, .8), size, h * .75 + range(.8, 2.2), size * range(.8, 1.2), district);
     rock.rotation.set(range(-.1, .1), range(0, 6.28), range(-.1, .1));
     metrics.props++;
-  }
+  } }
 
   // -------------------------------------------------------------------------
   // The Coalition's camp
@@ -717,34 +722,34 @@ export function createWestSuvalScenery(kit) {
   {
     const { minA, maxA, minB, maxB, gate } = COALITION_CAMP;
     const line = [];
-    for (let a = minA; a <= maxA; a += 5) line.push([a, minB], [a, maxB]);
-    for (let b = minB + 5; b < maxB; b += 5) line.push([minA, b], [maxA, b]);
-    for (const [a, b] of line) {
+    for (let a = minA; a <= maxA; a += 5) { if (++buildWork % 8 === 0) yield; line.push([a, minB], [a, maxB]); }
+    for (let b = minB + 5; b < maxB; b += 5) { if (++buildWork % 8 === 0) yield; line.push([minA, b], [maxA, b]); }
+    for (const [a, b] of line) { if (++buildWork % 8 === 0) yield;
       if (b === minB && a > gate[0] && a < gate[1]) continue;
       const p = P(a, b), y = gy(p.x, p.z);
       post(woodLight, p.x, y + .6, p.z, .06, 1.2, camp);
       const stub = P(a, b); post(darkWood, stub.x, y + .12, stub.z, .09, .24, rings);
     }
     const corners = [[minA, minB, gate[0], minB], [gate[1], minB, maxA, minB], [maxA, minB, maxA, maxB], [maxA, maxB, minA, maxB], [minA, maxB, minA, minB]];
-    for (const [a0, b0, a1, b1] of corners) {
+    for (const [a0, b0, a1, b1] of corners) { if (++buildWork % 8 === 0) yield;
       const from = P(a0, b0), to = P(a1, b1), mid = P((a0 + a1) / 2, (b0 + b1) / 2);
       rope([new THREE.Vector3(from.x, gy(from.x, from.z) + 1.0, from.z), new THREE.Vector3(mid.x, gy(mid.x, mid.z) + .85, mid.z), new THREE.Vector3(to.x, gy(to.x, to.z) + 1.0, to.z)], .025, cream, camp);
     }
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield;
       const p = P(side < 0 ? gate[0] : gate[1], minB), y = gy(p.x, p.z);
       post(wood, p.x, y + 1.6, p.z, .12, 3.2, camp);
     }
     wornPatch(P(100, -28).x, P(100, -28).z, 6, '#b3a77a', 1.4, district);
-    pave(96, 104, -30, 28, grassWorn, .03, 4);
-    for (const group of COALITION_CAMP.contingents) {
+    (yield* pave(96, 104, -30, 28, grassWorn, .03, 4));
+    for (const group of COALITION_CAMP.contingents) { if (++buildWork % 8 === 0) yield;
       const cloth = material(group.id === 'izoli' ? '#d9d2bc' : group.id === 'marosh' ? '#c9b48c' : group.id === 'pyros' ? '#b8a07c' : '#d4c9a8');
-      for (const spot of group.tents) {
+      for (const spot of group.tents) { if (++buildWork % 8 === 0) yield;
         const p = P(spot.a, spot.b), y = gy(p.x, p.z);
         mesh(roofGeometry(COALITION_CAMP.tent.w, COALITION_CAMP.tent.d, 2.3), cloth, p.x, y + .15, p.z, 1, 1, 1, camp);
         box(material(group.banner), p.x, y + 2.46, p.z, .3, .08, COALITION_CAMP.tent.d * .5, camp);
         box(shadow, p.x, y + .7, p.z - COALITION_CAMP.tent.d / 2 + .05, .8, 1.1, .05, camp);
         wornPatch(p.x, p.z, 2.4, '#a79c72', 1.15, rings);
-        for (const [sa, sb] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) pebble(stoneDark, p.x + sa * 1.9, gy(p.x + sa * 1.9, p.z + sb * 2.2) + .08, p.z + sb * 2.2, .16, .12, .16, rings);
+        for (const [sa, sb] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { if (++buildWork % 8 === 0) yield; pebble(stoneDark, p.x + sa * 1.9, gy(p.x + sa * 1.9, p.z + sb * 2.2) + .08, p.z + sb * 2.2, .16, .12, .16, rings); }
         metrics.tents++;
       }
       // The contingent's banner on its pole in the camp lane.
@@ -757,12 +762,12 @@ export function createWestSuvalScenery(kit) {
     }
     // A cook fire and a weapon rack; the ashes stay when the camp is struck.
     const fire = P(COALITION_CAMP.fire.a, COALITION_CAMP.fire.b), fy = gy(fire.x, fire.z);
-    for (let k = 0; k < 7; k++) { const angle = k / 7 * Math.PI * 2; pebble(stoneDark, fire.x + Math.sin(angle) * 1.1, fy + .12, fire.z + Math.cos(angle) * 1.1, .28, .2, .25, district); }
+    for (let k = 0; k < 7; k++) { if (++buildWork % 8 === 0) yield; const angle = k / 7 * Math.PI * 2; pebble(stoneDark, fire.x + Math.sin(angle) * 1.1, fy + .12, fire.z + Math.cos(angle) * 1.1, .28, .2, .25, district); }
     pebble(material('#3a3430'), fire.x, fy + .05, fire.z, .8, .06, .8, district);
-    for (let k = 0; k < 3; k++) { const log = mesh(cylinder, darkWood, fire.x, fy + .2, fire.z, .1, 1.3, .1, camp); log.rotation.set(Math.PI / 2, k * 1.05, 0); }
+    for (let k = 0; k < 3; k++) { if (++buildWork % 8 === 0) yield; const log = mesh(cylinder, darkWood, fire.x, fy + .2, fire.z, .1, 1.3, .1, camp); log.rotation.set(Math.PI / 2, k * 1.05, 0); }
     const rack = P(120, 23);
     box(wood, rack.x, gy(rack.x, rack.z) + 1.0, rack.z, .12, .12, 3, camp);
-    for (let k = 0; k < 6; k++) { const spear = post(woodLight, rack.x + .2, gy(rack.x, rack.z) + 1.3, rack.z - 1.2 + k * .48, .03, 2.6, camp); spear.rotation.x = .12; }
+    for (let k = 0; k < 6; k++) { if (++buildWork % 8 === 0) yield; const spear = post(woodLight, rack.x + .2, gy(rack.x, rack.z) + 1.3, rack.z - 1.2 + k * .48, .03, 2.6, camp); spear.rotation.x = .12; }
     push({ x: fire.x, z: fire.z, r: 1.4, kind: 'camp-fire' });
   }
 
@@ -790,9 +795,9 @@ export function createWestSuvalScenery(kit) {
     registerWorldTree(colliders, { id: worldTreeId('west-suval-hawthorn', x, z), x, z, y, species: 'hawthorn', radius: .3 }, [{ mesh: trunk }, { mesh: crown }], collider);
   }
   /** A dry-stone field wall along a world line, broken where the road passes. */
-  function fieldWall(x0, z0, x1, z1) {
+  function* fieldWall(x0, z0, x1, z1) {
     const length = Math.hypot(x1 - x0, z1 - z0), yaw = Math.atan2(x1 - x0, z1 - z0);
-    for (let s = 0; s < length; s += 1.4) {
+    for (let s = 0; s < length; s += 1.4) { if (++buildWork % 8 === 0) yield;
       const x = x0 + (x1 - x0) * s / length, z = z0 + (z1 - z0) * s / length;
       if (roadDistance(x, z) < 4 || gy(x, z) < 1.2) continue;
       const stoneBlock = box(s % 4.2 < 1.4 ? stonePatch : stone, x, gy(x, z) + .38, z, .75, .76 + range(-.12, .12), 1.5, district);
@@ -803,19 +808,19 @@ export function createWestSuvalScenery(kit) {
   // Field walls and trees either side of the road, where the downs are farmed.
   const road = SOLIS_ROAD;
   const reserved = (x, z, margin) => WEST_SUVAL_CLEARINGS.some(spot => Math.hypot(x - spot.x, z - spot.z) < spot.r + margin);
-  for (let i = 1; i < road.length - 4; i++) {
+  for (let i = 1; i < road.length - 4; i++) { if (++buildWork % 8 === 0) yield;
     const a = road[i - 1], b = road[i], length = Math.hypot(b.x - a.x, b.z - a.z), ux = (b.x - a.x) / length, uz = (b.z - a.z) / length;
-    for (let s = 12; s < length - 12; s += 26) {
+    for (let s = 12; s < length - 12; s += 26) { if (++buildWork % 8 === 0) yield;
       const cx = a.x + ux * s, cz = a.z + uz * s;
       const side = (i + Math.round(s)) % 2 ? 1 : -1, off = range(9, 22), wallLength = range(14, 30);
       const ox = cx - uz * off * side, oz = cz + ux * off * side;
-      if (random() < .7 && !reserved(ox, oz, wallLength / 2 + 2)) fieldWall(ox - ux * wallLength / 2, oz - uz * wallLength / 2, ox + ux * wallLength / 2, oz + uz * wallLength / 2);
+      if (random() < .7 && !reserved(ox, oz, wallLength / 2 + 2)) (yield* fieldWall(ox - ux * wallLength / 2, oz - uz * wallLength / 2, ox + ux * wallLength / 2, oz + uz * wallLength / 2));
       const tx = cx - uz * (off + range(5, 12)) * side, tz = cz + ux * (off + range(5, 12)) * side;
       if (roadDistance(tx, tz) > 5 && gy(tx, tz) > 1.4 && !reserved(tx, tz, 2)) (random() < .6 ? oliveTree : thornTree)(tx, tz);
     }
   }
   // An olive grove on the slope below the camp, outside its picket.
-  for (let k = 0; k < 14; k++) {
+  for (let k = 0; k < 14; k++) { if (++buildWork % 8 === 0) yield;
     const p = P(range(70, 132), range(40, 72));
     if (gy(p.x, p.z) > 1.4) oliveTree(p.x, p.z);
   }
@@ -824,7 +829,7 @@ export function createWestSuvalScenery(kit) {
   {
     const fold = WEST_SUVAL_PLACES.fold;
     wornPatch(fold.x, fold.z, 9, '#a8a070', 1, district);
-    for (let k = 0; k < 26; k++) {
+    for (let k = 0; k < 26; k++) { if (++buildWork % 8 === 0) yield;
       const angle = k / 26 * Math.PI * 2;
       if (angle > .3 && angle < .8) continue;                       // the gate, toward the road
       const x = fold.x + Math.sin(angle) * 7, z = fold.z + Math.cos(angle) * 7;
@@ -837,12 +842,12 @@ export function createWestSuvalScenery(kit) {
     box(shadow, hut.x + 1.62, hy + .7, hut.z, .05, 1.2, .8, district);
     push({ x: hut.x, z: hut.z, hx: 1.6, hz: 1.3, kind: 'fold-hut' });
     thornTree(fold.x + 11, fold.z - 6);
-    for (let k = 0; k < 5; k++) pebble(material('#e7e1cf'), fold.x + range(-4, 4), gy(fold.x, fold.z) + .1, fold.z + range(-4, 4), .2, .06, .14, district);
+    for (let k = 0; k < 5; k++) { if (++buildWork % 8 === 0) yield; pebble(material('#e7e1cf'), fold.x + range(-4, 4), gy(fold.x, fold.z) + .1, fold.z + range(-4, 4), .2, .06, .14, district); }
   }
   // The broken watchtower of the old kingdom.
   {
     const tower = WEST_SUVAL_PLACES.watchtower, ty = gy(tower.x, tower.z);
-    for (let k = 0; k < 12; k++) {
+    for (let k = 0; k < 12; k++) { if (++buildWork % 8 === 0) yield;
       const angle = k / 12 * Math.PI * 2, x = tower.x + Math.sin(angle) * 3.2, z = tower.z + Math.cos(angle) * 3.2;
       if (k === 3) continue;                                          // the doorway
       const height = 2.5 + ((k * 7) % 5) * .9;
@@ -851,7 +856,7 @@ export function createWestSuvalScenery(kit) {
     }
     const door = { x: tower.x + Math.sin(3 / 12 * Math.PI * 2) * 3.3, z: tower.z + Math.cos(3 / 12 * Math.PI * 2) * 3.3 };
     const relief = mesh(discGeometry, stoneWhite, door.x, ty + 2.7, door.z, .45, .08, .45, district); relief.rotation.set(0, 0, Math.PI / 2);
-    for (let k = 0; k < 16; k++) {
+    for (let k = 0; k < 16; k++) { if (++buildWork % 8 === 0) yield;
       const angle = range(0, 6.28), d = range(4, 8), x = tower.x + Math.sin(angle) * d, z = tower.z + Math.cos(angle) * d;
       pebble(k % 2 ? stone : stoneDark, x, gy(x, z) + .2, z, range(.4, .8), range(.25, .5), range(.4, .8), district);
     }
@@ -859,8 +864,8 @@ export function createWestSuvalScenery(kit) {
   // The wayside well, its trough and olives, and the defaced imperial milestone.
   {
     const well = WEST_SUVAL_PLACES.well, wy = gy(well.x, well.z);
-    for (let k = 0; k < 8; k++) { const angle = k / 8 * Math.PI * 2; box(stone, well.x + Math.sin(angle) * .95, wy + .45, well.z + Math.cos(angle) * .95, .55, .9, .5, district).rotation.y = angle; }
-    for (const side of [-1, 1]) post(wood, well.x + side * 1.1, wy + 1.3, well.z, .08, 2.2, district);
+    for (let k = 0; k < 8; k++) { if (++buildWork % 8 === 0) yield; const angle = k / 8 * Math.PI * 2; box(stone, well.x + Math.sin(angle) * .95, wy + .45, well.z + Math.cos(angle) * .95, .55, .9, .5, district).rotation.y = angle; }
+    for (const side of [-1, 1]) { if (++buildWork % 8 === 0) yield; post(wood, well.x + side * 1.1, wy + 1.3, well.z, .08, 2.2, district); }
     box(woodLight, well.x, wy + 2.4, well.z, 2.6, .14, .3, district);
     push({ x: well.x, z: well.z, r: 1.35, kind: 'wayside-well' });
     const trough = { x: well.x - 2.6, z: well.z + 1.4 };
@@ -885,8 +890,8 @@ export function createWestSuvalScenery(kit) {
     const centre = mesh.geometry.boundingSphere.center.clone().applyMatrix4(mesh.matrixWorld);
     return Math.hypot(centre.x - SOLIS.centre.x, centre.z - SOLIS.centre.z) < 220;
   });
-  for (const group of [city, country]) { district.add(group); movingGroups.add(group); }
-  for (const entry of holdings) mergeByColour(entry.group, new Set(), entry.group, entry.group, () => true);
+  for (const group of [city, country]) { if (++buildWork % 8 === 0) yield; district.add(group); movingGroups.add(group); }
+  for (const entry of holdings) { if (++buildWork % 8 === 0) yield; mergeByColour(entry.group, new Set(), entry.group, entry.group, () => true); }
 
   let holder = null;
   /** Show whoever holds Solis: 'coalition', 'empire' or 'routed' (the Coalition broke and the army is not in yet). */

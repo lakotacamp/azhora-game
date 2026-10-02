@@ -265,6 +265,6 @@ test('the host reads the margins rather than writing numbers of its own', () => 
   assert.match(main, /damageScale:id=>arms\?\.margins\(\)\.damageFor\(id\)\?\?1/, 'as do the weapons');
   assert.match(source('weapons.js'), /damage: type\.damage\.map\(hit => hit \* scale\)/, 'the multiplier is on the weapon’s own damage');
   // New craft and art lessons do not add or remove any of the seven fighting skills.
-  assert.equal(SKILL_IDS.length, 35, 'twenty-two of the world, seven of fighting, six of sorcery');
+  assert.equal(SKILL_IDS.length, 36, 'twenty-two of the world, one guarded specialization, seven of fighting, six of sorcery');
   assert.equal(SKILL_IDS.filter(id => SKILLS[id].group === ARMS_HEADING).length, 7);
 });

@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import { regionalFarmlandClear } from './regional-farmland.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
@@ -28,7 +29,9 @@ export const FERADOM_STONE = Object.freeze({
 const RUSSET = '#9a6f4f', GREEN = '#2f4a33', PALE = '#d8cfb4';
 const TIMBER = '#5e4a35', TIMBER_DARK = '#4a3a2a', SHINGLE = '#4d3f30', IRON = '#3d3c38';
 
-export function createFeradomScenery(kit) {
+export function createFeradomScenery(...args) { return finishBuild(createFeradomScenerySteps(...args)); }
+export function* createFeradomScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, groundHeight, colliders, dummy, color, round } = kit;
   const group = new THREE.Group(); group.name = 'Feradom scenery'; root.add(group);
   let seed = 7201963;
@@ -77,16 +80,16 @@ export function createFeradomScenery(kit) {
     const step = 3, TILE = 56, { minX, minZ, maxX, maxZ } = FERADOM_BOX;
     const cols = Math.floor((maxX - minX) / step) + 1, rows = Math.floor((maxZ - minZ) / step) + 1;
     const rise = new Float32Array(cols * rows), heights = new Float32Array(cols * rows).fill(NaN);
-    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) rise[j * cols + i] = hillRise(minX + i * step, minZ + j * step);
+    for (let j = 0; j < rows; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < cols; i++) { if ((++buildWork & 31) === 0) yield; rise[j * cols + i] = hillRise(minX + i * step, minZ + j * step); } }
     const drawn = new Uint8Array((cols - 1) * (rows - 1));
-    for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+    for (let j = 0; j < rows - 1; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < cols - 1; i++) { if ((++buildWork & 31) === 0) yield;
       let any = false;
-      for (let b = -1; b <= 2 && !any; b++) for (let a = -1; a <= 2 && !any; a++) {
+      for (let b = -1; b <= 2 && !any; b++) { if ((++buildWork & 31) === 0) yield; for (let a = -1; a <= 2 && !any; a++) { if ((++buildWork & 31) === 0) yield;
         const ii = i + a, jj = j + b;
         if (ii >= 0 && jj >= 0 && ii < cols && jj < rows && rise[jj * cols + ii] > 0) any = true;
-      }
+      } }
       if (any) drawn[j * (cols - 1) + i] = 1;
-    }
+    } }
     const heightOf = (i, j) => {
       const k = j * cols + i;
       if (Number.isNaN(heights[k])) heights[k] = gy(minX + i * step, minZ + j * step);
@@ -114,16 +117,16 @@ export function createFeradomScenery(kit) {
       shade.lerp(rock[((Math.floor(y / 2.4) % 4) + 4) % 4], Math.min(1, Math.max(0, (grade - .92) / .4)));
       shade.multiplyScalar(wobble());
     };
-    for (let tj = 0; tj < rows - 1; tj += TILE) for (let ti = 0; ti < cols - 1; ti += TILE) {
+    for (let tj = 0; tj < rows - 1; tj += TILE) { if ((++buildWork & 31) === 0) yield; for (let ti = 0; ti < cols - 1; ti += TILE) { if ((++buildWork & 31) === 0) yield;
       const ci = Math.min(TILE, cols - 1 - ti), cj = Math.min(TILE, rows - 1 - tj), indices = [];
-      for (let j = 0; j < cj; j++) for (let i = 0; i < ci; i++) {
+      for (let j = 0; j < cj; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < ci; i++) { if ((++buildWork & 31) === 0) yield;
         if (!drawn[(tj + j) * (cols - 1) + ti + i]) continue;
         const a = j * (ci + 1) + i;
         indices.push(a, a + ci + 1, a + 1, a + 1, a + ci + 1, a + ci + 2);
-      }
+      } }
       if (!indices.length) continue;
       const positions = new Float32Array((ci + 1) * (cj + 1) * 3), colours = new Float32Array((ci + 1) * (cj + 1) * 3);
-      for (let j = 0; j <= cj; j++) for (let i = 0; i <= ci; i++) {
+      for (let j = 0; j <= cj; j++) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i <= ci; i++) { if ((++buildWork & 31) === 0) yield;
         const gi = ti + i, gj = tj + j, x = minX + gi * step, z = minZ + gj * step, k = j * (ci + 1) + i;
         const used = [[0, 0], [-1, 0], [0, -1], [-1, -1]].some(([a, b]) => {
           const ii = gi + a, jj = gj + b;
@@ -136,7 +139,7 @@ export function createFeradomScenery(kit) {
         const north = heightOf(gi, Math.max(0, gj - 1)), south = heightOf(gi, Math.min(rows - 1, gj + 1));
         paint(x, z, y, Math.hypot(east - west, south - north) / (2 * step), rise[gj * cols + gi]);
         colours.set([shade.r, shade.g, shade.b], k * 3);
-      }
+      } }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
@@ -144,7 +147,7 @@ export function createFeradomScenery(kit) {
       const ground = new THREE.Mesh(geometry, groundMaterial);
       ground.name = 'Feradom barrier hills ground'; ground.receiveShadow = true; group.add(ground);
       metrics.batches++;
-    }
+    } }
   }
 
   // -------------------------------------------------------------------------
@@ -158,10 +161,10 @@ export function createFeradomScenery(kit) {
   })();
   {
     const half = 1.7, vertices = [], colours = [], indices = [], shade = new THREE.Color();
-    for (let i = 0; i < roadLine.length; i++) {
+    for (let i = 0; i < roadLine.length; i++) { if ((++buildWork & 31) === 0) yield;
       const p = roadLine[i], q = roadLine[Math.min(roadLine.length - 1, i + 1)], o = roadLine[Math.max(0, i - 1)];
       const dx = q.x - o.x, dz = q.z - o.z, length = Math.hypot(dx, dz) || 1, nx = -dz / length, nz = dx / length;
-      for (const side of [-1, 1]) {
+      for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield;
         const x = p.x + nx * half * side, z = p.z + nz * half * side;
         vertices.push(x, gy(x, z) + .06, z);
         shade.set('#8b7a57').multiplyScalar(.94 + (i % 3) * .03);
@@ -204,25 +207,26 @@ export function createFeradomScenery(kit) {
   const stumpMaterial = material('#6e5a41'), stoneMaterial = material('#8a887a');
   const felled = (x, z) => Math.sin(x * .021 + Math.sin(z * .017) * 2.2) * Math.sin(z * .025 + 1.1) > .38;
 
-  function forestBlock(trees, stumps) {
+  function* forestBlockSteps(trees, stumps) {
+    let buildWork = 0;
     if (trees.length) {
       const firs = trees.filter(tree => tree.fir), oaks = trees.filter(tree => !tree.fir);
       const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
-      trees.forEach((tree, index) => {
+      for (const [index, tree] of trees.entries()) { if ((++buildWork & 31) === 0) yield;
         const y = gy(tree.x, tree.z);
         dummy.position.set(tree.x, y + tree.h * (tree.fir ? .3 : .34), tree.z); dummy.rotation.set(0, tree.rot, 0);
         dummy.scale.set(tree.s, tree.h * (tree.fir ? .62 : .7), tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
         tree.parts = [{mesh:trunks,index}]; tree.collider = push({ x: tree.x, z: tree.z, r: .45 * tree.s, kind: 'feradom-tree' });
-      });
+      }
       const batches = [trunks];
       if (firs.length) {
         // A fir is three cones, one above another, narrowing to the top.
         const cones = new THREE.InstancedMesh(coneGeometry, leafMaterial, firs.length * 3);
         let n = 0;
-        for (const tree of firs) {
+        for (const tree of firs) { if ((++buildWork & 31) === 0) yield;
           const y = gy(tree.x, tree.z);
-          for (let tier = 0; tier < 3; tier++) {
+          for (let tier = 0; tier < 3; tier++) { if ((++buildWork & 31) === 0) yield;
             const r = tree.h * (.25 - tier * .058) * tree.spread, h = tree.h * (.42 - tier * .06);
             dummy.position.set(tree.x, y + tree.h * (.34 + tier * .21) + h / 2, tree.z);
             dummy.rotation.set(0, tree.rot + tier, 0); dummy.scale.set(r, h, r); dummy.updateMatrix();
@@ -236,9 +240,9 @@ export function createFeradomScenery(kit) {
       if (oaks.length) {
         const lobes = new THREE.InstancedMesh(lobeGeometry, leafMaterial, oaks.length * 3);
         let n = 0;
-        for (const tree of oaks) {
+        for (const tree of oaks) { if ((++buildWork & 31) === 0) yield;
           const y = gy(tree.x, tree.z);
-          for (let lobe = 0; lobe < 3; lobe++) {
+          for (let lobe = 0; lobe < 3; lobe++) { if ((++buildWork & 31) === 0) yield;
             const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : tree.h * .19;
             dummy.position.set(tree.x + Math.sin(a) * spread, y + tree.h * (lobe === 2 ? .88 : .7), tree.z + Math.cos(a) * spread);
             const r = tree.h * .33 * tree.spread;
@@ -250,19 +254,19 @@ export function createFeradomScenery(kit) {
         }
         batches.push(lobes);
       }
-      for (const batch of batches) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
-      for(const tree of trees) registerWorldTree(colliders,{id:worldTreeId('feradom',tree.x,tree.z),x:tree.x,z:tree.z,y:gy(tree.x,tree.z),height:tree.h,species:tree.fir?'silver-fir':'white-oak'},tree.parts,tree.collider);
+      for (const batch of batches) { if ((++buildWork & 31) === 0) yield;  batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); metrics.batches++; }
+      for(const tree of trees) { if ((++buildWork & 31) === 0) yield; registerWorldTree(colliders,{id:worldTreeId('feradom',tree.x,tree.z),x:tree.x,z:tree.z,y:gy(tree.x,tree.z),height:tree.h,species:tree.fir?'silver-fir':'white-oak'},tree.parts,tree.collider); }
       metrics.trees += trees.length;
     }
     if (stumps.length) {
       const batch = new THREE.InstancedMesh(stumpGeometry, stumpMaterial, stumps.length);
-      stumps.forEach((stump, index) => {
+      for (const [index, stump] of stumps.entries()) { if ((++buildWork & 31) === 0) yield;
         dummy.position.set(stump.x, gy(stump.x, stump.z) + stump.h * .4, stump.z); dummy.rotation.set(range(-.06, .06), stump.rot, range(-.06, .06));
         dummy.scale.set(stump.s, stump.h, stump.s); dummy.updateMatrix();
         batch.setMatrixAt(index, dummy.matrix);
         batch.setColorAt(index, color.set('#6e5a41').offsetHSL(0, 0, range(-.05, .06)));
         if (stump.s > .8) push({ x: stump.x, z: stump.z, r: .3 * stump.s, kind: 'feradom-stump' });
-      });
+      }
       batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
       metrics.stumps += stumps.length; metrics.batches++;
     }
@@ -270,9 +274,9 @@ export function createFeradomScenery(kit) {
 
   const BLOCK = 150, CELL = 4.4;
   const { minX, minZ, maxX, maxZ } = FERADOM_BOX;
-  for (let bx = minX; bx < maxX; bx += BLOCK) for (let bz = minZ; bz < maxZ; bz += BLOCK) {
+  for (let bx = minX; bx < maxX; bx += BLOCK) { if ((++buildWork & 31) === 0) yield; for (let bz = minZ; bz < maxZ; bz += BLOCK) { if ((++buildWork & 31) === 0) yield;
     const trees = [], stumps = [];
-    for (let cx = bx; cx < Math.min(maxX, bx + BLOCK); cx += CELL) for (let cz = bz; cz < Math.min(maxZ, bz + BLOCK); cz += CELL) {
+    for (let cx = bx; cx < Math.min(maxX, bx + BLOCK); cx += CELL) { if ((++buildWork & 31) === 0) yield; for (let cz = bz; cz < Math.min(maxZ, bz + BLOCK); cz += CELL) { if ((++buildWork & 31) === 0) yield;
       const x = cx + range(.3, CELL - .3), z = cz + range(.3, CELL - .3);
       const lift = hillRise(x, z);
       if (lift < .6 || !inFeradomBox(x, z)) { random(); random(); random(); continue; }
@@ -303,9 +307,9 @@ export function createFeradomScenery(kit) {
       const h = fir ? range(old ? 16 : 11, old ? 23 : 16) : range(old ? 12 : 9, old ? 17 : 13);
       trees.push({ x, z, fir, h, s: range(old ? 1.05 : .85, old ? 1.45 : 1.15), spread: range(.85, 1.15), rot: range(0, 6.28),
         tint: fir ? (random() < .5 ? '#2d4a37' : '#34523a') : (random() < .5 ? '#46633a' : '#4f6c3c') });
-    }
-    forestBlock(trees, stumps);
-  }
+    } }
+    yield* forestBlockSteps(trees, stumps);
+  } }
 
   // -------------------------------------------------------------------------
   // Stone: the rock band, and what has fallen from it
@@ -321,15 +325,15 @@ export function createFeradomScenery(kit) {
     // Wherever the ground is too steep to climb - the rock band, a gorge's walls, a basin's sides - its stone
     // stands out of it in blocks, a couple of metres apart.
     const STEP = 2.4, { minX, minZ, maxX, maxZ } = FERADOM_BOX;
-    for (let x = minX; x < maxX; x += STEP) for (let z = minZ; z < maxZ; z += STEP) {
+    for (let x = minX; x < maxX; x += STEP) { if ((++buildWork & 31) === 0) yield; for (let z = minZ; z < maxZ; z += STEP) { if ((++buildWork & 31) === 0) yield;
       const px = x + range(0, STEP), pz = z + range(0, STEP), keep = random();
       if (hillRise(px, pz) < 2) continue;
       const grade = Math.hypot(gy(px + 1.2, pz) - gy(px - 1.2, pz), gy(px, pz + 1.2) - gy(px, pz - 1.2)) / 2.4;
       if (grade < 1.05 || keep > .22 + (grade - 1.05) * .5) continue;
       if (nearWorks(px, pz, 2.5) || onRoad(px, pz, 2) || regionalFarmlandClear(px,pz,2)) continue;
       outcrops.push({ x: px, z: pz, s: range(1.1, 2.3) * Math.min(1.25, .7 + grade * .3), rot: range(0, 6.28) });
-    }
-    for (let s = 0; s < MIDLINE.length; s += 3.2) {
+    } }
+    for (let s = 0; s < MIDLINE.length; s += 3.2) { if ((++buildWork & 31) === 0) yield;
       const { k, talusTop } = scarpAt(s);
       if (GULLIES.some(gully => Math.abs(s - gully.s) < GULLY_HALF)) continue;
       if (random() < .55) {
@@ -410,16 +414,16 @@ export function createFeradomScenery(kit) {
     push({ x, z, r: half * 1.15, kind: 'feradom-tower' });
   }
 
-  for (const castle of PASS_CASTLES) {
+  for (const castle of PASS_CASTLES) { if ((++buildWork & 31) === 0) yield;
     drawCircuit(castle.circuit, {
       parent: group, heightAt: groundHeight, colliders, style: 'stone', name: castle.name, palette: FERADOM_STONE,
       // The gate toward the border is shut; the one toward the coast stands open.
       gateLeaves: gate => (gate.id.endsWith('front-gate') ? 'shut' : 'open'),
     });
     colliders.push(...castle.circuit.colliders);
-    for (const gate of castle.circuit.gates) if (gate.id.endsWith('front-gate')) {
-      for (let s = -gate.halfWidth; s <= gate.halfWidth + 1e-6; s += .7) push({ x: gate.centre.x + gate.along.x * s, z: gate.centre.z + gate.along.z * s, r: .75, kind: 'feradom-gate-shut' });
-    }
+    for (const gate of castle.circuit.gates) { if ((++buildWork & 31) === 0) yield; if (gate.id.endsWith('front-gate')) {
+      for (let s = -gate.halfWidth; s <= gate.halfWidth + 1e-6; s += .7) { if ((++buildWork & 31) === 0) yield; push({ x: gate.centre.x + gate.along.x * s, z: gate.centre.z + gate.along.z * s, r: .75, kind: 'feradom-gate-shut' }); }
+    } }
     // The keep: a stone tower-house to one side of the way through, taller than the walls; the great castle's is
     // broad and hooded, with the duchy's banner over it.
     const middle = castle.way[2];
@@ -438,20 +442,20 @@ export function createFeradomScenery(kit) {
         b.block(FERADOM_STONE.towerDark, h.width * .15, 3.4, h.length * .3, .8, h.width * .75 + .6, .8);
       });
       const steps = Math.max(1, Math.round(h.length / h.width));
-      for (let i = 0; i < steps; i++) {
+      for (let i = 0; i < steps; i++) { if ((++buildWork & 31) === 0) yield;
         const along = -h.length / 2 + (i + .5) * h.length / steps;
         push({ x: h.x + Math.sin(h.yaw) * along, z: h.z + Math.cos(h.yaw) * along, r: Math.max(h.width, h.length / steps) * .6, kind: 'feradom-hall' });
       }
     }
     // Banners over the front gate, one on each gate tower where there are towers.
     const front = castle.circuit.gates.find(gate => gate.id.endsWith('front-gate'));
-    for (const tower of castle.circuit.towers.filter(t => t.id.startsWith(front.id))) {
+    for (const tower of castle.circuit.towers.filter(t => t.id.startsWith(front.id))) { if ((++buildWork & 31) === 0) yield;
       const ty = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dz]) => gy(tower.x + dx * 2.4, tower.z + dz * 2.4)));
       banner(tower.x, ty + FERADOM_STANDARD.towerPlatform + .2, tower.z, tower.yaw);
     }
     metrics.castles++;
   }
-  for (const tower of TOWERS) {
+  for (const tower of TOWERS) { if ((++buildWork & 31) === 0) yield;
     const pass = PASSES.find(one => one.id === tower.pass);
     // The tower above the narrows faces the gorge; a watchtower faces out over the border.
     const inward = midlineAt(beltAt(tower.x, tower.z).s).inward;

@@ -77,7 +77,8 @@ test('the rule is the climbing rule’s shape: one region set, one field, and no
   assert.equal(thicketAt({}, -2300, 2900), null);
   // And `src/main.js` composes the two rules into the one `canTraverse` hook `moveCharacter` takes.
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-  assert.match(main, /const walkingSlope=\(x,z,nextX,nextZ\)=>canWalkSlope\(x,z,nextX,nextZ,climbWorld\)&&canPushThrough\(x,z,nextX,nextZ,climbWorld\)/,
+  // The step-wise loader puts its own gate first (a country still loading is not walked into); the two rules follow it.
+  assert.match(main, /const walkingSlope=\(x,z,nextX,nextZ\)=>(?:regionTraversalReady\(nextX,nextZ\)&&)?canWalkSlope\(x,z,nextX,nextZ,climbWorld\)&&canPushThrough\(x,z,nextX,nextZ,climbWorld\)/,
     'the host must gate walking on both rules through one hook');
   assert.match(main, /import \{ canPushThrough \} from '\.\/undergrowth\.js'/);
 });

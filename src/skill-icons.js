@@ -40,6 +40,7 @@ export const SKILL_ICONS = Object.freeze({
     + '<path d="M13 11c-1.8-2.2.6-3.6-1.2-5.8M20 10c-1.8-2.2.6-3.6-1.2-5.8M27 11c-1.8-2.2.6-3.6-1.2-5.8"/>',
   firemaking: '<path d="M6 32 29 27M7 27l22 5M18 4c1 6 6 8 6 15a6 6 0 0 1-12 0c0-4 4-7 6-15Z"/>',
   smithing: '<path d="M5 20h26l-5 6H13l-3-3H5ZM15 26l-2 6h14l-2-6M8 6l5-3 7 8-5 4ZM16 12l9 9"/>',
+  dwarvenSmithing: '<path d="M5 22h26l-5 5H13l-3-3H5ZM15 27l-2 5h14l-2-5M10 7h12v5H10ZM16 12v7M7 18h22"/><circle cx="24" cy="17" r="2.5"/><path d="m7 5 2-2m16 5 3-2"/>',
   // An axe left standing in a stump, which is where Bowden keeps his.
   woodcutting: '<ellipse cx="18" cy="25" rx="10" ry="4"/><path d="M8 25v4c0 2.2 4.4 4 10 4s10-1.8 10-4v-4"/>'
     + '<ellipse cx="18" cy="25" rx="4" ry="1.6"/><path d="M14.6 21.4 26 6"/>'
