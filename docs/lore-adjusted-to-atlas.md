@@ -196,6 +196,29 @@ Touched only where it contradicts the atlas about one of the six.
 | "when the Nethermere's expansion pushes the productive zone further up the drainage" | when the spring water pushes the productive zone further up the drainage | as above |
 | "In a year when the upland has received significant rain, the Nethermere floods high" | **Kept.** A flood meadow floods | — |
 
+## `telemonia.md`, `the_telemon.md` and `legemum.md` — the rewrite for Telemonia, **applied in place** (2026-10-01)
+
+The coordinating session rewrote the Telemon lore on 2026-10-01 to the user's design (a closed warrior
+kingdom in a bowl of dry rock: docs/telemonia-stage1-brief.md) and to the atlas, in place, uncommitted in
+`world-builder` as the rule is. Recorded here by the stage 1 build (docs/telemonia-stage1-report.md), which
+read the rewrite against the atlas and found nothing further to change. Only the claims the atlas forced
+are listed; what the user's design added - the Galmeth, Kethorn, Tormon and the Rothkar, the field people,
+the common life, the men's and women's arms - is design and not adjustment.
+
+| was | now | the atlas fact |
+|---|---|---|
+| "The climate is cool and wet in winter, short-summer"; "the ridges are forested in their lower reaches and rocky above the treeline" | **Hot, dry country** in the same belt as the Oves Desert and the Galan steppe: bunch grass, wormwood and thorn on the slopes, grey scrub oak and juniper in the folds, bare stone above, one short cool rainy season. No treeline: **only the south-eastern corner holds a wood**, the Belketh, "where the hills stand near enough to the sea to catch its weather" | climate per hex `BSh` × 23 and `Csb` × 2, and the two `Csb` hexes are (-12,121) and (-13,122), the south-east corner; `forest` 0 and `deep_forest` 0 among the 25 |
+| "Between **Pyros** to the west"; "**West Pyros** shares a cultural memory of the volcanic land and a degree of mutual intelligibility between their older dialects and Kellith"; Kellith "shares some sound patterns with older Pyrosi dialects" | **East Pyros** to the west - "the Pyrosi transit country lies along the western rim" - and Kellith shares sound patterns with "the old Taler speech of upland East Pyros"; they "trade occasionally at the western edge" | Telemonia's western neighbour is East Pyros on 8 edges; West Pyros touches East Pyros on 20 and Telemonia on none |
+| (the north unstated) | **The Oves Desert to the north**, where "the hills go down into the Oves", and the track along their foot - the desert's southern route, with its wells - kept by Telemon bands in every season: the road the bands go out by | the Oves Desert is Telemonia's longest border, 12 edges, the Caelin on five of them |
+| "a series of parallel valleys"; "the valley floors are fertile enough for grazing and subsistence agriculture"; "The rivers that drain the highland move quickly ... They flood unpredictably in spring. The Telemon build nothing in the flood plains." | **A bowl with a thick rim**: ridge behind ridge on the north-east grain round **one enclosed plain**, the Galmeth. **No river rises in Telemonia and leaves it under a name**: washes that run for a few days after rain, "dry stone by midsummer", and "the Telemon build nothing in a wash". The only streams that run the year round are on the borders - one along the northern foot, and the Treloss down the eastern side | `hills` × 17, every one on the edge, round `plains` × 8 that touch no border; **no river edge inside**: the atlas's 12 river edges on Telemonia are all borders, 5 `small` with the Oves Desert and 7 `small` with Gala |
+| (Gala's part in the Telemon's affairs: the contracts and the border markets) | **Kept, and one thing added from the neighbour's lore**: the same Galan brokers argue the classification of the Oves margin before **the Branch Court** of the inner-branch countries, the wells on the bands' northern routes being at issue, and no Telemon has ever appeared there. And the Gala meant is named: "the Gala of the Lizeem ... not the walled Gala of West Pyros" | `oves_desert.md` makes the margin's classification the dispute the desert is known for, and the Caelin - on the Telemon border - is the one water on its edge (docs/oves-report.md); the Lizeem's Gala borders Telemonia on 9 edges, the Pyrosi capital is two countries west |
+| `legemum.md`: "**To the north and west**, Legemum's land border connects it to the Mittoli interior" | Legemum's land border "is short and has three neighbors on it": **due north, along most of its length, the Telemon highland**, which the Legemi do not enter - what passes between them passes at the edge markets below the rim, a little tin up and Telemon horses down; **East Pyros to the north-west**, and the Mittoli interior beyond it; **Gala at the north-eastern corner** | Legemum's land edges are Telemonia 9, East Pyros 5, Gala 1, against 29 of sea |
+
+**Read against the atlas and left alone**: "roughly sixty miles east to west and forty north to south" (the
+country is 600 m by 460 m of world; the game's scale compresses every country alike, and the proportion,
+1.3 to 1, is the atlas's); "the passes through the rim are few" (three are built: docs/telemonia-stage1-report.md);
+"the Galan lowlands to the east" (Gala's ground stands 3-9 m against the Galmeth's 30).
+
 ---
 
 ## To review it once it is applied

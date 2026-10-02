@@ -308,7 +308,7 @@ export const LANGUAGES = freeze({
   }),
   kellith: tongue({
     id: 'kellith', name: 'Kellith', endonym: 'Kellith', family: 'Telemon highland',
-    where: 'the highland passes and their valley halls, Zorkys among them',
+    where: 'Telemonia: the Galmeth and Kethorn on its rock, the rim and the passes through it, and the translators at the border markets',
     sound: 'Compact and closed, hard on k, t, r and th: kel, keth, tarn, roth, vorn, ending -kar, -mon, -orn, -ith.',
     from: 'the world-builder profile `kellith`',
     note: 'A highland tongue for ground known too precisely for outsiders: passes, endurance, bands, borders, and what a hall owes the four hundred people in its valley. Matt of Zorkys speaks it, and says prince in it, and it does not mean what a lowlander hears.',
@@ -844,6 +844,13 @@ export const REGION_LANGUAGE = freeze({
   // lends and borrows, which is what the entry above already says of it. A dialect in this table
   // marks a deviation from a centre, and the island is the centre.
   Selemi: spoken('selemi'),
+  // Telemonia, the Telemon highland (stage 1, docs/telemonia-stage1-brief.md). **Kellith, and no dialect.** The lore
+  // names it outright: "They speak their own language - Kellith, in their own name for it" (telemonia.md, the_telemon.md),
+  // unstudied because outside linguists have not been let in, and spoken to outsiders only through the
+  // border-market translators. The tongue has been in this file since the company was hired; its `where` used to
+  // say "Zorkys among them", which is Matt's home and is not in Telemonia, and now says Telemonia. Matt's own
+  // tongue (`ORIGIN_LANGUAGE`, below) is left as it was: it changes in a later job.
+  Telemonia: spoken('kellith'),
 });
 
 /**

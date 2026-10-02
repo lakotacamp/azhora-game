@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, Selemi: 52 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, Selemi: 52, Telemonia: 53 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -602,6 +602,19 @@ export const REGION_TERRAIN = Object.freeze({
   // What the row does do is colour: the hex blend still weighs this swatch against the `outland` green
   // of the sea hexes in reach, and `selemisTint` takes both shares on the island's own ground.
   Selemi: Object.freeze({ base: 11.3, amp: 1.3, wave: 110, ground: REGION_BIOMES.Selemi.ground }),
+  // Telemonia (src/telemonia-world.js), the Telemon highland. **This profile shapes almost nothing of
+  // Telemonia itself**: the rim, the passes, the Galmeth and Kethorn's crag are all `telemoniaGround`'s,
+  // which takes over a few metres inside the border and writes nowhere else. What the profile does
+  // shape is the ground on both sides of the border within the blend's reach - the Oves Desert's and
+  // Gala's last eighty metres, and the two border streams worked out from them - so it is set for them
+  // and not for the highland, on Gala's and the Oves's wavelength, 320. That wavelength is the cure the
+  // Oves report asked for: the ribs it measured along every built border with unbuilt ground came from
+  // 150 m relief blending into 320, and they are gone on the twenty-one hex edges this country shares
+  // with the two of them. The level is measured, not chosen: `outland`'s own 11.5 m, which the streams
+  // were built against, with its six metres of roll taken away raises the Caelin's last reach more than
+  // Gala's first and leaves a 0.55 m fall where the two hand over (the Oves's own test allows 0.6);
+  // 10 m leaves 0.44, and every other number the two neighbours hold (docs/telemonia-stage1-report.md).
+  Telemonia: Object.freeze({ base: 10, amp: .8, wave: 320, ground: REGION_BIOMES.Telemonia.ground }),
   outland:Object.freeze({ base: 11.5, amp: 6, wave: 150, ground: '#8d9a6d' }),
 });
 /** The terrain a hex cell stands on: its region's profile, refined by the cell's atlas terrain where the region says so. */
@@ -1468,6 +1481,21 @@ const REGION_TEXT = {
     description: 'An island of eight hexes a channel’s width south of the tip of the Ascarth Peninsula, and a crescent, as its lore says: one bay in the hollow of it with a strand of sand round three sides, a rocky head at either end of the strand, and the cliffs of the peninsula’s tip standing across the water on the fourth. Behind the strand the ground climbs out of the hollow to three grass hills along the island’s back, the middle one twenty-seven metres up, and beyond them it tilts on up toward the open sea and ends in thirteen metres of pale cliff. Straw-pale grass and aromatic scrub over pale stone, thicker and greener in the lee of the hills, where a few pines lean away from the sea wind; two dry winter beds come down to the strand, and there is no stream and no spring. Every shore that is not the bay is a cliff, with seabirds on the heads and sea-plungers working the water off the ocean face. The city of Selemis that fills this crescent from headland to headland, its harbour works and its walls, its ships and everybody in it are somebody’s, and none of it is built.',
     palette: { ground: '#b1a971', accent: '#e3d9ac', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
     npcIds: [], landmarks: ['selemis-harbour', 'selemis-west-head', 'selemis-east-head', 'selemis-hills', 'selemis-winter-beds', 'selemis-south-cliffs', 'selemis-channel'] },
+  // **Telemonia, stage 1: the country and not its people** (docs/telemonia-stage1-brief.md). The rim,
+  // the passes, the Galmeth, Kethorn's crag and the wall across its one open side, the terraces, the
+  // Belketh and the wildlife are built; the town on the rock, the band halls, the king's hall, the
+  // farms, the cattle and the horses, the Telemon and the field people, and how a traveler is met are
+  // stage 2 and none of them is here. Nothing here says they are not there.
+  //
+  // **The Oves Desert's own sky, to the digit.** The lore puts the highland "in the same belt as the Oves
+  // Desert to its north and the Galan steppe to its east, and for most of the year it looks like them",
+  // and the bands' road north is the desert's southern route: one dry air over both. The Oves builder
+  // gave the desert the clearest air in the game because the one thing a rain shadow has is distance,
+  // and a bowl of bare rock a few tens of metres higher has as much of it.
+  Telemonia: { subtitle: 'The highland of the Telemon', spawn: point(-2016, 1196),
+    description: 'A bowl with a thick rim. Between the Oves Desert, the Galan lowland, the hills at the foot of Legemum and East Pyros the ground rises into a knot of dry rock: ridge behind ridge running north-east to south-west, bare on the crests and broken by bands of cliff, with narrow valleys between them that end against the next ridge. Three passes go through - north to the Oves, east to Gala and south toward Legemum - and none on the East Pyros side, where the rim is widest and the Rothkar, its highest rock, stands over everything. Inside the rim lies the Galmeth, one raised and level plain with dry washes across it, and in the middle of the plain the crag that carries Kethorn: cliff on three sides and a wall across the fourth, with one gate. Terraces step the rim’s inner faces down from the cliff foot to the plain, dry-stone walls holding steps of bare earth, and one way climbs them and the cliff above to the foot of the Rothkar. Bunch grass, wormwood and thorn on the slopes, grey scrub oak and juniper in the folds, bare stone above; only the south-eastern corner holds a wood, the Belketh. Hot and dry, with no river inside: the only running water is on the borders, the Caelin along the northern foot and the Treloss down the eastern side. The town on the rock, its halls and the king’s, the fields and the people who work them, the herds, the horses and the Telemon themselves are not built yet.',
+    palette: { ground: '#a59c7a', accent: '#e2d6b0', fog: '#d0c8b0', sky: 0xcedcd2, haze: 0xe3dabd, hazeDensity: .0034 },
+    npcIds: [], landmarks: ['telemonia-galmeth', 'telemonia-kethorn', 'telemonia-kethorn-gate', 'telemonia-rothkar', 'telemonia-tarnel', 'telemonia-east-pass', 'telemonia-south-pass', 'telemonia-terraces', 'telemonia-rothkar-way', 'telemonia-belketh', 'telemonia-west-rim'] },
 };
 
 export const regions = Object.freeze(REGION_ORDER.map(name => {

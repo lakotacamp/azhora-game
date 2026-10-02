@@ -43,4 +43,8 @@ export const OWN_SKY = new Set([
   // of water and the lore's one sentence about it is that smoke can be read across it on a clear day,
   // so the air is one air (docs/selemis-report.md).
   'Selemi',
+  // Telemonia: the Oves Desert's own sky, to the digit - "the same belt as the Oves Desert to its north ...
+  // for most of the year it looks like them", and the bands' road north is the desert's southern route
+  // (docs/telemonia-stage1-report.md).
+  'Telemonia',
 ]);

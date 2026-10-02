@@ -47,6 +47,16 @@ export const FACTIONS = Object.freeze({
     note: 'The last independent elven kingdom, ruled by a sorcerer king and queen. It holds Central Ibenwood and the inward forest belt of the four surrounding Ibenwood regions.' }),
   yunethre: Object.freeze({ id: 'yunethre', name: 'Yunethre free clans', short: 'Free clans', tint: '#9b986d',
     note: 'Independent centaur clans hold the steppe pass. The western lakeside town is neutral ground shared by humans, elves and centaurs, subject to neither Ambron, Celder nor Elfland.' }),
+  // The Telemon (lore: telemonia.md, the_telemon.md): a closed warrior kingdom, its one town Kethorn. In the war it is
+  // neither side's: it hires out its bands under contract and lets no foreign politics inside the rim.
+  telemon: Object.freeze({ id: 'telemon', name: 'Kingdom of Telemonia', short: 'Telemon', seat: 'Kethorn', tint: '#8c6f52',
+    note: 'A closed warrior kingdom of the highland: a king who must be able to fight, a council of band leaders, and every man under arms and every woman with a knife at her belt. It hires out its bands under contract and takes no side; it allows no foreign settlement, trade or politics inside the rim, and has never been conquered.' }),
+  // The Lizeem's Gala (lore: gala.md), which is not the walled Pyrosi capital of the same name in West Pyros: a
+  // Mittoli-speaking city of merchant families, its council and its Guild of Assessors, "under Aevis's suzerainty
+  // more often than not". A polity of its own is the builder's reading of that file (docs/telemonia-stage1-report.md):
+  // the suzerainty comes and goes with the Avite kings and the city's own institutions are what lasts.
+  galan: Object.freeze({ id: 'galan', name: 'Gala', short: 'Galan', seat: 'Gala', tint: '#b59a5e',
+    note: 'The city of brokers and assessors on the Lizeem’s western bank: governed by its council and the Guild of Assessors, and under the King of Aevis’s suzerainty more often than not - sometimes a garrison, sometimes a tribute, sometimes only a word. It brokers the Telemon’s contracts and keeps the border markets.' }),
   wild: Object.freeze({ id: 'wild', name: 'No ruler', short: 'Wild', tint: '#6f7d6a', note: 'No faction holds this land.' }),
 });
 
@@ -78,6 +88,7 @@ export const SETTLEMENTS = Object.freeze({
   lamdris: Object.freeze({ id: 'lamdris', name: 'Lamdris', region: 'South Suval', note: 'A lake city in the lowlands, garrisoned; the uplands above it belong to the hill bandits.' }),
   mavren: Object.freeze({ id: 'mavren', name: 'Mavren', region: 'Amod', note: 'Terraced town at the meeting of three valleys; the Empire’s outpost fortress (lore: amod.md).' }),
   gala: Object.freeze({ id: 'gala', name: 'Gala', region: 'West Pyros', note: 'The walled Pyrosi capital above a river confluence (lore: pyros.md).' }),
+  kethorn: Object.freeze({ id: 'kethorn', name: 'Kethorn', region: 'Telemonia', note: 'The one town of the Telemon, on a rock in the middle of the Galmeth: cliff on three sides and a wall closing the fourth, the only walled place in the country (lore: telemonia.md). The rock and the wall are built; the town is not yet.' }),
   mithalaCity: Object.freeze({ id: 'mithala-city', name: 'The Mithalan river-city', region: 'South Mithala', note: 'Where the rivers of West, East and South Mithala meet. Name pending.' }),
   izolveth: Object.freeze({ id: 'izolveth', name: 'Izolveth', region: 'West Izol', note: 'The Izoli port that shelters the Coalition army.' }),
   tornMouth: Object.freeze({ id: 'torn-mouth', name: 'The Torn mouth', region: 'Drent', note: 'Seat of the Ambroni Lord Protector of Drent (lore: drent.md).' }),
@@ -152,8 +163,9 @@ export const REGION_DESIGN = Object.freeze([
   region('South Ibenal', 3, 'wild', 'Plains west of the Ibenwood.', ['wolf-pack', 'bandit'], 'Level 3 by design.', {}),
   region('Alezhor', 3, 'wild', 'Plains and grassland south of the Ibenwood.', ['wolf-pack', 'bandit'], 'Level 3 by design.', {}),
   region('South Celder', 3, 'wild', 'Plains between the Lotharn and the Oremindi.', ['mountain-goblin', 'wolf-pack'], 'Level 3 by design.', {}),
-  region('Gala', 3, 'pyrosi', 'Plains south of Nesdor.', ['sand-goblin', 'bandit'], 'Level 3 by design.', {}),
-  region('Telemonia', 3, 'wild', 'Hills and plains toward the Oves Desert.', ['sand-goblin', 'hill-bandit'], 'Level 3 by design.', {}),
+  region('Gala', 3, 'galan', 'Plains south of Nesdor.', ['sand-goblin', 'bandit'], 'Level 3 by design. The Lizeem’s Gala, a city of brokers and assessors under Aevis’s suzerainty more often than not - not the walled Pyrosi capital of the same name in West Pyros.', {}),
+  region('Telemonia', 3, 'telemon', 'A hot, dry highland of rock: a rim of ridges and cliff bands round one enclosed plain, the Galmeth.', [],
+    'Level 3 by design. The closed kingdom of the Telemon: few passes through the rim, one town on a rock in the middle of the plain, and no wild threats, because every man in the country is under arms and nobody hunts in it. A traveler can get in by the passes and is challenged on sight.', { settlements: ['kethorn'] }),
   region('Legemum', 3, 'wild', 'Grassland, hills and plains south of the Ascarth.', ['wolf-pack', 'bandit'], 'Level 3 by design.', {}),
   region('Ganesh Plain', 3, 'wild', 'Plains south of West Pyros.', ['sand-goblin', 'bandit'], 'Level 3 by design.', {}),
   region('Trogo', 3, 'wild', 'Deep forest and grassland in the far south.', ['wolf-pack', 'troll'], 'Level 3 by design.', {}),

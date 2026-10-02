@@ -437,6 +437,14 @@ export const PLAYABLE_SURVEY = Object.freeze({
       bounds: Object.freeze({"x":1593.487,"y":3192,"width":110.852,"height":80}), centerX: 1647.18, centerY: 3235,
       cells: Object.freeze([{q:-9,r:133,terrain:'grassland'},{q:-8,r:133,terrain:'grassland'},{q:-9,r:134,terrain:'grassland'},{q:-8,r:134,terrain:'grassland'},{q:-7,r:134,
         terrain:'grassland'},{q:-9,r:135,terrain:'grassland'},{q:-8,r:135,terrain:'grassland'},{q:-7,r:135,terrain:'grassland'}]) }),
+    Object.freeze({ id: "Telemonia", name: "Telemonia",
+      bounds: Object.freeze({"x":1205.508,"y":2832,"width":166.277,"height":128}), centerX: 1288.092, centerY: 2898.88,
+      cells: Object.freeze([{q:-14,r:118,terrain:'hills'},{q:-13,r:118,terrain:'hills'},{q:-12,r:118,terrain:'hills'},{q:-11,r:118,terrain:'hills'},{q:-16,r:119,terrain:'hills'},
+        {q:-15,r:119,terrain:'hills'},{q:-14,r:119,terrain:'plains'},{q:-13,r:119,terrain:'plains'},{q:-12,r:119,terrain:'hills'},{q:-16,r:120,
+        terrain:'hills'},{q:-15,r:120,terrain:'plains'},{q:-14,r:120,terrain:'plains'},{q:-13,r:120,terrain:'plains'},{q:-12,r:120,terrain:'hills'},{q:-17,
+        r:121,terrain:'hills'},{q:-16,r:121,terrain:'hills'},{q:-15,r:121,terrain:'plains'},{q:-14,r:121,terrain:'plains'},{q:-13,r:121,terrain:'plains'},
+        {q:-12,r:121,terrain:'hills'},{q:-17,r:122,terrain:'hills'},{q:-16,r:122,terrain:'hills'},{q:-15,r:122,terrain:'hills'},{q:-14,r:122,terrain:'hills'},
+        {q:-13,r:122,terrain:'hills'}]) }),
   ]),
 });
 

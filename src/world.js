@@ -119,6 +119,8 @@ import { MITHALA_LANDMARKS } from './mithala-world.js';
 import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
 import { createSelemisScenery } from './selemis-scenery.js';
 import { SELEMIS_LANDMARKS } from './selemis-world.js';
+import { createTelemoniaScenery } from './telemonia-scenery.js';
+import { TELEMONIA_LANDMARKS, telemoniaTerrainSink, kethornUnclimbable as telemoniaUnclimbable } from './telemonia-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
@@ -506,7 +508,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
     // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
     // src/south-suval-scenery.js); the coarse grid is sunk out of sight beneath them.
-    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z), z], index * 3);
+    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z) - telemoniaTerrainSink(x, z), z], index * 3);
     groundTint(color, x, z, THREE);
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight > 0) {
@@ -1446,6 +1448,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
   // stones in its two winter beds and the rock fallen at the foot of its cliffs. Its own seeded
   // stream, after the southwest's, so nothing already built moves for it. Nobody's.
   const selemisScenery = createSelemisScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
+  // Telemonia (src/telemonia-scenery.js): the highland's own finer ground, the terraces' walls and the
+  // gullies' check-walls, the wall of Kethorn, bunch grass and wormwood and thorn, scrub oak and juniper
+  // in the folds, the Belketh's wood and the stone. Its own seeded stream, after Selemis's, so nothing
+  // already built moves for it. Stage 1: nothing planted and nobody's.
+  const telemoniaScenery = createTelemoniaScenery({ root: world, material, groundHeight, colliders, dummy, color, round });
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   const stakedProps = [];
   buildMorosWorks({ parent: world, heightAt: groundHeight, colliders, signs, movingGroups, stakedProps, roadDistance });
@@ -1728,12 +1735,25 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     const peak = mesh(geometry, summitMaterial, summit.x, baseY, summit.z, 1, 1, 1, world);
     peak.name = `Three Presences summit ${index + 1}`; peak.castShadow = false;
   }
+  // The ten "mountains" of the first small world: green cones on the horizon west of Drent. The west was
+  // built since, under them, and a cone on a built country is a green tent standing in somebody's fields -
+  // number 9 at Telemonia's border by the Treloss, half sunk in the rim. So a cone is drawn only where all
+  // of its footprint is still open country, and on 2026-10-02 that is none of the ten: they stood in
+  // Vastos, Meneth (2), Caricas (2), Nesdor (2), Ovesos, the Oves Desert and Gala. Their numbers are
+  // drawn from the seeded stream whether or not they are built, so nothing after them moves.
   const mountainMat = material('#849b83');
+  const builtGround = (x, z) => { const region = regionAt(x, z); return !!region && !isOpenCountry(region); };
+  const backdropMountains = [];
   for (let i = 0; i < 10; i++) {
     const { x, z } = at(-880 - (i % 5) * 46, -160 + i * 92);
-    const mountain = mesh(new THREE.ConeGeometry(1, 1, 7), mountainMat, x, 6, z,
-      range(30, 48) * WORLD_SCALE, range(12, 26), range(30, 50) * WORLD_SCALE, world);
-    mountain.rotation.y = range(0, 6.28); mountain.castShadow = false;
+    const sx = range(30, 48) * WORLD_SCALE, sy = range(12, 26), sz = range(30, 50) * WORLD_SCALE, yaw = range(0, 6.28);
+    const reach = Math.max(sx, sz), footprint = [[0, 0]];
+    for (let a = 0; a < 12; a++) for (const f of [.5, 1]) footprint.push([Math.cos(a * Math.PI / 6) * reach * f, Math.sin(a * Math.PI / 6) * reach * f]);
+    const drawn = !footprint.some(([dx, dz]) => builtGround(x + dx, z + dz));
+    backdropMountains.push(Object.freeze({ index: i + 1, x, z, radius: reach, drawn, region: regionAt(x, z)?.name ?? null }));
+    if (!drawn) continue;
+    const mountain = mesh(new THREE.ConeGeometry(1, 1, 7), mountainMat, x, 6, z, sx, sy, sz, world);
+    mountain.rotation.y = yaw; mountain.castShadow = false;
   }
 
   // ---------------------------------------------------------------------------
@@ -2091,6 +2111,11 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
     mithalaMetrics: mithalaScenery.metrics,
     southwestMetrics: southwestScenery.metrics,
     selemisMetrics: selemisScenery.metrics,
+    telemoniaMetrics: telemoniaScenery.metrics,
+    // Faces no climber can hold, whatever the skill (src/climbing.js reads it): Kethorn's rock and its wall,
+    // whose gate is the only way onto the top.
+    unclimbableAt: telemoniaUnclimbable,
+    backdropMountains: Object.freeze(backdropMountains),
     ascarthMetrics: ascarth.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
     renaRoute: RENA_ROAD.map(p => ({ x: p.x, z: p.z })),
@@ -2254,6 +2279,7 @@ export function createWorld(scene, { spatialBatches = true } = {}) {
       ...MITHALA_LANDMARKS,
       ...SOUTHWEST_LANDMARKS,
       ...SELEMIS_LANDMARKS,
+      ...TELEMONIA_LANDMARKS,
     ],
     paths,
     update(time, dt) {

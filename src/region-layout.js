@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'Selemi']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'Selemi', 'Telemonia']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -301,6 +301,16 @@ export const REGION_BIOMES = Object.freeze({
   Selemi: Object.freeze({ id: 'harbour-island', name: 'The island of Selemis', ground: '#b1a971', canopy: '#55653c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
     relief: { amplitude: 1.3, wavelength: 110 }, clearings: [],
     note: 'An island of eight hexes across a channel one hex wide from the tip of the Ascarth Peninsula: a crescent with its hollow side turned to the peninsula, one sheltered bay in the hollow with a strand of sand round it, a rocky headland at either end of the strand, three low grass hills along its back, and cliffs on every shore that is not the bay. Pale straw grass and aromatic scrub over pale stone, a few wind-leaned pines in the lee of the hills, two dry winter beds coming down to the strand, and seabirds on the heads. The city, its harbour works and everybody in it are somebody\u2019s and none of it is built.' }),
+  // Telemonia (src/telemonia-world.js, src/telemonia-scenery.js): the Telemon highland, stage 1 - the
+  // country and not its people (docs/telemonia-stage1-brief.md). Seventeen `hills` hexes on every edge
+  // and eight `plains` in the middle, `BSh` on twenty-three and `Csb` on the two in the south-east
+  // corner: a bowl of dry rock round one enclosed plain, the Galmeth, with Kethorn's crag in the middle
+  // of it. It scatters its own country because what grows on it is decided by what the ground is - bare
+  // rock and cliff on the rim, terraces on its inner faces, open plain, washes, and one wood in one
+  // corner - and a count per hex can say none of that.
+  Telemonia: Object.freeze({ id: 'telemon-highland', name: 'The Telemon highland', ground: '#a59c7a', canopy: '#4f5a3a', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'bunch-grass', ownScatter: true,
+    relief: { amplitude: .8, wavelength: 320 }, clearings: [],
+    note: 'A bowl with a thick rim. Ridge behind ridge of dry rock running north-east to south-west round one enclosed plain, bare on the crests and broken by cliff bands, with narrow valleys between them and three passes through - north to the Oves, east to Gala and south toward Legemum - and none on the East Pyros side. Inside, the Galmeth: a raised, level plain with dry washes across it and the crag of Kethorn in the middle, cliff on three sides and a wall across the fourth. Terraces step the rim\u2019s inner faces down to the plain. Bunch grass, wormwood and thorn on the slopes, grey scrub oak and juniper in the folds, bare stone above, and in the south-east corner the only wood, the Belketh. Stage 1: no building, no field and nobody - the town, the farms and the people are stage 2.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

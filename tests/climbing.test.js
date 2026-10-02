@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CLIMBING, createClimbing, climbSurfaceClear, sampleClimbSurface, canWalkSlope } from '../src/climbing.js';
+import { CLIMBING, createClimbing, climbSurfaceClear, sampleClimbSurface, canWalkSlope, climbForbidden } from '../src/climbing.js';
 
 const ground = (x, z) => 10 + Math.max(0, Math.min(20, z * 2));
 const terrain = (extra = {}) => ({ heightAt: ground, waterAt: () => .45, colliders: [],
@@ -133,6 +133,27 @@ test('a falling climber cannot cross sealed region boundaries or solid props', (
   const w = terrain({ canClimbMove: (a, b) => b.z >= 2 });
   const c = createClimbing({ world: w }); c.grab(at(5), 0, { stamina: 100 }); c.release();
   const result = run(c, 8); assert.ok(result.position.z >= 2); assert.equal(result.phase, 'idle');
+});
+
+test('a face the world marks unclimbable gives no hold and no step, while walking and falling are the ground’s own', () => {
+  // Kethorn's rock in Telemonia is such a face (src/telemonia-world.js, `kethornUnclimbable`): here the
+  // face from z = 2 up is marked, and the rest of the slope is ordinary climbing rock.
+  const marked = terrain({ unclimbableAt: (_x, z) => z >= 2 });
+  assert.equal(climbForbidden(marked, 0, 3), true);
+  assert.equal(climbForbidden(terrain(), 0, 3), false, 'no mark, no rule');
+  assert.equal(sampleClimbSurface(marked, 0, 3).allowed, false);
+  assert.equal(sampleClimbSurface(marked, 0, 3).climbable, false);
+  assert.equal(createClimbing({ world: marked }).grab(at(2.5), 0, { stamina: 100 }), false, 'no hold on the marked face');
+  // A climber on the rock below it climbs up to the mark and no further.
+  const c = createClimbing({ world: marked });
+  assert.equal(c.grab(at(), 0, { stamina: 100 }), true);
+  const result = run(c, 4);
+  assert.ok(result.position.z < 2 && result.position.z > 1.5, `the climb stopped at ${result.position.z.toFixed(2)}`);
+  // Walking up it is refused by the slope, as before, and coming down it is a fall the rule does not stop.
+  assert.equal(canWalkSlope(0, 3, 0, 3.1, marked), false);
+  assert.equal(canWalkSlope(0, 3.1, 0, 3, marked), true);
+  const faller = createClimbing({ world: marked }); faller.grab(at(1.5), 0, { stamina: 100 }); faller.release();
+  assert.ok(run(faller, 6).position.z < 1.5, 'a falling climber still slides down');
 });
 
 test('unbuilt regions and water are not climbing surfaces', () => {

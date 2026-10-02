@@ -218,6 +218,15 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    */
   assert.deepEqual(worldBoundsFor(survey, HEX_WORLD_TRANSFORM, PLAYABLE_REGIONS.filter(name => name !== 'Selemi')), bounds,
     'the island across the channel from the Ascarth tip moves the world box');
+  /**
+   * **Telemonia spends nothing either, and says so the same way.** Twenty-five hexes in rows 118-122,
+   * q -17...-11 - centres x -2350...-1850 and z 1068.230...1414.641, its outline at x -2400.002...-1800.002
+   * and z 1010.495...1472.376 - landlocked between the Oves Desert, Gala, Legemum and East Pyros, and
+   * 2,210 m inside the western edge, 2,410 m inside the eastern, 3,178 m inside the northern and 1,792 m
+   * inside the southern (docs/telemonia-stage1-report.md). Measured, and held here.
+   */
+  assert.deepEqual(worldBoundsFor(survey, HEX_WORLD_TRANSFORM, PLAYABLE_REGIONS.filter(name => name !== 'Telemonia')), bounds,
+    'the Telemon highland moves the world box');
   assert.ok(bounds.maxX - bounds.minX < 52.3 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
   assert.ok(bounds.maxZ - bounds.minZ < 55 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without

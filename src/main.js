@@ -246,6 +246,9 @@ import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASH
 import { VAELLIR as SOUTHWEST_VAELLIR } from './west-regions.js';
 import { HARBOUR as SELEMIS_HARBOUR, HEADS as SELEMIS_HEADS, HILLS as SELEMIS_HILLS, WINTER_BEDS as SELEMIS_BEDS,
   CHANNEL_VIEW as SELEMIS_CHANNEL_VIEW, SOUTH_CLIFFS as SELEMIS_SOUTH_CLIFFS } from './selemis-world.js';
+import { KETHORN as TELEMONIA_KETHORN, KETHORN_WALL as TELEMONIA_WALL, ROTHKAR as TELEMONIA_ROTHKAR, PASSES as TELEMONIA_PASSES,
+  passCol as telemoniaPassCol, TERRACE_VIEW as TELEMONIA_TERRACES, BELKETH as TELEMONIA_BELKETH, PLAIN_MIDDLE as TELEMONIA_PLAIN,
+  kethornPoint as telemoniaRockPoint, ROTHKAR_WAY as TELEMONIA_WAY } from './telemonia-world.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -2276,6 +2279,44 @@ function init() {
       if(view==='selemis-winter-bed'){const line=SELEMIS_BEDS[0].line,a=line[0],b=line[line.length-1];
         return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.17,1);}
     }
+    // Telemonia, stage 1. Worked out from the country's own numbers - the rock, its wall and gate, the
+    // passes' cols, the terrace belt, the Rothkar and the Belketh - so a view cannot drift off the thing
+    // it shows when a landform moves.
+    if(view.startsWith('telemonia-')){
+      const rock=TELEMONIA_KETHORN,gate=TELEMONIA_WALL.gate.centre,pass=id=>TELEMONIA_PASSES.find(p=>p.id===id);
+      // **The country in one picture**: from high over the north-eastern rim, across the Galmeth to the
+      // rock in the middle of it, the terraces round the plain and the western rim with the Rothkar beyond.
+      if(view==='telemonia-galmeth')
+        return shot({x:rock.x+150,z:rock.z-150},{x:rock.x,z:rock.z},.32,8);
+      // The wall and the gate, from the spur below them: the only wall in the country, across the one
+      // side of the rock that is not cliff.
+      if(view==='telemonia-kethorn-gate'){const below=telemoniaRockPoint(78,0);
+        return shot({x:below.x,z:below.z},{x:gate.x,z:gate.z},.1,5,true);}
+      // The rock's cliffs from the plain north-east of it: twenty metres of stone on three sides.
+      if(view==='telemonia-kethorn-cliffs'){const face=telemoniaRockPoint(-54,0);
+        return shot({x:face.x+58,z:face.z-50},{x:face.x,z:face.z},.06,11);}
+      // The terraces: from the plain up into the belt under the Rothkar, the walls in courses and a stair.
+      if(view==='telemonia-terraces'){const t=TELEMONIA_TERRACES,dx=TELEMONIA_PLAIN.x-t.x,dz=TELEMONIA_PLAIN.z-t.z,n=Math.hypot(dx,dz);
+        return shot({x:t.x+dx/n*34,z:t.z+dz/n*34},{x:t.x,z:t.z},.14,5);}
+      // The Tarnel from the Oves Desert's side: the gorge up through the rim to its col.
+      if(view==='telemonia-tarnel'){const p=pass('telemonia-tarnel'),mouth=p.points[0],col=telemoniaPassCol(p);
+        return shot({x:mouth.x,z:mouth.z-26},{x:col.x,z:col.z},.12,6,true);}
+      // The east pass from Gala: the gorge the Galmeth drains through, and the scarp either side of it.
+      if(view==='telemonia-east-pass'){const p=pass('telemonia-east-pass'),mouth=p.points[0],col=telemoniaPassCol(p);
+        return shot({x:mouth.x+34,z:mouth.z-10},{x:col.x,z:col.z},.1,6,true);}
+      // The Rothkar from the western edge of the plain: the highest rock of the rim, stood over everything.
+      if(view==='telemonia-rothkar'){const r=TELEMONIA_ROTHKAR;
+        return shot({x:r.x+150,z:r.z-70},{x:r.x,z:r.z},.1,18);}
+      // The Belketh from across the Treloss in Gala: the one wood, on the south-eastern corner of the rim.
+      if(view==='telemonia-belketh'){const w=TELEMONIA_BELKETH;
+        return shot({x:w.x+95,z:w.z+30},{x:w.x,z:w.z},.12,8);}
+      // The rim from outside: the cliff bands of the northern rim from the Oves Desert.
+      if(view==='telemonia-rim'){return shot({x:-2262,z:972},{x:-2236,z:1070},.12,14);}
+      // The Rothkar way from the plain: up the western terraces, across the inner cliff on its shelf and into
+      // its walled landing at the foot of the Rothkar.
+      if(view==='telemonia-way'){const w=TELEMONIA_WAY,p=w.points[6],q=w.points[7];
+        return shot({x:p.x+62,z:p.z+28},{x:(p.x+q.x)/2,z:(p.z+q.z)/2},.16,9);}
+    }
     if(view==='west-vastos'){
       // The open range: a watering pan with the plain going on behind it.
       const pan=VASTOS_PANS[2];
@@ -2846,7 +2887,7 @@ function init() {
   // People are solid (src/bodies.js): the traveler and every villager see the frame's bodies as colliders.
   const playerWorld=bodyWorld(world).moving(player.group.position,BODY.traveler,'traveler'),npcWorld=bodyWorld(world),catWorld=bodyWorld(world,{ignore:['prop']});
   const climbWorld={bounds:world.bounds,colliders:world.colliders,heightAt:world.heightAt,waterAt:world.waterAt,
-    regionAt:world.regionAt,nearColliders:(x,z,r)=>playerWorld.nearColliders(x,z,r),
+    regionAt:world.regionAt,nearColliders:(x,z,r)=>playerWorld.nearColliders(x,z,r),unclimbableAt:world.unclimbableAt,
     canClimbMove:(from,to)=>!closedRegionEntered(from,to)};
   climbing=createClimbing({world:climbWorld});
   terrainFall=createTerrainFall();
@@ -10594,7 +10635,7 @@ function init() {
         // are worked out by the same function. The spots come from the regions' own numbers
         // rather than typed in, so a view cannot drift off the thing it is meant to show
         // when the ground under it is adjusted.
-        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')||view.startsWith('southwest-')||view.startsWith('selemis-')){
+        if(view.startsWith('west-')||view.startsWith('south-')||view.startsWith('lotharn-')||view.startsWith('mithala-')||view.startsWith('southwest-')||view.startsWith('selemis-')||view.startsWith('telemonia-')){
           questStage=QUEST_DONE;combat.finishPractice();player.setArmed(true);
           const spot=westReviewSpot(view);
           if(spot){
