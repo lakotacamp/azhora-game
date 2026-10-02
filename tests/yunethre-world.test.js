@@ -18,7 +18,7 @@ const scenery=createYunethreScenery({parent,heightAt:terrain,colliders});
 const world={bounds:{minX:-10000,maxX:10000,minZ:-10000,maxZ:10000},heightAt:terrain,colliders};
 
 test('Yunethre appends its exact 27 plains cells without replacing an existing region ID',()=>{
- assert.equal(REGION_IDS.Yunethre,38);assert.equal(REGION_ORDER.at(-1),'Yunethre');assert.equal(YUNETHRE_CELLS.length,27);
+ assert.equal(REGION_IDS.Yunethre,38);assert.equal(REGION_ORDER[REGION_IDS.Yunethre-1],'Yunethre');assert.equal(YUNETHRE_CELLS.length,27);
  assert.ok(YUNETHRE_CELLS.every(c=>c.terrain==='plains'));
  assert.ok(yunethreOwns(YUNETHRE_TOWN.x,YUNETHRE_TOWN.z));assert.ok(yunethreOwns(YUNETHRE_CAMP.x,YUNETHRE_CAMP.z));
 });

@@ -116,8 +116,10 @@ test('this country does not grow the world box, and the four north of it do', ()
   // `coast` hex the atlas puts inside any country (docs/southwest-3-report.md). This range stands at
   // x -2550...-1550, nearly two kilometres inside it, and nothing of it moved for either. So what
   // this test now holds is the three facts together: this country spent nothing, the Mithala spent
-  // the north, the southwest spent the west - twice.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4360.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
+  // the north, the southwest spent the west - twice - **and West Ibenwood then took the west a third
+  // time, to -4610.002 and 52.20**, when the Ibenwood belt landed alongside: its rim is at x = -4550,
+  // two hundred and fifty metres past Cape Heth's. Nothing of this range moved for that either.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   // ...and the four Meroshe deserts took the south, 2398.401 -> 3177.824, which this range is two

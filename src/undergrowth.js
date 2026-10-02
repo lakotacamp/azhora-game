@@ -60,8 +60,12 @@ export const UNDERGROWTH = Object.freeze({ open: .5, reach: 1.1 });
  * the region set carries both the id and the name, because `world.regionAt` answers an object, an id or
  * a name depending on who is asking (the climbing rule's own `CLIMB_REGIONS` does the same).
  */
+// The number is `REGION_IDS.Trogo`, written out the way `CLIMB_REGIONS` writes its own, and
+// `tests/trogo-undergrowth.test.js` holds the two together. It read 44 for a day after the block was
+// renumbered 32-44 -> 39-51 behind the Ibenwood belt, which put Trogo's rule on the West Meroshe
+// Desert as well; nothing was ever refused there, because `trogoWay` answers 1 outside Trogo.
 const THICKETS = Object.freeze([
-  Object.freeze({ id: 'trogo', regions: new Set([44, 'Trogo']), open: trogoWay }),
+  Object.freeze({ id: 'trogo', regions: new Set([51, 'Trogo']), open: trogoWay }),
 ]);
 
 const region = (world, x, z) => world?.regionAt?.(x, z);

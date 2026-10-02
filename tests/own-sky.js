@@ -17,9 +17,15 @@
  * Ordered as `REGION_IDS` orders them, so the list reads as the history of who has asked.
  */
 export const OWN_SKY = new Set([
-  'Eer', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala',
+  'Caricas', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom',
+  'Gala',
   'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains',
   'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+  // The Ibenwood belt, which landed from the other side of the same merge and brought Caricas and
+  // Isareos (above) with it. **These nine were lost once**: the belt's builder had extended the two
+  // inline copies this file replaced, and the merge kept the file and dropped the copies.
+  'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood',
+  'South Oremindi Mountains', 'Yunethre',
   // The southwest, job 1: the first true-desert sky in the game (.0024, the clearest air in Azhora)
   // over the three `BWh` countries, and the steppe sky over West Pyros.
   'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',

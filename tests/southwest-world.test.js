@@ -105,7 +105,9 @@ const blockShare = shareOf(FOUR);
 const wholeShare = shareOf(BLOCK);
 
 test('the atlas gives four countries a hundred and seven hexes, in the order the brief fixed', () => {
-  assert.deepEqual(FOUR.map(name => REGION_IDS[name]), [32, 33, 34, 35]);
+  // 32-35 as built, 39-42 as landed: the Ibenwood belt landed first and took 32-38, and the whole
+  // block moved seven places behind it. The same seven are added in the three lists below.
+  assert.deepEqual(FOUR.map(name => REGION_IDS[name]), [39, 40, 41, 42]);
   assert.deepEqual(SOUTHWEST_NORTH_REGIONS, FOUR);
   assert.deepEqual(SOUTHWEST_REGIONS, BLOCK, 'the module\u2019s own list is all four jobs');
   // Appended, never inserted: `world-regions.js` walks PLAYABLE_REGIONS with one seeded scatter
@@ -214,7 +216,10 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // the southern edge goes from 2398.401 to **3177.824** and the world from 45.656 hexes tall to
   // **53.450**. It is 45.70 by 53.45 now: taller than it is wide, for the first time since the
   // Ascarth Peninsula, and no direction is left that a playable country has not spent.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4360.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
+  // ...and since the Ibenwood belt landed alongside, the western edge is West Ibenwood's and not this
+  // block's: its rim at x = -4550 stands two hundred and fifty metres past Cape Heth's, so the edge is
+  // -4610.002 and the world 52.20 hexes wide. The block's own reach west is still Cape Heth's -4300.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -2167.195996001615) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   // **South again, for job 4, and job 2 predicted the number a job and a half in advance.** Trogo's
@@ -226,7 +231,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  assert.ok(Math.abs(wide - 49.70) < .01, `east to west is ${wide.toFixed(2)} hexes`);
+  // 49.70 was this block's own doing; the other two and a half hexes are West Ibenwood's (see minX above).
+  assert.ok(Math.abs(wide - 52.20) < .01, `east to west is ${wide.toFixed(2)} hexes`);
   assert.ok(Math.abs(tall - 54.316) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // **Cape Heth alone spends the west now**, and the Ganesh Desert alone spent it before: no other
   // country in eleven reaches past -3900, which is the Dinelv Highlands' own western row.
@@ -266,7 +272,11 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // rows bought four columns) and it is the reason job 3's report says a prediction about the window is
   // not a prediction about the box: this job's brief predicted the box might move south, and the box did
   // move south *and* the window moved west, which is not the same statement.
-  assert.equal(WINDOW.minQ, -50);
+  // -49 was this block's own (Cape Heth's edge at Trogo's rows) and -50 the forest belt's. -52 is
+  // neither's: it is West Ibenwood's western edge taken down to Trogo's southern rows, a corner of the
+  // box that no country stands in. The two columns it adds hold no claimed hex, and the generated
+  // survey is byte-identical either way.
+  assert.equal(WINDOW.minQ, -52);
   assert.equal(WINDOW.maxQ, 34);
   assert.equal(WINDOW.minR, 79);
   assert.equal(WINDOW.maxR, 145);
@@ -310,7 +320,7 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   for (const name of BLOCK) for (const cell of cellsOf(name)) assert.ok(land.has(`${cell.q},${cell.r}`), `(${cell.q},${cell.r}) is not land`);
 });
 
-test('the block still touches no built country outside itself, and is one island of ground', () => {
+test('the block is one island of ground, and nine hex edges of the Ibenwood now join it to the built world', () => {
   const built = new Set(PLAYABLE_REGIONS);
   const neighbours = {};
   let internal = 0, job1 = 0, job2 = 0, job3 = 0, job4 = 0, across = 0;
@@ -333,7 +343,16 @@ test('the block still touches no built country outside itself, and is one island
   // Ibenwoods are the only thing that can ever change it.** The unbuilt neighbours left on these
   // margins are Alezhor, Ibenale, the three Ibenwoods, East Pyros, the Nether Desert, Babon and the
   // Azhor Stones, and nothing in the southwest quarter itself is unbuilt any more.
-  for (const other of Object.keys(neighbours)) assert.ok(!built.has(other), `${other} is built and shares an edge with this block`);
+  //
+  // **And the forest belt landed, on 2026-10-01, from the other side of the same merge.** The paragraph
+  // above was true for all four jobs and is kept as what they built against. What is true now is that
+  // the block has a door: Navarth's northern border meets South Ibenwood on five hex edges and East
+  // Ibenwood on three, and West Pyros meets East Ibenwood on one. Nine edges, all on the north side,
+  // and every other margin is still unbuilt - East Pyros (20 edges), Alezhor (8), the Nether Desert (1).
+  // Nobody has yet walked through that door or looked at the ground on either side of it.
+  const builtOutside = Object.fromEntries(Object.entries(neighbours).filter(([other]) => built.has(other)));
+  assert.deepEqual(builtOutside, { 'South Ibenwood': 5, 'East Ibenwood': 4 },
+    'the Ibenwood is the only built country this block touches, and it touches it on nine edges');
   assert.equal(job1 / 2, 46, 'forty-six internal hex edges among job 1\u2019s four');
   assert.equal(job2 / 2, 30, 'thirty among job 2\u2019s four');
   assert.equal(job3 / 2, 8, 'eight among job 3\u2019s three, all of them Cape Heth | Dinelv');
@@ -786,7 +805,7 @@ test('the four are charted, levelled, spoken for and listed, and nothing is buil
 // ---------------------------------------------------------------------------
 
 test('the atlas gives four more countries ninety-five hexes, one terrain word and one climate code', () => {
-  assert.deepEqual(MEROSHE.map(name => REGION_IDS[name]), [36, 37, 38, 39]);
+  assert.deepEqual(MEROSHE.map(name => REGION_IDS[name]), [43, 44, 45, 46]);
   assert.deepEqual(MEROSHE_REGIONS, MEROSHE);
   for (const name of MEROSHE) assert.ok(PLAYABLE.includes(name), `${name} is in the survey`);
   const at = PLAYABLE_REGIONS.indexOf('North Meroshe Desert');
@@ -1195,7 +1214,7 @@ test('the four Meroshe are charted, levelled, spoken for and listed, and nothing
 // ---------------------------------------------------------------------------
 
 test('the atlas gives three more countries seventy-three hexes, and every one of them is a first', () => {
-  assert.deepEqual(EDGE.map(name => REGION_IDS[name]), [40, 41, 42]);
+  assert.deepEqual(EDGE.map(name => REGION_IDS[name]), [47, 48, 49]);
   assert.deepEqual(WEST_EDGE_REGIONS, EDGE);
   for (const name of EDGE) assert.ok(PLAYABLE.includes(name), `${name} is in the survey`);
   const at = PLAYABLE_REGIONS.indexOf('Cape Heth');
@@ -1711,7 +1730,7 @@ test('the three are charted, levelled, spoken for and listed, and nothing is bui
  * for; what is below is the ground, the climate, the water, the colour and the animals.
  */
 test('the atlas gives two more countries forty-seven hexes, and neither has a desert hex on it', () => {
-  assert.deepEqual(EAST.map(name => REGION_IDS[name]), [43, 44]);
+  assert.deepEqual(EAST.map(name => REGION_IDS[name]), [50, 51]);
   assert.deepEqual(EAST_EDGE_REGIONS, EAST);
   const at = PLAYABLE_REGIONS.indexOf('Marosh');
   assert.deepEqual(PLAYABLE_REGIONS.slice(at, at + 2), EAST);

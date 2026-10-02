@@ -15,11 +15,13 @@ const name = 'South Oremindi Mountains';
 const atlas = JSON.parse(readFileSync(new URL('../assets/azhora-dev-regions.json', import.meta.url), 'utf8'));
 
 test('South Oremindi appends region 37 while preserving the Mithala reservations and Ibenwood IDs', () => {
-  assert.equal(PLAYABLE_REGIONS.at(-1), name);
-  assert.equal(PLAYABLE.at(-1), name);
+  // Not `.at(-1)`: Yunethre came after it, and thirteen more after that. Its own id's place is what holds.
+  assert.equal(PLAYABLE_REGIONS[REGION_IDS[name] - 1], name);
+  assert.equal(PLAYABLE[REGION_IDS[name] - 1], name);
   assert.equal(REGION_IDS[name], 37);
   assert.deepEqual(['East', 'North', 'South', 'West', 'Central'].map(side => REGION_IDS[`${side} Ibenwood`]), [32, 33, 34, 35, 36]);
-  for (const id of [28, 29, 30, 31]) assert.ok(!Object.values(REGION_IDS).includes(id));
+  // The reservation was honoured: the four Mithala countries landed on exactly these four.
+  assert.deepEqual(['South', 'West', 'East', 'North'].map(side => REGION_IDS[`${side} Mithala`]), [28, 29, 30, 31]);
   assert.equal(new Set(Object.values(REGION_IDS)).size, Object.keys(REGION_IDS).length);
 });
 
@@ -38,7 +40,9 @@ test('South Oremindi retains all 45 authored cells and its two lake components w
     assert.ok(land.has(`${cell.q},${cell.r}`), 'owned lakes remain inland water, not sea');
     assert.ok(cell.q >= WINDOW.minQ && cell.q <= WINDOW.maxQ && cell.r >= WINDOW.minR && cell.r <= WINDOW.maxR);
   }
-  const oldBounds = { minX: -4610.001927939127, maxX: 609.9980720608719, minZ: -1301.1705922171766, maxZ: 2398.401076758503 };
+  const oldBounds = { minX: -4610.001927939127, maxX: 609.9980720608719, minZ: -2167.195996001615, maxZ: 3264.4264805429416 };
+  // North and south are North Mithala's and Trogo's since they landed; east and west are as they were.
+  // South Oremindi still spends none of the four.
   for (const key of Object.keys(oldBounds)) assert.ok(Math.abs(WORLD_BOUNDS[key] - oldBounds[key]) < 1e-8, key);
 });
 

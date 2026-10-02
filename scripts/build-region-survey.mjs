@@ -209,7 +209,7 @@ export const ENCLOSED_HEXES = Object.freeze({
  * nearest hex and past `WORLD_BOUNDS.maxX`, so it is horizon and nothing else. LAND_HEXES goes from
  * 2,078 to **2,079**, which is the smallest widening this window has ever had.
  */
-export const WINDOW = { minQ: -50, maxQ: 34, minR: 79, maxR: 145 };
+export const WINDOW = { minQ: -52, maxQ: 34, minR: 79, maxR: 145 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

@@ -177,11 +177,14 @@ test('the world grows north, and it is the biggest structural change any region 
   // southwestern countries moved it afterwards: the Ganesh Desert took the western edge from
   // -3010.002 to -3960.002 and the width from 36.20 hexes to 45.70. What this plain is held to is
   // that it spent none of it, which is what its own box being inside -2400...-950 says.
-  assert.ok(Math.abs(wide - 49.70) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
+  // ...and 52.20 since West Ibenwood took the western edge to -4610.002 when the forest belt landed
+  // alongside. Still none of it the plain's.
+  assert.ok(Math.abs(wide - 52.20) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
   // The other three edges are exactly where they were when this plain was built: it spends northing
   // and nothing else. The western one has moved twice since, and neither time for anything on this
-  // plain: -3960.002 for the Ganesh Desert and **-4360.002** for Cape Heth's one `coast` hex.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4360.001927939127) < 1e-6);
+  // plain: -3960.002 for the Ganesh Desert and **-4360.002** for Cape Heth's one `coast` hex - and a
+  // third time, to **-4610.002**, for West Ibenwood when the forest belt landed alongside.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 609.9980720608719) < 1e-6);
   // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
   // (docs/southwest-2-report.md), which the plain also spent nothing of.

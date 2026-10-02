@@ -56,7 +56,8 @@ test('the rule is the climbing rule’s shape: one region set, one field, and no
   assert.equal(UNDERGROWTH_REGIONS.length, 1, 'one forest country carries a thicket today');
   assert.ok(UNDERGROWTH_REGIONS[0].has('Trogo') && UNDERGROWTH_REGIONS[0].has(REGION_IDS.Trogo),
     'the set holds both the name and the id, as CLIMB_REGIONS does');
-  assert.equal(REGION_IDS.Trogo, 44);
+  // 44 as built, 51 as landed behind the Ibenwood belt. The rule's own literal was left at 44 for a day.
+  assert.equal(REGION_IDS.Trogo, 51);
   // Inside Trogo the rule has an opinion; nowhere else in Azhora does it have one.
   assert.equal(isThicketTerrain(walker, -2300, 2900), true);
   for (const name of Object.keys(REGION_IDS)) {
@@ -332,7 +333,7 @@ test('the rule is written to be reused, and the Ibenwoods are one row of it', ()
   // there and one field in their own world module.
   const source = readFileSync(new URL('../src/undergrowth.js', import.meta.url), 'utf8');
   assert.match(source, /const THICKETS = Object\.freeze\(\[/);
-  assert.match(source, /regions: new Set\(\[44, 'Trogo'\]\), open: trogoWay/);
+  assert.match(source, /regions: new Set\(\[51, 'Trogo'\]\), open: trogoWay/);
   assert.equal(source.includes('TROGO_GULLIES'), false, 'the rule must not know one country’s geometry');
   assert.equal(source.includes('TROGO_PATHS'), false);
   // And it owns no input, no rendering and no saved state, which is the climbing rule's contract.
