@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { createSceneryBuilder } from './scenery-builder.js';
 import { MENORA, MENORA_OUTLINE, MENORA_GATES, MENORA_BUILDINGS, MENORA_PATHS,
@@ -7,11 +8,14 @@ const WHITE='#e2e2d2', IVORY='#eee9d4', SHADE='#b9c4bd', DARK='#385052', GOLD='#
 const WOOD='#726052', PAVING='#c4c2ac', WATER='#548985', RED='#713e45';
 /** The pale frontier city is built as small merged districts: its fine masonry,
  * windows and slender tower ribs do not become individual render objects. */
-export function createMenoraScenery({parent,heightAt,colliders}) {
+export function createMenoraScenery(...args) { return finishBuild(createMenoraScenerySteps(...args)); }
+
+export function* createMenoraScenerySteps({parent,heightAt,colliders}) {
+  let buildWork = 0;
   const root=new THREE.Group();root.name='Menora — white walls at the river fork';parent.add(root);
   const metrics={buildings:0,towers:0,wallSegments:0,bridges:0,gardens:0,tents:0,batches:0,vertices:0,colliders:0};
   const push=c=>{colliders.push(c);metrics.colliders++;return c;};
-  const finish=b=>{metrics.vertices+=b.vertexCount;if(b.finish(root))metrics.batches++;};
+  const finish=function* (b) {metrics.vertices+=b.vertexCount;if((yield* b.finishSteps(root)))metrics.batches++;};
   const ground=(x,z)=>menoraDeckHeight(x,z)??heightAt(x,z);
   function collider(x,z,hx,hz,id,kind='building',y=heightAt(x,z),h=20) {push({x,z,hx,hz,id,kind,minY:y-.5,maxY:y+h});}
   function flag(b,x,y,z,tint=RED,scale=1) {
@@ -31,18 +35,18 @@ export function createMenoraScenery({parent,heightAt,colliders}) {
 
   // Paved lanes follow the sampled ground and cross streams on physical decks.
   const streets=createSceneryBuilder('Menora paving, plazas and quiet courts');
-  for(const p of MENORA_PATHS)for(let i=1;i<p.points.length;i++) {
+  for(const p of MENORA_PATHS){ if (++buildWork % 8 === 0) yield; for(let i=1;i<p.points.length;i++) { if (++buildWork % 8 === 0) yield;
     const a=p.points[i-1],c=p.points[i],dx=c.x-a.x,dz=c.z-a.z,len=Math.hypot(dx,dz);
-    streets.patch(PAVING,ground,(a.x+c.x)/2,(a.z+c.z)/2,p.width,len,Math.atan2(dx,dz),.045,Math.max(2,Math.ceil(len/4)));
-  }
-  streets.patch('#d4d1b9',ground,-2338,137,34,28,0,.06,8);
-  streets.patch('#b8b8a2',ground,-2370,152,24,13,0,.04,6);
-  streets.patch('#bfbea6',ground,-2414,60,25,13,0,.04,5);
-  finish(streets);
+    (yield* streets.patchSteps(PAVING,ground,(a.x+c.x)/2,(a.z+c.z)/2,p.width,len,Math.atan2(dx,dz),.045,Math.max(2,Math.ceil(len/4))));
+  } }
+  (yield* streets.patchSteps('#d4d1b9',ground,-2338,137,34,28,0,.06,8));
+  (yield* streets.patchSteps('#b8b8a2',ground,-2370,152,24,13,0,.04,6));
+  (yield* streets.patchSteps('#bfbea6',ground,-2414,60,25,13,0,.04,5));
+  (yield* finish(streets));
 
   // Each bridge spans the existing water. Side parapets leave a genuinely open
   // ten-metre deck, and the footbridges carry the garden stream across town.
-  for(const bridge of MENORA_BRIDGES) {
+  for(const bridge of MENORA_BRIDGES) { if (++buildWork % 8 === 0) yield;
     const b=createSceneryBuilder(bridge.name),len=bridge.end-bridge.start,small=bridge.id.includes('footbridge');
     const cx=bridge.axis==='x'?(bridge.start+bridge.end)/2:bridge.x;
     const cz=bridge.axis==='z'?(bridge.start+bridge.end)/2:bridge.z;
@@ -71,20 +75,20 @@ export function createMenoraScenery({parent,heightAt,colliders}) {
         }
       }
     });
-    for(const side of [-1,1]){
+    for(const side of [-1,1]){ if (++buildWork % 8 === 0) yield;
       const x=cx+(bridge.axis==='z'?side*(bridge.width/2-.3):railInset/2),z=cz+(bridge.axis==='x'?side*(bridge.width/2-.3):railInset/2);
       collider(x,z,bridge.axis==='x'?(len-railInset)/2:.3,bridge.axis==='z'?(len-railInset)/2:.3,`${bridge.id}-rail-${side}`,'bridge-rail',y,small?1:1.6);
     }
-    finish(b);metrics.bridges++;
+    (yield* finish(b));metrics.bridges++;
   }
 
   // Tall white curtains are stepped finely along the bank. A stream opening
   // stays open below an overhead arch instead of being silently filled in.
-  for(let e=0;e<MENORA_OUTLINE.length;e++) {
+  for(let e=0;e<MENORA_OUTLINE.length;e++) { if (++buildWork % 8 === 0) yield;
     const a=MENORA_OUTLINE[e],c=MENORA_OUTLINE[(e+1)%MENORA_OUTLINE.length],dx=c.x-a.x,dz=c.z-a.z,len=Math.hypot(dx,dz),yaw=Math.atan2(dx,dz);
     const b=createSceneryBuilder(`Menora white curtain ${e}`),steps=Math.ceil(len/3),step=len/steps;
     const gate=MENORA_GATES.find(g=>g.edge===e);
-    for(let i=0;i<steps;i++) {
+    for(let i=0;i<steps;i++) { if (++buildWork % 8 === 0) yield;
       const t=(i+.5)/steps,x=a.x+dx*t,z=a.z+dz*t;
       if(gate&&Math.hypot(x-gate.x,z-gate.z)<gate.width/2+.3)continue;
       const y=heightAt(x,z),water=menoraRiverClearance(x,z)<3;
@@ -98,9 +102,9 @@ export function createMenoraScenery({parent,heightAt,colliders}) {
       if(!water)push({x,z,r:1.6,minY:y-.5,maxY:y+19.5,kind:'city-wall',id:`menora-wall-${e}-${i}`});
       metrics.wallSegments++;
     }
-    finish(b);
+    (yield* finish(b));
   }
-  function turret(x,z,r=5.3,h=26,name='Menora curtain tower') {
+  function* turret(x,z,r=5.3,h=26,name='Menora curtain tower') {
     const b=createSceneryBuilder(name),y=heightAt(x,z);
     b.cylinder(SHADE,x,y-.5,z,r+1,h*.18);
     b.cylinder(WHITE,x,y+1,z,r,h-1);
@@ -112,12 +116,12 @@ export function createMenoraScenery({parent,heightAt,colliders}) {
     }
     b.cone('#768387',x,y+h-.1,z,r*.72,4.5);
     flag(b,x,y+h+4,z,RED,.7);
-    push({x,z,r:r+.35,minY:y-.5,maxY:y+h+5,kind:'city-tower'});finish(b);metrics.towers++;
+    push({x,z,r:r+.35,minY:y-.5,maxY:y+h+5,kind:'city-tower'});(yield* finish(b));metrics.towers++;
   }
-  for(const p of MENORA_OUTLINE)if(menoraRiverClearance(p.x,p.z)>7)turret(p.x,p.z);
-  for(const g of MENORA_GATES) {
+  for(const p of MENORA_OUTLINE){ if (++buildWork % 8 === 0) yield; if(menoraRiverClearance(p.x,p.z)>7)(yield* turret(p.x,p.z)); }
+  for(const g of MENORA_GATES) { if (++buildWork % 8 === 0) yield;
     const a=MENORA_OUTLINE[g.edge],c=MENORA_OUTLINE[(g.edge+1)%MENORA_OUTLINE.length],len=Math.hypot(c.x-a.x,c.z-a.z),dx=(c.x-a.x)/len,dz=(c.z-a.z)/len;
-    for(const side of [-1,1])turret(g.x+dx*side*11,g.z+dz*side*11,4.2,29,`${g.name} flank`);
+    for(const side of [-1,1]){ if (++buildWork % 8 === 0) yield; (yield* turret(g.x+dx*side*11,g.z+dz*side*11,4.2,29,`${g.name} flank`)); }
     const b=createSceneryBuilder(g.name),y=heightAt(g.x,g.z),yaw=Math.atan2(dx,dz);
     b.frame(g.x,y,g.z,yaw,()=>{
       b.box(WHITE,0,17,0,5.3,8,14.3);b.box(IVORY,0,21.2,0,5.7,.6,15);
@@ -125,10 +129,10 @@ export function createMenoraScenery({parent,heightAt,colliders}) {
       for(let k=-6;k<=6;k+=1.2)b.box(DARK,0,12,k,.18,3.5,.16);
       for(const side of [-1,1])flag(b,side*3,20,0,RED,1.1);
     });
-    finish(b);
+    (yield* finish(b));
   }
 
-  for(const home of MENORA_BUILDINGS) {
+  for(const home of MENORA_BUILDINGS) { if (++buildWork % 8 === 0) yield;
     const b=createSceneryBuilder(home.name),w=home.width,d=home.depth,h=home.height,y=heightAt(home.x,home.z);
     const foot=Math.min(y,...[-w/2,w/2].flatMap(dx=>[-d/2,d/2].map(dz=>heightAt(home.x+dx,home.z+dz))))-.6;
     b.frame(home.x,y,home.z,0,()=>{
@@ -196,45 +200,45 @@ export function createMenoraScenery({parent,heightAt,colliders}) {
       }
     });
     collider(home.x,home.z,w/2+.1,d/2+.1,home.id,'house',foot,h+12);
-    finish(b);metrics.buildings++;
+    (yield* finish(b));metrics.buildings++;
   }
 
   // Formal flowers and low shrubs make the sanctuary cared for without
   // inventing residents or adding unregistered decorative tree species.
   const gardens=createSceneryBuilder('Menora temple gardens and fountains');
-  for(const g of MENORA_GARDENS) {
-    gardens.patch('#758667',ground,g.x,g.z,g.width,g.depth,0,.06,6);
-    for(const sx of [-1,1])gardens.box(SHADE,g.x+sx*g.width/2,ground(g.x+sx*g.width/2,g.z)+.2,g.z,.4,.4,g.depth);
-    for(let x=g.x-g.width/2+1.5;x<g.x+g.width/2;x+=2.7)for(let z=g.z-g.depth/2+1.2;z<g.z+g.depth/2;z+=2.5) {
+  for(const g of MENORA_GARDENS) { if (++buildWork % 8 === 0) yield;
+    (yield* gardens.patchSteps('#758667',ground,g.x,g.z,g.width,g.depth,0,.06,6));
+    for(const sx of [-1,1]){ if (++buildWork % 8 === 0) yield; gardens.box(SHADE,g.x+sx*g.width/2,ground(g.x+sx*g.width/2,g.z)+.2,g.z,.4,.4,g.depth); }
+    for(let x=g.x-g.width/2+1.5;x<g.x+g.width/2;x+=2.7){ if (++buildWork % 8 === 0) yield; for(let z=g.z-g.depth/2+1.2;z<g.z+g.depth/2;z+=2.5) { if (++buildWork % 8 === 0) yield;
       const y=ground(x,z);gardens.rock('#537759',x,y+.5,z,.65,.65,.65);
-      for(let j=0;j<3;j++){const a=j*2.1;gardens.rock(j%2?'#ddc479':'#b691bc',x+Math.cos(a)*.35,y+1,z+Math.sin(a)*.35,.19,.2,.2);}
-    }
+      for(let j=0;j<3;j++){ if (++buildWork % 8 === 0) yield;const a=j*2.1;gardens.rock(j%2?'#ddc479':'#b691bc',x+Math.cos(a)*.35,y+1,z+Math.sin(a)*.35,.19,.2,.2);}
+    } }
     metrics.gardens++;
   }
-  for(const [x,z] of [[-2354,138],[-2320,61]]) {
+  for(const [x,z] of [[-2354,138],[-2320,61]]) { if (++buildWork % 8 === 0) yield;
     const y=ground(x,z);gardens.cylinder(SHADE,x,y,z,2.4,.65);gardens.cylinder(WATER,x,y+.6,z,2.08,.08);
     gardens.cylinder(IVORY,x,y+.6,z,.4,2);gardens.cone(GOLD,x,y+2.6,z,.55,.8);
     push({x,z,r:2.45,minY:y,maxY:y+3.5,kind:'fountain'});
   }
-  for(const [x,z] of [[-2328,129],[-2348,129],[-2418,150],[-2408,156],[-2354,179]]) {
-    const y=ground(x,z);gardens.box(WOOD,x,y+.55,z,2.8,.23,.7);for(const s of [-1,1])gardens.block(SHADE,x+s*.95,y,z,.35,.5,.55);
+  for(const [x,z] of [[-2328,129],[-2348,129],[-2418,150],[-2408,156],[-2354,179]]) { if (++buildWork % 8 === 0) yield;
+    const y=ground(x,z);gardens.box(WOOD,x,y+.55,z,2.8,.23,.7);for(const s of [-1,1]){ if (++buildWork % 8 === 0) yield; gardens.block(SHADE,x+s*.95,y,z,.35,.5,.55); }
   }
-  finish(gardens);
+  (yield* finish(gardens));
 
   const camp=createSceneryBuilder('The Blood Prince’s field army muster');
-  camp.patch('#b2ab86',ground,MENORA_CAMP.x,MENORA_CAMP.z,MENORA_CAMP.width,MENORA_CAMP.depth,0,.03,14);
-  for(const t of MENORA_CAMP.tents) {
+  (yield* camp.patchSteps('#b2ab86',ground,MENORA_CAMP.x,MENORA_CAMP.z,MENORA_CAMP.width,MENORA_CAMP.depth,0,.03,14));
+  for(const t of MENORA_CAMP.tents) { if (++buildWork % 8 === 0) yield;
     const y=ground(t.x,t.z);camp.tent(t.id.endsWith('2')?'#743c47':'#9a7266',t.x,y,t.z,t.width,t.depth,t.height);
-    for(const side of [-1,1])camp.beam(WOOD,[t.x,y+t.height,t.z],[t.x+side*(t.width/2+2),y+.1,t.z],.08);
+    for(const side of [-1,1]){ if (++buildWork % 8 === 0) yield; camp.beam(WOOD,[t.x,y+t.height,t.z],[t.x+side*(t.width/2+2),y+.1,t.z],.08); }
     collider(t.x,t.z,t.width/2,t.depth/2,t.id,'tent',y,t.height);metrics.tents++;
   }
-  for(const [x,z] of [[-2453,57],[-2498,63]])flag(camp,x,ground(x,z),z,'#852f3b',1.7);
-  for(let i=0;i<5;i++) {
+  for(const [x,z] of [[-2453,57],[-2498,63]]){ if (++buildWork % 8 === 0) yield; flag(camp,x,ground(x,z),z,'#852f3b',1.7); }
+  for(let i=0;i<5;i++) { if (++buildWork % 8 === 0) yield;
     const x=-2453,z=84+i*3,y=ground(x,z);
     camp.cylinder(WOOD,x,y,z,.85,1.3);camp.cylinder(DARK,x,y+.17,z,.88,.13);camp.cylinder(DARK,x,y+1.08,z,.88,.13);
     push({x,z,r:.9,minY:y,maxY:y+1.4,kind:'barrel'});
   }
-  finish(camp);
+  (yield* finish(camp));
   const mapFeatures=MENORA_BUILDINGS.map(b=>({id:b.id,name:b.name,x:b.x,z:b.z,width:b.width,depth:b.depth,kind:b.kind}));
   return {root,metrics,mapFeatures,bridges:MENORA_BRIDGES};
 }

@@ -1,9 +1,11 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import { regionalFarmlandClear } from './regional-farmland.js';
 import { AVREL_POND } from './avrel-pond.js';
 import { SYLVIA_STUDIO } from './visual-arts.js';
 import * as THREE from 'three';
 import {
-  REGION_ORDER, REGION_CELLS, REGION_BIOMES, METRES_PER_HEX, AVREL_CLEARING, CALOSS, CALOSS_BANK,
+  REGION_ORDER, REGION_IDS, REGION_CELLS, REGION_BIOMES, METRES_PER_HEX, AVREL_CLEARING, CALOSS, CALOSS_BANK,
   STORY_SITES, MAIN_ROAD, SUVAL_ROAD, FRONTIER, LUMBER_TOWN, townPoint, hexOwnerAt, journeySites, regionNpcPositions } from './region-world.js';
 import { HIDEOUT_CLEARINGS, PUETH_CLEARINGS } from './pueth-world.js';
 import { PEBLOS_CLEARINGS } from './peblos-world.js';
@@ -122,7 +124,10 @@ function cellBlocks(name, size = BLOCK_HEXES) {
   return blocks;
 }
 
-export function createRegionScenery(kit) {
+export function createRegionScenery(...args) { return finishBuild(createRegionScenerySteps(...args)); }
+
+export function* createRegionScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, mesh, box, post, pebble, rope, cottage, fence, leanTo, barrel, crate,
     groundHeight, colliders, wornPatch, dummy, color,
     wood, woodLight, darkWood, cream, rockMat, roofGeometry, cylinder, round, movingGroups } = kit;
@@ -136,7 +141,7 @@ export function createRegionScenery(kit) {
   };
   const metrics = { trees: 0, rocks: 0, grass: 0, batches: 0 };
   const broadleafTrees = [], timberTrees = [];
-  let pineTreeCount = 0;
+  let pineTreeCount = 0, broadTreeCount = 0;
 
   // -------------------------------------------------------------------------
   // Biome scatter: trees, rocks and ground cover, one instanced batch per block
@@ -171,14 +176,14 @@ export function createRegionScenery(kit) {
    */
   const tuftsPerHex = biome => Math.round((biome.tuftsPerHex ?? (biome.undergrowth === 'none' ? 34 : 26)) * WORLD_SCALE * WORLD_SCALE);
 
-  function scatterBlock(name, block, biome, parent) {
-    const trees = [], rocks = [], tufts = [];
+  function* scatterBlock(name, block, biome, parent, prepared = null, sampleOnly = false) {
+    const { trees, rocks, tufts } = prepared ?? { trees: [], rocks: [], tufts: [] };
     const dense = biome.undergrowth === 'dense';
-    for (const cell of block) {
+    if (!prepared) for (const cell of block) { if (++buildWork % 32 === 0) yield;
       // Copses in Luscia, an even canopy in Drent: seeded clusters per cell.
       const clusters = biome.treesPerHex && biome.id === 'sparse-woodland' ? 3 : 0;
       const seeds = Array.from({ length: clusters }, () => ({ x: cell.x + range(-22 * WORLD_SCALE, 22 * WORLD_SCALE), z: cell.z + range(-24 * WORLD_SCALE, 24 * WORLD_SCALE) }));
-      for (let i = 0; i < biome.treesPerHex; i++) {
+      for (let i = 0; i < biome.treesPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const anchor = clusters ? seeds[i % clusters] : cell;
         // A copse grows with the hex it stands in, so its trees keep their spacing.
         const spread = clusters ? 9 * WORLD_SCALE : METRES_PER_HEX * .48;
@@ -192,12 +197,12 @@ export function createRegionScenery(kit) {
         const noPines = biome.id === 'coastal-downs' || biome.id === 'lake-shelf';
         trees.push({ x, z, s: range(.78, 1.3), pine: !noPines && random() < (dense ? .3 : .16), h: range(7, 11.5), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < biome.rocksPerHex; i++) {
+      for (let i = 0; i < biome.rocksPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-26 * WORLD_SCALE, 26 * WORLD_SCALE), z = cell.z + range(-28 * WORLD_SCALE, 28 * WORLD_SCALE);
         if (hexOwnerAt(x, z) !== name || kit.insideVillage(x, z) || regionClear(x, z, 2) || kit.roadDistance(x, z) < 3.4) continue;
         rocks.push({ x, z, s: range(.55, biome.id === 'stone-hills' ? 3.1 : 1.3), rot: range(0, 6.28) });
       }
-      for (let i = 0; i < tuftsPerHex(biome); i++) {
+      for (let i = 0; i < tuftsPerHex(biome); i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-27 * WORLD_SCALE, 27 * WORLD_SCALE), z = cell.z + range(-30 * WORLD_SCALE, 30 * WORLD_SCALE);
         if (hexOwnerAt(x, z) !== name || kit.insideVillage(x, z) || kit.roadDistance(x, z) < 2.1) continue;
         // Grass grows on any ground above the tideline, which in the Lake Lands includes the bed of a lake.
@@ -206,32 +211,42 @@ export function createRegionScenery(kit) {
         tufts.push({ x, z, s: range(.7, 1.7), rot: range(0, 6.28) });
       }
     }
+    if (sampleOnly) {
+      // Sampling stores no meshes or colliders. Skip precisely the decorative
+      // random draws that rendering would consume, keeping the next block's
+      // original stream and stable tree ids regardless of travel priority.
+      const drawSeed = seed, pines = trees.filter(tree => tree.pine).length;
+      const broad = trees.length - pines, draws = pines * 9 + broad * 15 + rocks.length * 5 + tufts.length * 3;
+      for (let i = 0; i < draws; i++) { if (++buildWork % 32 === 0) yield; random(); }
+      return { trees, rocks, tufts, seed: drawSeed, pines, broad };
+    }
+    if (prepared) { seed = prepared.seed; pineTreeCount = prepared.pineOffset; broadTreeCount = prepared.broadOffset; }
     if (trees.length) {
       const broad = trees.filter(tree => !tree.pine), pines = trees.filter(tree => tree.pine);
       const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, trees.length);
       const canopies = new THREE.InstancedMesh(canopyGeometry, leafMaterial, Math.max(1, broad.length * 3));
       const cones = new THREE.InstancedMesh(coneGeometry, leafMaterial, Math.max(1, pines.length * 3));
       let broadIndex = 0, pineIndex = 0;
-      trees.forEach((tree, index) => {
+      yield* forEachBuild(trees, function* (tree, index) {
         const y = groundHeight(tree.x, tree.z), height = tree.h * tree.s;
         dummy.position.set(tree.x, y + height * .41, tree.z);
         dummy.rotation.set(0, tree.rot, 0); dummy.scale.set(tree.s, height * .82, tree.s); dummy.updateMatrix();
         trunks.setMatrixAt(index, dummy.matrix);
         const parts = [{mesh:trunks,index}];
-        const timber = { ...forestTimber(tree.pine), id: tree.pine ? `country-pine-${pineTreeCount++}` : `country-oak-${broadleafTrees.length}`, x: tree.x, z: tree.z, y,
+        const timber = { ...forestTimber(tree.pine), id: tree.pine ? `country-pine-${pineTreeCount++}` : `country-oak-${broadTreeCount++}`, x: tree.x, z: tree.z, y,
           height, radius: .38 * tree.s, trunkHeight: height * .82, trunkTopRadius: .21 * tree.s,
           axis: [0, 1, 0], base: { x: tree.x, y, z: tree.z }, region: name };
         timberTrees.push(timber);
         if (!tree.pine) broadleafTrees.push(timber);
         const collider = { x: tree.x, z: tree.z, r: .52 * tree.s, kind: 'region-tree', id: timber.id, species: timber.species, woodKind: timber.woodKind }; colliders.push(collider);
-        if (tree.pine) for (let c = 0; c < 3; c++) {
+        if (tree.pine) for (let c = 0; c < 3; c++) { if (++buildWork % 32 === 0) yield;
           dummy.position.set(tree.x, y + height * (.48 + c * .19), tree.z);
           dummy.rotation.set(0, tree.rot + c * .35, 0);
           dummy.scale.set(height * (.29 - c * .051), height * .49, height * (.29 - c * .051)); dummy.updateMatrix();
           cones.setMatrixAt(pineIndex, dummy.matrix);
           parts.push({mesh:cones,index:pineIndex});
           cones.setColorAt(pineIndex++, color.setHSL(range(.25, .31), range(.28, .40), range(.26, .38)));
-        } else for (let c = 0; c < 3; c++) {
+        } else for (let c = 0; c < 3; c++) { if (++buildWork % 32 === 0) yield;
           const a = tree.rot + c * 2.1, spread = c === 2 ? 0 : height * .15;
           dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (c === 2 ? .95 : .78) + Math.sin(c * 3) * .18, tree.z + Math.cos(a) * spread);
           dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
@@ -243,7 +258,7 @@ export function createRegionScenery(kit) {
         registerWorldTree(colliders, timber, parts, collider);
       });
       canopies.count = broadIndex; cones.count = pineIndex;
-      for (const batch of [trunks, canopies, cones]) {
+      for (const batch of [trunks, canopies, cones]) { if (++buildWork % 32 === 0) yield;
         if (!batch.count) continue;
         batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); parent.add(batch); metrics.batches++;
       }
@@ -251,7 +266,7 @@ export function createRegionScenery(kit) {
     }
     if (rocks.length) {
       const batch = new THREE.InstancedMesh(round, stoneMaterial, rocks.length);
-      rocks.forEach((rock, index) => {
+      yield* forEachBuild(rocks, function* (rock, index) {
         const y = groundHeight(rock.x, rock.z);
         dummy.position.set(rock.x, y + rock.s * .28, rock.z);
         dummy.rotation.set(range(-.16, .16), rock.rot, range(-.16, .16));
@@ -265,7 +280,7 @@ export function createRegionScenery(kit) {
     }
     if (tufts.length) {
       const batch = new THREE.InstancedMesh(grassGeometry, grassMaterial, tufts.length);
-      tufts.forEach((tuft, index) => {
+      yield* forEachBuild(tufts, function* (tuft, index) {
         dummy.position.set(tuft.x, groundHeight(tuft.x, tuft.z) + .02, tuft.z);
         dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
         batch.setMatrixAt(index, dummy.matrix);
@@ -282,16 +297,16 @@ export function createRegionScenery(kit) {
   const luscia = district('Luscia');
   const riverVertices = [], riverIndices = [];
   const riverSamples = [];
-  for (let i = 1; i < CALOSS.points.length; i++) {
+  for (let i = 1; i < CALOSS.points.length; i++) { if (++buildWork % 32 === 0) yield;
     const a = CALOSS.points[i - 1], b = CALOSS.points[i];
     const length = Math.hypot(b.x - a.x, b.z - a.z), steps = Math.max(1, Math.round(length / 5));
-    for (let step = i === 1 ? 0 : 1; step <= steps; step++) {
+    for (let step = i === 1 ? 0 : 1; step <= steps; step++) { if (++buildWork % 32 === 0) yield;
       const t = step / steps;
       riverSamples.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t,
         nx: -(b.z - a.z) / length, nz: (b.x - a.x) / length });
     }
   }
-  riverSamples.forEach((sample, index) => {
+  yield* forEachBuild(riverSamples, function* (sample, index) {
     const y = calossSurface(sample.x, sample.z), half = CALOSS.halfWidth;
     riverVertices.push(sample.x - sample.nx * half, y, sample.z - sample.nz * half,
       sample.x + sample.nx * half, y, sample.z + sample.nz * half);
@@ -344,7 +359,7 @@ export function createRegionScenery(kit) {
    */
   const BREAK = { from: .6, to: 6.6 };
   const broken = along => along >= BREAK.from && along <= BREAK.to;
-  for (let along = -HALF_SPAN; along <= HALF_SPAN; along += .7) {
+  for (let along = -HALF_SPAN; along <= HALF_SPAN; along += .7) { if (++buildWork % 32 === 0) yield;
     if (broken(along)) continue;
     box(woodLight, 0, deckY, along, 5.1, .18, .64, bridge);
   }
@@ -355,10 +370,10 @@ export function createRegionScenery(kit) {
     box(darkWood, side * 2.55, deckY - .4, middle, .25, .5, length, parent);
     box(wood, side * 2.6, deckY + .71, middle, .13, .13, length, parent);
   };
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     spanTimber(bridge, -HALF_SPAN, BREAK.from, side);
     spanTimber(bridge, BREAK.to, HALF_SPAN, side);
-    for (let along = -HALF_SPAN; along <= HALF_SPAN; along += 4) {
+    for (let along = -HALF_SPAN; along <= HALF_SPAN; along += 4) { if (++buildWork % 32 === 0) yield;
       if (!broken(along)) post(wood, side * 2.6, deckY + .17, along, .12, 1.6, bridge);
     }
     // Thin rails: a line of small colliders, because the deck runs at an angle
@@ -368,7 +383,7 @@ export function createRegionScenery(kit) {
     // traveler to wander onto and be trapped on. Over the banks the deck is a
     // step off ordinary ground and needs no rail: a wall there would only pen a
     // traveler who walked round the end of it.
-    for (let along = -HALF_SPAN; along <= HALF_SPAN; along += .6) {
+    for (let along = -HALF_SPAN; along <= HALF_SPAN; along += .6) { if (++buildWork % 32 === 0) yield;
       const spot = bridgePoint(along, side * 2.8);
       if (kit.riverDistance(spot.x, spot.z) > CALOSS.halfWidth) continue;
       colliders.push({ x: spot.x, z: spot.z, r: .35, kind: 'bridge-rail' });
@@ -378,12 +393,12 @@ export function createRegionScenery(kit) {
   repairedDeck.name = 'Caloss repaired western deck';
   luscia.add(repairedDeck); movingGroups.add(repairedDeck);
   repairedDeck.position.copy(bridge.position); repairedDeck.rotation.y = roadHeading;
-  for (let along = -HALF_SPAN; along <= HALF_SPAN; along += .7) {
+  for (let along = -HALF_SPAN; along <= HALF_SPAN; along += .7) { if (++buildWork % 32 === 0) yield;
     if (broken(along)) box(woodLight, 0, deckY, along, 5.1, .18, .64, repairedDeck);
   }
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     spanTimber(repairedDeck, BREAK.from, BREAK.to, side);
-    for (let along = -HALF_SPAN; along <= HALF_SPAN; along += 4) {
+    for (let along = -HALF_SPAN; along <= HALF_SPAN; along += 4) { if (++buildWork % 32 === 0) yield;
       if (broken(along)) post(wood, side * 2.6, deckY + .17, along, .12, 1.6, repairedDeck);
     }
   }
@@ -402,14 +417,14 @@ export function createRegionScenery(kit) {
   splinterGeometry.setIndex([0, 1, 2, 3, 5, 4, 0, 3, 4, 0, 4, 1, 1, 4, 5, 1, 5, 2, 2, 5, 3, 2, 3, 0]);
   splinterGeometry.computeVertexNormals();
   const snappedWood = material('#c59a66');
-  for (const [lip, direction] of [[BREAK.from, 1], [BREAK.to, -1]]) {
-    for (let i = 0; i < 7; i++) {
+  for (const [lip, direction] of [[BREAK.from, 1], [BREAK.to, -1]]) { if (++buildWork % 32 === 0) yield;
+    for (let i = 0; i < 7; i++) { if (++buildWork % 32 === 0) yield;
       const shard = mesh(splinterGeometry, snappedWood, -2.1 + i * .7, deckY - .03,
         lip - direction * .23, 1, 1, .3 + ((i * 3) % 5) * .1, brokenCord);
       shard.rotation.y = direction < 0 ? Math.PI : 0;
       shard.rotation.x = direction * (.12 + (i % 3) * .16);
     }
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const fallen = box(darkWood, side * 2.55, deckY - .66, lip + direction * .52,
         .28, .35, 1.45, brokenCord);
       fallen.rotation.x = direction * .58;
@@ -420,18 +435,18 @@ export function createRegionScenery(kit) {
   }
   // A conspicuous low warning cord stops at the same near lip as the collider.
   // The repair marker is still reachable from the sound planks before it.
-  for (const side of [-1, 1]) post(wood, side * 2.45, deckY + .05, BREAK.from - .25, .1, 1.05, brokenCord);
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, side * 2.45, deckY + .05, BREAK.from - .25, .1, 1.05, brokenCord); }
   rope([new THREE.Vector3(-2.45, deckY + .9, BREAK.from), new THREE.Vector3(0, deckY + .62, BREAK.from),
     new THREE.Vector3(2.45, deckY + .9, BREAK.from)], .055, material('#d6b86e'), brokenCord);
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     const warning = box(material('#b36e3b'), side * 1.8, deckY + .53, BREAK.from, .3, .47, .035, brokenCord);
     warning.rotation.z = side * .12;
   }
   // **The break closes the whole lane**, not one side of it: across the deck's full width and out
   // to the rails, so there is no edge of plank to sidle along and no corner to be caught on.
   const damagedColliders = [];
-  for (let along = BREAK.from; along <= BREAK.to; along += .8) {
-    for (const across of [-1.9, -.7, .5, 1.7, 2.7]) {
+  for (let along = BREAK.from; along <= BREAK.to; along += .8) { if (++buildWork % 32 === 0) yield;
+    for (const across of [-1.9, -.7, .5, 1.7, 2.7]) { if (++buildWork % 32 === 0) yield;
       const spot = bridgePoint(along, across);
       damagedColliders.push({ x: spot.x, z: spot.z, r: .7, kind: 'bridge-damage' });
     }
@@ -449,15 +464,15 @@ export function createRegionScenery(kit) {
   // Water blocks the channel everywhere but the bridge lane. Small, dense
   // blockers near the crossing keep the lane exactly as wide as the deck; the
   // rails above close the strip between the deck's edge and where they resume.
-  for (let i = 1; i < riverSamples.length; i++) {
+  for (let i = 1; i < riverSamples.length; i++) { if (++buildWork % 32 === 0) yield;
     const a = riverSamples[i - 1], b = riverSamples[i];
     const length = Math.hypot(b.x - a.x, b.z - a.z);
     const close = Math.min(Math.hypot(a.x - crossing.x, a.z - crossing.z), Math.hypot(b.x - crossing.x, b.z - crossing.z)) < 36;
     const step = close ? 1.5 : 4, offsets = close ? [-6.3, -4.5, -2.7, -.9, .9, 2.7, 4.5, 6.3] : [-4.2, 0, 4.2];
     const radius = close ? 1.3 : 4.0, count = Math.max(1, Math.round(length / step));
-    for (let k = 0; k < count; k++) {
+    for (let k = 0; k < count; k++) { if (++buildWork % 32 === 0) yield;
       const t = k / count, x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t;
-      for (const offset of offsets) {
+      for (const offset of offsets) { if (++buildWork % 32 === 0) yield;
         let px = x + a.nx * offset, pz = z + a.nz * offset;
         // A blocker that would reach into the lane is pushed out until its edge
         // sits on the lane's edge, rather than dropped. Dropping it left a strip
@@ -478,7 +493,7 @@ export function createRegionScenery(kit) {
   }
 
   // Reeds, bank stones and the reedcutters' camp on the Luscia side.
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 150; i++) { if (++buildWork % 32 === 0) yield;
     const sample = riverSamples[Math.floor(random() * riverSamples.length)];
     const side = random() < .5 ? -1 : 1, offset = CALOSS.halfWidth + range(.6, 4.2);
     const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
@@ -491,21 +506,21 @@ export function createRegionScenery(kit) {
   const reedCrate = at(-376, 112); crate(reedCrate.x, reedCrate.z, .78, groundHeight(reedCrate.x, reedCrate.z), luscia);
   barrel(...xz(-368, 111), .8, luscia);
   leanTo(...xz(-362, 98), '#7e9780', -.7, luscia);
-  for (const { x, z } of [at(-386, 108), at(-330, 118), at(-318, 90)]) {
+  for (const { x, z } of [at(-386, 108), at(-330, 118), at(-318, 90)]) { if (++buildWork % 32 === 0) yield;
     const y = groundHeight(x, z);
     post(wood, x - 1.5, y + 1.25, z, .085, 2.5, luscia); post(wood, x + 1.5, y + 1.25, z, .085, 2.5, luscia);
     box(wood, x, y + 2.3, z, 3.2, .11, .13, luscia);
-    for (let i = 0; i < 10; i++) post(material('#b19c60'), x - 1.3 + i * .29, y + 1.35, z, .04, 1.8, luscia);
+    for (let i = 0; i < 10; i++) { if (++buildWork % 32 === 0) yield; post(material('#b19c60'), x - 1.3 + i * .29, y + 1.35, z, .04, 1.8, luscia); }
   }
   // The marked fishing bank, upstream of the bridge.
   const bank = CALOSS_BANK.spot, stool = { x: bank.x + 1.9, z: bank.z + 1.4 };
   const stoolY = groundHeight(stool.x, stool.z);
   box(woodLight, stool.x, stoolY + .47, stool.z, .7, .12, .58, luscia);
-  for (const dx of [-.25, .25]) for (const dz of [-.2, .2]) post(wood, stool.x + dx, stoolY + .22, stool.z + dz, .055, .44, luscia);
+  for (const dx of [-.25, .25]) { if (++buildWork % 32 === 0) yield; for (const dz of [-.2, .2]) { if (++buildWork % 32 === 0) yield; post(wood, stool.x + dx, stoolY + .22, stool.z + dz, .055, .44, luscia); } }
   colliders.push({ x: stool.x, z: stool.z, r: .43, kind: 'fishing-stool' });
   const rest = { x: bank.x - 1.2, z: bank.z - 1.0 }, restY = groundHeight(rest.x, rest.z);
   post(wood, rest.x, restY + .5, rest.z, .055, 1, luscia);
-  for (const side of [-1, 1]) { const fork = post(woodLight, rest.x + side * .12, restY + 1.0, rest.z, .035, .35, luscia); fork.rotation.z = -side * .6; }
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; const fork = post(woodLight, rest.x + side * .12, restY + 1.0, rest.z, .035, .35, luscia); fork.rotation.z = -side * .6; }
   wornPatch(bank.x, bank.z, 1.25, '#afa883');
 
   // -------------------------------------------------------------------------
@@ -521,15 +536,15 @@ export function createRegionScenery(kit) {
   // stand where the army's ground was (the user, 23 September 2026): measured 28 m and 30 m off
   // the road, on ground flat to 1.3 and 2.0 metres.
   for (const [{ x: fx, z: fz }, width, depth] of [[at(-262, 58), 22, 20], [at(-206, 56), 18, 16], [at(-268, 12), 18, 18],
-    [at(-238, -6), 18, 16], [at(-216, -8), 18, 16]]) {
+    [at(-238, -6), 18, 16], [at(-216, -8), 18, 16]]) { if (++buildWork % 32 === 0) yield;
     wornPatch(fx, fz, width * .6, '#9f8d57', depth / width);
-    for (let x = -width / 2; x < width / 2; x += 2.4) for (let z = -depth / 2; z < depth / 2; z += 1.6) {
+    for (let x = -width / 2; x < width / 2; x += 2.4) { if (++buildWork % 32 === 0) yield; for (let z = -depth / 2; z < depth / 2; z += 1.6) { if (++buildWork % 32 === 0) yield;
       const px = fx + x + .6, pz = fz + z, y = groundHeight(px, pz);
       post(material('#bfa860'), px, y + .35, pz, .04, .7, drent);
       const ear = pebble(material('#c8b66d'), px, y + .78, pz, .14, .27, .11, drent); ear.rotation.z = .12;
-    }
+    } }
     fence(fx, fz + depth / 2 + 1, width + 2, 0, drent);
-    for (const sx of [-1, 1]) {
+    for (const sx of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       const hx = fx + sx * (width / 2 + 2);
       const hay = mesh(cylinder, material('#bba266'), hx, groundHeight(hx, fz) + .8, fz, .82, 1.3, .82, drent);
       hay.rotation.z = Math.PI / 2;
@@ -544,11 +559,11 @@ export function createRegionScenery(kit) {
   millSails.name = 'Clearing mill sails';
   millSails.position.set(mill.x, millY + 7.3, mill.z + 2.75);
   drent.add(millSails); movingGroups.add(millSails);
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
     const sail = new THREE.Group(); sail.rotation.z = i * Math.PI / 2; millSails.add(sail);
     box(wood, 0, 2.8, 0, .16, 5.6, .15, sail);
     box(material('#d3c69e'), .48, 3.5, .03, .95, 3.2, .04, sail);
-    for (let r = 2; r <= 5; r += .75) box(woodLight, .43, r, .07, 1.12, .055, .065, sail);
+    for (let r = 2; r <= 5; r += .75) { if (++buildWork % 32 === 0) yield; box(woodLight, .43, r, .07, 1.12, .055, .065, sail); }
   }
   pebble(darkWood, 0, 0, .04, .35, .35, .2, millSails);
   // The courier's cart lay tumbled here, with three army parcels spilled out of it, until the
@@ -566,25 +581,25 @@ export function createRegionScenery(kit) {
     marlCart.position.set(marlSpot.x, groundHeight(marlSpot.x, marlSpot.z) + .75, marlSpot.z);
     marlCart.rotation.y = Math.atan2(toll.frame.dir.x, toll.frame.dir.z); drent.add(marlCart);
     box(woodLight, 0, 0, 0, 1.9, .18, 2.6, marlCart);
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
       box(wood, side * .93, .38, 0, .11, .76, 2.6, marlCart);
       const wheel = mesh(new THREE.TorusGeometry(.68, .11, 5, 12), darkWood, side * 1.14, -.08, .1, 1, 1, 1, marlCart);
       wheel.rotation.y = Math.PI / 2;
-      for (let k = 0; k < 4; k++) { const spoke = box(wood, side * 1.14, -.08, .1, .09, .09, 1.3, marlCart); spoke.rotation.x = k * Math.PI / 4; }
+      for (let k = 0; k < 4; k++) { if (++buildWork % 32 === 0) yield; const spoke = box(wood, side * 1.14, -.08, .1, .09, .09, 1.3, marlCart); spoke.rotation.x = k * Math.PI / 4; }
       // The shafts, tipped down to the ground the way a cart is left standing.
       box(wood, side * .55, -.42, 1.9, .1, .12, 2.2, marlCart);
     }
     // The load: shell marl, which is what a field wants and what a geologist reads.
     const marl = material('#cfc7b4');
     for (const [mx, my, mz, r] of [[0, .3, -.35, .52], [-.32, .24, .35, .4], [.36, .22, .55, .34]])
-      pebble(marl, mx, my, mz, r, r * .62, r * .9, marlCart);
+      { if (++buildWork % 32 === 0) yield; pebble(marl, mx, my, mz, r, r * .62, r * .9, marlCart); }
     colliders.push({ x: marlSpot.x, z: marlSpot.z, r: 1.5, kind: 'marl-cart' });
   }
   // Luscia: the shrine, the relay, the field at the Lauvel and a burned hamlet
   // -------------------------------------------------------------------------
   const shrine = at(-374, 134), shrineY = groundHeight(shrine.x, shrine.z);
   wornPatch(shrine.x, shrine.z, 5.2, '#b1ae96');
-  for (const side of [-1, 1]) box(material('#b0afa0'), shrine.x + side * 1.5, shrineY + 1.05, shrine.z, .5, 2.1, .6, luscia);
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(material('#b0afa0'), shrine.x + side * 1.5, shrineY + 1.05, shrine.z, .5, 2.1, .6, luscia); }
   box(material('#a6a99a'), shrine.x, shrineY + 2.3, shrine.z, 3.8, .45, .8, luscia);
   box(material('#919688'), shrine.x, shrineY + .18, shrine.z, 4.2, .36, 1.8, luscia);
   const basin = post(material('#96a89c'), shrine.x, shrineY + .6, shrine.z + .9, .52, .5, luscia);
@@ -596,7 +611,7 @@ export function createRegionScenery(kit) {
   // The Lauvel: broken carts, a fallen banner, a burial line and an army picket.
   const field = STORY_SITES.lauvelField;
   wornPatch(field.x, field.z, 22, '#9c9a6e', 1.1);
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
     const angle = i * 1.7 + .4, x = field.x + Math.sin(angle) * (7 + i * 3.3), z = field.z + Math.cos(angle) * (6 + i * 3.1);
     if (kit.roadDistance(x, z) < 5) continue;
     const y = groundHeight(x, z), wreck = new THREE.Group();
@@ -607,7 +622,7 @@ export function createRegionScenery(kit) {
     box(wood, -1.1, .5, 0, .12, .8, 2.9, wreck);
     colliders.push({ x, z, r: 1.7, kind: 'lauvel-wreck' });
   }
-  for (let i = 0; i < 11; i++) {
+  for (let i = 0; i < 11; i++) { if (++buildWork % 32 === 0) yield;
     const x = field.x - 14 + i * 2.6, z = field.z + 13 + Math.sin(i * .9) * 1.4, y = groundHeight(x, z);
     pebble(material('#9aa08f'), x, y + .16, z, .34, .3, .26, luscia);
     const marker = box(darkWood, x, y + .52, z, .1, .78, .1, luscia); marker.rotation.z = (i % 3 - 1) * .07;
@@ -616,10 +631,10 @@ export function createRegionScenery(kit) {
   bannerPole.rotation.z = .7;
   const banner = box(material('#5d6f86'), field.x + 5.4, groundHeight(field.x + 4, field.z - 8) + .3, field.z - 7.4, 1.5, .06, .9, luscia);
   banner.name = 'Fallen rebel banner';
-  for (const [dx, dz] of [[-16, -6], [-14, 8]]) {
+  for (const [dx, dz] of [[-16, -6], [-14, 8]]) { if (++buildWork % 32 === 0) yield;
     const x = field.x + dx, z = field.z + dz, y = groundHeight(x, z);
     if (kit.roadDistance(x, z) < 5) continue;
-    for (const sx of [-1, 1]) post(wood, x + sx * 1.4, y + .9, z, .08, 1.8, luscia);
+    for (const sx of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, x + sx * 1.4, y + .9, z, .08, 1.8, luscia); }
     mesh(roofGeometry(3.4, 2.8, .8), material('#9d9377'), x, y + 1.8, z, 1, 1, 1, luscia);
     colliders.push({ x, z, r: 1.6, kind: 'legion-picket' });
   }
@@ -634,7 +649,7 @@ export function createRegionScenery(kit) {
   const faceRoad = b => Math.atan2(-Math.sign(b) * LUMBER_TOWN.across.x, -Math.sign(b) * LUMBER_TOWN.across.z);
   wornPatch(square.x, square.z, 15, '#a89b78', 1);
   for (const [a, b, radius] of [[-16, 6, 7], [4, 17, 9], [10, 20, 6], [8, -8, 6]])
-    { const spot = townPoint(a, b); wornPatch(spot.x, spot.z, radius, '#a3987a', 1); }
+    { if (++buildWork % 32 === 0) yield; const spot = townPoint(a, b); wornPatch(spot.x, spot.z, radius, '#a3987a', 1); }
   // Ten buildings: the inn, five houses, the town store, the relay post, the
   // sawmill shed and the log store above the sawpits.
   for (const [a, b, width, depth, height, roof, wall] of [
@@ -645,28 +660,28 @@ export function createRegionScenery(kit) {
     [15, 9, 5.8, 5.2, 3.0, '#6d7568', '#ccc3a5'],
     [20, -9, 6.0, 4.8, 3.0, '#737a6c', '#c8c0a3'],
     [-4, -12, 5.4, 4.4, 2.8, '#6a7165', '#c4bd9f'],   // the town store
-  ]) {
+  ]) { if (++buildWork % 32 === 0) yield;
     const spot = townPoint(a, b);
     cottage(spot.x, spot.z, width, depth, height, roof, wall, faceRoad(b) + (a % 2 ? .08 : -.06), luscia);
   }
   // The well on the square: a stone ring, a frame and a bucket.
   const well = townPoint(-2, 5), wellY = groundHeight(well.x, well.z);
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 8; i++) { if (++buildWork % 32 === 0) yield;
     const angle = i / 8 * Math.PI * 2;
     box(rockMat, well.x + Math.sin(angle) * .95, wellY + .45, well.z + Math.cos(angle) * .95, .5, .9, .5, luscia);
   }
-  for (const side of [-1, 1]) post(wood, well.x + LUMBER_TOWN.across.x * side * 1.1, wellY + 1.5, well.z + LUMBER_TOWN.across.z * side * 1.1, .1, 2.2, luscia);
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, well.x + LUMBER_TOWN.across.x * side * 1.1, wellY + 1.5, well.z + LUMBER_TOWN.across.z * side * 1.1, .1, 2.2, luscia); }
   box(woodLight, well.x, wellY + 2.6, well.z, 2.6, .16, .5, luscia).rotation.y = roadAngle;
   barrel(well.x + 1.4, well.z + 1.2, .8, luscia, groundHeight(well.x + 1.4, well.z + 1.2));
   colliders.push({ x: well.x, z: well.z, r: 1.4, kind: 'town-well' });
   // Three market stalls: posts, a canvas roof and a counter.
-  for (const [a, b, tint] of [[3, 7, '#b8a582'], [7, 5, '#a9b0a0'], [-5, 7, '#c0ab83']]) {
+  for (const [a, b, tint] of [[3, 7, '#b8a582'], [7, 5, '#a9b0a0'], [-5, 7, '#c0ab83']]) { if (++buildWork % 32 === 0) yield;
     const spot = townPoint(a, b), y = groundHeight(spot.x, spot.z);
     const stall = new THREE.Group(); stall.position.set(spot.x, y, spot.z); stall.rotation.y = roadAngle; luscia.add(stall);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) post(wood, sx * 1.5, 1.1, sz * 1.0, .09, 2.2, stall);
+    for (const sx of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (const sz of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, sx * 1.5, 1.1, sz * 1.0, .09, 2.2, stall); } }
     mesh(roofGeometry(3.6, 2.6, .7), material(tint), 0, 2.2, 0, 1, 1, 1, stall);
     box(woodLight, 0, .85, .9, 3.0, .14, .7, stall);
-    for (let i = 0; i < 3; i++) box(material(i % 2 ? '#8e7f5f' : '#a08a63'), -.8 + i * .8, 1.02, .9, .55, .2, .5, stall);
+    for (let i = 0; i < 3; i++) { if (++buildWork % 32 === 0) yield; box(material(i % 2 ? '#8e7f5f' : '#a08a63'), -.8 + i * .8, 1.02, .9, .55, .2, .5, stall); }
     colliders.push({ x: spot.x, z: spot.z, r: 1.5, kind: 'market-stall' });
   }
   // The army's relay post on the corner of the square.
@@ -683,15 +698,15 @@ export function createRegionScenery(kit) {
   // The timber yard: an open sawmill shed, the sawpit and stacked logs.
   const shed = townPoint(4, 17), shedY = groundHeight(shed.x, shed.z);
   const shedGroup = new THREE.Group(); shedGroup.position.set(shed.x, shedY, shed.z); shedGroup.rotation.y = roadAngle; luscia.add(shedGroup);
-  for (const sx of [-1, 0, 1]) for (const sz of [-1, 1]) post(wood, sx * 4.2, 1.6, sz * 3.2, .16, 3.2, shedGroup);
+  for (const sx of [-1, 0, 1]) { if (++buildWork % 32 === 0) yield; for (const sz of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, sx * 4.2, 1.6, sz * 3.2, .16, 3.2, shedGroup); } }
   mesh(roofGeometry(10.4, 8.0, 2.2), material('#8d8168'), 0, 3.2, 0, 1, 1, 1, shedGroup);
   box(woodLight, 0, .95, -2.6, 8.6, .2, 1.1, shedGroup);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1])
-    colliders.push({ x: shed.x + (sx * 4.2 * Math.cos(roadAngle) + sz * 3.2 * Math.sin(roadAngle)),
-      z: shed.z - (sx * 4.2 * Math.sin(roadAngle)) + sz * 3.2 * Math.cos(roadAngle), r: .5, kind: 'sawmill-post' });
-  for (const [a, b, count] of [[10, 16, 4], [-2, 18, 3], [8, 21, 3]]) {
+  for (const sx of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (const sz of [-1, 1])
+    { if (++buildWork % 32 === 0) yield; colliders.push({ x: shed.x + (sx * 4.2 * Math.cos(roadAngle) + sz * 3.2 * Math.sin(roadAngle)),
+      z: shed.z - (sx * 4.2 * Math.sin(roadAngle)) + sz * 3.2 * Math.cos(roadAngle), r: .5, kind: 'sawmill-post' }); } }
+  for (const [a, b, count] of [[10, 16, 4], [-2, 18, 3], [8, 21, 3]]) { if (++buildWork % 32 === 0) yield;
     const stack = townPoint(a, b), stackY = groundHeight(stack.x, stack.z);
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++) { if (++buildWork % 32 === 0) yield;
       const log = mesh(cylinder, darkWood, stack.x, stackY + .42 + Math.floor(i / 2) * .72, stack.z + (i % 2 ? .8 : -.05), .36, 4.6, .36, luscia);
       log.rotation.set(0, roadAngle, Math.PI / 2);
     }
@@ -699,9 +714,9 @@ export function createRegionScenery(kit) {
   }
   const sawpit = townPoint(2, 12);
   wornPatch(sawpit.x, sawpit.z, 3.2, '#8d8163', 1);
-  for (const side of [-1, 1]) post(wood, sawpit.x + LUMBER_TOWN.along.x * side * 1.8, groundHeight(sawpit.x, sawpit.z) + .85, sawpit.z + LUMBER_TOWN.along.z * side * 1.8, .12, 1.7, luscia);
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, sawpit.x + LUMBER_TOWN.along.x * side * 1.8, groundHeight(sawpit.x, sawpit.z) + .85, sawpit.z + LUMBER_TOWN.along.z * side * 1.8, .12, 1.7, luscia); }
   // Fences and a paddock behind the eastern houses.
-  for (const [a, b, length] of [[-24, 13, 11], [-9, 16, 9], [18, -13, 8]]) {
+  for (const [a, b, length] of [[-24, 13, 11], [-9, 16, 9], [18, -13, 8]]) { if (++buildWork % 32 === 0) yield;
     const spot = townPoint(a, b);
     fence(spot.x, spot.z, length, roadAngle + Math.PI / 2, luscia);
   }
@@ -709,10 +724,10 @@ export function createRegionScenery(kit) {
   // A burned hamlet: four roofless walls and a standing chimney.
   const hamlet = STORY_SITES.burnedHamlet;
   wornPatch(hamlet.x, hamlet.z, 11, '#8a7f63', 1);
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
     const angle = i * 1.6, x = hamlet.x + Math.sin(angle) * 6.5, z = hamlet.z + Math.cos(angle) * 6.0, y = groundHeight(x, z);
     if (kit.roadDistance(x, z) < 6) continue;
-    for (const side of [-1, 1]) box(material('#6f6656'), x + side * 2.2, y + .95, z, .4, 1.9, 4.2, luscia);
+    for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; box(material('#6f6656'), x + side * 2.2, y + .95, z, .4, 1.9, 4.2, luscia); }
     box(material('#6f6656'), x, y + .7, z - 2.1, 4.4, 1.4, .4, luscia);
     colliders.push({ x: x + 2.2, z, hx: .4, hz: 2.2, kind: 'hamlet-wall' });
     colliders.push({ x: x - 2.2, z, hx: .4, hz: 2.2, kind: 'hamlet-wall' });
@@ -730,10 +745,10 @@ export function createRegionScenery(kit) {
   // `moros-works.js` to the shared fortification standard; the horse line stays here with its horses.
   // The army's horse line, where the traveler's horse is claimed.
   const hitch = STORY_SITES.horseHitch, hitchY = groundHeight(hitch.x, hitch.z);
-  for (let i = 0; i <= 6; i++) post(wood, hitch.x + i * 2.4, hitchY + .65, hitch.z, .1, 1.3, moros);
+  for (let i = 0; i <= 6; i++) { if (++buildWork % 32 === 0) yield; post(wood, hitch.x + i * 2.4, hitchY + .65, hitch.z, .1, 1.3, moros); }
   box(woodLight, hitch.x + 7.2, hitchY + 1.15, hitch.z, 16.8, .12, .12, moros);
   colliders.push({ x: hitch.x + 7.2, z: hitch.z, hx: 8.4, hz: .22, kind: 'horse-line' });
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 4; i++) { if (++buildWork % 32 === 0) yield;
     const x = hitch.x + 1.8 + i * 3.6, z = hitch.z - 1.6, y = groundHeight(x, z);
     if (kit.roadDistance(x, z) < 4) continue;
     // The horses themselves are animated models placed by the game; only their footprint lives here.
@@ -747,7 +762,7 @@ export function createRegionScenery(kit) {
   const border = STORY_SITES.suvalBorderPost, borderY = groundHeight(border.x, border.z);
   const borderNormal = roadNormal(border.x, border.z);
   wornPatch(border.x, border.z, 8, '#aaa182');
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     const x = border.x + borderNormal.x * side * 5.6, z = border.z + borderNormal.z * side * 5.6, y = groundHeight(x, z);
     box(material('#9aa08f'), x, y + .7, z, 1.0, 1.4, 1.0, suval);
     post(wood, x, y + 1.9, z, .14, 1.2, suval);
@@ -761,7 +776,7 @@ export function createRegionScenery(kit) {
   crate(border.x - 9, border.z + 7, .8, groundHeight(border.x - 9, border.z + 7), suval);
   const waystation = STORY_SITES.waystation, ruinY = groundHeight(waystation.x, waystation.z);
   wornPatch(waystation.x, waystation.z, 4.4, '#b1ae96');
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield;
     const x = waystation.x + side * 2.4;
     box(material('#b0afa0'), x, ruinY + 1.65, waystation.z, .95, 3.3, 1.2, suval);
     box(material('#919688'), x, ruinY + .25, waystation.z, 1.45, .5, 1.55, suval);
@@ -769,12 +784,12 @@ export function createRegionScenery(kit) {
     const arch = box(material('#a6a99a'), waystation.x + side * 1.15, ruinY + 3.47, waystation.z, 2.9, .65, 1.2, suval);
     arch.rotation.z = -side * .14;
   }
-  for (let i = 0; i < 5; i++) box(material('#a9aa99'), waystation.x - 1.6 + i * .8, ruinY + .055, waystation.z + 2.0, .65, .11, 1.0, suval);
+  for (let i = 0; i < 5; i++) { if (++buildWork % 32 === 0) yield; box(material('#a9aa99'), waystation.x - 1.6 + i * .8, ruinY + .055, waystation.z + 2.0, .65, .11, 1.0, suval); }
   // Elod itself — its gate, its walls, the Threshold and its harbour — is built
   // by src/east-suval-world.js now; the three cottages and the bare lintel that
   // stood here were the placeholder for it.
   const lookout = STORY_SITES.banditLookout, lookoutY = groundHeight(lookout.x, lookout.z);
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 7; i++) { if (++buildWork % 32 === 0) yield;
     const angle = i / 7 * Math.PI * 2, x = lookout.x + Math.sin(angle) * 4.2, z = lookout.z + Math.cos(angle) * 4.0;
     const y = groundHeight(x, z), size = 1.1 + (i % 3) * .45;
     const stone = pebble(material(i % 2 ? '#8b9187' : '#b2afa0'), x, y + size * .4, z, size, size * .8, size * .9, suval);
@@ -786,16 +801,53 @@ export function createRegionScenery(kit) {
   // -------------------------------------------------------------------------
   // Biome scatter last, so every yard and camp above is already reserved
   // -------------------------------------------------------------------------
-  for (const name of REGION_ORDER) {
-    const biome = REGION_BIOMES[name], parent = district(name);
-    if (biome.ownScatter) continue;   // Pueth scatters its own woods (src/pueth-scenery.js)
-    // A region may ask for bigger scatter blocks: Elagos is the largest of them, and
-    // its stands of lake timber read the same from two blocks as from six.
-    for (const block of cellBlocks(name, biome.blockHexes)) scatterBlock(name, block, biome, parent);
+  const deferredScenery = [];
+  const chosenRegions = kit.regionIds ?? (kit.fastInitialRegion == null ? null : [kit.fastInitialRegion]);
+  if (chosenRegions == null) {
+    for (const name of REGION_ORDER) { if (++buildWork % 32 === 0) yield;
+      const biome = REGION_BIOMES[name], parent = district(name);
+      if (biome.ownScatter) continue;
+      for (const block of cellBlocks(name, biome.blockHexes)) {
+        if (++buildWork % 32 === 0) yield;
+        yield* scatterBlock(name, block, biome, parent);
+      }
+    }
+  } else {
+    const initial = new Set([...chosenRegions].map(value => typeof value === 'number' ? value : REGION_IDS[value]));
+    const names = REGION_ORDER.filter(name => !REGION_BIOMES[name].ownScatter);
+    const preparedRegions = new Map(), completed = new Set();
+    let preparedThrough = -1, sampleSeed = seed, samplePines = 0, sampleBroad = 0;
+    // Reserve lightweight district groups in the original scene order.
+    for (const name of REGION_ORDER) district(name);
+    function* prepareThrough(index) {
+      while (preparedThrough < index) {
+        const name = names[++preparedThrough], biome = REGION_BIOMES[name], records = [];
+        seed = sampleSeed;
+        for (const block of cellBlocks(name, biome.blockHexes)) {
+          const record = yield* scatterBlock(name, block, biome, null, null, true);
+          record.pineOffset = samplePines; record.broadOffset = sampleBroad;
+          samplePines += record.pines; sampleBroad += record.broad; records.push(record);
+        }
+        sampleSeed = seed; preparedRegions.set(name, records);
+      }
+    }
+    function* buildScatterRegion(name, parentOverride = null) {
+      if (completed.has(name)) return;
+      yield* prepareThrough(names.indexOf(name));
+      for (const record of preparedRegions.get(name)) {
+        yield* scatterBlock(name, null, REGION_BIOMES[name], parentOverride ?? district(name), record);
+      }
+      preparedRegions.delete(name); completed.add(name);
+    }
+    for (const name of names) {
+      if (initial.has(REGION_IDS[name])) yield* buildScatterRegion(name);
+      else deferredScenery.push({ id: `regional-scatter-${REGION_IDS[name]}`, name: `${name} woodland and ground cover`,
+        regions: [REGION_IDS[name]], steps: buildScatterRegion(name), createSteps: parentOverride => buildScatterRegion(name, parentOverride) });
+    }
   }
 
   // The frontier: the end of the built world, west of the army camp.
-  for (let z = FRONTIER.z - 170; z <= FRONTIER.z + 170; z += 8) {
+  for (let z = FRONTIER.z - 170; z <= FRONTIER.z + 170; z += 8) { if (++buildWork % 32 === 0) yield;
     const y = groundHeight(FRONTIER.barrierX, z);
     post(wood, FRONTIER.barrierX, y + .64, z, .085, 1.28, moros);
     if (z + 8 <= FRONTIER.z + 170) rope([
@@ -808,7 +860,7 @@ export function createRegionScenery(kit) {
   wornPatch(FRONTIER.x, FRONTIER.z, 7, '#aca990');
 
   return {
-    metrics, riverMaterial, riverSamples, districts, broadleafTrees, timberTrees,
+    metrics, riverMaterial, riverSamples, districts, broadleafTrees, timberTrees, deferredScenery,
     bridge: { deckY, heading: roadHeading, halfSpan: HALF_SPAN, axis: bridgeAxis, side: bridgeSide, crossing },
     repairedDeck, brokenCord, damagedColliders, millSails, lauvelField,
     bank: { spot: bank, surfaceY: calossSurface(bank.x, bank.z), castPoint: { x: CALOSS_BANK.cast.x, y: calossSurface(CALOSS_BANK.cast.x, CALOSS_BANK.cast.z) + .035, z: CALOSS_BANK.cast.z } },

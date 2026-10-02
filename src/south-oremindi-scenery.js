@@ -1,3 +1,5 @@
+import { forEachBuild } from './build-each.js';
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { treeGroundingOffset } from './tree-grounding.js';
@@ -21,7 +23,10 @@ const tones = {
 
 /** One stable, batched alpine landscape. No artificial cliff collision hulls:
  * the visible heightfield supplies all ridges, passes and climbing surfaces. */
-export function createSouthOremindiScenery({ parent, heightAt, renderedGroundHeight = heightAt, colliders, terrainRoot, isReserved = () => false }) {
+export function createSouthOremindiScenery(...args) { return finishBuild(createSouthOremindiScenerySteps(...args)); }
+
+export function* createSouthOremindiScenerySteps({ parent, heightAt, renderedGroundHeight = heightAt, colliders, terrainRoot, isReserved = () => false }) {
+  let buildWork = 0;
   const root = new THREE.Group(); root.name = 'South Oremindi alpine country'; parent.add(root);
   const material = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .98, flatShading: true });
   const batches = new Map(), pendingTrees = [], dummy = new THREE.Object3D(), color = new THREE.Color();
@@ -66,7 +71,7 @@ export function createSouthOremindiScenery({ parent, heightAt, renderedGroundHei
   const b = SOUTH_OREMINDI_BOUNDS;
   // Wind and altitude open the canopy gradually; groves occupy sheltered lower
   // slopes rather than forming a uniform band parallel to the map's hexes.
-  for (let z0 = b.minZ + 4; z0 < b.maxZ; z0 += 11) for (let x0 = b.minX + 4; x0 < b.maxX; x0 += 11) {
+  for (let z0 = b.minZ + 4; z0 < b.maxZ; z0 += 11) { if (++buildWork % 32 === 0) yield; for (let x0 = b.minX + 4; x0 < b.maxX; x0 += 11) { if (++buildWork % 32 === 0) yield;
     const x = x0 + range(-4.2, 4.2), z = z0 + range(-4.2, 4.2);
     if (!southOremindiOwns(x, z) || southOremindiWaterAt(x, z) !== null) continue;
     const f = southOremindiFeatures(x, z);
@@ -77,9 +82,9 @@ export function createSouthOremindiScenery({ parent, heightAt, renderedGroundHei
     const edge = f.height > f.treeline - 45, v = random();
     const species = edge ? (v < .42 ? 'common-juniper' : 'stone-pine') : v < .47 ? 'silver-fir' : v < .74 ? 'silver-birch' : 'stone-pine';
     tree(x, z, species, species === 'common-juniper' ? range(2.1, 4.2) : range(9, 17) * (edge ? .64 : 1));
-  }
+  } }
 
-  for (let z0 = b.minZ + 2; z0 < b.maxZ; z0 += 8) for (let x0 = b.minX + 2; x0 < b.maxX; x0 += 8) {
+  for (let z0 = b.minZ + 2; z0 < b.maxZ; z0 += 8) { if (++buildWork % 32 === 0) yield; for (let x0 = b.minX + 2; x0 < b.maxX; x0 += 8) { if (++buildWork % 32 === 0) yield;
     const x = x0 + range(-3, 3), z = z0 + range(-3, 3);
     if (!southOremindiOwns(x, z) || southOremindiWaterAt(x, z) !== null) continue;
     const f = southOremindiFeatures(x, z), y = renderedGroundHeight(x, z);
@@ -97,7 +102,7 @@ export function createSouthOremindiScenery({ parent, heightAt, renderedGroundHei
     }
     if (f.grade > .9 || f.snow > .7 || random() > .64) continue;
     const grass = f.height < f.treeline ? '#75895f' : '#999f7f';
-    for (let j = 0; j < 3; j++) {
+    for (let j = 0; j < 3; j++) { if (++buildWork % 32 === 0) yield;
       const px = x + range(-.5, .5), pz = z + range(-.5, .5), h = range(.17, .55);
       part('blade', grass, px, renderedGroundHeight(px, pz) + h / 2 - .025, pz, .1, h, .065, range(0, 6), range(-.25, .25));
     }
@@ -107,13 +112,13 @@ export function createSouthOremindiScenery({ parent, heightAt, renderedGroundHei
     } else if (f.height < f.treeline && random() < .14) {
       part('crown', '#6e805f', x, y + .25, z, range(.4, .9), .4, .55, range(0, 6)); metrics.shrubs++;
     }
-  }
-  for (const [key, batch] of batches) {
+  } }
+  for (const [key, batch] of batches) { if (++buildWork % 32 === 0) yield;
     batch.pieces = batch.pieces.filter(p => !p.omitted && (p.tree || !isReserved(p.x, p.z, p.radius)));
     if (!batch.pieces.length) continue;
     const mesh = new THREE.InstancedMesh(geometry[batch.type], material, batch.pieces.length);
     mesh.name = `South Oremindi ${key}`; mesh.castShadow = batch.type !== 'blade'; mesh.receiveShadow = true;
-    batch.pieces.forEach((p, index) => { mesh.setMatrixAt(index, p.matrix); mesh.setColorAt(index, color.set(p.tint)); p.handle = { mesh, index }; });
+    yield* forEachBuild(batch.pieces, function* (p, index) { mesh.setMatrixAt(index, p.matrix); mesh.setColorAt(index, color.set(p.tint)); p.handle = { mesh, index }; });
     mesh.computeBoundingBox(); mesh.computeBoundingSphere(); root.add(mesh);
   }
   const trees = pendingTrees.map(t => registerWorldTree(colliders, t.descriptor, t.pieces.map(p => p.handle), t.collider));

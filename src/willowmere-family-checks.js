@@ -50,6 +50,9 @@ export async function runWillowmereFamilyChecks(h) {
   await visit('harbormaster'); await h.close(); await h.frames(2);
   check(h.getState().questStage >= 2, 'The normal Jojo introduction opens the optional fishing teacher');
 
+  // Inspect their full appearances after approaching Willowmere. At the
+  // harbour they may correctly be distant stand-ins with no detailed rig yet.
+  await visit(RYAN.id); await h.close(); await h.frames(3);
   for (const definition of [RYAN, BARRETT]) {
     const npc = h.npcById.get(definition.id), group = npc?.actor?.group;
     check(!!group?.visible, `${definition.name} has a visible character at Willowmere`);

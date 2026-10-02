@@ -1,3 +1,4 @@
+import {validateBaldroSnapshot} from './baldro-state.js';
 import { validateIbenwoodDefenseSnapshot } from './ibenwood-defense.js';
 import { IBENWOOD_BOUNDARY } from './ibenwood-boundary.js';
 import { validateBarrettGeography } from './barrett-geography.js';
@@ -294,6 +295,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.murder !== undefined && !validateMurderQuestSnapshot(data.murder)) return failed('The saved case in Cobble is invalid.');
     if (data.cat !== undefined && !validateCatQuestSnapshot(data.cat)) return failed('The saved errand for Liz is invalid.');
     if (!validBatmanSave(data, stock)) return failed('The saved vigilante quest, carried flight, or bounty proof is inconsistent.');
+    if (!validateBaldroSnapshot(data.baldro)) return failed('The saved dwarf gate permissions are invalid.');
     if (!validateFrontierRaids(data.frontierRaids)) return failed('The saved frontier patrol is invalid.');
     if (!validateKaylaSnapshot(data.kayla)) return failed('The saved honey rounds are invalid.');
     if (!validateKaylaRaceSnapshot(data.kaylaRace)) return failed('The saved race for Kayla is invalid.');
@@ -436,6 +438,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (Object.hasOwn(data, 'brandy')) result.brandy = { ...data.brandy };
     if (data.jesseCarriage) result.jesseCarriage = JSON.parse(JSON.stringify(data.jesseCarriage));
     if (data.brandyHome) result.brandyHome = JSON.parse(JSON.stringify(data.brandyHome));
+    if(data.baldro)result.baldro=JSON.parse(JSON.stringify(data.baldro));
     if (data.frontierRaids) result.frontierRaids=JSON.parse(JSON.stringify(data.frontierRaids));
     if (data.ibenwoodDefense) result.ibenwoodDefense = JSON.parse(JSON.stringify(data.ibenwoodDefense));
     if (Object.hasOwn(data, 'salt')) result.salt = { ...data.salt };

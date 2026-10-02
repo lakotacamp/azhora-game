@@ -34,6 +34,7 @@ function cleanTestProfile() {
 }
 // The console wrapper may be hidden, but the GUI process must receive normal
 // startup visibility. Hiding Electron suppresses its first native game window.
-const child = spawn(electron, [root, ...process.argv.slice(2)], { cwd: root, env, windowsHide: smoke, stdio: 'inherit' });
+const entry = process.argv.includes('--startup-profile') ? path.join(root,'scripts/profile-startup.cjs') : root;
+const child = spawn(electron, [entry, ...process.argv.slice(2)], { cwd: root, env, windowsHide: smoke, stdio: 'inherit' });
 child.on('error', error => { cleanTestProfile();console.error(error.message); process.exit(1); });
 child.on('exit', code => { cleanTestProfile();process.exit(code ?? 1); });

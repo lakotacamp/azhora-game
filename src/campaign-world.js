@@ -25,6 +25,10 @@ export const LEVELS = Object.freeze([
 ]);
 
 export const FACTIONS = Object.freeze({
+  'west-baldro': Object.freeze({ id: 'west-baldro', name: 'West Baldro city kingdom', short: 'West Hold', seat: 'West Hold', tint: '#9b8c70', independent: true, confederation: 'Dwarfland',
+    note: 'One of the two surviving independent dwarf city kingdoms. Dwarfland is their confederation; each kingdom governs its own mountain city and grants entry separately. West Hold is a descriptive label, not a canonical city name.' }),
+  'east-baldro': Object.freeze({ id: 'east-baldro', name: 'East Baldro city kingdom', short: 'East Hold', seat: 'East Hold', tint: '#779078', independent: true, confederation: 'Dwarfland',
+    note: 'The other surviving independent dwarf city kingdom, confederated with the West in Dwarfland. Thriving halls coexist with abandoned quarters. East Hold is a descriptive label, not a canonical city name.' }),
   empire: Object.freeze({ id: 'empire', name: 'Ambroni Empire', short: 'Empire', seat: 'Ambron', army: 'the Ambroni army', tint: '#c9a24a',
     note: 'The lake-country monarchy that has ruled most of eastern Azhora for generations and is now losing its grip on every frontier.' }),
   coalition: Object.freeze({ id: 'coalition', name: 'Republican Coalition', short: 'Coalition', seat: 'Izolveth', army: 'the Coalition army', tint: '#5f8fd6',
@@ -68,6 +72,8 @@ export const THREATS = Object.freeze({
 
 /** Named places that the campaign refers to. Lore names are cited where they exist. */
 export const SETTLEMENTS = Object.freeze({
+  westBaldroHold: Object.freeze({ id: 'west-baldro-hold', name: 'West Hold', region: 'West Baldro Mountains', nameStatus: 'descriptive', note: 'The western independent dwarf city kingdom of Dwarfland, with working halls and sealed old districts beneath the exposed ridges. The canonical city name is unassigned.' }),
+  eastBaldroHold: Object.freeze({ id: 'east-baldro-hold', name: 'East Hold', region: 'East Baldro Mountains', nameStatus: 'descriptive', note: 'The eastern independent dwarf city kingdom of Dwarfland, with a thriving inner city and abandoned quarters beneath the sheltered mountains. The canonical city name is unassigned.' }),
   tidehaven: Object.freeze({ id: 'tidehaven', name: 'Tidehaven', region: 'Drent', note: 'The sheltered landing on the Stills where the mercenary steps ashore.' }),
   ambron: Object.freeze({ id: 'ambron', name: 'Ambron', region: 'Elagos', note: 'The imperial capital on the Lake Ela narrows: walled, causewayed, the empire’s economic heart (lore: elagos.md).' }),
   menora: Object.freeze({ id: 'menora', name: 'Menora', region: 'Isareos', note: 'The fortified holy city at the Isa-Lizeem fork, home of the great temple and the Sorcerers’ Guild. Cedric still claims the crown from here; Wilhelm and his army are present.' }),
@@ -91,6 +97,10 @@ const region = (id, level, control, climate, threats, role, extra = {}) =>
  * the game. `provisional` marks levels inferred from terrain rather than stated.
  */
 export const REGION_DESIGN = Object.freeze([
+  region('West Baldro Mountains', 3, 'west-baldro', 'Cold dry-winter hills and exposed joined mountain ridges; Dwc with one Dfc mountain hex and no permanent ice.', [],
+    'The western surviving independent dwarf city kingdom, confederated in Dwarfland. Travelers earn this kingdom\'s permission at its own gate; short, broad dwarves occupy thriving halls beside abandoned districts.', { provisional: true, confederation: 'Dwarfland', settlements: ['west-baldro-hold'] }),
+  region('East Baldro Mountains', 3, 'east-baldro', 'Cold dry-winter mountains, sheltered wooded hills, rock basins and mapped border water; Dwc throughout.', [],
+    'The eastern surviving independent dwarf city kingdom, confederated in Dwarfland while keeping its own sovereignty. Its gate grants entry separately; working halls and deserted old quarters share the mountain.', { provisional: true, confederation: 'Dwarfland', settlements: ['east-baldro-hold'] }),
   // Ambroni heartland
   region('Drent', 0, 'empire', 'Wet, wooded coastal slope; river valleys under forested upland; the Stills and the Pebbles offshore.', ['bramble-goblin'],
     'Starting region. The most stable province outside Elagos. One scripted bramble-goblin raid; nothing else attacks.', { story: 'prologue', settlements: ['tidehaven', 'torn-mouth'] }),

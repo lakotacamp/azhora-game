@@ -48,7 +48,7 @@ Results, screenshots and `failure.png` / `failure.json` land in `tests/artifacts
 
 - `main.cjs` (Electron main): serves the project folder over a loopback HTTP server on a random port, opens one sandboxed `BrowserWindow` with context isolation, and owns the single save slot through `scripts/checkpoint-store.cjs` (validated JSON, atomic temp-file rename, 64 KB cap). It also parses every `--smoke-test --<x>-checks` / `--<x>-review` flag and decides which `window.__AZHORA__` entry point to call.
 - `preload.cjs` exposes `window.azhoraRoadStorage`, a `localStorage`-shaped API backed by synchronous IPC. The renderer never sees the filesystem.
-- `index.html` loads `src/main.js` as a module with an import map that resolves `three` to `vendor/three.module.js`.
+- `index.html` loads the lightweight `src/boot.js` mode chooser, then dynamically imports `src/main.js`. Full is the ten-second default; experimental Fast builds Drent before deferring other region scenery. The import map resolves `three` to `vendor/three.module.js`.
 
 ### Renderer composition
 

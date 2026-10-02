@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 /**
  * Cut a road ribbon against the triangles of the displayed terrain grid.
  * Sampling the smooth height field only at a ribbon's edges lets a coarse
@@ -24,13 +25,17 @@ function cellAt(axis, value) {
   while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (axis[mid] <= value) lo = mid; else hi = mid; }
   return Math.min(axis.length - 2, Math.max(0, lo));
 }
-export function drapeRoadOnTerrain(positions, indices, xs, zs, terrainPositions, offset = .045, strengthAt = null) {
+export function drapeRoadOnTerrain(...args) { return finishBuild(drapeRoadOnTerrainSteps(...args)); }
+
+export function* drapeRoadOnTerrainSteps(positions, indices, xs, zs, terrainPositions, offset = .045, strengthAt = null) {
+  let buildWork = 0;
   const output = [], outputIndices = [], columns = xs.length;
   const terrainVertex = (i, j) => {
     const at = (j * columns + i) * 3;
     return { x: terrainPositions[at], y: terrainPositions[at + 1], z: terrainPositions[at + 2] };
   };
   for (let at = 0; at < indices.length; at += 3) {
+    if (++buildWork % 32 === 0) yield;
     const road = indices.slice(at, at + 3).map(index => ({ x: positions[index * 3], y: positions[index * 3 + 1], z: positions[index * 3 + 2] }));
     if (strengthAt && road.every(p => strengthAt(p.x, p.z) <= 0)) {
       const base = output.length / 3;
@@ -40,6 +45,7 @@ export function drapeRoadOnTerrain(positions, indices, xs, zs, terrainPositions,
     const minX = Math.min(...road.map(p => p.x)), maxX = Math.max(...road.map(p => p.x));
     const minZ = Math.min(...road.map(p => p.z)), maxZ = Math.max(...road.map(p => p.z));
     for (let j = cellAt(zs, minZ); j <= cellAt(zs, maxZ); j++) for (let i = cellAt(xs, minX); i <= cellAt(xs, maxX); i++) {
+      if (++buildWork % 32 === 0) yield;
       const a = terrainVertex(i, j), b = terrainVertex(i + 1, j), c = terrainVertex(i, j + 1), d = terrainVertex(i + 1, j + 1);
       // Terrain indices use a-c-b and b-c-d; clipping needs the positive XZ winding.
       for (const ground of [[a, b, c], [b, d, c]]) {

@@ -25,6 +25,10 @@ const ibenwoodDefense = ' Persistent rangers defend the signed inner belt around
 
 /** Region by region. `detail` is what exists; `work` is what it still wants. */
 export const BUILD_STATUS = Object.freeze({
+  'West Baldro Mountains': status('early', 'The exposed mountain range and cold hill approaches, connected natural paths, wildlife, the West Hold gate and an accessible dwarf city interior with working halls beside abandoned districts. Three exterior cairn repairs earn entry to this independent kingdom of the Dwarfland confederation.',
+    'Canonical city names, royalty, civilian communities, trade and the broader regional quests remain unassigned or unfinished.'),
+  'East Baldro Mountains': status('early', 'Sheltered wooded mountains, rock basins, mapped border water, connected paths and wildlife, the East Hold gate and an accessible dwarf city interior with thriving halls and deserted quarters. Three drainage repairs earn entry separately from the western kingdom.',
+    'Canonical city names, royalty, civilian communities, trade and the broader regional quests remain unassigned or unfinished.'),
   Yunethre: status('early', 'Open steppe and wooded hollows surround a mixed lakeside free town and Bane’s tent-and-wagon camp. Human, elven and centaur peacekeepers explain the town’s neutrality; centaur warriors defend their plains, and a persistent patrol raids northwestern Isareos and returns to camp. Fifty resident animals occupy the countryside.', 'Trade, civilian stories, faction permissions and the wider centaur campaign remain unfinished.'),
   'South Oremindi Mountains': status('environment', 'Environment preview: the authored hill approaches and high mountains, two alpine lake basins, tundra and permanent ice, with grounded regional vegetation and wildlife.',
     'Sevron, other settlements, the sage and the campaign convergence chapter remain unbuilt. No civilian population, interiors, trade, pass infrastructure or regional quests.'),

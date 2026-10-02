@@ -25,7 +25,15 @@
   <section id="skill-intro" hidden role="status" aria-live="polite" aria-label="New skill learned"></section>
   <canvas id="world" aria-label="A 3D world. Walk with W A S D. Q moves forward-left and E moves forward-right. Right-drag to turn the camera. F to speak. Left-click or R to swing. C to dodge."></canvas>
   <div id="vignette"></div><div id="damage-flash" aria-hidden="true"></div><div id="crossing" class="hidden" aria-hidden="true"><p id="crossing-caption"></p></div><div id="cutscene" class="hidden" aria-live="polite"><div class="cutscene-caption"><span class="eyebrow" id="cutscene-eyebrow"></span><p id="cutscene-text"></p></div><button id="skip-cutscene" class="secondary">Skip cutscene <kbd>Esc</kbd></button></div>
-  <div id="loading" aria-label="Azhora is loading"><img class="opening-oak" src="./assets/azhora-oak-mark.png" alt="Azhora — an oak tree with acorns and a squirrel at its roots"></div>
+  <div id="loading" aria-label="Azhora is loading"><img class="opening-oak" src="./assets/azhora-oak-mark.png" alt="Azhora — an oak tree with acorns and a squirrel at its roots">
+    <section id="loading-choice" hidden role="dialog" aria-modal="true" aria-labelledby="loading-choice-title" aria-describedby="loading-countdown">
+      <h2 id="loading-choice-title">Choose how to begin</h2>
+      <button id="loading-full" type="button"><strong>Full mode <span>Default</span></strong><small>Prepare the whole world before you play.</small></button>
+      <button id="loading-fast" type="button"><strong>Fast mode <span>Experimental</span></strong><small>Start in your region. Nearby regions load first as you play, then the rest of the world.</small></button>
+      <p id="loading-countdown" role="timer" aria-live="off">Full mode starts automatically in 10 seconds.</p>
+    </section>
+    <p id="loading-status" role="status" aria-live="polite">Opening Azhora</p>
+  </div>
   <header id="location"><div class="eyebrow">AZHORA <span> / </span> <span id="region-kicker">THE FIRST SHORE</span></div><h1 id="region-name">Drent</h1><p id="area-name">Tidehaven Landing</p><p id="world-calendar" title="Active play time; menus pause the calendar.">1 April 980 &middot; Spring &middot; 06:00</p></header>
   <div id="compass" aria-label="Compass"><span>W</span><span>NW</span><b id="heading">N</b><span>NE</span><span>E</span><i>◆</i></div>
   <div id="map-wrap"><button id="open-trail-map" aria-label="Open map" title="Map &middot; M"><canvas id="minimap" width="300" height="300" aria-label="Nearby trails, north up"></canvas></button><span class="map-north">N</span><span class="map-caption" id="map-caption">DRENT</span><div id="trail-pin" class="hidden game-only"><button id="trail-pin-open" title="Review marked place &middot; M"><span id="trail-pin-label"></span></button><button id="trail-pin-clear" aria-label="Clear marked place" title="Clear marked place">&times;</button></div></div>
@@ -72,6 +80,7 @@
         <div class="test-quest-grid" aria-labelledby="test-silver-heading">
           <button id="test-silver-drent-autoplay" class="test-quest-card test-silver-card"><span class="test-card-title">Civil War in Drent <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Glun's investigation &middot; Monarchist route</span></button>
           <button id="test-silver-luscia-autoplay" class="test-quest-card test-silver-card"><span class="test-card-title">Civil War in Luscia <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">Republican introduction &middot; Stops after the briefing</span></button>
+          <button id="test-dwarf-autoplay" class="test-quest-card test-silver-card"><span class="test-card-title">Dwarfland <span aria-hidden="true">&rarr;</span></span><span class="test-card-description">A Place at the Forge &middot; Earn entry and learn Dwarven Smithing</span></button>
         </div>
         <h4 id="test-named-heading" class="test-group-heading">Named quest-givers</h4>
         <div class="test-quest-grid" aria-labelledby="test-named-heading">
@@ -106,5 +115,5 @@
     </section>
     <section id="defeat" class="hidden panel" role="dialog" aria-modal="true" aria-labelledby="defeat-title"><div class="eyebrow">YOUR JOURNEY CONTINUES</div><h2 id="defeat-title">You have fallen.</h2><p id="defeat-detail">Return to your checkpoint, or recover somewhere safe before deciding where to go next.</p><button id="defeat-restore">Return to checkpoint <span>↵</span></button><button id="defeat-saved" class="secondary">Load saved adventure</button><button id="retry" class="secondary">Return to safety</button><small id="defeat-checkpoint">You choose when to face the danger again.</small></section></div>
   <div id="fatal" class="hidden panel"><h2>The shore could not load.</h2><p id="fatal-message"></p></div>
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="./src/boot.js"></script>
 </body></html>

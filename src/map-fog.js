@@ -6,6 +6,7 @@
  * village the game opens in, is the first. Pure: no DOM, no three.
  */
 import { hexAt } from './region-world.js';
+import { BALDRO_KINGDOMS, BALDRO_PATHS, baldroRegionAt } from './baldro-world.js';
 import { FARMSTEADS } from './regional-farmland.js';
 import { WINERY } from './winery.js';
 import { CARICAS_TOWN } from './caricas-settlement.js';
@@ -28,6 +29,15 @@ const area = (id, name, region, x, z, radius, note) => Object.freeze({ id, name,
 
 /** The named ground of Azhora, as the traveler's own chart records it. */
 export const SUBREGIONS = Object.freeze([
+  ...BALDRO_KINGDOMS.flatMap(k => {
+    const side = k.id === 'west-baldro' ? 'Western' : 'Eastern';
+    const points = BALDRO_PATHS.find(p => p.id === 'baldro-saddle-traverse').points.filter(p => baldroRegionAt(p.x, p.z) === k.region);
+    const pass = points[Math.floor(points.length / 2)];
+    return [area(`${k.id}-gate`, `${k.name} Gate`, k.regionName, k.gate.x, k.gate.z, 44,
+      'The mountain gate of one of the two surviving independent dwarf city kingdoms. Dwarfland joins the two in confederation, but permission to enter is earned here separately.'),
+      area(`${k.id}-pass`, `${side} Baldro saddle`, k.regionName, pass.x, pass.z, 42,
+        'A winding natural traverse through unequal ridges and sheltered rock basins. The path joins the approaches to the two independent dwarf holds.')];
+  }),
   ...FARMSTEADS.map(farm => area(farm.id, farm.name, farm.region, farm.x, farm.z, 28, 'Worked fields, an open tool shelter and shared garden beds. Take seeds, sow, water, and return for the harvest.')),
   ...ISCARE_RUIN_SITES.map(site => area(site.id, site.name, ISCARE_REGION, site.x, site.z, 45, 'Burned, roofless stone and charred beams remain from the Blood Prince\'s passage. The islands have wildlife, but these settlements are abandoned.')),
   area('imlamdris-rebuilding', 'Imlamdris rebuilding', 'South Suval', -126, 1154, 40, 'Four small timber homes and a new building frame stand beside the razed city.'),

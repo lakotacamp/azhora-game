@@ -27,6 +27,7 @@ import { menoraGround } from './menora-city.js';
 import { caricasSettlementGround } from './caricas-settlement.js';
 import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
 import { yunethreGround, yunethreTint } from './yunethre-world.js';
+import { baldroHeight, baldroTint } from './baldro-world.js';
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const smooth = (a, b, x) => { const v = clamp((x - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
@@ -273,7 +274,8 @@ export function groundBeforeFeradom(x, z) {
   // own box; it touches nothing within a hundred metres of Gala or of the Lizeem (src/ascarth-world.js).
   // Lotharn's valleys are cut before western water; level the pass road and made places afterward.
   // Keep the Suval climbing landscape and Iscare ground, then blend Feradom's inland seam.
-  return yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))))));
+  const regional = yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))))));
+  return baldroHeight(x,z,regional);
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -320,10 +322,18 @@ const GROUND_TINTS = Object.freeze([
  */
 export const GROUND_TINT_FAMILIES = Object.freeze(GROUND_TINTS.map(family => family.id));
 
+// Tinting is synchronous; reuse scratch colours for each THREE namespace instead
+// of allocating four or more colours at every vertex of the whole-world grid.
+const tintScratch = new WeakMap();
 export function groundTint(color, x, z, THREE) {
   const mix = terrainMix(x, z), distance = landDistance(x, z);
-  const target = new THREE.Color(0, 0, 0);
-  const swatch = new THREE.Color();
+  let scratch = tintScratch.get(THREE);
+  if (!scratch) {
+    scratch = { target: new THREE.Color(), swatch: new THREE.Color(), sand: new THREE.Color('#cdb98a'), rock: new THREE.Color('#8a857a') };
+    tintScratch.set(THREE, scratch);
+  }
+  const { target, swatch, sand, rock } = scratch;
+  target.setRGB(0, 0, 0);
   let total = 0;
   // Colours by weight, so a cell whose atlas terrain refines its region's ground (Pueth's hills) is tinted as itself.
   // Gala's plains are the one ground the atlas's terrain field cannot colour: it calls the steppe and the
@@ -368,15 +378,16 @@ export function groundTint(color, x, z, THREE) {
       }
     }
   }
-  color.lerp(new THREE.Color('#cdb98a'), 1 - smooth(1, 15, distance));
+  color.lerp(sand, 1 - smooth(1, 15, distance));
   // The Ascarth cliffs are the one shore in the world that is not a beach: grass to the edge and
   // bare stone down the face (src/ascarth-world.js). Everywhere else `cliff` is null and this is the
   // same sand it has always been.
   const cliff = ascarthCliffTint(x, z, distance);
-  color.lerp(new THREE.Color('#cdb98a'), (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
-  if (cliff?.rock) color.lerp(new THREE.Color('#8a857a'), cliff.rock);
+  color.lerp(sand, (1 - smooth(1, 15, distance)) * (cliff ? cliff.sand : 1));
+  if (cliff?.rock) color.lerp(rock, cliff.rock);
   const oremindi=southOremindiTint(x,z);if(oremindi!==null)color.set(oremindi);
   const yunethre=yunethreTint(x,z);if(yunethre!==null)color.set(yunethre);
+  const baldro=baldroTint(x,z);if(baldro!==null)color.set(baldro);
   return color;
 }
 

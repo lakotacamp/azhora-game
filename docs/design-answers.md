@@ -1405,3 +1405,35 @@ and the bounded next-session task are saved in
 ### 2026-10-01: Inquest cottage authorized
 
 The user resumed with "go ahead with that cottage." Implemented the small Long Tarn cottage, named mailbox and literal blank-slate Inquest Clearlistern at the screenshot-matched shoreline clearing. The future main-quest role is still a design note only. See [the placement record](next-session-inquest-clearlistern.md) for coordinates and scope.
+
+### 2026-10-01: Sevron and the lost dwarf capital
+
+The user requested design work before implementing Dwarfland. West Oremindi will be extremely dangerous wilderness with many passes and caves. Its central hidden elven kingdom, Sevron, occupies the ruins of the greatest ancient dwarf capital. Centuries ago humans besieged that capital for years, killed the dwarf king and drowned the population by bringing the sea into the mountain, ending the kingdom and driving the dwarves from the Oremindi. Elves settled the ruined city centuries later; their small powerful kingdom remains legendary and unconfirmed to outsiders. The old dwarven name and language are deferred.
+
+The surviving Baldro dwarves remember that realm as a lost golden age. Implementation order is Baldro Dwarfland, then West Oremindi and Sevron. The [Sevron plan](sevron-west-oremindi-design.md) and [updated Dwarfland draft](dwarfland-design-draft.md) distinguish this confirmed history from proposed flood mechanics, discovery routes and social responses. No implementation is part of this request.
+
+### 2026-10-01: Baldro Dwarfland implementation authorized
+
+The user moved Baldro from planning to implementation and settled the outstanding
+choices: Dwarfland is a confederation of independent city kingdoms; only two
+survive, one in each Baldro region. Many earlier cities were destroyed by humans
+or overrun by goblins. Each surviving city has active, inhabited districts beside
+abandoned quarters. Visitors must earn entry independently at each city's gate.
+
+The first implementation uses the working labels West Hold and East Hold, real
+mountain approaches, two enclosed six-room interiors, unnamed dwarf guards and
+civic residents, and separate exterior service tasks. Restoring the western
+cairns or eastern sluices and reporting to the respective guard grants that
+kingdom's admission and 30 Construction XP once. These task rewards and the
+specific first room plans are build choices, not additional user canon. Both
+regions appear in F8 Go Anywhere. Active interior saves resume safely outside
+their entrance while preserving admission and repaired sites.
+
+The drowned West Oremindi capital remains the greatest ancient dwarf kingdom;
+its old name and language, named Baldro residents, rulers and larger stories are
+still deferred. West Oremindi and Sevron are the next phase, and are not built by
+this change. The preceding Sevron entry records the earlier design-only request;
+this later authorization supersedes that status for Baldro alone. See
+[Dwarfland implementation](dwarfland-implementation.md) for the current module map,
+controls, limits and validation, and [the updated design](dwarfland-design-draft.md)
+for the confirmed choices and proposals that remain open.

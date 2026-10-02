@@ -179,16 +179,35 @@ export function validateWoodcuttingSnapshot(data, { allowMissing = true } = {}) 
  */
 export function createWoodcutting({ skills, random = Math.random, trees: suppliedTrees = [] } = {}) {
   const state = { met: false, visits: 0, kingsAxe: false, logs: 0, sold: 0 };
-  const byId = new Map();
-  for (const source of [...suppliedTrees, ...WOODLOT_TREES]) {
-    if (!source || typeof source.id !== 'string' || !Number.isFinite(source.x) || !Number.isFinite(source.z)) continue;
-    const timber = source.species ? timberForSpecies(source.species) : timberForKind(source.woodKind ?? source.kind);
-    if (!timber) continue;
-    const recipe = TREE_KINDS[timber.woodKind];
-    byId.set(source.id, freeze({ ...source, ...timber, kind: timber.woodKind, harvestable: source.harvestable !== false && !!recipe }));
-  }
-  const catalog = freeze([...byId.values()]);
+  const byId = new Map(), pending = new Map();
   const entries = new Map(), touched = new Set(), stumps = new Set();
+  let suppliedCount = 0, catalog = freeze([]), catalogDirty = false;
+  function registerTrees(sources = []) {
+    let added = 0;
+    for (const source of sources) {
+      if (!source || typeof source.id !== 'string' || byId.has(source.id) || !Number.isFinite(source.x) || !Number.isFinite(source.z)) continue;
+      const timber = source.species ? timberForSpecies(source.species) : timberForKind(source.woodKind ?? source.kind);
+      if (!timber) continue;
+      const recipe = TREE_KINDS[timber.woodKind];
+      const tree = freeze({ ...source, ...timber, kind: timber.woodKind, harvestable: source.harvestable !== false && !!recipe });
+      byId.set(source.id, tree); added++;
+      const saved = pending.get(source.id);
+      if (saved) {
+        pending.delete(source.id);
+        if (tree.harvestable) {
+          // A changed species may have a shorter regrowth/stock allowance.
+          entries.set(source.id, { logsLeft: Math.min(saved.logsLeft, recipe.logs[1]), stump: Math.min(saved.stump, recipe.regrow) });
+          touched.add(source.id); if (saved.stump > 0) stumps.add(source.id);
+        }
+      }
+    }
+    if (added) catalogDirty = true;
+    return added;
+  }
+  function syncTrees() {
+    if (suppliedCount < suppliedTrees.length) { registerTrees(suppliedTrees.slice(suppliedCount)); suppliedCount = suppliedTrees.length; }
+  }
+  syncTrees(); registerTrees(WOODLOT_TREES);
   const roll = () => Math.max(0, Math.min(.999999999, Number(random()) || 0));
   const stock = t => { const [lo, hi] = TREE_KINDS[t.kind].logs; return lo + Math.floor(roll() * (hi - lo + 1)); };
   // Keep the established woodlot's deterministic stock sequence unchanged.
@@ -204,6 +223,7 @@ export function createWoodcutting({ skills, random = Math.random, trees: supplie
   const level = () => skills?.level?.(WOODCUTTING_SKILL) ?? 0;
 
   function canChop(id, has = () => false) {
+    syncTrees();
     const t = byId.get(id);
     if (!t) return { ok: false, reason: 'There is no tree there.' };
     const k = TREE_KINDS[t.kind];
@@ -229,8 +249,13 @@ export function createWoodcutting({ skills, random = Math.random, trees: supplie
   }
   /** Advance only felled trees. A completed regrowth removes its saved change. */
   function update(dt) {
+    syncTrees();
     const grown = [], elapsed = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     if (!elapsed) return grown;
+    for (const [id, saved] of pending) if (saved.stump > 0) {
+      saved.stump = Math.max(0, saved.stump - elapsed);
+      if (!saved.stump) pending.delete(id);
+    }
     for (const id of stumps) {
       const entry = entries.get(id);
       entry.stump = Math.max(0, entry.stump - elapsed);
@@ -240,7 +265,7 @@ export function createWoodcutting({ skills, random = Math.random, trees: supplie
     }
     return grown;
   }
-  const standing = id => byId.has(id) && !(entries.get(id)?.stump > 0);
+  const standing = id => { syncTrees(); return byId.has(id) && !(entries.get(id)?.stump > 0); };
   function meet() { const first = !state.met; state.met = true; return { first }; }
   function visit() { if (state.met) state.visits++; }
   function giveKingsAxe() { if (state.kingsAxe || level() < KINGS_AXE_LEVEL) return { ok: false }; state.kingsAxe = true; return { ok: true }; }
@@ -250,22 +275,25 @@ export function createWoodcutting({ skills, random = Math.random, trees: supplie
   }
   function sold(logs) { if (Number.isFinite(logs)) state.sold += Math.max(0, Math.floor(logs)); }
   function snapshot() {
+    syncTrees();
     return { version: WOODCUTTING_VERSION, met: state.met, visits: state.visits, kingsAxe: state.kingsAxe, logs: state.logs, sold: state.sold,
-      trees: [...touched].sort().map(id => ({ id, ...entries.get(id) })) };
+      trees: [...[...touched].map(id => ({ id, ...entries.get(id) })), ...[...pending].map(([id, saved]) => ({ id, ...saved }))].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) };
   }
   function restore(data) {
     if (!validateWoodcuttingSnapshot(data, { allowMissing: false })) return false;
-    const restored = [];
+    syncTrees();
+    const restored = [], deferred = [];
     for (const saved of data.trees ?? []) {
       const t = byId.get(saved.id);
-      // A region can be removed between drafts. Ignore its old tree, but never
-      // allow a known tree more logs or regrowth time than its own recipe.
-      if (!t?.harvestable) continue;
+      // Unloaded region IDs stay in the save until their catalog arrives.
+      if (!t) { deferred.push(saved); continue; }
+      if (!t.harvestable) continue;
       const k = TREE_KINDS[t.kind];
       if (saved.logsLeft > k.logs[1] || saved.stump > k.regrow) return false;
       restored.push(saved);
     }
-    resetTrees();
+    resetTrees(); pending.clear();
+    for (const saved of deferred) pending.set(saved.id, { logsLeft: saved.logsLeft, stump: saved.stump });
     Object.assign(state, { met: data.met, visits: data.visits, kingsAxe: data.kingsAxe, logs: data.logs, sold: data.sold });
     for (const saved of restored) {
       entries.set(saved.id, { logsLeft: saved.logsLeft, stump: saved.stump }); touched.add(saved.id);
@@ -273,7 +301,7 @@ export function createWoodcutting({ skills, random = Math.random, trees: supplie
     }
     return true;
   }
-  return { canChop, swing, update, standing, meet, visit, giveKingsAxe, offer, sold, snapshot, restore, level, catalog, tree: id => byId.get(id) ?? null,
+  return { canChop, swing, update, standing, meet, visit, giveKingsAxe, offer, sold, snapshot, restore, level, registerTrees, get catalog() { syncTrees(); if (catalogDirty) { catalog = freeze([...byId.values()]); catalogDirty = false; } return catalog; }, tree: id => { syncTrees(); return byId.get(id) ?? null; },
     get met() { return state.met; }, get visits() { return state.visits; }, get kingsAxe() { return state.kingsAxe; }, get logs() { return state.logs; } };
 }
 

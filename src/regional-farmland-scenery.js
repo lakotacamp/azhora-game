@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { createSceneryBuilder } from './scenery-builder.js';
@@ -22,7 +23,10 @@ const hash = (a, b = 0) => {
  * merged meshes per farm keep distant fields cheap and independently cullable.
  * The playable beds are intentionally bare here: farming-view owns their crops.
  */
-export function createRegionalFarmlandScenery({ root, groundHeight, colliders = [], canPlace = () => true }) {
+export function createRegionalFarmlandScenery(...args) { return finishBuild(createRegionalFarmlandScenerySteps(...args)); }
+
+export function* createRegionalFarmlandScenerySteps({ root, groundHeight, colliders = [], canPlace = () => true }) {
+  let buildWork = 0;
   const group = new THREE.Group(); group.name = 'Regional farmland'; root.add(group);
   const metrics = { farms: 0, fields: 0, grainFields: 0, vegetableFields: 0, meadows: 0,
     orchards: 0, orchardTrees: 0, gardenBeds: 0, seedStations: 0, shelters: 0,
@@ -33,32 +37,32 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
 
   // Subdivide an irregular polygon's triangles to follow local contours. Long,
   // rigid fan triangles would bridge shallow hollows and cause floating crops.
-  function groundTriangle(builder, tint, a, b, c, lift, depth = 0) {
+  function* groundTriangle(builder, tint, a, b, c, lift, depth = 0) { if (++buildWork % 32 === 0) yield;
     if (depth < 5 && Math.max(distance(a, b), distance(b, c), distance(c, a)) > 2.5) {
       const ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
-      groundTriangle(builder, tint, a, ab, ca, lift, depth + 1);
-      groundTriangle(builder, tint, ab, b, bc, lift, depth + 1);
-      groundTriangle(builder, tint, ca, bc, c, lift, depth + 1);
-      groundTriangle(builder, tint, ab, bc, ca, lift, depth + 1);
+      (yield* groundTriangle(builder, tint, a, ab, ca, lift, depth + 1));
+      (yield* groundTriangle(builder, tint, ab, b, bc, lift, depth + 1));
+      (yield* groundTriangle(builder, tint, ca, bc, c, lift, depth + 1));
+      (yield* groundTriangle(builder, tint, ab, bc, ca, lift, depth + 1));
     } else {
       const up = (b.z - a.z) * (c.x - a.x) - (b.x - a.x) * (c.z - a.z);
       builder.triangle(tint, v(a, lift), v(up >= 0 ? b : c, lift), v(up >= 0 ? c : b, lift));
     }
   }
-  function groundPolygon(builder, tint, polygon, lift = .045) {
+  function* groundPolygon(builder, tint, polygon, lift = .045) {
     const contour = polygon.map(p => new THREE.Vector2(p.x, p.z));
-    for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(contour, [])) {
-      groundTriangle(builder, tint, polygon[a], polygon[b], polygon[c], lift);
+    for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(contour, [])) { if (++buildWork % 32 === 0) yield;
+      (yield* groundTriangle(builder, tint, polygon[a], polygon[b], polygon[c], lift));
     }
   }
-  function ribbon(builder, tint, a, b, width, lift = .06) {
+  function* ribbon(builder, tint, a, b, width, lift = .06) {
     const length = distance(a, b), count = Math.max(1, Math.ceil(length / 1.3));
     if (length < .01) return;
     const nx = -(b.z - a.z) / length * width / 2, nz = (b.x - a.x) / length * width / 2;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++) { if (++buildWork % 32 === 0) yield;
       const p = mix(a, b, i / count), q = mix(a, b, (i + 1) / count);
-      groundPolygon(builder, tint, [{ x: p.x + nx, z: p.z + nz }, { x: p.x - nx, z: p.z - nz },
-        { x: q.x - nx, z: q.z - nz }, { x: q.x + nx, z: q.z + nz }], lift);
+      (yield* groundPolygon(builder, tint, [{ x: p.x + nx, z: p.z + nz }, { x: p.x - nx, z: p.z - nz },
+        { x: q.x - nx, z: q.z - nz }, { x: q.x + nx, z: q.z + nz }], lift));
     }
   }
   function cropBasis(field) {
@@ -74,22 +78,22 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
     return { x: basis.centre.x + u * basis.c - (w + bow) * basis.s,
       z: basis.centre.z + u * basis.s + (w + bow) * basis.c };
   }
-  function fieldCrops(field, plants, earth, index) {
+  function* fieldCrops(field, plants, earth, index) {
     const basis = cropBasis(field), grain = field.kind === 'grain';
     const spacing = grain ? 1.05 : 1.3, along = grain ? .76 : 1.05;
-    for (let row = -19; row <= 19; row++) {
+    for (let row = -19; row <= 19; row++) { if (++buildWork % 32 === 0) yield;
       let previous = null;
-      for (let u = -24; u <= 24; u += along) {
+      for (let u = -24; u <= 24; u += along) { if (++buildWork % 32 === 0) yield;
         const p = cropPoint(basis, u, row * spacing);
         if (!inFarmPolygon(field.polygon, p.x, p.z) || !canPlace(p, 'crop')) { previous = null; continue; }
-        if (previous) ribbon(earth, grain ? '#938759' : C.furrow, previous, p, grain ? .15 : .29, .058);
+        if (previous) (yield* ribbon(earth, grain ? '#938759' : C.furrow, previous, p, grain ? .15 : .29, .058));
         previous = p;
         const jitter = hash(p.x + index, p.z), h = (grain ? .6 : .17) + jitter * (grain ? .25 : .13);
         const py = y(p.x, p.z) + .06;
         if (grain) {
           // Three tapered, crossed blades and visible ears read as a grain stand,
           // rather than a solid cuboid hedge, from the normal walking camera.
-          for (let k = 0; k < 3; k++) {
+          for (let k = 0; k < 3; k++) { if (++buildWork % 32 === 0) yield;
             const angle = k * Math.PI / 3 + jitter, dx = Math.cos(angle) * .14, dz = Math.sin(angle) * .14;
             const tip = [p.x + dx * .4, py + h, p.z + dz * .4];
             plants.triangle(k % 2 ? C.straw : C.stem, [p.x - dx, py, p.z - dz], [p.x + dx, py, p.z + dz], tip);
@@ -98,7 +102,7 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
           plants.rock((row + index) % 3 ? C.straw : C.strawLight, p.x, py + h - .04, p.z, .047, .13, .047, jitter * 3);
         } else {
           plants.rock(field.crop === 'beet' ? '#865369' : '#b08044', p.x, py + .06, p.z, .14, .12, .14);
-          for (let k = 0; k < 3; k++) {
+          for (let k = 0; k < 3; k++) { if (++buildWork % 32 === 0) yield;
             const angle = k * 2.094 + jitter, dx = Math.cos(angle) * .28, dz = Math.sin(angle) * .28;
             plants.sheet(k % 2 ? C.leafLight : C.leaf, [p.x, py, p.z], [p.x + dx - dz * .3, py + h, p.z + dz + dx * .3],
               [p.x + dx * 1.2, py + h * .9, p.z + dz * 1.2], [p.x + dx + dz * .3, py + h, p.z + dz - dx * .3]);
@@ -172,26 +176,26 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
     earth.patch(C.path, y, bench.x, bench.z + .8, 2.9, 1.5, 0, .06, 3);
   }
 
-  for (const farm of FARMSTEADS) {
+  for (const farm of FARMSTEADS) { if (++buildWork % 32 === 0) yield;
     if (!canPlace(farm, 'farm')) continue;
     const place = new THREE.Group(); place.name = farm.name; place.userData.farmId = farm.id; group.add(place);
     const earth = createSceneryBuilder(`${farm.name} — ground`);
     const plants = createSceneryBuilder(`${farm.name} — crops`);
     const props = createSceneryBuilder(`${farm.name} — orchard and tools`);
-    for (const field of farm.fields) {
+    for (const field of farm.fields) { if (++buildWork % 32 === 0) yield;
       if (!canPlace(field.polygon[0], 'field')) continue;
-      groundPolygon(earth, C[field.kind === 'grain' ? 'grainSoil' : field.kind === 'vegetable' ? 'soil' : field.kind], field.polygon);
+      (yield* groundPolygon(earth, C[field.kind === 'grain' ? 'grainSoil' : field.kind === 'vegetable' ? 'soil' : field.kind], field.polygon));
       metrics.fields++;
       if (field.kind === 'grain' || field.kind === 'vegetable') {
-        fieldCrops(field, plants, earth, farm.index);
+        (yield* fieldCrops(field, plants, earth, farm.index));
         metrics[field.kind === 'grain' ? 'grainFields' : 'vegetableFields']++;
       } else if (field.kind === 'meadow') {
         // The grass close is partly cut: low windrows, a few tied sheaves, open
         // uncut margins. Its warm straw is restrained next to the green orchard.
         const centre = field.polygon.reduce((p, v) => ({ x: p.x + v.x / field.polygon.length, z: p.z + v.z / field.polygon.length }), { x: 0, z: 0 });
-        for (let row = -1; row <= 1; row++) {
+        for (let row = -1; row <= 1; row++) { if (++buildWork % 32 === 0) yield;
           const a = { x: centre.x - 3.2, z: centre.z + row * 2.1 }, b = { x: centre.x + 3.2, z: centre.z + row * 2.1 + .4 };
-          for (let n = 0; n < 10; n++) {
+          for (let n = 0; n < 10; n++) { if (++buildWork % 32 === 0) yield;
             const p = mix(a, b, n / 9);
             if (inFarmPolygon(field.polygon, p.x, p.z)) plants.rock('#b3a36f', p.x, y(p.x, p.z) + .09, p.z, .48, .12, .34, .13);
           }
@@ -202,11 +206,11 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
         metrics.meadows++;
       } else metrics.orchards++;
     }
-    for (const tree of farm.orchardTrees) if (canPlace(tree, 'tree')) orchardTree(tree, props, farm.index);
-    for (const edge of farm.hedgeEdges) {
+    for (const tree of farm.orchardTrees) { if (++buildWork % 32 === 0) yield; if (canPlace(tree, 'tree')) orchardTree(tree, props, farm.index); }
+    for (const edge of farm.hedgeEdges) { if (++buildWork % 32 === 0) yield;
       const a = farm.boundary[edge], b = farm.boundary[(edge + 1) % farm.boundary.length];
       const count = Math.floor(distance(a, b) / 2.1);
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < count; i++) { if (++buildWork % 32 === 0) yield;
         if ((i + farm.index) % 7 === 3) continue;
         const p = mix(a, b, (i + .5) / count);
         if (!canPlace(p, 'hedge')) continue;
@@ -215,14 +219,14 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
         metrics.hedgeClumps++;
       }
     }
-    for (let i = 1; i < farm.approach.length; i++) {
-      ribbon(earth, C.pathEdge, farm.approach[i - 1], farm.approach[i], 1.55, .07);
-      ribbon(earth, C.path, farm.approach[i - 1], farm.approach[i], 1.06, .078);
+    for (let i = 1; i < farm.approach.length; i++) { if (++buildWork % 32 === 0) yield;
+      (yield* ribbon(earth, C.pathEdge, farm.approach[i - 1], farm.approach[i], 1.55, .07));
+      (yield* ribbon(earth, C.path, farm.approach[i - 1], farm.approach[i], 1.06, .078));
     }
     const lane = FARM_LANES.find(lane => lane.farmId === farm.id);
-    for (let i = 1; i < lane.points.length; i++) {
-      ribbon(earth, C.pathEdge, lane.points[i - 1], lane.points[i], 1.55, .055);
-      ribbon(earth, C.path, lane.points[i - 1], lane.points[i], 1.08, .065);
+    for (let i = 1; i < lane.points.length; i++) { if (++buildWork % 32 === 0) yield;
+      (yield* ribbon(earth, C.pathEdge, lane.points[i - 1], lane.points[i], 1.55, .055));
+      (yield* ribbon(earth, C.path, lane.points[i - 1], lane.points[i], 1.08, .065));
     }
     metrics.lanes++;
     // Short weathered rail fragments mix with the hedges; never a uniform fence
@@ -230,7 +234,7 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
     if (farm.index % 3 !== 1) {
       const a = farm.boundary[2], b = farm.boundary[3], tint = farm.index % 2 ? '#8e8969' : C.timber;
       const count = Math.floor(distance(a, b) / 3.4);
-      for (let n = 0; n < count; n++) {
+      for (let n = 0; n < count; n++) { if (++buildWork % 32 === 0) yield;
         if ((n + farm.index) % 4 === 2) continue;
         const p = mix(a, b, n / count), q = mix(a, b, (n + 1) / count);
         const py = y(p.x, p.z), qy = y(q.x, q.z);
@@ -239,8 +243,8 @@ export function createRegionalFarmlandScenery({ root, groundHeight, colliders = 
       }
     }
     workyard(farm, props, earth);
-    for (const [builder, shadow] of [[earth, false], [plants, false], [props, true]]) {
-      if (builder.finish(place, { castShadow: shadow })) { metrics.batches++; metrics.vertices += builder.vertexCount; }
+    for (const [builder, shadow] of [[earth, false], [plants, false], [props, true]]) { if (++buildWork % 32 === 0) yield;
+      if ((yield* builder.finishSteps(place, { castShadow: shadow }))) { metrics.batches++; metrics.vertices += builder.vertexCount; }
     }
     metrics.farms++; metrics.gardenBeds += farm.rows.length;
   }

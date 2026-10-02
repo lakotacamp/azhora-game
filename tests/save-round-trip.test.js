@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
  * trusting each module to remember on its own.
  */
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
+const rangerPosts = Object.freeze([Object.freeze({ id: 'fixture-ranger', x: 0, z: 0 })]);
 const modules = [];
 for (const file of readdirSync(SRC).filter(name => name.endsWith('.js'))) {
   const text = readFileSync(SRC + file, 'utf8');
@@ -19,15 +20,24 @@ for (const file of readdirSync(SRC).filter(name => name.endsWith('.js'))) {
   const module = await import(new URL(`../src/${file}`, import.meta.url));
   const validators = Object.keys(module).filter(name => /^validate\w*Snapshot$/.test(name));
   for (const maker of Object.keys(module).filter(name => /^create[A-Z]/.test(name) && typeof module[name] === 'function')) {
+    // This host can be constructed without arguments, but its save reads Liz's
+    // world position and restoration resets stealth at the player's position.
+    const make = maker === 'createCubHoneyHost'
+      ? () => module[maker]({ world: { npcPositions: {} }, position: () => ({ x: 0, z: 0 }) })
+      : maker === 'createIbenwoodDefense' ? () => module[maker]({ posts: rangerPosts }) : module[maker];
     let made;
-    try { made = module[maker](); } catch { continue; }          // needs arguments: covered by its own module's tests
+    try { made = make(); } catch { continue; }                  // needs arguments: covered by its own module's tests
     if (!made || typeof made.snapshot !== 'function' || typeof made.restore !== 'function') continue;
     const snapshot = made.snapshot();
     if (!snapshot || typeof snapshot !== 'object') continue;
     const expected = maker === 'createMopWalk' ? 'validateMopSnapshot' : 'validate' + maker.slice(6) + 'Snapshot';
     const validate = validators.includes(expected) ? expected : validators.length === 1 ? validators[0] : null;
     assert.ok(validate, file + ': specify the matching snapshot validator for ' + maker);
-    modules.push({ file, maker, validate: module[validate], validateName: validate, make: module[maker], snapshot });
+    // Defense snapshots validate IDs against the same authored posts supplied to
+    // their factory. Null explicitly represents a missing section in old saves.
+    const defense = validate === 'validateIbenwoodDefenseSnapshot';
+    modules.push({ file, maker, validate: defense ? value => module[validate](value, rangerPosts) : module[validate],
+      nullable: defense, validateName: validate, make, snapshot });
   }
 }
 
@@ -43,9 +53,10 @@ test('every save section in src/ has a validator that accepts what its own snaps
     `${entry.file}: ${entry.validateName} rejects ${entry.maker}().snapshot()`);
 });
 
-test('every save section rejects a value that is not an object at all', () => {
+test('every save section rejects non-object data except its documented missing-section value', () => {
   for (const entry of modules) for (const rubbish of [null, 'a save', 7, [], true])
-    assert.equal(entry.validate(rubbish), false, `${entry.file}: ${entry.validateName} accepted ${JSON.stringify(rubbish)}`);
+    assert.equal(entry.validate(rubbish), rubbish === null && entry.nullable,
+      `${entry.file}: ${entry.validateName} mishandled ${JSON.stringify(rubbish)}`);
 });
 
 test('no number a save section accepts can come back out of a restore as one JSON cannot write', () => {

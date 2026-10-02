@@ -66,3 +66,13 @@
 @media(max-width:580px){.skills-browser{grid-template-columns:155px minmax(0,1fr);font-size:15px}.skill-browser-sidebar{padding-right:8px}.skill-browser-category-label{font-size:12px}.skill-browser-category{font-size:13px;padding-inline:6px}.skill-browser-row{gap:7px;padding-inline:6px;font-size:14px}.skill-browser-row>.skill-browser-icon{flex-basis:20px;width:20px;height:20px}.skill-browser-detail{padding:20px 12px}.skill-browser-heading{gap:10px;align-items:flex-start}.skill-browser-heading>.skill-browser-icon{display:none}.skill-browser-heading h3{font-size:26px!important}.skill-browser-progress-line{flex-direction:column;gap:5px}.skill-browser-scope{font-size:12px}}
 
 .skill-browser-list,.skill-browser-detail{scrollbar-width:thin;scrollbar-color:#718b75 transparent}
+.skill-browser-row[data-parent-skill]{margin-left:16px;width:calc(100% - 16px);border-left:2px solid #8fa69966;font-size:.94em}
+.skill-browser-parent-link,.skill-browser-specialization-link{padding:8px 12px;border:1px solid #8fa69977;border-radius:4px;background:#193a32;color:#efdeb3;font:600 14px/1.4 'Segoe UI',sans-serif;cursor:pointer}
+.skill-browser-parent-link{margin:0 0 20px}
+.skill-browser-specializations,.skill-browser-techniques{margin:0 0 24px;padding:16px 18px;border:1px solid #8fa69955;border-radius:4px;background:#102d272e}
+.skill-browser-specializations h4,.skill-browser-techniques h4{margin:0 0 12px;font:600 15px/1.4 'Segoe UI',sans-serif;color:#eedca9}
+.skill-browser-specializations p,.skill-browser-techniques p{margin:8px 0 16px!important;font:14px/1.65 'Segoe UI',sans-serif!important;color:#cbd9cc!important}
+.skill-browser-technique{display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:15px}
+.skill-browser-technique span{font:600 12px/1.4 'Segoe UI',sans-serif;color:#c7d2c8}
+.skill-browser-technique[data-learned=true] span{color:#d9e7a2}
+@media(max-width:580px){.skill-browser-row[data-parent-skill]{margin-left:8px;width:calc(100% - 8px)}.skill-browser-specializations,.skill-browser-techniques{padding:12px}.skill-browser-technique{flex-direction:column;gap:4px}}

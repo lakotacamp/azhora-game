@@ -1,3 +1,4 @@
+import { finishBuild } from './build-steps.js';
 import * as THREE from 'three';
 import { hexOwnerAt, REGION_CELLS, relief, landDistance } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
@@ -55,7 +56,9 @@ import {
  * hexes (`hexOwnerAt`), from one seeded stream of its own drawn after the Mithala's, so nothing
  * already built anywhere else moves by a centimetre for it.
  */
-export function createSouthwestScenery(kit) {
+export function createSouthwestScenery(...args) { return finishBuild(createSouthwestScenerySteps(...args)); }
+export function* createSouthwestScenerySteps(kit) {
+  let buildWork = 0;
   const { root, material, groundHeight, colliders, dummy, color, round } = kit;
   const group = new THREE.Group(); group.name = 'Southwest scenery'; root.add(group);
   let seed = 8113507;
@@ -111,7 +114,7 @@ export function createSouthwestScenery(kit) {
     }
     flush();
   }
-  for (const course of SOUTHWEST_RIVERS) ribbon(WEST_PROFILES.get(course.id), course.name);
+  for (const course of SOUTHWEST_RIVERS) { if ((++buildWork & 31) === 0) yield; ribbon(WEST_PROFILES.get(course.id), course.name); }
 
   /**
    * **The Vaellir is a wall below its ford**, as every deep western river is, and it is the one
@@ -121,10 +124,10 @@ export function createSouthwestScenery(kit) {
    * eight of its edges and is waded anywhere, which is the only reason Navarth and the Ganesh Desert
    * are joined round the north at all.
    */
-  for (const sample of WEST_PROFILES.get(VAELLIR.id)) {
+  for (const sample of WEST_PROFILES.get(VAELLIR.id)) { if ((++buildWork & 31) === 0) yield;
     if (sample.ford) continue;
     const step = Math.max(1, Math.round(sample.half / 3.2)), radius = sample.half / (step + .5) + 1.4;
-    for (let k = -step; k <= step; k++) {
+    for (let k = -step; k <= step; k++) { if ((++buildWork & 31) === 0) yield;
       const offset = sample.half * (k / (step + .5));
       colliders.push({ x: sample.x + sample.nx * offset, z: sample.z + sample.nz * offset, r: radius, kind: 'west-deep-water' });
       metrics.blockers++;
@@ -135,15 +138,16 @@ export function createSouthwestScenery(kit) {
   // Stone: the washes' floors, the desert pavement, the swells' tops
   // -------------------------------------------------------------------------
   const stoneMaterial = material('#ffffff', { flatShading: true });
-  function stoneBatch(spots, name, tint, lift = .12) {
+  function* stoneBatchSteps(spots, name, tint, lift = .12) {
+    let buildWork = 0;
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(round, stoneMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    for (const [index, spot] of spots.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(spot.x, gy(spot.x, spot.z) + spot.s * lift, spot.z);
       dummy.rotation.set(range(-.16, .16), spot.rot, range(-.16, .16));
       dummy.scale.set(spot.s, spot.s * (spot.flat ?? range(.25, .45)), spot.s * range(.7, 1.25)); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix); batch.setColorAt(index, tint(spot));
-    });
+    }
     batch.name = name; batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
   }
 
@@ -155,17 +159,17 @@ export function createSouthwestScenery(kit) {
    * lives. Nothing grows on either floor, which is what `southwestClear` says.
    */
   const washGravel = [], washBoulders = [], channelSilt = [];
-  for (const wash of GANESH_WASHES) {
-    for (let i = 1; i < wash.line.length; i++) {
+  for (const wash of GANESH_WASHES) { if ((++buildWork & 31) === 0) yield;
+    for (let i = 1; i < wash.line.length; i++) { if ((++buildWork & 31) === 0) yield;
       const a = wash.line[i - 1], b = wash.line[i], length = Math.hypot(b.x - a.x, b.z - a.z);
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += 1.2) for (let k = 0; k < 3; k++) {
+      for (let d = 0; d < length; d += 1.2) { if ((++buildWork & 31) === 0) yield; for (let k = 0; k < 3; k++) { if ((++buildWork & 31) === 0) yield;
         const t = d / length, across = range(-wash.half - .8, wash.half + .8);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !southwestClear(x, z, .8)) continue;
         washGravel.push({ x, z, s: range(.13, .44), rot: random() * 6.28 });
-      }
-      for (let d = 0; d < length; d += 6) {
+      } }
+      for (let d = 0; d < length; d += 6) { if ((++buildWork & 31) === 0) yield;
         const t = d / length, side = random() < .5 ? -1 : 1, across = side * range(0, wash.half * 1.6);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !nearestWash(x, z)) continue;
@@ -173,35 +177,35 @@ export function createSouthwestScenery(kit) {
       }
     }
   }
-  for (const channel of GANESH_PLAIN_CHANNELS) {
-    for (let i = 1; i < channel.line.length; i++) {
+  for (const channel of GANESH_PLAIN_CHANNELS) { if ((++buildWork & 31) === 0) yield;
+    for (let i = 1; i < channel.line.length; i++) { if ((++buildWork & 31) === 0) yield;
       const a = channel.line[i - 1], b = channel.line[i], length = Math.hypot(b.x - a.x, b.z - a.z);
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += 2.2) for (let k = 0; k < 2; k++) {
+      for (let d = 0; d < length; d += 2.2) { if ((++buildWork & 31) === 0) yield; for (let k = 0; k < 2; k++) { if ((++buildWork & 31) === 0) yield;
         const t = d / length, across = range(-channel.half, channel.half);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         if (!own(x, z) || !southwestClear(x, z, .6)) continue;
         channelSilt.push({ x, z, s: range(.18, .46), rot: random() * 6.28, flat: range(.07, .15) });
-      }
+      } }
     }
   }
-  stoneBatch(washGravel, 'Ganesh wash gravel', () => color.set('#645d4e').offsetHSL(0, range(-.03, .03), range(-.06, .06)), .07);
-  stoneBatch(washBoulders, 'Ganesh wash boulders', () => color.set('#6b6355').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .2);
-  stoneBatch(channelSilt, 'Ganesh Plain channel clay', () => color.set('#6d6553').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .03);
+  yield* stoneBatchSteps(washGravel, 'Ganesh wash gravel', () => color.set('#645d4e').offsetHSL(0, range(-.03, .03), range(-.06, .06)), .07);
+  yield* stoneBatchSteps(washBoulders, 'Ganesh wash boulders', () => color.set('#6b6355').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .2);
+  yield* stoneBatchSteps(channelSilt, 'Ganesh Plain channel clay', () => color.set('#6d6553').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .03);
   metrics.gravel += washGravel.length + channelSilt.length; metrics.boulders += washBoulders.length;
 
   /** The Vaellir's bed is gravel over its ford, which is the only part of it anybody stands in. */
   const fordGravel = [];
-  for (const sample of WEST_PROFILES.get(VAELLIR.id)) {
+  for (const sample of WEST_PROFILES.get(VAELLIR.id)) { if ((++buildWork & 31) === 0) yield;
     if (!sample.ford) continue;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++) { if ((++buildWork & 31) === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = range(0, sample.half + 3);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z)) continue;
       fordGravel.push({ x, z, s: range(.15, .5), rot: random() * 6.28, flat: range(.3, .55) });
     }
   }
-  stoneBatch(fordGravel, 'Vaellir bed gravel', () => color.set('#6d655b').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .1);
+  yield* stoneBatchSteps(fordGravel, 'Vaellir bed gravel', () => color.set('#6d655b').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .1);
   metrics.gravel += fordGravel.length;
 
   // -------------------------------------------------------------------------
@@ -222,28 +226,29 @@ export function createSouthwestScenery(kit) {
     return geometry;
   })();
   const bladeMaterial = material('#ffffff', { side: THREE.DoubleSide });
-  function reedBatch(spots, name) {
+  function* reedBatchSteps(spots, name) {
+    let buildWork = 0;
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(reedGeometry, bladeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    for (const [index, spot] of spots.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(spot.x, gy(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0); dummy.scale.set(spot.s, spot.s * range(.85, 1.35), spot.s); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
       batch.setColorAt(index, color.setHSL(range(.13, .21), range(.22, .36), range(.24, .36)));
-    });
+    }
     batch.name = name; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
     metrics.reeds += spots.length;
   }
   const reeds = [];
-  for (const course of SOUTHWEST_RIVERS) for (const sample of WEST_PROFILES.get(course.id)) {
-    for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
+  for (const course of SOUTHWEST_RIVERS) { if ((++buildWork & 31) === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if ((++buildWork & 31) === 0) yield;
+    for (const side of [-1, 1]) { if ((++buildWork & 31) === 0) yield; for (let i = 0; i < 3; i++) { if ((++buildWork & 31) === 0) yield;
       const offset = sample.half + range(.2, 3.2);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!own(x, z) || westWaterSurface(x, z) !== null) continue;
       reeds.push({ x, z, s: range(.6, 1.35), rot: random() * 6.28 });
-    }
-  }
-  reedBatch(reeds, 'Southwest reed');
+    } }
+  } }
+  yield* reedBatchSteps(reeds, 'Southwest reed');
 
   // -------------------------------------------------------------------------
   // What grows
@@ -251,37 +256,39 @@ export function createSouthwestScenery(kit) {
   const trunkGeometry = new THREE.CylinderGeometry(.16, .28, 1, 6);
   const crownGeometry = new THREE.IcosahedronGeometry(1, 0);
   const barkMaterial = material('#6b5942'), leafMaterial = material('#ffffff', { flatShading: true });
-  function treeBatch(trees, name, tint, kind) {
+  function* treeBatchSteps(trees, name, tint, kind) {
+    let buildWork = 0;
     if (!trees.length) return;
     const trunks = new THREE.InstancedMesh(trunkGeometry, barkMaterial, trees.length);
     const crowns = new THREE.InstancedMesh(crownGeometry, leafMaterial, trees.length * 3);
     let at = 0;
-    trees.forEach((tree, index) => {
+    for (const [index, tree] of trees.entries()) { if ((++buildWork & 31) === 0) yield;
       const y = gy(tree.x, tree.z), height = tree.h * tree.s;
       dummy.position.set(tree.x, y + height * tree.bole * .5, tree.z); dummy.rotation.set(range(-.05, .05), tree.rot, range(-.05, .05));
       dummy.scale.set(tree.s * tree.girth, height * tree.bole, tree.s * tree.girth); dummy.updateMatrix();
       trunks.setMatrixAt(index, dummy.matrix);
       colliders.push({ x: tree.x, z: tree.z, r: .42 * tree.s * tree.girth, kind });
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if ((++buildWork & 31) === 0) yield;
         const a = tree.rot + lobe * 2.1, spread = lobe === 2 ? 0 : height * tree.spread;
         dummy.position.set(tree.x + Math.sin(a) * spread, y + height * (lobe === 2 ? tree.top : tree.top - .16), tree.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.2, .2), a, range(-.18, .18));
         dummy.scale.set(height * tree.wide, height * tree.deep, height * tree.wide); dummy.updateMatrix();
         crowns.setMatrixAt(at, dummy.matrix); crowns.setColorAt(at++, tint(tree));
       }
-    });
+    }
     trunks.name = `${name} trunks`; crowns.name = `${name} crowns`;
-    for (const batch of [trunks, crowns]) { batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
+    for (const batch of [trunks, crowns]) { if ((++buildWork & 31) === 0) yield;  batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch); }
     metrics.trees += trees.length;
   }
   /** A low bush of three lobes: desert scrub, the plain's saltbush and the damp reach's green are all this shape. */
-  function bushBatch(bushes, name, tint, collide = null) {
+  function* bushBatchSteps(bushes, name, tint, collide = null) {
+    let buildWork = 0;
     if (!bushes.length) return;
     const batch = new THREE.InstancedMesh(round, leafMaterial, bushes.length * 3);
     let at = 0;
-    for (const bush of bushes) {
+    for (const bush of bushes) { if ((++buildWork & 31) === 0) yield;
       const y = gy(bush.x, bush.z);
-      for (let lobe = 0; lobe < 3; lobe++) {
+      for (let lobe = 0; lobe < 3; lobe++) { if ((++buildWork & 31) === 0) yield;
         const a = bush.rot + lobe * 2.1, spread = lobe === 2 ? 0 : .42 * bush.s;
         dummy.position.set(bush.x + Math.sin(a) * spread, y + bush.s * bush.h * (lobe === 2 ? .62 : .42), bush.z + Math.cos(a) * spread);
         dummy.rotation.set(range(-.16, .16), a, range(-.16, .16));
@@ -305,26 +312,28 @@ export function createSouthwestScenery(kit) {
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     return geometry;
   })();
-  function tuftBatch(tufts, name, tint) {
+  function* tuftBatchSteps(tufts, name, tint) {
+    let buildWork = 0;
     if (!tufts.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, bladeMaterial, tufts.length);
-    tufts.forEach((tuft, index) => {
+    for (const [index, tuft] of tufts.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(tuft.x, gy(tuft.x, tuft.z) + .02, tuft.z);
       dummy.rotation.set(0, tuft.rot, 0); dummy.scale.set(tuft.s * tuft.wide, tuft.s, tuft.s * tuft.wide); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix); batch.setColorAt(index, tint(tuft));
-    });
+    }
     batch.name = name; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
     metrics.tufts += tufts.length;
   }
-  function stubbleBatch(spots, name) {
+  function* stubbleBatchSteps(spots, name) {
+    let buildWork = 0;
     if (!spots.length) return;
     const batch = new THREE.InstancedMesh(tuftGeometry, bladeMaterial, spots.length);
-    spots.forEach((spot, index) => {
+    for (const [index, spot] of spots.entries()) { if ((++buildWork & 31) === 0) yield;
       dummy.position.set(spot.x, gy(spot.x, spot.z) + .02, spot.z);
       dummy.rotation.set(0, spot.rot, 0); dummy.scale.set(spot.s * .5, spot.s * 1.5, spot.s * .5); dummy.updateMatrix();
       batch.setMatrixAt(index, dummy.matrix);
       batch.setColorAt(index, color.set('#7b7259').offsetHSL(range(-.015, .015), range(-.06, .04), range(-.05, .06)));
-    });
+    }
     batch.name = name; batch.receiveShadow = true; batch.computeBoundingSphere(); group.add(batch);
     metrics.stubble += spots.length;
   }
@@ -341,10 +350,10 @@ export function createSouthwestScenery(kit) {
    * like this one is that it gains nothing on the way: what it has, it brought.
    */
   const gallery = [], tamarisk = [];
-  for (const course of SOUTHWEST_RIVERS) for (const sample of WEST_PROFILES.get(course.id)) {
+  for (const course of SOUTHWEST_RIVERS) { if ((++buildWork & 31) === 0) yield; for (const sample of WEST_PROFILES.get(course.id)) { if ((++buildWork & 31) === 0) yield;
     const small = course.id === ALEZHOR_WATER.id;
     if (sample.index % (small ? 4 : 2)) continue;
-    for (let i = 0; i < (small ? 2 : 4); i++) {
+    for (let i = 0; i < (small ? 2 : 4); i++) { if ((++buildWork & 31) === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = sample.half + range(2.4, small ? 7 : 13);
       const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
       if (!plantable(x, z, 2.2)) continue;
@@ -364,12 +373,12 @@ export function createSouthwestScenery(kit) {
           wide: poplar ? .17 : .34, deep: poplar ? .5 : .26 });
       }
     }
-  }
+  } }
   metrics.gallery = gallery.length + tamarisk.length;
-  treeBatch(gallery, 'Vaellir gallery', tree => tree.poplar
+  yield* treeBatchSteps(gallery, 'Vaellir gallery', tree => tree.poplar
     ? color.set('#4e6536').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06))
     : color.set('#5f6f49').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05)), 'southwest-tree');
-  treeBatch(tamarisk, 'Southwest tamarisk', () => color.set('#71785e').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'southwest-tree');
+  yield* treeBatchSteps(tamarisk, 'Southwest tamarisk', () => color.set('#71785e').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'southwest-tree');
 
   /**
    * **The north wood**, on the one `forest` hex the atlas gives this quarter: (-24,116), `Csb`, at
@@ -383,7 +392,7 @@ export function createSouthwestScenery(kit) {
   const wood = [];
   {
     const hex = (REGION_CELLS.Navarth ?? []).find(cell => cell.terrain === 'forest');
-    if (hex) for (let i = 0; i < 620; i++) {
+    if (hex) for (let i = 0; i < 620; i++) { if ((++buildWork & 31) === 0) yield;
       const x = hex.x + range(-54, 54), z = hex.z + range(-58, 58);
       if (!plantable(x, z, 2.5) || where(x, z) !== 'Navarth') continue;
       // Thinning outward: the middle of the hex is wood and its southern edge is scrub with a tree in it.
@@ -396,7 +405,7 @@ export function createSouthwestScenery(kit) {
         wide: pine ? .2 : .36, deep: pine ? .46 : .3 });
     }
   }
-  treeBatch(wood, 'Navarth north wood', tree => tree.pine
+  yield* treeBatchSteps(wood, 'Navarth north wood', tree => tree.pine
     ? color.set('#3b5135').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05))
     : color.set('#4c6037').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'southwest-tree');
   metrics.wood = wood.length;
@@ -410,20 +419,20 @@ export function createSouthwestScenery(kit) {
   const dampScrub = [];
   {
     const wash = GANESH_WASHES.find(w => w.id === 'south-wash');
-    for (let i = 1; i < wash.line.length; i++) {
+    for (let i = 1; i < wash.line.length; i++) { if ((++buildWork & 31) === 0) yield;
       const a = wash.line[i - 1], b = wash.line[i], length = Math.hypot(b.x - a.x, b.z - a.z);
       const nx = -(b.z - a.z) / length, nz = (b.x - a.x) / length;
-      for (let d = 0; d < length; d += 1.1) for (let k = 0; k < 2; k++) {
+      for (let d = 0; d < length; d += 1.1) { if ((++buildWork & 31) === 0) yield; for (let k = 0; k < 2; k++) { if ((++buildWork & 31) === 0) yield;
         const t = d / length, across = range(-wash.half * 1.6, wash.half * 1.6);
         const x = a.x + (b.x - a.x) * t + nx * across, z = a.z + (b.z - a.z) * t + nz * across;
         const damp = ganeshDamp(x, z);
         if (damp < .25 || !own(x, z) || random() > damp * .55) continue;
         if (dampScrub.some(s => Math.hypot(s.x - x, s.z - z) < 1.6)) continue;
         dampScrub.push({ x, z, s: range(.55, 1.05), h: range(1.0, 1.45), rot: random() * 6.28 });
-      }
+      } }
     }
   }
-  bushBatch(dampScrub, 'Ganesh damp-reach scrub', () => color.set('#415934').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), .42);
+  yield* bushBatchSteps(dampScrub, 'Ganesh damp-reach scrub', () => color.set('#415934').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), .42);
 
   /**
    * The open ground of all four countries, block by block over their own hexes. What decides what a
@@ -440,13 +449,13 @@ export function createSouthwestScenery(kit) {
   const perHex = Math.round(27 * WORLD_SCALE * WORLD_SCALE);
   const rise = (x, z) => relief(x, z, .9, 320) / .9;
   const scrub = [], stubble = [], stones = [], pavement = [];
-  for (let start = 0; start < cells.length; start += BLOCK) {
+  for (let start = 0; start < cells.length; start += BLOCK) { if ((++buildWork & 31) === 0) yield;
     const block = cells.slice(start, start + BLOCK), tufts = [];
-    for (const cell of block) {
+    for (const cell of block) { if ((++buildWork & 31) === 0) yield;
       const here = where(cell.x, cell.z);
       const desert = here === 'Ganesh Desert';
       const plain = here === 'Ganesh Plain';
-      for (let i = 0; i < perHex * 3; i++) {
+      for (let i = 0; i < perHex * 3; i++) { if ((++buildWork & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.2)) continue;
         const dry = southwestAridity(x, z);
@@ -465,7 +474,7 @@ export function createSouthwestScenery(kit) {
       // Perennial scrub: the desert's is small and far apart and has all its investment underground;
       // the plain's is the saltbush of the bare clay between the depressions; West Pyros's western
       // columns get the desert's kind because the map says those hexes are desert.
-      for (let i = 0; i < 160; i++) {
+      for (let i = 0; i < 160; i++) { if ((++buildWork & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (!plantable(x, z, 1.5)) continue;
         const dry = southwestAridity(x, z);
@@ -477,7 +486,7 @@ export function createSouthwestScenery(kit) {
       }
       if (desert || plain) {
         // The seed bank as a dry year leaves it: bleached annual stalks where the flush would be.
-        for (let i = 0; i < 200; i++) {
+        for (let i = 0; i < 200; i++) { if ((++buildWork & 31) === 0) yield;
           const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
           if (!plantable(x, z, .8)) continue;
           const chance = desert ? (1 - ganeshLie(x, z)) * .42 : .18 + inDepression(x, z) * .4;
@@ -488,7 +497,7 @@ export function createSouthwestScenery(kit) {
       if (desert) {
         // Desert pavement: grit and gravel wherever the wind has taken the fine stuff away, which is
         // every rise and every wind-combed crest. It is most of the surface of this country.
-        for (let i = 0; i < 340; i++) {
+        for (let i = 0; i < 340; i++) { if ((++buildWork & 31) === 0) yield;
           const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
           if (!plantable(x, z, .5)) continue;
           if (random() > ganeshLie(x, z) * .62) continue;
@@ -497,7 +506,7 @@ export function createSouthwestScenery(kit) {
       } else {
         // Stone on the rises: Navarth's swells show grey along their tops and West Pyros's plain has
         // a scatter of it where the grass gives out.
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < 70; i++) { if ((++buildWork & 31) === 0) yield;
           const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
           if (!plantable(x, z, 1)) continue;
           const dry = southwestAridity(x, z);
@@ -506,7 +515,7 @@ export function createSouthwestScenery(kit) {
         }
       }
     }
-    tuftBatch(tufts, 'Southwest grass', tuft => {
+    yield* tuftBatchSteps(tufts, 'Southwest grass', tuft => {
       // Bleached buff in the desert, a shade greener in the plain's depressions, and properly green
       // only in the two `Cs` corners. Lightnesses are chosen low (the renderer's working space: the
       // old Meneth lesson, which the Mithala had to learn again).
@@ -516,12 +525,12 @@ export function createSouthwestScenery(kit) {
       return color.setHSL(hue + range(-.012, .012), sat, light);
     });
   }
-  bushBatch(scrub, 'Southwest perennial scrub', bush => bush.grey
+  yield* bushBatchSteps(scrub, 'Southwest perennial scrub', bush => bush.grey
     ? color.set('#75776a').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#666e54').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
-  stubbleBatch(stubble, 'Southwest seed-bank stubble');
-  stoneBatch(stones, 'Southwest stones', () => color.set('#605c52').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
-  stoneBatch(pavement, 'Ganesh desert pavement', spot => (spot.bald ? color.set('#696557') : color.set('#5f5a4d')).offsetHSL(0, range(-.03, .03), range(-.05, .06)), .04);
+  yield* stubbleBatchSteps(stubble, 'Southwest seed-bank stubble');
+  yield* stoneBatchSteps(stones, 'Southwest stones', () => color.set('#605c52').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16);
+  yield* stoneBatchSteps(pavement, 'Ganesh desert pavement', spot => (spot.bald ? color.set('#696557') : color.set('#5f5a4d')).offsetHSL(0, range(-.03, .03), range(-.05, .06)), .04);
   metrics.scrub = scrub.length; metrics.stones += stones.length; metrics.pavement = pavement.length;
 
   // -------------------------------------------------------------------------
@@ -558,10 +567,12 @@ export function createSouthwestScenery(kit) {
   const ripples = [], corridorGrit = [], sheetScrub = [];
   const regPebbles = [], lichen = [], fogThorn = [], regStubble = [];
   const RIPPLE = MEROSHE_DUNES.bearing + Math.PI / 2;
-  for (const cell of merosheCells) {
+  for (const cell of merosheCells) { if ((++buildWork & 31) === 0) yield;
     const here = where(cell.x, cell.z);
-    const sample = (count, work) => {
+    const sampleSteps = function* (count, work) {
+      let workCount = 0;
       for (let i = 0; i < count; i++) {
+        if ((++workCount & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (where(x, z) !== here) continue;
         work(x, z);
@@ -570,21 +581,21 @@ export function createSouthwestScenery(kit) {
     if (here === 'North Meroshe Desert') {
       // Bedrock: slabs where the hard bed is at the surface, which is along and above every riser,
       // and gravel in the joints everywhere else. This is the ground and not a scatter on it.
-      sample(300, (x, z) => {
+      yield* sampleSteps(300, (x, z) => {
         if (!plantable(x, z, .4)) return;
         const bench = merosheBench(x, z);
         const bare = .30 + bench.edge * .55;
         if (random() > bare) return;
         rockSlabs.push({ x, z, s: range(.5, 1.7) * (1 + bench.edge * .5), rot: random() * 6.28, flat: range(.06, .14) });
       });
-      sample(220, (x, z) => {
+      yield* sampleSteps(220, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > .5) return;
         hamadaGrit.push({ x, z, s: range(.1, .34), rot: random() * 6.28, flat: range(.2, .4) });
       });
       // "Scrubby thorn trees still manage to exist" - in the joints, which is where the water is, so
       // they are on the risers and nowhere else. Three to six metres, wide flat crowns, far apart.
-      sample(90, (x, z) => {
+      yield* sampleSteps(90, (x, z) => {
         if (!plantable(x, z, 2.4)) return;
         const bench = merosheBench(x, z);
         if (random() > bench.edge * .30) return;
@@ -592,14 +603,14 @@ export function createSouthwestScenery(kit) {
         thornTrees.push({ x, z, s: range(.85, 1.2), h: range(3.4, 5.6), rot: random() * 6.28,
           girth: .62, bole: .46, top: .74, spread: .26, wide: .40, deep: .16 });
       });
-      sample(120, (x, z) => {
+      yield* sampleSteps(120, (x, z) => {
         if (!plantable(x, z, 1.2)) return;
         const bench = merosheBench(x, z);
         if (random() > .10 + bench.edge * .22) return;
         if (thornScrub.some(b => Math.hypot(b.x - x, b.z - z) < 5.4)) return;
         thornScrub.push({ x, z, s: range(.24, .5), h: range(.7, 1.15), rot: random() * 6.28, grey: random() < .6 });
       });
-      sample(90, (x, z) => {
+      yield* sampleSteps(90, (x, z) => {
         if (!plantable(x, z, .8)) return;
         if (random() > merosheBench(x, z).edge * .34) return;
         hamadaStubble.push({ x, z, s: range(.32, .62), rot: random() * 6.28 });
@@ -608,27 +619,27 @@ export function createSouthwestScenery(kit) {
       // **The fans are a grain-size story and nothing else.** Cobbles at the apex, pebbles halfway,
       // dust at the toe - the one thing a traveler notices about this country is what the walking is
       // like, and it changes over four hundred paces.
-      sample(300, (x, z) => {
+      yield* sampleSteps(300, (x, z) => {
         if (!plantable(x, z, .5)) return;
         const grain = merosheFan(x, z);
         if (random() > .16 + grain * .62) return;
         // "A hand across" is a hand across: the first pass ran to a metre and photographed as boulders.
         fanCobble.push({ x, z, s: range(.10, .24) + grain * range(.10, .30), rot: random() * 6.28, flat: range(.3, .6), grain });
       });
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > (1 - merosheFan(x, z)) * .5) return;
         fanDust.push({ x, z, s: range(.16, .44), rot: random() * 6.28, flat: range(.05, .11) });
       });
       // The Malhat: a salt crust, and the polygonal ridges standing a hand's breadth off it where the
       // crust has buckled. Nothing grows on it, which `southwestClear` already says.
-      sample(260, (x, z) => {
+      yield* sampleSteps(260, (x, z) => {
         const pan = onSaltPan(x, z);
         if (pan < .18 || westBareGround(x, z, .3)) return;
         if (random() > pan * .82) return;
         saltPlates.push({ x, z, s: range(.3, .9), rot: random() * 6.28, flat: range(.03, .07) });
       });
-      sample(180, (x, z) => {
+      yield* sampleSteps(180, (x, z) => {
         const pan = onSaltPan(x, z);
         if (pan < .3 || westBareGround(x, z, .3)) return;
         // The ridges stand on a coarse lattice: a crust cracks into plates a few metres across.
@@ -636,14 +647,14 @@ export function createSouthwestScenery(kit) {
         if (lattice > .16 || random() > pan * .6) return;
         saltRidges.push({ x, z, s: range(.22, .52), rot: random() * 6.28, flat: range(.3, .6) });
       });
-      sample(140, (x, z) => {
+      yield* sampleSteps(140, (x, z) => {
         if (!plantable(x, z, 1.4)) return;
         // What little grows here grows on the fine ground between the fans and off the salt entirely.
         if (random() > (1 - merosheFan(x, z)) * (1 - onSaltPan(x, z, 30)) * .16) return;
         if (skirtScrub.some(b => Math.hypot(b.x - x, b.z - z) < 6.5)) return;
         skirtScrub.push({ x, z, s: range(.22, .46), h: range(.6, .95), rot: random() * 6.28, grey: random() < .7 });
       });
-      sample(140, (x, z) => {
+      yield* sampleSteps(140, (x, z) => {
         const shore = landDistance(x, z);
         if (shore > 34 || shore < 1 || westWaterSurface(x, z) !== null) return;
         if (random() > .58) return;
@@ -652,7 +663,7 @@ export function createSouthwestScenery(kit) {
     } else if (here === 'Central Meroshe Desert') {
       const ergHere = (x, z) => merosheErg(x, z, regionShare('Central Meroshe Desert', x, z));
       // Wind ripples: flat, long, lying across the ridge, dense on the sand and absent on the gravel.
-      sample(420, (x, z) => {
+      yield* sampleSteps(420, (x, z) => {
         if (!plantable(x, z, .3)) return;
         const sandHere = duneProfile(x, z) * ergHere(x, z);
         if (random() > .10 + sandHere * .80) return;
@@ -660,14 +671,14 @@ export function createSouthwestScenery(kit) {
       });
       // The corridor floors: swept gravel, and the one thing that tells a traveler through their boots
       // which of the two grounds they are on.
-      sample(260, (x, z) => {
+      yield* sampleSteps(260, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > merosheCorridor(x, z) ** 3 * .58) return;
         corridorGrit.push({ x, z, s: range(.1, .34), rot: random() * 6.28, flat: range(.16, .34) });
       });
       // **Every plant in this country is on the sand sheet at its margin.** An active dune has nothing
       // on it at all, and thirty-one hexes of this one are mostly active dune.
-      sample(160, (x, z) => {
+      yield* sampleSteps(160, (x, z) => {
         if (!plantable(x, z, 1.6)) return;
         if (random() > (1 - ergHere(x, z)) * .13) return;
         if (sheetScrub.some(b => Math.hypot(b.x - x, b.z - z) < 8)) return;
@@ -675,32 +686,32 @@ export function createSouthwestScenery(kit) {
       });
     } else if (here === 'South Meroshe Desert') {
       // The reg itself: pebbles edge to edge, small and flat and very many, dark where the varnish is.
-      sample(460, (x, z) => {
+      yield* sampleSteps(460, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > .66) return;
         regPebbles.push({ x, z, s: range(.13, .34), rot: random() * 6.28, flat: range(.2, .42), dark: merosheVarnish(x, z) });
       });
       // Lichen in the lee of the pebbles, and only where the fog reaches: the one thing in the Meroshe
       // that lives on water out of the air.
-      sample(300, (x, z) => {
+      yield* sampleSteps(300, (x, z) => {
         if (!plantable(x, z, .3)) return;
         const fog = merosheFog(x, z);
         if (random() > fog * .46) return;
         lichen.push({ x, z, s: range(.12, .34), rot: random() * 6.28, flat: range(.04, .08) });
       });
-      sample(280, (x, z) => {
+      yield* sampleSteps(280, (x, z) => {
         if (!plantable(x, z, 1.5)) return;
         const fog = merosheFog(x, z);
         if (random() > fog * fog * .62) return;
         if (fogThorn.some(b => Math.hypot(b.x - x, b.z - z) < 2.6)) return;
         fogThorn.push({ x, z, s: range(.2, .44), h: range(.8, 1.25), rot: random() * 6.28, fog });
       });
-      sample(140, (x, z) => {
+      yield* sampleSteps(140, (x, z) => {
         if (!plantable(x, z, .8)) return;
         if (random() > merosheFog(x, z) * .3) return;
         regStubble.push({ x, z, s: range(.3, .58), rot: random() * 6.28 });
       });
-      sample(140, (x, z) => {
+      yield* sampleSteps(140, (x, z) => {
         const shore = landDistance(x, z);
         if (shore > 34 || shore < 1 || westWaterSurface(x, z) !== null) return;
         if (random() > .55) return;
@@ -708,36 +719,36 @@ export function createSouthwestScenery(kit) {
       });
     }
   }
-  stoneBatch(rockSlabs, 'Meroshe bedrock slabs', () => color.set('#6f6a55').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
-  stoneBatch(hamadaGrit, 'Meroshe hamada grit', () => color.set('#63604e').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
-  stoneBatch(fanCobble, 'Meroshe fan cobbles', spot => color.set(spot.grain > .55 ? '#6a6450' : '#615c4a').offsetHSL(0, range(-.03, .03), range(-.05, .06)), .16);
-  stoneBatch(fanDust, 'Meroshe fan dust', () => color.set('#6d6854').offsetHSL(0, range(-.02, .02), range(-.04, .06)), .02);
-  stoneBatch(saltPlates, 'Malhat salt crust', () => color.set('#8e8b7c').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .01);
-  stoneBatch(saltRidges, 'Malhat crust ridges', () => color.set('#98957f').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .12);
-  stoneBatch(ripples, 'Meroshe sand ripples', () => color.set('#79714f').offsetHSL(0, range(-.02, .02), range(-.04, .07)), .01);
-  stoneBatch(corridorGrit, 'Meroshe corridor gravel', () => color.set('#5e5a49').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .04);
+  yield* stoneBatchSteps(rockSlabs, 'Meroshe bedrock slabs', () => color.set('#6f6a55').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
+  yield* stoneBatchSteps(hamadaGrit, 'Meroshe hamada grit', () => color.set('#63604e').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  yield* stoneBatchSteps(fanCobble, 'Meroshe fan cobbles', spot => color.set(spot.grain > .55 ? '#6a6450' : '#615c4a').offsetHSL(0, range(-.03, .03), range(-.05, .06)), .16);
+  yield* stoneBatchSteps(fanDust, 'Meroshe fan dust', () => color.set('#6d6854').offsetHSL(0, range(-.02, .02), range(-.04, .06)), .02);
+  yield* stoneBatchSteps(saltPlates, 'Malhat salt crust', () => color.set('#8e8b7c').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .01);
+  yield* stoneBatchSteps(saltRidges, 'Malhat crust ridges', () => color.set('#98957f').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .12);
+  yield* stoneBatchSteps(ripples, 'Meroshe sand ripples', () => color.set('#79714f').offsetHSL(0, range(-.02, .02), range(-.04, .07)), .01);
+  yield* stoneBatchSteps(corridorGrit, 'Meroshe corridor gravel', () => color.set('#5e5a49').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .04);
   // The pebbles are a shade *lighter* than the pavement they make, which is the only way a stone
   // floor reads as stones rather than as a flat dark field: the varnish is on the ground and the tops
   // of the pebbles catch what light there is.
-  stoneBatch(regPebbles, 'Meroshe reg pavement', spot => color.set(spot.dark > .6 ? '#5c5340' : '#6a5f49').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .03);
-  stoneBatch(lichen, 'Meroshe fog lichen', () => color.set('#5b6050').offsetHSL(range(-.02, .02), range(-.03, .04), range(-.04, .06)), .01);
-  stoneBatch(shingle, 'Meroshe shore shingle', () => color.set('#6a6657').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .1);
-  bushBatch(thornScrub, 'Meroshe hamada thorn', bush => bush.grey
+  yield* stoneBatchSteps(regPebbles, 'Meroshe reg pavement', spot => color.set(spot.dark > .6 ? '#5c5340' : '#6a5f49').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .03);
+  yield* stoneBatchSteps(lichen, 'Meroshe fog lichen', () => color.set('#5b6050').offsetHSL(range(-.02, .02), range(-.03, .04), range(-.04, .06)), .01);
+  yield* stoneBatchSteps(shingle, 'Meroshe shore shingle', () => color.set('#6a6657').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .1);
+  yield* bushBatchSteps(thornScrub, 'Meroshe hamada thorn', bush => bush.grey
     ? color.set('#6e7065').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#5f6750').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
-  bushBatch(skirtScrub, 'Meroshe skirt scrub', bush => bush.grey
+  yield* bushBatchSteps(skirtScrub, 'Meroshe skirt scrub', bush => bush.grey
     ? color.set('#70726a').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#616852').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
-  bushBatch(sheetScrub, 'Meroshe sand-sheet scrub', bush => bush.grey
+  yield* bushBatchSteps(sheetScrub, 'Meroshe sand-sheet scrub', bush => bush.grey
     ? color.set('#767567').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#666b52').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
   // The fog thorn is the only green in ninety-five hexes and it gets greener the deeper into the fog
   // belt it stands, which is the one gradient this half of the block has.
-  bushBatch(fogThorn, 'Meroshe fog thorn', bush =>
+  yield* bushBatchSteps(fogThorn, 'Meroshe fog thorn', bush =>
     color.setHSL(.160 + bush.fog * .022 + range(-.010, .010), .13 + bush.fog * .11 + range(-.025, .025), .145 + range(-.02, .02)), .34);
-  treeBatch(thornTrees, 'Meroshe hamada thorn trees', () => color.set('#5d6647').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'southwest-tree');
-  stubbleBatch(hamadaStubble, 'Meroshe hamada stubble');
-  stubbleBatch(regStubble, 'Meroshe fog stubble');
+  yield* treeBatchSteps(thornTrees, 'Meroshe hamada thorn trees', () => color.set('#5d6647').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'southwest-tree');
+  yield* stubbleBatchSteps(hamadaStubble, 'Meroshe hamada stubble');
+  yield* stubbleBatchSteps(regStubble, 'Meroshe fog stubble');
   metrics.rock = rockSlabs.length; metrics.cobble = fanCobble.length + fanDust.length;
   metrics.sand = ripples.length; metrics.reg = regPebbles.length;
   metrics.salt = saltPlates.length + saltRidges.length; metrics.lichen = lichen.length;
@@ -781,10 +792,12 @@ export function createSouthwestScenery(kit) {
   const capeSlabs = [], capeGrit = [], capeSalt = [], capeLichen = [], capeScrub = [], hollowScrub = [], hollowGrass = [], capeShingle = [];
   const plateauSlabs = [], plateauGrit = [], mesaBlocks = [], channelRubble = [], plateauScrub = [], basinScrub = [], basinGrass = [], basinTrees = [], plateauStubble = [];
   const hamaSward = [], hamaMaquis = [], hamaTrees = [], bedGrass = [], hamaRibs = [], hamaGravel = [], hamaStubble = [];
-  for (const cell of edgeCells) {
+  for (const cell of edgeCells) { if ((++buildWork & 31) === 0) yield;
     const here = where(cell.x, cell.z);
-    const sample = (count, work) => {
+    const sampleSteps = function* (count, work) {
+      let workCount = 0;
       for (let i = 0; i < count; i++) {
+        if ((++workCount & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (where(x, z) !== here) continue;
         work(x, z);
@@ -793,13 +806,13 @@ export function createSouthwestScenery(kit) {
     if (here === 'Cape Heth') {
       // The rock itself, and the bedding showing through it: a sedimentary cape, "grey-brown, soft
       // enough to be worked by hand tools", so the slabs are thin and lie flat.
-      sample(300, (x, z) => {
+      yield* sampleSteps(300, (x, z) => {
         if (!plantable(x, z, .4)) return;
         const salt = hethSpray(x, z);
         if (random() > .22 + salt * .52) return;
         capeSlabs.push({ x, z, s: range(.35, 1.25), rot: random() * 6.28, flat: range(.05, .12), salt });
       });
-      sample(220, (x, z) => {
+      yield* sampleSteps(220, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > .34 + hethSpray(x, z) * .3) return;
         capeGrit.push({ x, z, s: range(.1, .32), rot: random() * 6.28, flat: range(.18, .38) });
@@ -807,18 +820,18 @@ export function createSouthwestScenery(kit) {
       // **Salt in the rock hollows on the weather face**, which is the cape's own signature and the one
       // thing in the block outside the Malhat that is white: sea water thrown over a low shore and left
       // to dry in a hot desert leaves crust, and the lore's storm archive is a record of how far it got.
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > Math.max(0, hethSpray(x, z) - .42) * 1.5) return;
         capeSalt.push({ x, z, s: range(.18, .55), rot: random() * 6.28, flat: range(.02, .05) });
       });
-      sample(240, (x, z) => {
+      yield* sampleSteps(240, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > hethSpray(x, z) * .40) return;
         capeLichen.push({ x, z, s: range(.1, .3), rot: random() * 6.28, flat: range(.03, .07) });
       });
       // Scrub: nothing where the salt gets, spaced on the open lee, and close and large in the hollows.
-      sample(180, (x, z) => {
+      yield* sampleSteps(180, (x, z) => {
         if (!plantable(x, z, 1.4)) return;
         const hollow = inHethHollow(x, z), salt = hethSpray(x, z);
         if (hollow > .25) {
@@ -831,7 +844,7 @@ export function createSouthwestScenery(kit) {
         if (capeScrub.some(b => Math.hypot(b.x - x, b.z - z) < 5.6)) return;
         capeScrub.push({ x, z, s: range(.2, .44), h: range(.55, .9), rot: random() * 6.28, grey: random() < .7 });
       });
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, .6)) return;
         const hollow = inHethHollow(x, z);
         if (random() > hollow * hollow * .8) return;
@@ -839,7 +852,7 @@ export function createSouthwestScenery(kit) {
       });
       // Shingle on the bight's sheltered northern shore, and nothing on the weather face, where the
       // surf takes anything loose away.
-      sample(140, (x, z) => {
+      yield* sampleSteps(140, (x, z) => {
         const shore = landDistance(x, z);
         if (shore > 30 || shore < 1 || westWaterSurface(x, z) !== null) return;
         if (random() > Math.max(0, .62 - hethSpray(x, z) * .5)) return;
@@ -850,13 +863,13 @@ export function createSouthwestScenery(kit) {
       const mesa = (x, z) => dinelvMesaAt(x, z);
       // Bedrock: bare along every crest and all over the mesa flanks, because that is where the beds
       // outcrop. The slabs are thin and flat for the same reason Cape Heth's are - it is bedded rock.
-      sample(320, (x, z) => {
+      yield* sampleSteps(320, (x, z) => {
         if (!plantable(x, z, .4)) return;
         const bare = .16 + crest(x, z) * .46 + mesa(x, z).flank * .5;
         if (random() > bare) return;
         plateauSlabs.push({ x, z, s: range(.4, 1.5), rot: random() * 6.28, flat: range(.05, .13) });
       });
-      sample(240, (x, z) => {
+      yield* sampleSteps(240, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > .44) return;
         plateauGrit.push({ x, z, s: range(.1, .34), rot: random() * 6.28, flat: range(.18, .4) });
@@ -864,21 +877,21 @@ export function createSouthwestScenery(kit) {
       // **The blocks at the foot of the cliffs**, which is what tells a mesa from a hill: a flat-topped
       // block with vertical sides sheds its cap in pieces, and the pieces lie in an apron round the base
       // at the size the bedding gives them. They are the biggest stones in the whole block.
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, 1.1)) return;
         const m = mesa(x, z);
         if (random() > m.flank * .52) return;
         if (mesaBlocks.some(s => Math.hypot(s.x - x, s.z - z) < 2.6)) return;
         mesaBlocks.push({ x, z, s: range(.5, 1.9), rot: random() * 6.28, flat: range(.45, .95) });
       });
-      sample(180, (x, z) => {
+      yield* sampleSteps(180, (x, z) => {
         const found = nearestDinelvChannel(x, z);
         if (!found || found.distance > found.channel.half * 1.3 || westBareGround(x, z, .3)) return;
         if (random() > .58) return;
         channelRubble.push({ x, z, s: range(.16, .6), rot: random() * 6.28, flat: range(.3, .62) });
       });
       // The scrub, "low, spaced, adapted to the dryness", and the basins where it is not spaced.
-      sample(260, (x, z) => {
+      yield* sampleSteps(260, (x, z) => {
         if (!plantable(x, z, 1.4)) return;
         const basin = inDinelvBasin(x, z), m = mesa(x, z);
         if (basin > .2) {
@@ -891,7 +904,7 @@ export function createSouthwestScenery(kit) {
         if (plateauScrub.some(b => Math.hypot(b.x - x, b.z - z) < 6.2)) return;
         plateauScrub.push({ x, z, s: range(.18, .42), h: range(.5, .85), rot: random() * 6.28, grey: random() < .65 });
       });
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, .6)) return;
         const basin = inDinelvBasin(x, z);
         if (random() > basin * basin * .72) return;
@@ -900,14 +913,14 @@ export function createSouthwestScenery(kit) {
       // **The plateau's only trees, and all of them are in a basin**, which is the lore's own claim
       // about where the deep roots are. Small, far apart, and visible from a long way off across a
       // plateau that has nothing else standing on it.
-      sample(80, (x, z) => {
+      yield* sampleSteps(80, (x, z) => {
         if (!plantable(x, z, 2.4)) return;
         if (random() > inDinelvBasin(x, z) * .18) return;
         if (basinTrees.some(t => Math.hypot(t.x - x, t.z - z) < 16)) return;
         basinTrees.push({ x, z, s: range(.85, 1.15), h: range(3.2, 5.2), rot: random() * 6.28,
           girth: .6, bole: .46, top: .74, spread: .24, wide: .38, deep: .17 });
       });
-      sample(120, (x, z) => {
+      yield* sampleSteps(120, (x, z) => {
         if (!plantable(x, z, .8)) return;
         if (random() > .10 + inDinelvBasin(x, z) * .3) return;
         plateauStubble.push({ x, z, s: range(.32, .62), rot: random() * 6.28 });
@@ -916,7 +929,7 @@ export function createSouthwestScenery(kit) {
       const greenAt = (x, z) => hamaGreen(x, z);
       // **The sward**, and it is the densest scatter in nine countries. Thick where the map says `Csb`,
       // gone where it says `BWh`, and the whole of the change over two hundred paces.
-      sample(880, (x, z) => {
+      yield* sampleSteps(880, (x, z) => {
         if (!plantable(x, z, .5)) return;
         const green = greenAt(x, z), bed = inHamaBed(x, z);
         // **Raised from 520 after the first review render**, where two hundred and fifty tufts a hex -
@@ -930,7 +943,7 @@ export function createSouthwestScenery(kit) {
       // Low evergreen scrub in the hollows of the green half: mastic, juniper and wild-olive shapes, which
       // is what a `Csb` grassland carries where it is sheltered. Nothing cultivated - the plots are the
       // merchant houses' and are not built.
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, 1.6)) return;
         const green = greenAt(x, z);
         if (random() > green * green * .34) return;
@@ -940,7 +953,7 @@ export function createSouthwestScenery(kit) {
       // **A few trees, and every one of them leans inland**, because this corner takes the weather of
       // half an ocean: "the western face is open-ocean coast, exposed to the weather patterns that
       // originate in the far west and arrive at the peninsula having crossed considerable water".
-      sample(90, (x, z) => {
+      yield* sampleSteps(90, (x, z) => {
         if (!plantable(x, z, 2.6)) return;
         const green = greenAt(x, z);
         if (random() > green * green * .16 * smooth(20, 120, landDistance(x, z))) return;
@@ -950,14 +963,14 @@ export function createSouthwestScenery(kit) {
       });
       // The dry half: stony ribs where the walking is bad, gravel between them, and a bleached stubble
       // across the change where the grass has given out and nothing has taken its place yet.
-      sample(320, (x, z) => {
+      yield* sampleSteps(320, (x, z) => {
         if (!plantable(x, z, .4)) return;
         const dry = 1 - greenAt(x, z), lie = hamaLie(x, z);
         if (random() > dry * (.14 + lie * .5)) return;
         (lie > .6 ? hamaRibs : hamaGravel).push({ x, z, s: lie > .6 ? range(.3, .95) : range(.12, .36), rot: random() * 6.28,
           flat: lie > .6 ? range(.22, .5) : range(.16, .36) });
       });
-      sample(200, (x, z) => {
+      yield* sampleSteps(200, (x, z) => {
         if (!plantable(x, z, .7)) return;
         const green = greenAt(x, z);
         if (random() > (1 - Math.abs(green - .34) * 2.6) * .5) return;
@@ -965,48 +978,48 @@ export function createSouthwestScenery(kit) {
       });
     }
   }
-  stoneBatch(capeSlabs, 'Cape Heth bedding slabs', spot => color.set(spot.salt > .55 ? '#54524a' : '#47453a').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
-  stoneBatch(capeGrit, 'Cape Heth grit', () => color.set('#454336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
-  stoneBatch(capeSalt, 'Cape Heth salt crust', () => color.set('#6e6d62').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .01);
-  stoneBatch(capeLichen, 'Cape Heth lichen', () => color.set('#464a3e').offsetHSL(range(-.02, .02), range(-.03, .04), range(-.04, .06)), .01);
-  stoneBatch(capeShingle, 'Heth Bight shingle', () => color.set('#514f46').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .1);
-  stoneBatch(plateauSlabs, 'Dinelv bedding slabs', () => color.set('#4f4a3c').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
-  stoneBatch(plateauGrit, 'Dinelv plateau grit', () => color.set('#464336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  yield* stoneBatchSteps(capeSlabs, 'Cape Heth bedding slabs', spot => color.set(spot.salt > .55 ? '#54524a' : '#47453a').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
+  yield* stoneBatchSteps(capeGrit, 'Cape Heth grit', () => color.set('#454336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  yield* stoneBatchSteps(capeSalt, 'Cape Heth salt crust', () => color.set('#6e6d62').offsetHSL(0, range(-.015, .015), range(-.04, .07)), .01);
+  yield* stoneBatchSteps(capeLichen, 'Cape Heth lichen', () => color.set('#464a3e').offsetHSL(range(-.02, .02), range(-.03, .04), range(-.04, .06)), .01);
+  yield* stoneBatchSteps(capeShingle, 'Heth Bight shingle', () => color.set('#514f46').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .1);
+  yield* stoneBatchSteps(plateauSlabs, 'Dinelv bedding slabs', () => color.set('#4f4a3c').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .02);
+  yield* stoneBatchSteps(plateauGrit, 'Dinelv plateau grit', () => color.set('#464336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
   // The fallen cap rock is the harder darker upper bed, so the blocks are darker than the ground they
   // lie on - which is the reverse of the reg's pebbles and is true for the same kind of reason.
-  stoneBatch(mesaBlocks, 'Dinelv cliff blocks', () => color.set('#302f29').offsetHSL(0, range(-.02, .02), range(-.04, .06)), .22);
-  stoneBatch(channelRubble, 'Dinelv channel rubble', () => color.set('#4a4639').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .14);
-  stoneBatch(hamaRibs, 'Hama stony ribs', () => color.set('#4a483b').offsetHSL(0, range(-.02, .03), range(-.05, .06)), .12);
-  stoneBatch(hamaGravel, 'Hama gravel', () => color.set('#454336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
-  bushBatch(capeScrub, 'Cape Heth scrub', bush => bush.grey
+  yield* stoneBatchSteps(mesaBlocks, 'Dinelv cliff blocks', () => color.set('#302f29').offsetHSL(0, range(-.02, .02), range(-.04, .06)), .22);
+  yield* stoneBatchSteps(channelRubble, 'Dinelv channel rubble', () => color.set('#4a4639').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .14);
+  yield* stoneBatchSteps(hamaRibs, 'Hama stony ribs', () => color.set('#4a483b').offsetHSL(0, range(-.02, .03), range(-.05, .06)), .12);
+  yield* stoneBatchSteps(hamaGravel, 'Hama gravel', () => color.set('#454336').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .05);
+  yield* bushBatchSteps(capeScrub, 'Cape Heth scrub', bush => bush.grey
     ? color.set('#565849').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#494e3c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
-  bushBatch(hollowScrub, 'Heth hollow scrub', bush => bush.grey
+  yield* bushBatchSteps(hollowScrub, 'Heth hollow scrub', bush => bush.grey
     ? color.set('#525648').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#3f4c2c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .4);
-  bushBatch(plateauScrub, 'Dinelv plateau scrub', bush => bush.grey
+  yield* bushBatchSteps(plateauScrub, 'Dinelv plateau scrub', bush => bush.grey
     ? color.set('#54564d').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#474c3c').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)));
-  bushBatch(basinScrub, 'Dinelv basin scrub', bush => bush.grey
+  yield* bushBatchSteps(basinScrub, 'Dinelv basin scrub', bush => bush.grey
     ? color.set('#505448').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#3d4a2b').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .4);
-  bushBatch(hamaMaquis, 'Hama evergreen scrub', bush => bush.grey
+  yield* bushBatchSteps(hamaMaquis, 'Hama evergreen scrub', bush => bush.grey
     ? color.set('#4e5346').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.05, .05))
     : color.set('#2e4423').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .46);
-  treeBatch(basinTrees, 'Dinelv basin thorn', () => color.set('#434b34').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'southwest-tree');
-  treeBatch(hamaTrees, 'Hama wind trees', () => color.set('#334823').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'southwest-tree');
+  yield* treeBatchSteps(basinTrees, 'Dinelv basin thorn', () => color.set('#434b34').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.04, .06)), 'southwest-tree');
+  yield* treeBatchSteps(hamaTrees, 'Hama wind trees', () => color.set('#334823').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'southwest-tree');
   // **Hama's grass is the only properly green scatter in the block**, and the beds in it are greener
   // again. Everything else in nine countries is buff, grey or bleached.
-  tuftBatch(hamaSward, 'Hama sward', tuft => color.setHSL(.212 + tuft.green * .022 + range(-.012, .012),
+  yield* tuftBatchSteps(hamaSward, 'Hama sward', tuft => color.setHSL(.212 + tuft.green * .022 + range(-.012, .012),
     .21 + tuft.green * .16 + range(-.03, .03), .17 + tuft.green * .06 + range(-.025, .025)));
-  tuftBatch(bedGrass, 'Hama winter-bed grass', tuft => color.setHSL(.238 + range(-.010, .010),
+  yield* tuftBatchSteps(bedGrass, 'Hama winter-bed grass', tuft => color.setHSL(.238 + range(-.010, .010),
     .30 + range(-.03, .03), .20 + range(-.02, .02)));
-  tuftBatch(hollowGrass, 'Heth hollow grass', tuft => color.setHSL(.140 + tuft.hollow * .030 + range(-.012, .012),
+  yield* tuftBatchSteps(hollowGrass, 'Heth hollow grass', tuft => color.setHSL(.140 + tuft.hollow * .030 + range(-.012, .012),
     .20 + range(-.03, .03), .33 + range(-.03, .03)));
-  tuftBatch(basinGrass, 'Dinelv basin grass', tuft => color.setHSL(.132 + tuft.basin * .026 + range(-.012, .012),
+  yield* tuftBatchSteps(basinGrass, 'Dinelv basin grass', tuft => color.setHSL(.132 + tuft.basin * .026 + range(-.012, .012),
     .21 + range(-.03, .03), .32 + range(-.03, .03)));
-  stubbleBatch(hamaStubble, 'Hama transition stubble');
-  stubbleBatch(plateauStubble, 'Dinelv plateau stubble');
+  yield* stubbleBatchSteps(hamaStubble, 'Hama transition stubble');
+  yield* stubbleBatchSteps(plateauStubble, 'Dinelv plateau stubble');
   metrics.capeRock = capeSlabs.length + capeGrit.length;
   metrics.capeSalt = capeSalt.length; metrics.lichen += capeLichen.length;
   metrics.plateauRock = plateauSlabs.length + plateauGrit.length;
@@ -1056,10 +1069,12 @@ export function createSouthwestScenery(kit) {
   const maquis = [], maroshOaks = [], terraceGrass = [], aromatics = [], combeGrass = [], maroshStone = [], maroshTurf = [], maroshShingle = [];
   const emergents = [], canopyTrees = [], fogTrees = [], understory = [], litter = [], buttress = [], wayFerns = [];
   const clearingSaplings = [], clearingGrass = [], gullyStones = [], mangroves = [], shoreTussock = [], shoreScrub = [];
-  for (const cell of eastCells) {
+  for (const cell of eastCells) { if ((++buildWork & 31) === 0) yield;
     const here = where(cell.x, cell.z);
-    const sample = (count, work) => {
+    const sampleSteps = function* (count, work) {
+      let workCount = 0;
       for (let i = 0; i < count; i++) {
+        if ((++workCount & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
         if (where(x, z) !== here) continue;
         work(x, z);
@@ -1067,7 +1082,7 @@ export function createSouthwestScenery(kit) {
     };
     if (here === 'Marosh') {
       // The crest: holm oak and maquis, and the maquis is the densest scrub in thirteen countries.
-      sample(150, (x, z) => {
+      yield* sampleSteps(150, (x, z) => {
         if (!plantable(x, z, 1.8)) return;
         const crest = maroshCrest(x, z);
         if (random() > crest * .62) return;
@@ -1075,7 +1090,7 @@ export function createSouthwestScenery(kit) {
         maroshOaks.push({ x, z, s: range(.9, 1.3), h: range(6.5, 10.5), rot: random() * 6.28,
           girth: 1.05, bole: .4, top: .74, spread: .3, wide: .38, deep: .26, crest });
       });
-      sample(260, (x, z) => {
+      yield* sampleSteps(260, (x, z) => {
         if (!plantable(x, z, .9)) return;
         const crest = maroshCrest(x, z);
         if (random() > .12 + crest * .62) return;
@@ -1088,26 +1103,26 @@ export function createSouthwestScenery(kit) {
       // **Six hundred and fifty a cell and not three hundred**, which is job 3's lesson about Hama's sward
       // met a second time: a quarter of a thousand tufts a hex is not grass at a low angle across a wide
       // view, it is a mown lawn with stones on it. The first review round photographed exactly that.
-      sample(650, (x, z) => {
+      yield* sampleSteps(650, (x, z) => {
         if (!plantable(x, z, .3)) return;
         const crest = maroshCrest(x, z), shore = maroshShore(x, z), combe = inMaroshCombe(x, z);
         if (random() > (1 - crest * .72) * (1 - shore * .4)) return;
         (combe > .35 ? combeGrass : terraceGrass).push({ x, z, s: range(.62, 1.25), rot: random() * 6.28,
           wide: range(.9, 1.45), combe, crest });
       });
-      sample(280, (x, z) => {
+      yield* sampleSteps(280, (x, z) => {
         if (!plantable(x, z, 1.1)) return;
         if (random() > (1 - maroshCrest(x, z)) * .4) return;
         if (aromatics.some(b => Math.hypot(b.x - x, b.z - z) < 2.8)) return;
         aromatics.push({ x, z, s: range(.26, .56), h: range(.55, .95), rot: random() * 6.28 });
       });
       // Grey limestone showing along the crest, and shingle and sea turf on the Iberos shore.
-      sample(180, (x, z) => {
+      yield* sampleSteps(180, (x, z) => {
         if (!plantable(x, z, .3)) return;
         if (random() > maroshCrest(x, z) * .34) return;
         maroshStone.push({ x, z, s: range(.2, .7), rot: random() * 6.28, flat: range(.1, .24) });
       });
-      sample(140, (x, z) => {
+      yield* sampleSteps(140, (x, z) => {
         const shore = maroshShore(x, z);
         if (shore < .35 || !own(x, z) || westWaterSurface(x, z) !== null) return;
         if (westBareGround(x, z, .3)) { if (random() < shore * .5) maroshShingle.push({ x, z, s: range(.12, .34), rot: random() * 6.28, flat: range(.12, .3) }); return; }
@@ -1118,7 +1133,7 @@ export function createSouthwestScenery(kit) {
     }
     // ----- Trogo -----
     // The canopy, in the lore's own three layers, and none of it on a way.
-    sample(150, (x, z) => {
+    yield* sampleSteps(150, (x, z) => {
       if (!plantable(x, z, 2.6) || trogoWay(x, z) >= TROGO_WAY.open) return;
       const band = trogoBand(x, z), fog = trogoFogForest(x, z);
       if (trogoThicket(x, z) < .5) return;
@@ -1129,7 +1144,7 @@ export function createSouthwestScenery(kit) {
       emergents.push({ x, z, s: range(1, 1.35), h: range(26, 38), rot: random() * 6.28,
         girth: .78, bole: .68, top: .82, spread: .1, wide: .2, deep: .34, band });
     });
-    sample(850, (x, z) => {
+    yield* sampleSteps(850, (x, z) => {
       if (!plantable(x, z, 1.6) || trogoWay(x, z) >= TROGO_WAY.open) return;
       if (trogoThicket(x, z) < .5) return;
       const fog = trogoFogForest(x, z), open = inTrogoClearing(x, z);
@@ -1149,7 +1164,7 @@ export function createSouthwestScenery(kit) {
     });
     // The understory, which is the thicket itself: tree-ferns, palms and rattan, no colliders at all,
     // because what stops a body in this country is `src/undergrowth.js` and not three thousand rocks.
-    sample(820, (x, z) => {
+    yield* sampleSteps(820, (x, z) => {
       if (!plantable(x, z, .5)) return;
       const thicket = trogoThicket(x, z), way = trogoWay(x, z);
       if (thicket < .45) return;
@@ -1164,20 +1179,20 @@ export function createSouthwestScenery(kit) {
         palm: random() < .38, band: trogoBand(x, z) });
     });
     // The floor: leaf litter and buttress roots, and nothing green, because nothing grows in that light.
-    sample(380, (x, z) => {
+    yield* sampleSteps(380, (x, z) => {
       if (!own(x, z) || westWaterSurface(x, z) !== null || westBareGround(x, z, .3)) return;
       if (trogoThicket(x, z) < .5) return;
       if (random() > .52) return;
       litter.push({ x, z, s: range(.18, .55), rot: random() * 6.28, flat: range(.03, .08) });
     });
-    sample(110, (x, z) => {
+    yield* sampleSteps(110, (x, z) => {
       if (!own(x, z) || westWaterSurface(x, z) !== null || westBareGround(x, z, .4)) return;
       if (trogoThicket(x, z) < .55 || trogoWay(x, z) >= TROGO_WAY.open) return;
       if (random() > .3) return;
       buttress.push({ x, z, s: range(.5, 1.5), rot: random() * 6.28, flat: range(.3, .7) });
     });
     // The clearings: light-gap saplings and the only grass under the canopy.
-    sample(160, (x, z) => {
+    yield* sampleSteps(160, (x, z) => {
       if (!plantable(x, z, .6)) return;
       const open = inTrogoClearing(x, z);
       if (open < .25) return;
@@ -1186,7 +1201,7 @@ export function createSouthwestScenery(kit) {
       else clearingGrass.push({ x, z, s: range(.5, 1), rot: random() * 6.28, wide: range(.9, 1.4) });
     });
     // The gully floors: stone, because a gully in a rainforest is scoured to rock every month.
-    sample(180, (x, z) => {
+    yield* sampleSteps(180, (x, z) => {
       if (!own(x, z) || westWaterSurface(x, z) !== null) return;
       if (!onTrogoGullyFloor(x, z, 1)) return;
       if (random() > .5) return;
@@ -1194,7 +1209,7 @@ export function createSouthwestScenery(kit) {
     });
     // The coast, in the two forms the atlas draws: canopy to the waterline where the shore is sheltered,
     // and a salt-pruned collar of tussock and scrub where it faces the southern ocean.
-    sample(200, (x, z) => {
+    yield* sampleSteps(200, (x, z) => {
       if (!plantable(x, z, .4)) return;
       const thicket = trogoThicket(x, z), land = landDistance(x, z);
       if (thicket >= .55) {
@@ -1212,43 +1227,43 @@ export function createSouthwestScenery(kit) {
     });
   }
   // Marosh, in the order a traveler crossing from the Iberos meets it.
-  stoneBatch(maroshStone, 'Marosh crest limestone', () => color.set('#5b5a4c').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .1);
-  stoneBatch(maroshShingle, 'Marosh shore shingle', () => color.set('#63604f').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .08);
-  bushBatch(maquis, 'Marosh maquis', bush => color.setHSL(.248 + bush.crest * .014 + range(-.012, .012),
+  yield* stoneBatchSteps(maroshStone, 'Marosh crest limestone', () => color.set('#5b5a4c').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .1);
+  yield* stoneBatchSteps(maroshShingle, 'Marosh shore shingle', () => color.set('#63604f').offsetHSL(0, range(-.02, .02), range(-.05, .05)), .08);
+  yield* bushBatchSteps(maquis, 'Marosh maquis', bush => color.setHSL(.248 + bush.crest * .014 + range(-.012, .012),
     .24 + bush.crest * .10 + range(-.03, .03), .13 + range(-.02, .025)), .32);
-  bushBatch(aromatics, 'Marosh aromatic scrub', () => color.setHSL(.176 + range(-.014, .014),
+  yield* bushBatchSteps(aromatics, 'Marosh aromatic scrub', () => color.setHSL(.176 + range(-.014, .014),
     .16 + range(-.03, .03), .23 + range(-.025, .025)));
-  treeBatch(maroshOaks, 'Marosh holm oak', tree => color.set('#2d4020').offsetHSL(range(-.015, .015), range(-.04, .05), range(-.03, .05) - tree.crest * .015), 'southwest-tree');
-  tuftBatch(terraceGrass, 'Marosh terrace grass', tuft => color.setHSL(.148 + range(-.014, .014),
+  yield* treeBatchSteps(maroshOaks, 'Marosh holm oak', tree => color.set('#2d4020').offsetHSL(range(-.015, .015), range(-.04, .05), range(-.03, .05) - tree.crest * .015), 'southwest-tree');
+  yield* tuftBatchSteps(terraceGrass, 'Marosh terrace grass', tuft => color.setHSL(.148 + range(-.014, .014),
     .20 + range(-.03, .03), .27 + range(-.03, .03)));
-  tuftBatch(combeGrass, 'Marosh combe grass', tuft => color.setHSL(.246 + range(-.010, .010),
+  yield* tuftBatchSteps(combeGrass, 'Marosh combe grass', tuft => color.setHSL(.246 + range(-.010, .010),
     .30 + range(-.03, .03), .20 + range(-.02, .02)));
-  tuftBatch(maroshTurf, 'Marosh sea turf', () => color.setHSL(.224 + range(-.012, .012),
+  yield* tuftBatchSteps(maroshTurf, 'Marosh sea turf', () => color.setHSL(.224 + range(-.012, .012),
     .22 + range(-.03, .03), .21 + range(-.025, .025)));
   // Trogo, from the floor up.
-  stoneBatch(litter, 'Trogo leaf litter', () => color.set('#332c1d').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.035, .045)), .03);
-  stoneBatch(buttress, 'Trogo buttress roots', () => color.set('#3a3226').offsetHSL(0, range(-.02, .03), range(-.04, .05)), .22);
-  stoneBatch(gullyStones, 'Trogo gully stones', () => color.set('#4a4a3e').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .12);
+  yield* stoneBatchSteps(litter, 'Trogo leaf litter', () => color.set('#332c1d').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.035, .045)), .03);
+  yield* stoneBatchSteps(buttress, 'Trogo buttress roots', () => color.set('#3a3226').offsetHSL(0, range(-.02, .03), range(-.04, .05)), .22);
+  yield* stoneBatchSteps(gullyStones, 'Trogo gully stones', () => color.set('#4a4a3e').offsetHSL(0, range(-.02, .02), range(-.05, .06)), .12);
   // **The first review round came back with the understory as pale mint boulders**, which is job 1's
   // haze lesson and job 3's renderer lesson met for the third time: a bush on the floor of a closed
   // canopy gets a few per cent of the light that falls on the top of it, and the renderer reads an
   // authored colour as linear and lifts it a long way. Everything on this floor went about forty per
   // cent down.
-  bushBatch(understory, 'Trogo understory', bush => color.setHSL(bush.palm ? .268 : .288 + range(-.014, .014),
+  yield* bushBatchSteps(understory, 'Trogo understory', bush => color.setHSL(bush.palm ? .268 : .288 + range(-.014, .014),
     .34 + range(-.04, .04), .062 + (1 - bush.band) * .028 + range(-.012, .015)));
-  bushBatch(wayFerns, 'Trogo way ferns', () => color.setHSL(.296 + range(-.012, .012),
+  yield* bushBatchSteps(wayFerns, 'Trogo way ferns', () => color.setHSL(.296 + range(-.012, .012),
     .36 + range(-.04, .04), .085 + range(-.012, .018)));
-  bushBatch(clearingSaplings, 'Trogo clearing saplings', () => color.setHSL(.258 + range(-.014, .014),
+  yield* bushBatchSteps(clearingSaplings, 'Trogo clearing saplings', () => color.setHSL(.258 + range(-.014, .014),
     .34 + range(-.04, .04), .125 + range(-.018, .022)));
-  bushBatch(shoreScrub, 'Trogo shore scrub', () => color.setHSL(.212 + range(-.014, .014),
+  yield* bushBatchSteps(shoreScrub, 'Trogo shore scrub', () => color.setHSL(.212 + range(-.014, .014),
     .24 + range(-.03, .03), .145 + range(-.02, .02)));
-  treeBatch(canopyTrees, 'Trogo canopy', tree => color.set('#1e3318').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.025, .045) - tree.fog * .01), 'southwest-tree');
-  treeBatch(emergents, 'Trogo emergents', () => color.set('#20381a').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.02, .05)), 'southwest-tree');
-  treeBatch(fogTrees, 'Trogo fog forest', () => color.set('#31422c').offsetHSL(range(-.012, .012), range(-.05, .04), range(-.02, .05)), 'southwest-tree');
-  treeBatch(mangroves, 'Trogo mangrove', () => color.set('#253a22').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.02, .05)), 'southwest-tree');
-  tuftBatch(clearingGrass, 'Trogo clearing grass', () => color.setHSL(.252 + range(-.012, .012),
+  yield* treeBatchSteps(canopyTrees, 'Trogo canopy', tree => color.set('#1e3318').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.025, .045) - tree.fog * .01), 'southwest-tree');
+  yield* treeBatchSteps(emergents, 'Trogo emergents', () => color.set('#20381a').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.02, .05)), 'southwest-tree');
+  yield* treeBatchSteps(fogTrees, 'Trogo fog forest', () => color.set('#31422c').offsetHSL(range(-.012, .012), range(-.05, .04), range(-.02, .05)), 'southwest-tree');
+  yield* treeBatchSteps(mangroves, 'Trogo mangrove', () => color.set('#253a22').offsetHSL(range(-.012, .012), range(-.04, .05), range(-.02, .05)), 'southwest-tree');
+  yield* tuftBatchSteps(clearingGrass, 'Trogo clearing grass', () => color.setHSL(.252 + range(-.012, .012),
     .30 + range(-.03, .03), .21 + range(-.025, .025)));
-  tuftBatch(shoreTussock, 'Trogo shore tussock', () => color.setHSL(.176 + range(-.014, .014),
+  yield* tuftBatchSteps(shoreTussock, 'Trogo shore tussock', () => color.setHSL(.176 + range(-.014, .014),
     .21 + range(-.03, .03), .25 + range(-.03, .03)));
   metrics.maquis = maquis.length; metrics.maroshStone = maroshStone.length + maroshShingle.length;
   metrics.oaks = maroshOaks.length;

@@ -123,6 +123,18 @@ export const SKILLS = Object.freeze({
     thresholds: RUNESCAPE_TABLE,
     unlocks: Object.freeze([unlock(1, 'Repair worn weapons at a repair bench or with Martin for 18 Smithing experience')]),
   }),
+  dwarvenSmithing: Object.freeze({
+    id: 'dwarvenSmithing', name: 'Dwarven Smithing', parent: 'smithing', kind: 'working', requiresLesson: true,
+    blurb: 'A guarded branch of Smithing preserved in the dwarf holds. The first lesson teaches repair-riveting: controlled heat, a fitted and peened joint, then a careful quench. Further techniques require separate lessons and trust.',
+    teacher: 'The West Hold artisan, after earning entry to the western kingdom',
+    thresholds: RUNESCAPE_TABLE,
+    unlocks: Object.freeze([unlock(1, 'Repair-riveting: heat the rivet, fit and peen the joint, then quench under the artisan\'s supervision')]),
+    techniques: Object.freeze([
+      Object.freeze({ id: 'repair-riveting', name: 'Repair-riveting', detail: 'Heat the rivet; fit and peen the joint; quench and inspect the repair.' }),
+      Object.freeze({ id: 'further-techniques', name: 'Further dwarven techniques', future: true,
+        detail: 'Locked: future quests and separate teaching will be needed. Skill levels and the first lesson do not grant these techniques.' }),
+    ]),
+  }),
   woodcutting: Object.freeze({
     id: 'woodcutting', name: 'Woodcutting', kind: 'working',
     blurb: 'Choosing the tree, reading the grain, and swinging until it gives. Every log you cut is experience, and every tree and every axe has the level it wants from you.',
@@ -373,6 +385,10 @@ export function skillLevel(id, xp) {
 export function skillGuide(id, level) {
   return (SKILLS[id]?.unlocks ?? []).map(entry => ({ ...entry, open: level >= entry.level }));
 }
+/** Guarded craft techniques are taught, not granted merely by a higher level. */
+export function skillTechniques(id, taught = false) {
+  return (SKILLS[id]?.techniques ?? []).map(entry => ({ ...entry, learned: !!taught && !entry.future }));
+}
 /** RuneScape's words for a new level. */
 export const levelUpLine = (id, level) => `Congratulations, you’ve just advanced a ${SKILLS[id]?.name ?? id} level. You are now level ${level}.`;
 
@@ -395,7 +411,9 @@ export function validateSkillsSnapshot(data, { allowMissing = true } = {}) {
   if (data.taught !== undefined && (!Array.isArray(data.taught)
     || !data.taught.every(id => typeof id === 'string' && Object.hasOwn(SKILLS, canonical(id))))) return false;
   return Object.entries(data.skills).every(([id, entry]) => Object.hasOwn(SKILLS, canonical(id)) && entry && typeof entry === 'object'
-    && Number.isInteger(entry.xp) && entry.xp >= 0 && entry.xp <= MAX_XP);
+    && Number.isInteger(entry.xp) && entry.xp >= 0 && entry.xp <= MAX_XP
+    && (!SKILLS[canonical(id)].requiresLesson || data.taught === undefined || data.taught.includes(canonical(id))))
+    && (data.taught ?? []).every(id => !SKILLS[canonical(id)]?.requiresLesson || Object.hasOwn(data.skills, canonical(id)));
 }
 
 /**
@@ -413,11 +431,15 @@ export function validateSkillsSnapshot(data, { allowMissing = true } = {}) {
  * something you have never done, that is still an occasion, and `learn` still says so. It says
  * it by the only honest measure left, which is that you have no experience in it yet, so the
  * answer survives a save without a field to hold it.
+ *
+ * The user's 1 October Dwarfland choice adds a narrower exception: guarded
+ * specializations require their own lesson. Ordinary Smithing and every other
+ * existing skill retain their original first-step availability.
  */
 export function createSkills({ onEvent = () => {}, begins = [] } = {}) {
   const learned = new Map();
   /** The skills this game begins knowing: seeded silently, because a life lived is not a banner. */
-  const seed = () => { for (const id of begins) if (Object.hasOwn(SKILLS, id) && !learned.has(id)) learned.set(id, 0); };
+  const seed = () => { for (const id of begins) if (Object.hasOwn(SKILLS, id) && !SKILLS[id].requiresLesson && !learned.has(id)) learned.set(id, 0); };
   seed();
   /**
    * **Who has already shown the traveler something.** Knowing a skill is no longer the question
@@ -436,15 +458,18 @@ export function createSkills({ onEvent = () => {}, begins = [] } = {}) {
     if (!Object.hasOwn(SKILLS, id)) return { ok: false, reason: 'There is no such skill.' };
     // New the first time this teacher's own lesson lands, and never again: `taught` is saved.
     const first = !taught.has(id);
+    const parent = SKILLS[id].parent;
+    if (parent && !learned.has(parent)) learned.set(parent, 0);
     if (!learned.has(id)) learned.set(id, 0);
     taught.add(id);
     if (first) onEvent({ type: 'skill-learned', id });
     return { ok: true, first, ...skillLevel(id, learned.get(id)) };
   }
 
-  /** Add experience. Any skill the game has can be practised, taught or not. */
+  /** Ordinary skills can be practised untaught; guarded branches need a lesson. */
   function gain(id, amount) {
     if (!Object.hasOwn(SKILLS, id)) return { ok: false, reason: 'There is no such skill.' };
+    if (SKILLS[id].requiresLesson && !taught.has(id)) return { ok: false, reason: 'A dwarf artisan must teach this guarded Smithing technique first.' };
     if (!learned.has(id)) learned.set(id, 0);
     const points = Math.max(0, Math.floor(Number(amount) || 0));
     const before = skillLevel(id, learned.get(id)), after = skillLevel(id, Math.min(MAX_XP, before.xp + points));
@@ -457,15 +482,16 @@ export function createSkills({ onEvent = () => {}, begins = [] } = {}) {
   // The floor is the law, not the seeding: every skill the game has is known and no lower than
   // level 1, whether or not this game seeded it and whether or not anybody has taught it. A
   // module asking `level` of a skill nobody has touched gets 1, which is what it now is.
-  const known = id => Object.hasOwn(SKILLS, id);
-  const level = id => learned.has(id) ? skillLevel(id, learned.get(id)).level : (Object.hasOwn(SKILLS, id) ? 1 : 0);
+  const known = id => Object.hasOwn(SKILLS, id) && (!SKILLS[id].requiresLesson || taught.has(id));
+  const level = id => !known(id) ? 0 : learned.has(id) ? skillLevel(id, learned.get(id)).level : 1;
 
   /** Every skill, learned or not, for the journal, with its guide. */
   function view() {
     return SKILL_IDS.map(id => {
       const read = learned.has(id) ? skillLevel(id, learned.get(id)) : { level: 0, top: SKILLS[id].thresholds.length, xp: 0, floor: 0, next: null, max: false, progress: 0 };
       return { id, name: SKILLS[id].name, blurb: SKILLS[id].blurb, teacher: SKILLS[id].teacher, kind: SKILLS[id].kind ?? 'knowing',
-        learned: learned.has(id), taught: taught.has(id), ...read, guide: skillGuide(id, read.level) };
+        parent: SKILLS[id].parent ?? null, requiresLesson: SKILLS[id].requiresLesson === true,
+        learned: learned.has(id), taught: taught.has(id), ...read, guide: skillGuide(id, read.level), techniques: skillTechniques(id, taught.has(id)) };
     });
   }
   /** RuneScape's total level: every learned skill's level, added up. */
@@ -484,6 +510,10 @@ export function createSkills({ onEvent = () => {}, begins = [] } = {}) {
     seed();
     if (!validateSkillsSnapshot(data, { allowMissing: false })) return false;
     for (const [id, entry] of Object.entries(data.skills)) learned.set(canonical(id), Math.max(entry.xp, learned.get(canonical(id)) ?? 0));
+    for (const id of learned.keys()) {
+      const parent = SKILLS[id]?.parent;
+      if (parent && !learned.has(parent)) learned.set(parent, 0);
+    }
     // A save written before teaching and knowing were separate says who taught by which skills it
     // holds, which is exactly what the field meant then.
     for (const id of data.taught ?? Object.keys(data.skills)) if (Object.hasOwn(SKILLS, canonical(id))) taught.add(canonical(id));

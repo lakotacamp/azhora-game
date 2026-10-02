@@ -4,7 +4,7 @@
 export const CLIMBING = Object.freeze({ grabSlope: .9, restSlope: .6, maxSlope: 12, reach: 1.45, radius: .34,
   speed: 1.8, movingDrain: 7, descendingDrain: 3.5, hangingDrain: 1.2, burstCost: 14,
   safeDrop: 3.5, gravity: 20 });
-const CLIMB_REGIONS = new Set([4, 5, 18, 20, 21, 27, 37, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains']);
+const CLIMB_REGIONS = new Set([4, 5, 18, 20, 21, 27, 37, 52, 53, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains', 'West Baldro Mountains', 'East Baldro Mountains']);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const copy = p => p ? { x: p.x, y: p.y, z: p.z } : null;
 const finite = p => p && Number.isFinite(p.x) && Number.isFinite(p.z);

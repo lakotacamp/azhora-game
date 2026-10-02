@@ -66,6 +66,19 @@ test('race restoration is atomic, supports old saves, and resumes the exact live
   }
   assert.equal(next.restore(undefined), true); assert.equal(next.state().stage, 'available');
 });
+test('abandoning a race with a malformed or oversized reason still produces a valid checkpoint', () => {
+  for (const reason of [null, 7, {}, 'x'.repeat(161), 'The rider dismounted.']) {
+    const events = [], quest = createKaylaRace({ onEvent: event => events.push(event) });
+    quest.accept(); assert.equal(quest.abandon(reason), true);
+    const saved = quest.snapshot();
+    assert.equal(saved.stage, 'lost');
+    assert.equal(validateKaylaRaceSnapshot(saved), true);
+    assert.equal(events.at(-1).reason, saved.reason);
+    assert.equal(saved.reason, typeof reason === 'string' ? reason.slice(0, 160) : 'You left the race.');
+    const restored = createKaylaRace(); assert.equal(restored.restore(JSON.parse(JSON.stringify(saved))), true);
+    assert.deepEqual(restored.snapshot(), saved);
+  }
+});
 test('manual rider input honors solid objects', () => {
   const quest = createKaylaRace(), at = quest.position;
   const blocked = { ...world, colliders: [{ x: at.x + 3, z: at.z, hx: .5, hz: 8 }] };

@@ -125,3 +125,22 @@ test('invalid guard progress cannot overwrite a save, and a new completed lesson
   const { chartLesson, ...legacyOnward } = onward;
   assert.equal(checkpoint.save({ ...legacyOnward, woodland: legacyWoodland }).ok, true);
 });
+
+
+test('saved discoveries survive absent regional scenery and remain bounded validated IDs', () => {
+  const { data, checkpoint } = fixture();
+  const discoveries = ['harbor', 'west-baldro-entrance', 'east-sluice-2-workyard'];
+  data.woodland.discoveries = discoveries;
+  assert.equal(checkpoint.save(data).ok, true);
+  const resumed = checkpoint.read().data;
+  assert.deepEqual(resumed.woodland.discoveries, discoveries);
+  // No live scene catalog is needed when resaving from another region.
+  resumed.woodland = copyWoodlandProgress(resumed.woodland);
+  assert.equal(checkpoint.save(resumed).ok, true);
+  assert.deepEqual(checkpoint.read().data.woodland.discoveries, discoveries);
+  for (const invalid of [[42], ['a'.repeat(65)], ['harbor', 'harbor'],
+    Array.from({ length: 401 }, (_, i) => `landmark-${i}`)]) {
+    assert.equal(checkpoint.save({ ...resumed, woodland: { ...resumed.woodland, discoveries: invalid } }).ok, false);
+    assert.deepEqual(checkpoint.read().data.woodland.discoveries, discoveries);
+  }
+});

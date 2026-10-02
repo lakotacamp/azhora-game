@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { drapeRoadOnTerrain, terrainRoadHeight } from '../src/terrain-road.js';
+import { drapeRoadOnTerrain, drapeRoadOnTerrainSteps, terrainRoadHeight } from '../src/terrain-road.js';
 
 // A ridge in the middle of a flat-edged ribbon: sampling only the road edges
 // would hide the whole ridge under the road and let green triangles poke out.
@@ -31,4 +31,15 @@ test('local draping leaves distant road triangles unchanged and tapers at the bo
   assert.ok(unchanged.positions.every((v, i) => i % 3 !== 1 || v === .045));
   const partial = drapeRoadOnTerrain(ribbon, indices, xs, zs, ground, .045, () => .5);
   assert.ok(partial.positions.every((v, i) => i % 3 !== 1 || v >= .045 - 1e-8 && v <= 1.045 + 1e-8));
+});
+
+test('a wide road triangle yields during cell clipping, then preserves its final draped faces', () => {
+  const axes=Array.from({length:41},(_,i)=>i),surface=new Float32Array(axes.flatMap(z=>axes.flatMap(x=>[x,Math.sin(x)*.1,z])));
+  const vertices=[0,0,0,0,0,40,40,0,40],faces=[0,1,2];
+  const iterator=drapeRoadOnTerrainSteps(vertices,faces,axes,axes,surface);
+  let next=iterator.next(),pauses=0;
+  assert.equal(next.done,false,'one broad triangle must not monopolize a frame');
+  while(!next.done){pauses++;next=iterator.next();}
+  assert.ok(pauses>20);
+  assert.deepEqual(next.value,drapeRoadOnTerrain(vertices,faces,axes,axes,surface));
 });
