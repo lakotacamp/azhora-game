@@ -1927,11 +1927,13 @@ test('every ground tint in the game reaches the screen, which is the guard two j
   // away on the three hundred metres its box overlaps the Meroshe's. Both reports asked for the chain to
   // become a table walked in order, and job 4 made it one - so this is the guard that makes the failure
   // loud: **every family in the table must move the colour of the ground somewhere in its own country.**
-  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest'],
+  // Selemis is the fifth family and the first to arrive as a row (2026-10-01, docs/selemis-report.md):
+  // its line here is its line there, which is the arrangement this guard was written to force.
+  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis'],
     'a family was added to groundTint without a line here');
   const probes = { gala: ['Gala'], oves: ['Ovesos', 'Oves Desert'],
     mithala: ['South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'],
-    southwest: [...BLOCK] };
+    southwest: [...BLOCK], selemis: ['Selemi'] };
   const painted = new THREE.Color(), swatch = new THREE.Color();
   for (const family of GROUND_TINT_FAMILIES) {
     let worst = 0, at = null;

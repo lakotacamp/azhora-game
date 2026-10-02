@@ -26,7 +26,7 @@ export { METRES_PER_HEX };
 // Eer is last on purpose, and every country added after it goes on the end too. The biome
 // scatter in `world-regions.js` walks this list with one seeded stream, so a name inserted
 // anywhere but the end re-rolls every region after it and moves scatter that is already built.
-export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo']);
+export const PLAYABLE_REGIONS = Object.freeze(['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'Selemi']);
 /** Scatter is per hex, so a hex worth k times more ground carries k² times as much of it. */
 const perHex = count => Math.round(count * WORLD_SCALE * WORLD_SCALE);
 
@@ -289,6 +289,18 @@ export const REGION_BIOMES = Object.freeze({
   Trogo: Object.freeze({ id: 'trogo-rainforest', name: 'The Trogo rainforest', ground: '#2c3a24', canopy: '#24361f', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'dense', ownScatter: true,
     relief: { amplitude: 2.4, wavelength: 320 }, clearings: ['trogo-fog-ridge'],
     note: 'The first rainforest in the game: twenty-two `deep_forest` hexes that are every one of them `Af` - tropical, with no dry season, the wettest code the atlas paints anywhere - with seven `Csa` `grassland` hexes along the southern shore where the forest stops, and no hex where the two fields disagree. A slope forest on the ridge that makes it: the ridge catches the southern ocean\u2019s moisture, drops a fog wall on its windward face and leaves the Meroshe in its lee, which is why there is a desert one hex west of a rainforest. **Two rules of its own**: a haze so thick that a traveler is half hidden at fifty-eight paces, and an undergrowth that can be walked along the watercourses, the animal paths and the clearings and not through the thicket between them.' }),
+  // Selemi (src/selemis-world.js, src/selemis-scenery.js): the island one row of water south of the
+  // Ascarth tip, and the atlas's own spelling for it - the place is Selemis and its people the Selemi.
+  // Eight `grassland` hexes that are every one of them `Csa`, the same hot-summer Mediterranean code as
+  // the eighteen of Southern Ascarth a hundred and seventy metres away, so it scatters its own country
+  // for the reason the peninsula does: what grows here is decided by whether a point is on the sheltered
+  // side of the hills or the open one, on a headland, on the strand or in a winter bed, and a count per
+  // hex can say none of that. **Kin to the peninsula's grass and not the same swatch**: the Iberos coast's
+  // own lore has the land drying and "the hills become pale" going south, and this is the southernmost
+  // ground on that coast, so the grass is a shade paler and more straw than the tip's.
+  Selemi: Object.freeze({ id: 'harbour-island', name: 'The island of Selemis', ground: '#b1a971', canopy: '#55653c', treesPerHex: 0, rocksPerHex: 0, undergrowth: 'aromatic-scrub', ownScatter: true,
+    relief: { amplitude: 1.3, wavelength: 110 }, clearings: [],
+    note: 'An island of eight hexes across a channel one hex wide from the tip of the Ascarth Peninsula: a crescent with its hollow side turned to the peninsula, one sheltered bay in the hollow with a strand of sand round it, a rocky headland at either end of the strand, three low grass hills along its back, and cliffs on every shore that is not the bay. Pale straw grass and aromatic scrub over pale stone, a few wind-leaned pines in the lee of the hills, two dry winter beds coming down to the strand, and seabirds on the heads. The city, its harbour works and everybody in it are somebody\u2019s and none of it is built.' }),
 });
 
 const AXIAL_NEIGHBORS = Object.freeze([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);

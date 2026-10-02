@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
-  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo'];
+  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'Selemi'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -208,6 +208,29 @@ export const ENCLOSED_HEXES = Object.freeze({
  * clear days." It stands at x = 650, z = 3406 - two thousand eight hundred metres out from Trogo's
  * nearest hex and past `WORLD_BOUNDS.maxX`, so it is horizon and nothing else. LAND_HEXES goes from
  * 2,078 to **2,079**, which is the smallest widening this window has ever had.
+ *
+ * Then **Selemi was added, and it moved neither the box nor the window** - which is said here because
+ * five reports in a row have warned that a prediction about one is not a prediction about the other,
+ * so both were measured. Its eight hexes are (-9,133) (-8,133) / (-9,134) (-8,134) (-7,134) /
+ * (-9,135) (-8,135) (-7,135): centres x -950...-650 and z 2367.269...2540.474, its outer flats at
+ * x = -1000 and -600 and its southernmost corners a circumradius past row 135 at z = 2598.209.
+ * `worldBoundsFor` over every other country without it and over all of them with it answers the
+ * same four numbers to the last digit - x -4610.001927939127...609.9980720608719 and
+ * z -2167.195996001615...3264.4264805429416 - because the island stands 3,610 m inside the western
+ * edge, 1,210 m inside the eastern, 4,477 m inside the northern and 666 m inside the southern. So the
+ * coast lattice is the same 1,355 x 1,408 = 1,907,840 points it was, and every one of them falls in
+ * the hex it fell in before. LAND_HEXES stays at 2,079 and does not change by a hex: all eight of
+ * Selemi's were already in it as land - six of them since the Ascarths took `maxR` to 135 - so the
+ * only thing this script writes differently is one more region in `PLAYABLE_SURVEY`.
+ *
+ * **One thing was found while measuring and is left as it was found**: sampled over the whole of
+ * today's lattice, the hexes it reaches are q **-52**...34, r 79...145, and `minQ` here says -50. The
+ * two columns came with the Ibenwood belt, which took the western edge from -4360.002 to -4610.002
+ * after the paragraph above was written; they are reached only on rows 144 and 145, in the same
+ * south-western corner of the sheet, and they hold no claimed hex (nothing on the atlas is west of
+ * q = -39 in rows 79-145), so the generated file is identical either way. It is not this island's to
+ * move and `tests/southwest-world.test.js` pins the -50, so it is reported rather than changed
+ * (docs/selemis-report.md).
  */
 export const WINDOW = { minQ: -50, maxQ: 34, minR: 79, maxR: 145 };
 

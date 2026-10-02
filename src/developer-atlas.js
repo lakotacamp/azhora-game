@@ -1,5 +1,6 @@
 /** Developer destinations on the authored atlas. Normal journal mapping stays read-only. */
 import { regionDesign, levelInfo, provisionalLevel, terrainCounts } from './campaign-world.js';
+import { REGION_IDS } from './region-world.js';
 
 export const DEV_ATLAS_SIZE = Object.freeze({ width: 3062.266, height: 4088 });
 export const DEV_ATLAS_PROVENANCE = Object.freeze({
@@ -111,6 +112,9 @@ const hamaAnchor = point(969.948, 3352, -35, 139);
 // cannot walk to**, which is the point of the country.
 const maroshAnchor = point(1136.225, 3208, -26, 133);
 const trogoAnchor = point(1233.220, 3376, -26, 140);
+// Selemis's middle hex, (-8, 134): `grassland` like the other seven, and the one the hollow behind the
+// harbour and the high hill share. For (-8, 134) the atlas's formula gives this point and no other.
+const selemisAnchor = point(1648.912, 3232, -8, 134);
 const capeAnchor = point(1025.374, 1864, -2, 77);
 // The four playable regions sit on their own authored hexes now: Drent's coast,
 // Luscia across the Caloss, the Moros Plain west of it and East Suval to the south.
@@ -172,6 +176,9 @@ const LOCALS = [
   [49, 'Hama', 'hama', 'Hama', hamaAnchor],
   [50, 'Marosh', 'marosh', 'Marosh', maroshAnchor],
   [51, 'Trogo', 'trogo', 'Trogo', trogoAnchor],
+  // Its number is read, not written: another branch has taken the next ids on main, so this island's
+  // will change the day it lands, and the one place that says what it is is `REGION_IDS`.
+  [REGION_IDS.Selemi, 'Selemis', 'selemis', 'Selemi', selemisAnchor],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

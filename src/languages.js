@@ -833,6 +833,17 @@ export const REGION_LANGUAGE = freeze({
   //    and the forest peoples' unclassified language is an open question rather than a gap.
   Marosh: spoken('maroshi'),
   Trogo: spoken('maroshi', 'fogspeech'),
+  // The island of Selemis, after everything above. **Selemi, and no dialect** - and this is the first country built
+  // whose tongue was in this file before its ground was. `selemi` has been here since the company was
+  // (Kristen is "of the Selemi coast"), with its endonym Selanoc and its lexicon, and its own `where`
+  // says "Selemis and every Selemi outpost": this is the Selemis in that sentence. Neither lore file
+  // for the island has a Language section. What they do have is that the Selemi "have been absorbing
+  // foreign vocabulary... for long enough that the question of what is originally Selemi culture is
+  // genuinely difficult to answer" (the_selemi.md), and from the other side that Sorveth's commercial
+  // register "has absorbed vocabulary from Selemi" (suval.md) - so it is a tongue of its own that both
+  // lends and borrows, which is what the entry above already says of it. A dialect in this table
+  // marks a deviation from a centre, and the island is the centre.
+  Selemi: spoken('selemi'),
 });
 
 /**

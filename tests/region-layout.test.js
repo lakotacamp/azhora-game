@@ -205,6 +205,19 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    * is max() per axis with no interaction term, and 52.3 is **Codex's own ceiling**, kept as they
    * wrote it rather than recomputed.
    */
+  /**
+   * **Selemi spends nothing in either direction, and states its case like everybody else.** The island
+   * is eight hexes one row of water south of the Ascarth tip - centres x -950...-650, z 2367.269...2540.474,
+   * its outline's corners at x -1000.002 and -600.002 and z 2309.534 and 2598.209 - and every one of
+   * those is deep inside the box the others made: 3,610 m from the western edge West Ibenwood set,
+   * 1,210 m from the eastern one Drent set, 4,477 m from the northern one North Mithala set and 666 m
+   * from the southern one Trogo set. Measured rather than assumed, because the last five countries'
+   * briefs each predicted no movement and four of them were wrong: `worldBoundsFor` over the list
+   * without it answers the same four numbers as over the list with it, to the last digit, and that is
+   * asserted here so that it stays measured. The budget does not move and neither does its floor.
+   */
+  assert.deepEqual(worldBoundsFor(survey, HEX_WORLD_TRANSFORM, PLAYABLE_REGIONS.filter(name => name !== 'Selemi')), bounds,
+    'the island across the channel from the Ascarth tip moves the world box');
   assert.ok(bounds.maxX - bounds.minX < 52.3 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
   assert.ok(bounds.maxZ - bounds.minZ < 55 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
