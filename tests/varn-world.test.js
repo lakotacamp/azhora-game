@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
 import { scopedWorld } from './scoped-world.js';
-import { sampleLattice, leastFall, reachedByCountry, shutGate, LETHAL_FALL } from './lattice-flood.js';
+import { sampleLattice, leastFall, reachedByCountry, shutGate, travel, LETHAL_FALL } from './lattice-flood.js';
 import { canStand, moveCharacter } from '../src/game-state.js';
 import { createClimbing, climbForbidden, sampleClimbSurface, canWalkSlope, CLIMBING } from '../src/climbing.js';
 import { hexOwnerAt, hexAt, hexCentre, insideRegion, regions } from '../src/region-world.js';
@@ -28,7 +28,7 @@ import {
   VARN_KEEP, VARN_BUILDINGS, VARN_SQUARE, VARN_ROAD, VARN_ROAD_HEAD, VARN_STREET, VARN_DESCENT, VARN_DESCENT_PROFILE, VARN_LANDMARKS,
   VARN_SLABS, SLAB, VARN_ROCK, VARN_NEIGHBOURHOOD, RIB, VARN_WICKET, VARN_CLOSED,
   LOTHARN_PASSES_SHUT, varnGateShut, varnWicket, varnFloor, varnJambRise, jambTop, onLanding, varnGround, varnDitchCut, varnKeepsClear, varnUnclimbable, varnSurface,
-  onSlab, slabFoot, lipRib, lipRuleApplies, onLip, onWayShoulder, inVarnRock, inVarnNeighbourhood,
+  onSlab, slabFoot, lipRib, lipRuleApplies, onLip, onWayShoulder, inVarnRock, inVarnNeighbourhood, LIP_STOPS, stopRib, varnBeforeLips,
 } from '../src/varn-world.js';
 
 /**
@@ -45,7 +45,17 @@ import {
  * `canWalkSlope`, and climbs the rock with the game's own climbing controller and its own wind. What is
  * held here is the pass itself: the notch, the walls across it, the two shoulders of rock they are built
  * into, the slabs that are the one way over, and the lips that take every other way away. The whole of
- * both ranges, with every other way south, is `tests/lotharn-forts.test.js`.
+ * both ranges, with every other way south, is `tests/lotharn-forts.test.js` - and so is the whole of Varn's
+ * reach, flooded from the valleys: that nobody comes down past the city by any fall, and no climber but by
+ * the slabs.
+ *
+ * **A flood here is given the rims as risers** (tests/lattice-flood.js, `risers: lipRib, riserReach: inVarnRock`). The rims are built
+ * in treads and risers; a lattice a metre apart walked up them slantwise, which the traveler's own step does
+ * not (it was this file's one red test on 3 October 2026: a diagonal lattice step onto the rim at the west
+ * jamb's south-west corner, (-1266, -722), and a fall of thirty-nine metres off it - a step `canWalkSlope`
+ * refuses, and a place a traveler walked at with `moveCharacter` never reaches). So a step that crosses a riser
+ * is taken in the game's own strides. What the same measurement found that **was** real - a ledge with no
+ * brink, on the south-west peak - is closed in the ground (`LIP_STOPS`) and held below.
  */
 const EAST_LOTHARN = 'East Lotharn Mountains';
 const gate = id => VARN_CIRCUIT.gates.find(one => one.id === id);
@@ -326,6 +336,50 @@ test('the lips: a rim on the brink of every edge within Varn’s reach that a wa
   assert.ok(!lipRuleApplies(-1150, -800) && !lipRuleApplies(-1650, -700) && !lipRuleApplies(slabFoot(VARN_SLABS[0]).x, slabFoot(VARN_SLABS[0]).z));
 });
 
+test('the stop: a rim stood by hand at the head of the south-west peak’s slide, where the ledge has no brink for the rule to find', () => {
+  assert.equal(LIP_STOPS.length, 1);
+  const [stop] = LIP_STOPS, slopeOf = (at, x, z) => Math.hypot(at(x + .4, z) - at(x - .4, z), at(x, z + .4) - at(x, z - .4)) / .8;
+  const ground = { heightAt: groundWithRiver, regionAt: () => ({ id: 20, name: EAST_LOTHARN }) }, bare = { heightAt: varnBeforeLips, regionAt: ground.regionAt };
+  assert.ok(stop.id === 'south-west-slide' && stop.from.z === stop.to.z && stop.from.x < stop.to.x && inVarnRock(stop.from.x, stop.from.z) && inVarnRock(stop.to.x, stop.to.z));
+  assert.ok(stop.height >= RIB.height && stop.height / stop.half > 2.4, 'a ridge no walker gets up, on a ledge that falls away under it at a grade of nine tenths');
+  // One ridge from end to end, as tall as the plan says on its line and nothing a stride beyond its foot; every metre of it
+  // the mountain's own ground, and no hold on it.
+  for (let x = stop.from.x; x <= stop.to.x; x += .5) {
+    assert.ok(Math.abs(stopRib(x, stop.from.z) - stop.height) < 1e-9 && lipRib(x, stop.from.z) >= stop.height, `the stop is broken at x ${x}`);
+    assert.equal(stopRib(x, stop.from.z - stop.half - .01), 0); assert.equal(stopRib(x, stop.from.z + stop.half + .01), 0);
+    assert.equal(hexOwnerAt(x, stop.from.z), EAST_LOTHARN); assert.equal(unclimbableAt(x, stop.from.z), true, `a hold on the stop at x ${x}`);
+  }
+  // It runs from the rim the rule built west of the slide to the one it built east of it: at each end the ground on its line
+  // already stood as high as a rim without it, and beyond each end there is no ledge left, only the face.
+  for (const [end, sign] of [[stop.from, 1], [stop.to, -1]]) {
+    let joined = false;
+    for (let reach = 0; reach <= 3; reach += .25) if (groundWithRiver(end.x + sign * reach, end.z) - varnBeforeLips(end.x + sign * reach, end.z) > stop.height + .05) joined = true;
+    assert.ok(joined, `the stop's end at ${end.x} does not reach the rule's own rim`);
+    assert.ok(varnBeforeLips(end.x, end.z) - varnBeforeLips(end.x - sign * 5, end.z) > 15, `there is ground to walk beyond the stop's end at ${end.x}`);
+  }
+  // Why it is there. On the ground without the lips, south of its line: a grade steeper than a walker's at every half metre
+  // for four metres, which the walking rule never refuses going down and the fall rule calls a fall - and thirty metres and
+  // more of drop beyond. And the rule's own rim is not on it: the ledge slopes, and never breaks.
+  for (const x of [-1414, -1410, -1406]) {
+    for (let z = -646.5; z <= -643; z += .5) {
+      assert.ok(slopeOf(varnBeforeLips, x, z) > CLIMBING.grabSlope, `the slide is a walker's grade at ${x}, ${z}`);
+      assert.equal(canWalkSlope(x, z - .5, x, z, bare), true); assert.equal(lipRib(x, z), 0, `a rim on the slide at ${x}, ${z}`);
+    }
+    assert.ok(varnBeforeLips(x, -647.5) - varnBeforeLips(x, -636) > 30, `no drop under the slide at x ${x}`);
+  }
+  // What it does. A walker from either end of the ledge, going south: stopped at the ridge's uphill foot, short of its
+  // line, on ground he walks back up - so the rim keeps nobody.
+  for (const x of [-1422, -1418, -1394, -1391]) {
+    assert.ok(slopeOf(groundWithRiver, x, -651.5) <= CLIMBING.grabSlope, `the ledge at ${x} is not walked`);
+    let blocked = null;
+    for (let z = -651.5; z < -645; z += .1) if (!canWalkSlope(x, z, x, z + .1, ground)) { blocked = z; break; }
+    assert.ok(blocked !== null && blocked < stop.from.z - .4 && blocked > stop.from.z - stop.half - .6, `a walker at x ${x} is ${blocked === null ? 'never stopped' : `stopped at ${blocked.toFixed(1)}`}`);
+    assert.ok(slopeOf(groundWithRiver, x, blocked) <= CLIMBING.grabSlope && canWalkSlope(x, blocked, x, blocked - .1, ground), `he cannot walk back from ${x}, ${blocked.toFixed(1)}`);
+  }
+  // And it changes nothing else: off its ridge the ground is the ground the rule made.
+  for (const [x, z] of [[-1418, -651], [-1394, -652], [-1410, -644], [-1250, -740], [-1020, -750]]) assert.equal(stopRib(x, z), 0);
+});
+
 test('rock that gives no hold: the rule, the table, and Varn’s row of it', () => {
   // The rule itself, on a stand-in slope: a marked face gives no grab and no attached step, and is still fallen down.
   const ground = (_x, z) => 10 + Math.max(0, Math.min(20, z * 2));
@@ -555,7 +609,7 @@ test('the neighbours’ scatter was lifted off the city’s ground', () => {
 });
 
 test('the pass is shut to a walker, whatever he is willing to fall: from the pass nothing of Amod behind the wall, and from Amod nothing of the pass', { skip: !LOTHARN_PASSES_SHUT }, t => {
-  const down = leastFall(L, world, pass, { midpoints: true, ways }), up = leastFall(L, world, amodSide, { midpoints: true, ways });
+  const down = leastFall(L, world, pass, { midpoints: true, risers: lipRib, riserReach: inVarnRock, ways }), up = leastFall(L, world, amodSide, { midpoints: true, risers: lipRib, riserReach: inVarnRock, ways });
   assert.ok(area(down, upThePass, .01) > 1500 && area(up, behindTheCity, .01) > 5000, 'both floods ran');
   // No way at all: not with a fall that kills, not with any fall.
   assert.equal(area(down, southOfTheFront), 0, `a walker from the pass is in Amod behind the wall (${JSON.stringify(reachedByCountry(L, down, Infinity, southOfTheFront))})`);
@@ -618,7 +672,7 @@ test('nobody steps off a jamb’s top: the west jamb and the east shelf are walk
     const { jamb } = part, seed = L.near(part.seedX, (jamb.minZ + jamb.maxZ) / 2, 5);
     assert.ok(seed >= 0 && L.heights[seed] > JAMB.top - 2 && L.heights[seed] < JAMB.top + 2, `${part.name} can be stood on`);
     // Kept to the top itself he walks all of it inside the breastwork and none of the strip between the breastwork and the lip.
-    const cost = leastFall(L, world, [seed], { midpoints: true, within: part.onTop });
+    const cost = leastFall(L, world, [seed], { midpoints: true, risers: lipRib, riserReach: inVarnRock, within: part.onTop });
     const runs = VARN_PARAPETS.filter(run => run.jamb === jamb.id), side = name => runs.find(run => run.side === name), REACH = PARAPET.half + .35;
     const beyond = (p, run, sign, axis) => {
       if (!run) return false;
@@ -638,7 +692,7 @@ test('nobody steps off a jamb’s top: the west jamb and the east shelf are walk
     assert.ok(strip > 40, `${part.name}: ${strip} m2 of lip outside the breastwork to be kept off`);
     assert.ok(top > 500, `${top} m2 of ${part.name} walked`);
     // He is not shut up there: free of the rectangle he walks back off it along the mountain's own ledge; and he is not on the landing.
-    const free = leastFall(L, world, [seed], { midpoints: true, ways });
+    const free = leastFall(L, world, [seed], { midpoints: true, risers: lipRib, riserReach: inVarnRock, ways });
     let off = 0;
     for (let k = 0; k < free.length; k++) if (free[k] === 0) { const p = L.at(k); if (!(p.x >= jamb.minX && p.x <= jamb.maxX && p.z >= jamb.minZ && p.z <= jamb.maxZ) && L.heights[k] > JAMB.top - 6) off++; }
     assert.ok(off > 30, `${part.name}: ${off} m2 of ledge beyond the jamb is walked to from its top`);
@@ -653,7 +707,7 @@ test('nobody steps off a jamb’s top: the west jamb and the east shelf are walk
   // The wicket is left out of this flood: the lattice knows the colliders and not the rule that it opens one way, and without
   // it a body that came down the south slab would walk round and in through it (which is the traveler's own step's business).
   const wicket = varnWicket(), noWicket = (x, z) => !(Math.abs(x - wicket.x) < 2 && Math.abs(z - wicket.z) < 4);
-  const from = leastFall(L, world, [seed], { midpoints: true, ways, within: noWicket });
+  const from = leastFall(L, world, [seed], { midpoints: true, risers: lipRib, riserReach: inVarnRock, ways, within: noWicket });
   const city = VARN_PARAPETS.find(run => run.jamb === EAST_JAMB.id && run.side === 'city');
   let landing = 0;
   for (let k = 0; k < from.length; k++) {
@@ -683,10 +737,49 @@ test('nobody steps off a jamb’s top: the west jamb and the east shelf are walk
   }
 });
 
+test('the game’s own step and the game’s own fall: nobody slides off the south-west peak’s ledge, nobody mounts a rim, and without the stop he went over', t => {
+  // The walking and running paces at their caps (src/locomotion-skills.js), thirty frames a second.
+  const [stop] = LIP_STOPS, south = 0, walk = 6.6, run = 10.5, FRAME = 1 / 30;
+  // At the stop, from both dead ends of the ledge, walking and running, straight at it and slantwise: no fall that costs a
+  // point of health, never past its line, still on the ledge - and from where he fetched up he walks away again.
+  let sent = 0;
+  for (const [x, z] of [[-1422, -651.5], [-1418, -651.2], [-1394, -651.5], [-1391, -652.5]]) for (const [heading, speed] of [[south, walk], [.6, run], [-.6, run]]) {
+    assert.ok(canStand(x, z, world, .34), `nowhere to stand at ${x}, ${z}`);
+    const went = travel(world, { x, z, heading, speed, seconds: 4, dt: FRAME }); sent++;
+    assert.ok(went.damage === 0 && went.worst < 1, `from ${x}, ${z} on ${heading}: a fall of ${went.worst.toFixed(1)} m costing ${went.damage}`);
+    assert.ok(went.at.z < stop.from.z - .5 && went.at.y > JAMB.top - 6, `from ${x}, ${z} on ${heading} he is at ${went.at.x.toFixed(1)}, ${went.at.z.toFixed(1)}, ${went.at.y.toFixed(1)} m`);
+    // Not kept: on one of the eight winds he is five metres off in two seconds, unhurt. (Not on all of them: where he slid
+    // along the ridge to the place the course above bulges out, the way back is the way he came.)
+    const away = Math.max(...[0, 1, 2, 3, 4, 5, 6, 7].map(wind => { const left = travel(world, { x: went.at.x, z: went.at.z, heading: wind * Math.PI / 4, speed: walk, seconds: 1.5, dt: FRAME }); return left.damage ? 0 : Math.hypot(left.at.x - went.at.x, left.at.z - went.at.z); }));
+    assert.ok(away > 5, `he is kept at ${went.at.x.toFixed(1)}, ${went.at.z.toFixed(1)}: ${away.toFixed(1)} m is the farthest he walks`);
+  }
+  // The same traveler on the ground as it lay without the lips: over the edge, forty metres, the whole of what a fall
+  // can cost - and alive at the bottom with anything over a hundred health, on the Empire's side of the mountain.
+  const bare = { bounds: world.bounds, heightAt: varnBeforeLips, waterAt: world.waterAt, regionAt: world.regionAt, colliders: [], nearColliders: () => [] };
+  const over = travel(bare, { x: -1418, z: -651.2, heading: south, speed: walk, seconds: 8, dt: FRAME });
+  assert.ok(over.worst > 35 && over.damage >= TERRAIN_FALL.maxDamage && over.at.y < 80 && over.at.z > -640, `without the stop: worst fall ${over.worst.toFixed(1)} m, damage ${over.damage}, at ${over.at.x.toFixed(1)}, ${over.at.z.toFixed(1)}, ${over.at.y.toFixed(1)} m`);
+  assert.ok(maxHealth(99) > TERRAIN_FALL.maxDamage, 'which a tough traveler lives through');
+  // The rims, where the lattice once stepped onto one (the west jamb's south-west corner and the ledge beyond it): a traveler
+  // sent at the rim from the ledge, every three metres for forty, square on and slantwise, never has a foot on more than its
+  // first tread and never leaves the ledge's level.
+  let tried = 0;
+  for (let i = 0; i <= 14; i++) {
+    const x = -1267 - i * 2.1, z = -727 + i * 2.1;   // the ledge's walked ground, a few metres inside the rim, which runs north-east to south-west here
+    if (!canStand(x, z, world, .34) || lipRib(x, z) > 0) continue;
+    for (const heading of [Math.PI / 4, Math.PI / 2, 0]) {   // toward the brink (south-east), east, south
+      const went = travel(world, { x, z, heading, speed: run, seconds: 2, dt: FRAME }); tried++;
+      assert.ok(went.damage === 0 && went.worst < 1 && went.at.y > JAMB.top - 6, `from ${x}, ${z} on ${heading.toFixed(2)}: a fall of ${went.worst.toFixed(1)} m to ${went.at.y.toFixed(1)} m`);
+      assert.ok(lipRib(went.at.x, went.at.z) < RIB.height / 3, `he stands ${lipRib(went.at.x, went.at.z).toFixed(2)} m up the rim at ${went.at.x.toFixed(1)}, ${went.at.z.toFixed(1)}`);
+    }
+  }
+  assert.ok(tried >= 30, `${tried} travelers sent at the rim`);
+  t.diagnostic(`${sent} travelers sent at the stop and ${tried} at the rim by the west jamb; without the lips the first of them fell ${over.worst.toFixed(1)} m and landed at ${over.at.y.toFixed(1)} m`);
+});
+
 test('the climber’s route: a tireless climber from the pass is in Amod behind the city by the slabs and by nothing else, and from Amod on the pass the same way', { skip: !LOTHARN_PASSES_SHUT }, t => {
   const slabsShut = (x, z) => world.unclimbableAt(x, z) || !!onSlab(x, z, .5);
   // With the slabs' rock made no-hold like the rest: no way behind the wall by any fall, and no way onto the pass from Amod.
-  const shut = { climber: true, forbidden: slabsShut, midpoints: true, ways };
+  const shut = { climber: true, forbidden: slabsShut, midpoints: true, risers: lipRib, riserReach: inVarnRock, ways };
   const downShut = leastFall(L, world, pass, shut), upShut = leastFall(L, world, amodSide, shut);
   assert.ok(area(downShut, upThePass, .01) > 1500 && area(upShut, behindTheCity, .01) > 4000, 'both floods ran');
   assert.equal(area(downShut, southOfTheFront), 0, `but for the slabs a climber from the pass is in Amod behind the wall (${JSON.stringify(reachedByCountry(L, downShut, Infinity, southOfTheFront))})`);
@@ -698,14 +791,14 @@ test('the climber’s route: a tireless climber from the pass is in Amod behind 
   assert.ok(area(downShut, onShelf, .01) > 300, `${area(downShut, onShelf, .01)} m2 of the shelf reached by a climber from the pass`);
   // With the slabs as they are: through, by the landing, with no fall worse than the step down into the north slab's apron,
   // which is cut two metres and more into the foot of the hill (a step a traveler takes without harm, under `safeDrop`).
-  const open = { climber: true, forbidden: world.unclimbableAt, midpoints: true, ways }, SAFE = TERRAIN_FALL.safeDrop;
+  const open = { climber: true, forbidden: world.unclimbableAt, midpoints: true, risers: lipRib, riserReach: inVarnRock, ways }, SAFE = TERRAIN_FALL.safeDrop;
   const down = leastFall(L, world, pass, open), up = leastFall(L, world, amodSide, open);
   assert.ok(area(down, behindTheCity, SAFE) > 1000, `${area(down, behindTheCity, SAFE)} m2 of Amod behind the city reached from the pass by the slabs`);
   assert.ok(area(up, upThePass, SAFE) > 1000, `${area(up, upThePass, SAFE)} m2 of the pass reached from Amod by the slabs`);
   for (const slab of VARN_SLABS) { const foot = slabFoot(slab), k = L.cell(foot.x, foot.z); assert.ok(down[k] < SAFE && up[k] < SAFE, `${slab.id}'s apron: ${down[k].toFixed(1)} m from the pass, ${up[k].toFixed(1)} m from Amod`); }
   assert.ok(area(down, (x, z) => onLanding(x, z, -1), SAFE) > 800 && area(up, (x, z) => onLanding(x, z, -1), SAFE) > 800, 'over the landing');
   // And the aprons are no pits: from each, a walker is out onto the hill beside it.
-  for (const slab of VARN_SLABS) { const foot = slabFoot(slab), off = leastFall(L, world, [L.cell(foot.x, foot.z)], { midpoints: true, ways }); assert.ok(area(off, (x, z) => !onSlab(x, z, 1), .01) > 500, `${slab.id}'s apron is a pit`); }
+  for (const slab of VARN_SLABS) { const foot = slabFoot(slab), off = leastFall(L, world, [L.cell(foot.x, foot.z)], { midpoints: true, risers: lipRib, riserReach: inVarnRock, ways }); assert.ok(area(off, (x, z) => !onSlab(x, z, 1), .01) > 500, `${slab.id}'s apron is a pit`); }
   // No other way: every cell he reaches behind the city, he reaches with the slabs shut as well or only by way of the landing.
   // (Both floods are the same but for the slabs; so what the slabs add is what they add.)
   let added = 0; for (let k = 0; k < down.length; k++) if (down[k] < Infinity && downShut[k] === Infinity) added++;
@@ -756,7 +849,7 @@ test('the slabs, climbed with the game’s own controller and its own wind: leve
 });
 
 test('open the gates and the road goes through: every metre of it can be stood on, and the pass and Amod are one country again', t => {
-  const down = leastFall(L, world, pass, { open: shutGate, midpoints: true }), up = leastFall(L, world, amodSide, { open: shutGate, midpoints: true });
+  const down = leastFall(L, world, pass, { open: shutGate, midpoints: true, risers: lipRib, riserReach: inVarnRock }), up = leastFall(L, world, amodSide, { open: shutGate, midpoints: true, risers: lipRib, riserReach: inVarnRock });
   assert.equal(down[L.cell(VARN.axis, -692)], 0, 'through the city from the pass, walking'); assert.equal(up[L.cell(PASS_ROAD[2].x, PASS_ROAD[2].z)], 0, 'and up the pass from Amod');
   t.diagnostic(`gates open: ${area(down, southOfTheFront, .01)} m2 of Amod walked to from the pass, ${area(up, upThePass, .01)} m2 of the pass from Amod`);
   const blocked = [];
@@ -798,10 +891,10 @@ test('nobody is sealed in: from the square a traveler walks out by the wicket an
   }
   assert.ok(walked > 300, `${walked.toFixed(0)} m walked`);
   // The forecourt before the shut Pass Gate is not a pocket: it is the pass road's own end.
-  const forecourt = leastFall(L, world, [{ x: VARN.axis, z: gate(VARN_PASS_GATE).centre.z - 7 }], { midpoints: true });
+  const forecourt = leastFall(L, world, [{ x: VARN.axis, z: gate(VARN_PASS_GATE).centre.z - 7 }], { midpoints: true, risers: lipRib, riserReach: inVarnRock });
   assert.equal(forecourt[L.cell(PASS_ROAD[2].x, PASS_ROAD[2].z)], 0, 'from the Pass Gate’s causeway a walker is back on Kemrath’s floor');
   // And the ground inside the walls is one piece: from the square, every court and both gates' insides are walked to.
-  const inside = leastFall(L, world, [{ x: VARN_SQUARE.x, z: VARN_SQUARE.z }], { midpoints: true });
+  const inside = leastFall(L, world, [{ x: VARN_SQUARE.x, z: VARN_SQUARE.z }], { midpoints: true, risers: lipRib, riserReach: inVarnRock });
   for (const [x, z] of [[VARN.axis, -770], [VARN.axis, -715], [VARN.axis, g.centre.z + g.inward.z * 5], [VARN.axis, gate(VARN_PASS_GATE).centre.z + 5], [VARN_KEEP.x + 9, VARN_KEEP.z + 4]]) assert.equal(inside[L.cell(x, z)], 0, `${x}, ${z} is cut off from the square`);
   // The garrison's men on the ground inside the gates stand where a body stands, and are not in a pocket either.
   for (const man of LOTHARN_GARRISON_FIGURES.filter(one => one.ground)) {

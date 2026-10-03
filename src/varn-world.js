@@ -46,6 +46,8 @@ import { amodRoadBench, amodTerracedGround } from './amod-terraces.js';
 import { firstCliff, onPeakWay, RAMPS_KEEP_THEIR_HOLD } from './lotharn-first-course.js';
 import { peakUplift as eastUplift, BANDS as EAST_BANDS, LOTHARN as EAST_LOTHARN, RAMPS as EAST_RAMPS, nearestOn, pointOn as pointOnLine } from './east-lotharn-world.js';
 import { RAMPS as WEST_RAMPS } from './west-lotharn-world.js';
+import { CAVE_LINES as EAST_CAVE_LINES } from './east-lotharn-caves.js';
+import { WEST_CAVE_LINES } from './west-lotharn-caves.js';
 import { hexOwnerAt } from './region-world.js';
 // A cycle, on purpose: the lips are read off the ground as it lay before Varn, which only the chain knows
 // (`groundBeforeVarn`), and the chain lays Varn's ground. Nothing here calls it while a module is loading.
@@ -313,9 +315,29 @@ export const RIB = freeze({ height: 3, over: 2.5, most: 5, reach: 3, peak: 1, ne
 const inBoxOf = (box, x, z) => x >= box.minX && x <= box.maxX && z >= box.minZ && z <= box.maxZ;
 export const inVarnRock = (x, z) => inBoxOf(VARN_ROCK, x, z);
 export const inVarnNeighbourhood = (x, z) => inBoxOf(VARN_NEIGHBOURHOOD, x, z);
-/** Whether the lip rule looks at a point at all: Varn's reach, the mountain's own hexes, the courses it takes, off the ways and the works. */
+/**
+ * **The doors the rim would stand in.** A cave comes out onto a ledge, and a rim reaches three metres in from a ledge's
+ * brink: where the ledge is narrow its inner treads stand in the cave's own doorway, and a traveler stepped out of the
+ * eastern peak's high chimney, and up to its eastern chamber, onto a riser a metre and three quarters high
+ * (tests/east-lotharn-peaks.test.js, "never a step"). A cave is the mountain's own way, as a ramp is, and a way crosses
+ * its lip where it always did: no rim stands within `DOOR` metres of where a cave's line comes out.
+ *
+ * Two metres, and no more, because the rim is what keeps a body on the mountain. On a ledge wider than its rim that
+ * clears the door and leaves the crest on the brink (the south-west chamber's, the western chimney's lower door). On a
+ * shelf no wider than its rim it leaves the brink before the door open, as it was before there were rims - and at
+ * three doors of the eastern peak a body that steps off there comes to the Empire's ground by falls: the high
+ * chimney's two (by two falls, over the east jamb's back) and the eastern chamber's (by one, ninety-two metres, onto
+ * Amod's hills). **They are no way past Varn only because nobody gets to them**: off the peaks' own ways the rock
+ * gives no hold and those shelves are all rim, so no walker and no climber comes to any of the three, by any fall
+ * (held in tests/lotharn-forts.test.js, "Varn's reach"; measured in docs/varn-report.md). Whoever builds a way to
+ * one of those caves must rail its door.
+ */
+const CAVE_MOUTHS = freeze([...EAST_CAVE_LINES, ...WEST_CAVE_LINES].flatMap(cave => cave.kind === 'chamber' ? [cave.points[0]] : [cave.points[0], cave.points.at(-1)]));
+const DOOR = 2;
+const nearCaveMouth = (x, z) => CAVE_MOUTHS.some(mouth => Math.hypot(mouth.x - x, mouth.z - z) <= DOOR);
+/** Whether the lip rule looks at a point at all: Varn's reach, the mountain's own hexes, the courses it takes, off the ways, the caves' mouths and the works. */
 export function lipRuleApplies(x, z) {
-  if (!inVarnRock(x, z) || hexOwnerAt(x, z) !== EAST_LOTHARN || onSlab(x, z, SLAB.side + 1) || onLanding(x, z, -2.5)) return false;
+  if (!inVarnRock(x, z) || hexOwnerAt(x, z) !== EAST_LOTHARN || onSlab(x, z, SLAB.side + 1) || onLanding(x, z, -2.5) || nearCaveMouth(x, z)) return false;
   if (onPeakWay(x, z)) return onWayShoulder(x, z);
   return eastUplift(x, z) >= RIB.lift.low;
 }
@@ -363,6 +385,45 @@ export function onWayShoulder(x, z) {
  * the cliff.
  */
 export function lipRib(x, z, unbuilt = varnBeforeLips, here = null) {
+  return Math.max(brinkRib(x, z, unbuilt, here), stopRib(x, z));
+}
+/**
+ * **The stops**: a rim stood by hand where the brink rule has no brink to stand one on. One, so far.
+ *
+ * The rule above looks for a brink: gentle ground, and then a cliff. On the south-west peak's first ledge, over
+ * the hills between Varn and the Vastos Gate, there is a stretch thirty metres long with no brink at all: the
+ * ledge tips toward its own edge at a grade of one to one and a fifth for six or seven metres - steeper than a
+ * walker's grade, and never suddenly steeper - and then goes over. The rule reads that as a ledge that slopes,
+ * which it is; to a traveler it is a slide. Measured on 3 October 2026 with the game's own step and its own
+ * fall (docs/varn-report.md): a traveler who stepped south off the last gentle ground at (-1418, -648) slid to
+ * the edge, went over, and came down forty metres onto the Empire's ground - and a hundred is all any fall costs,
+ * so a traveler of more than a hundred health walked on into Amod. It is the place the first least-fall search
+ * named, (-1426, -648), whose rim stops six metres short of it.
+ *
+ * A rim on that edge would stop the fall and keep the man: nobody walks back up a grade of 1.1, and the rock
+ * within Varn's reach gives no hold. So the rim stands at the **head** of the slide, where the walking ends: a
+ * ridge of the same stone along `from`-`to`, `height` over the ground it stands on at its line and nothing
+ * `half` metres either side, from the rim the rule built west of the slide to the one it built east of it. Its
+ * uphill foot is on ground a walker walks back up. The ledge either side of it is two dead ends, as it was (the
+ * course above bulges out between them); nothing that was walked to is cut off, and the slide itself is now
+ * reached by nobody.
+ */
+export const LIP_STOPS = freeze([
+  freeze({ id: 'south-west-slide', from: point(-1427.5, -648.15), to: point(-1387, -648.15), half: 1.25, height: 3.2 }),
+]);
+/** The height of a stop's ridge at a point: `height` on its line, falling to nothing `half` metres off it. */
+export function stopRib(x, z) {
+  let rib = 0;
+  for (const stop of LIP_STOPS) {
+    const { from, to, half, height } = stop;
+    if (x < Math.min(from.x, to.x) - half || x > Math.max(from.x, to.x) + half || z < Math.min(from.z, to.z) - half || z > Math.max(from.z, to.z) + half) continue;
+    const dx = to.x - from.x, dz = to.z - from.z, t = clamp(((x - from.x) * dx + (z - from.z) * dz) / (dx * dx + dz * dz), 0, 1);
+    rib = Math.max(rib, height * Math.max(0, 1 - Math.hypot(x - from.x - dx * t, z - from.z - dz * t) / half));
+  }
+  return rib;
+}
+/** The rim the brink rule builds at a point (the comment above `lipRib`). */
+function brinkRib(x, z, unbuilt, here) {
   if (!lipRuleApplies(x, z)) return 0;
   if (here === null) here = unbuilt(x, z);
   const shoulder = onPeakWay(x, z);

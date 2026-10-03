@@ -19,7 +19,7 @@ import {
 import { LOTHARN_WATERS, LOTHARN_BORDER_WATER, KEMRATH_WATER, STONEGATE_WATER, OLVETH_BECK, courseDistance } from '../src/west-regions.js';
 import { WEST_PROFILES, westWaterSurface } from '../src/west-ground.js';
 import { EAST_LOTHARN_WILDLIFE_ZONES } from '../src/east-lotharn-wildlife.js';
-import { varnJambRise } from '../src/varn-world.js';
+import { varnJambRise, VARN_LANDMARKS } from '../src/varn-world.js';
 
 /**
  * The East Lotharn: the old range north of Amod, built on the user's word of 26 September 2026 -
@@ -204,7 +204,9 @@ test('nobody lives here yet: no people, and the chart says what is built', () =>
   assert.deepEqual(region.npcIds, []);
   for (const [id, stand] of Object.entries(world.npcPositions)) assert.ok(!own(stand.x, stand.z), `${id} stands in the East Lotharn`);
   for (const id of region.landmarks) {
-    const place = EAST_LOTHARN_LANDMARKS.find(entry => entry.id === id);
+    // The range's own places, and the one of Varn's that stands on the range's ground: the Slabs, the climbers' way past
+    // the city (src/varn-world.js), which the chart lists for the country they are in.
+    const place = EAST_LOTHARN_LANDMARKS.find(entry => entry.id === id) ?? VARN_LANDMARKS.find(entry => entry.id === id);
     assert.ok(place, `${id} is not a place`);
     assert.ok(own(place.x, place.z) || id === 'border-water', `${id} is not in the East Lotharn`);
     assert.ok(place.description.length > 60);

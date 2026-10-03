@@ -1,7 +1,8 @@
-import { canStand, waterAt } from '../src/game-state.js';
+import { canStand, moveCharacter, waterAt } from '../src/game-state.js';
 import { colliderOverlapsHeight } from '../src/walk-surfaces.js';
-import { CLIMBING, isClimbTerrain } from '../src/climbing.js';
-import { TERRAIN_FALL } from '../src/terrain-fall.js';
+import { CLIMBING, isClimbTerrain, canWalkSlope } from '../src/climbing.js';
+import { TERRAIN_FALL, createTerrainFall, shouldStartTerrainFall } from '../src/terrain-fall.js';
+import { closedRegionEntered } from '../src/closed-border.js';
 import { nearestPlain } from '../src/east-lotharn-caves.js';
 
 /**
@@ -9,12 +10,18 @@ import { nearestPlain } from '../src/east-lotharn-caves.js';
  * the game's own rules.
  *
  * Not a test: the measuring tool `tests/varn-world.test.js` and `tests/lotharn-forts.test.js` share.
+ * A flood says where a traveler can get to; `travel`, at the foot of this file, is one traveler sent to see.
  *
  *  - **Standing** is `canStand` itself (src/game-state.js), asked of the built world at every lattice
  *    point with a traveler's radius: colliders, water, the world's edge.
  *  - **Walking** is `canWalkSlope`'s rule (src/climbing.js) on the lattice's own heights: in a climbing
  *    country a step up is refused when it rises faster than the grab slope or the face under it is steeper
- *    than that; anywhere else there is no limit; and a step down is always allowed.
+ *    than that; anywhere else there is no limit; and a step down is always allowed. **The face is read twice**:
+ *    by the lattice, a step either side of each end, and - where the lattice's reading is over half the grab
+ *    slope, so that it matters - by the game, forty centimetres either side of the step's middle, which is the
+ *    reading `canWalkSlope` itself takes. The lattice's alone irons a ledge that tilts at a grade of one into
+ *    one it walks up (it took a climber along the eastern massif's first ledge that way, on ground the
+ *    traveler's own step refuses); a step must pass both.
  *  - **Falling** is what a step down onto ground too steep to stand on becomes (src/terrain-fall.js): the
  *    body comes down the face to the first ground that holds it. A fall is never refused - the game does
  *    not refuse it - it is **costed**: what a flood answers, for every point, is the least worst single
@@ -25,10 +32,24 @@ import { nearestPlain } from '../src/east-lotharn-caves.js';
  *    at the other (src/east-lotharn-caves.js), so the two mouths are one step apart (`caveLinks`).
  *  - **Climbing**, for a flood asked as a climber's, is the controller's rule (`sampleClimbSurface`): in a
  *    climbing country, on a face no steeper than its limit, clear of colliders, and not on rock the world
- *    marks unclimbable. Stamina is not counted, which is the worst case: a climber who never tires.
+ *    marks unclimbable - at either end of the step **or at its quarter points**, because the controller asks at
+ *    every twelve centimetres of an attached move and a band of no-hold rock a metre wide (the rim on a ramp's
+ *    shoulder) lies between two lattice points. Stamina is not counted, which is the worst case: a climber
+ *    who never tires.
  *  - With `midpoints`, a step is refused if a collider stands half-way along it, so that a lattice coarser
  *    than something thin cannot step over it. Without, the flood is the more generous, which is the safe
  *    side for saying that somewhere cannot be reached.
+ *  - **Risers** (`risers(x, z)`): ground that stands in steps the lattice cannot see. The rims Varn raises on the
+ *    ledges' brinks (src/varn-world.js, `lipRib`) are built in treads and risers of half a metre to two metres, and
+ *    a lattice a metre apart, reading the face two metres across, irons three of them into a hill it walks up
+ *    slantwise - which the traveler's own step does not: `moveCharacter` takes eighteen centimetres at a time and
+ *    `canWalkSlope` refuses any of them that rises more than a quarter of a metre. So where `risers` answers more
+ *    at the far end of a step than at the near end (by more than that quarter metre), the step is taken as the
+ *    traveler takes it: in strides of eighteen centimetres along the lattice's line, every one asked of
+ *    `canWalkSlope` itself. **And so is a step off an edge**, wherever `riserReach(x, z)` says the risers are
+ *    (everywhere, if it is not given): the rim on a ramp's shoulder is a metre wide and lies between the tread
+ *    and the face beyond it, between two lattice points, and a lattice that asks only its two ends steps over
+ *    it and falls - which no traveler does. A flood without `risers` is as it always was.
  *  - **The peaks' own ways** (`ways(x, z)`): a ramp cut slantwise up a cliff is four metres wide at a grade a
  *    traveler walks, and the game's own check (`canWalkSlope`) reads the face eighty centimetres across; a
  *    lattice a metre apart reads it two metres across, which on a ramp is the cliff either side, so without
@@ -37,6 +58,8 @@ import { nearestPlain } from '../src/east-lotharn-caves.js';
  */
 const N8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 const RADIUS = .34;
+/** `moveCharacter`'s longest stride (src/game-state.js), and the most `canWalkSlope` lets one of them rise: its grade and its eight centimetres of roughness. */
+const STRIDE = .18, RISER = STRIDE * CLIMBING.grabSlope + .08;
 /** The fall a traveler with a hundred health does not walk away from, in metres. */
 export const LETHAL_FALL = TERRAIN_FALL.safeDrop + TERRAIN_FALL.maxDamage / TERRAIN_FALL.damagePerMetre;
 
@@ -128,7 +151,7 @@ export function caveLinks(L, caves) {
  * Returns, for every lattice point, the least worst single fall on any way to it from the seeds, in
  * metres: 0 where it is walked to, `Infinity` where there is no way.
  */
-export function leastFall(L, world, seeds, { open = null, climber = false, forbidden = () => false, within = null, links = null, midpoints = false, ways = null } = {}) {
+export function leastFall(L, world, seeds, { open = null, climber = false, forbidden = () => false, within = null, links = null, midpoints = false, ways = null, risers = null, riserReach = null } = {}) {
   const { W, H, heights, stand, used, climb, slope, step } = L;
   const onWay = ways ? (L.onWay ??= (() => { const out = new Uint8Array(W * H); for (let k = 0; k < out.length; k++) if (used[k]) { const p = L.at(k); if (ways(p.x, p.z)) out[k] = 1; } return out; })()) : null;
   const near = (x, z) => { const got = world.nearColliders(x, z, RADIUS); return open ? got.filter(c => !open(c)) : got; };
@@ -143,6 +166,37 @@ export function leastFall(L, world, seeds, { open = null, climber = false, forbi
     return opened[k] > 0;
   };
   const banned = climber ? k => { const p = L.at(k); return forbidden(p.x, p.z); } : null;
+  /** No hold somewhere along a hand's move from one point to the next: the quarter points, as the controller's own steps would find it. */
+  const barredHand = (k, n) => {
+    const a = L.at(k), b = L.at(n);
+    for (const t of [.25, .5, .75]) if (forbidden(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return true;
+    return false;
+  };
+  /** The face half-way along a step, read as `canWalkSlope` reads it: forty centimetres either side, on the ground itself. Kept with the lattice. */
+  const faces = L.faces ??= new Map();
+  const face = (k, n) => {
+    const key = k < n ? k * W * H + n : n * W * H + k;
+    let s = faces.get(key);
+    if (s === undefined) { const a = L.at(k), b = L.at(n), x = (a.x + b.x) / 2, z = (a.z + b.z) / 2, e = .4; s = Math.hypot((world.heightAt(x + e, z) - world.heightAt(x - e, z)) / (2 * e), (world.heightAt(x, z + e) - world.heightAt(x, z - e)) / (2 * e)); faces.set(key, s); }
+    return s;
+  };
+  // The traveler's own step up onto a riser (the header, **Risers**): how much of the ground at a point is riser, and
+  // whether the game's own strides take a lattice step. Both are the ground's own business, kept with the lattice.
+  const raised = risers ? (L.raised ??= new Float32Array(W * H).fill(NaN)) : null, strides = risers ? (L.strides ??= new Map()) : null;
+  const reach = risers && riserReach ? (L.reach ??= new Int8Array(W * H)) : null;
+  const guarded = k => { if (!reach) return true; if (!reach[k]) { const p = L.at(k); reach[k] = riserReach(p.x, p.z) ? 1 : -1; } return reach[k] > 0; };
+  const riser = k => { if (Number.isNaN(raised[k])) { const p = L.at(k); raised[k] = risers(p.x, p.z); } return raised[k]; };
+  const strode = (k, n) => {
+    const key = k * W * H + n;
+    let took = strides.get(key);
+    if (took === undefined) {
+      const a = L.at(k), b = L.at(n), pieces = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / STRIDE);
+      took = true;
+      for (let i = 0; i < pieces && took; i++) took = canWalkSlope(a.x + (b.x - a.x) * i / pieces, a.z + (b.z - a.z) * i / pieces, a.x + (b.x - a.x) * (i + 1) / pieces, a.z + (b.z - a.z) * (i + 1) / pieces, world);
+      strides.set(key, took);
+    }
+    return took;
+  };
   // Where a falling body comes to rest is judged as the game judges it (src/terrain-fall.js): on the ground's own slope
   // read forty centimetres either side of the foot, not the lattice's, which reads it a step either side and so
   // smooths a ridge a metre wide into a shelf a body could stand on.
@@ -182,14 +236,20 @@ export function leastFall(L, world, seeds, { open = null, climber = false, forbi
         const wall = m => !ok(m) || heights[m] > here + step * CLIMBING.grabSlope + .08;
         if (wall(j * W + ii) && wall(jj * W + i)) continue;
       }
-      const hand = climber && climb[k] && climb[n] && slope[k] <= CLIMBING.maxSlope && slope[n] <= CLIMBING.maxSlope && !banned(k) && !banned(n);
+      const hand = climber && climb[k] && climb[n] && slope[k] <= CLIMBING.maxSlope && slope[n] <= CLIMBING.maxSlope && !banned(k) && !banned(n) && !barredHand(k, n);
+      // A riser between the two points stops a foot whichever of them is the higher: a ledge that slopes to its edge
+      // brings the far side of its rim's first tread level with the near side of it.
+      const barred = risers !== null && riser(n) > riser(k) + RISER && !strode(k, n);
       let fall = 0;
       if (rise > 1e-6) {
         const grade = rise <= run * CLIMBING.grabSlope + .08;
-        const walk = !(climb[k] || climb[n]) || (grade && (slope[k] + slope[n]) / 2 <= CLIMBING.grabSlope) || (onWay && grade && onWay[k] && onWay[n]);
+        const lattice = (slope[k] + slope[n]) / 2;
+        const walk = !barred && (!(climb[k] || climb[n]) || (grade && lattice <= CLIMBING.grabSlope && (lattice <= CLIMBING.grabSlope / 2 || face(k, n) <= CLIMBING.grabSlope)) || (onWay && grade && onWay[k] && onWay[n]));
         if (!walk && !hand) continue;
-      } else if (-rise > TERRAIN_FALL.stepDown && (-rise / run > CLIMBING.grabSlope || !holds(n)) && !hand) {
-        // He has stepped off: down the face to the first ground that holds him.
+      } else if (barred && !hand) continue;
+      else if (-rise > TERRAIN_FALL.stepDown && (-rise / run > CLIMBING.grabSlope || !holds(n)) && !hand) {
+        // He has stepped off - if his own strides take him off (the header, **Risers**): down the face to the first ground that holds him.
+        if (risers !== null && climb[k] && guarded(k) && !strode(k, n)) continue;
         let land = n;
         for (let guard = 0; guard < 4000 && !holds(land); guard++) {
           const li = land % W, lj = (land - li) / W;
@@ -229,3 +289,39 @@ export function reachedByCountry(L, cost, maxFall = LETHAL_FALL, where = () => t
 }
 /** The colliders that shut a gate: what "open the gates" takes away. */
 export const shutGate = c => typeof c.kind === 'string' && c.kind.endsWith('gate-shut');
+
+/**
+ * **One traveler, moved as src/main.js moves him.** His step is `moveCharacter` with `canWalkSlope` and the
+ * closed-place rule; after every frame `shouldStartTerrainFall` is asked of the ground under his foot, read as
+ * the host reads it; and a fall, once begun, is run by `createTerrainFall` with the stick still held - its drift
+ * off the edge, its slide down a face, its landing, and what it costs.
+ *
+ * He sets out from (`x`, `z`) on a `heading` (radians; 0 looks along +z) at `speed` metres a second and keeps the
+ * stick forward for `seconds`. Answers where he ended, every fall he took, the worst of them in metres, and the
+ * health they cost in all. A flood is a lattice's opinion of the ground; this is the game's.
+ */
+export function travel(world, { x, z, heading, speed = 6, seconds = 10, dt = 1 / 60 }) {
+  const at = { x, y: world.heightAt(x, z), z }, dir = { x: Math.sin(heading), z: Math.cos(heading) };
+  const surfaceAt = (px, pz) => {
+    const s = .4, gx = (world.heightAt(px + s, pz) - world.heightAt(px - s, pz)) / (2 * s), gz = (world.heightAt(px, pz + s) - world.heightAt(px, pz - s)) / (2 * s), slope = Math.hypot(gx, gz);
+    return { height: world.heightAt(px, pz), slope, gradient: { x: slope > 1e-7 ? gx / slope : 0, z: slope > 1e-7 ? gz / slope : 0 }, water: false };
+  };
+  const step = (px, pz, nx, nz) => canWalkSlope(px, pz, nx, nz, world) && !closedRegionEntered({ x: px, z: pz }, { x: nx, z: nz });
+  const falling = (p, dx, dz) => moveCharacter(p, dx, dz, world, RADIUS, { swimming: true, canTraverse: (px, pz, nx, nz) => world.heightAt(nx, nz) <= p.y + .35 && !closedRegionEntered({ x: px, z: pz }, { x: nx, z: nz }) });
+  const fall = createTerrainFall(), falls = [];
+  let worst = 0, damage = 0;
+  for (let t = 0; t < seconds; t += dt) {
+    if (!fall.active) {
+      const before = { x: at.x, y: at.y, z: at.z };
+      moveCharacter(at, dir.x * speed * dt, dir.z * speed * dt, world, RADIUS, { swimming: true, canTraverse: step });
+      const surface = surfaceAt(at.x, at.z);
+      if (shouldStartTerrainFall({ before, after: at, floor: surface.height, groundSlope: surface.slope })) { fall.begin(at, { drift: { x: (at.x - before.x) / dt, z: (at.z - before.z) / dt } }); falls.push({ from: before }); }
+      else at.y = surface.height;
+    }
+    if (fall.active) {
+      const state = fall.tick(dt, { position: at, surfaceAt, steer: dir, moveHorizontal: falling });
+      if (state.landed) { const drop = state.peak - at.y; Object.assign(falls.at(-1), { to: { x: at.x, y: at.y, z: at.z }, drop, damage: state.damage }); worst = Math.max(worst, drop); damage += state.damage; }
+    }
+  }
+  return { at, falls, worst, damage, falling: fall.active };
+}

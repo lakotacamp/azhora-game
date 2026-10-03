@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
 import { scopedWorld } from './scoped-world.js';
 import { sampleLattice, leastFall, caveLinks, reachedByCountry, shutGate, LETHAL_FALL } from './lattice-flood.js';
-import { canStand } from '../src/game-state.js';
+import { canStand, moveCharacter } from '../src/game-state.js';
+import { canWalkSlope } from '../src/climbing.js';
+import { closedRegionEntered } from '../src/closed-border.js';
+import { TERRAIN_FALL } from '../src/terrain-fall.js';
 import { hexOwnerAt } from '../src/region-world.js';
 import { groundWithRiver } from '../src/world-terrain.js';
 import { longestTowerGap } from '../src/fortification.js';
@@ -12,7 +15,7 @@ import { RAMPS as WEST_RAMPS } from '../src/west-lotharn-world.js';
 import { belowFirstLedge, onPeakWay, firstCliff, RAMPS_KEEP_THEIR_HOLD } from '../src/lotharn-first-course.js';
 import { BUILD_STATUS } from '../src/build-status.js';
 import { NO_CLIMB_ZONES, unclimbableAt } from '../src/no-climb-zones.js';
-import { LOTHARN_PASSES_SHUT, VARN, VARN_PASS_GATE, VARN_STANDARD } from '../src/varn-world.js';
+import { LOTHARN_PASSES_SHUT, VARN, VARN_PASS_GATE, VARN_STANDARD, VARN_ROCK, VARN_CIRCUIT, lipRib, inVarnRock, onSlab, varnWicket } from '../src/varn-world.js';
 import {
   LOTHARN_FORTS, PASS_FORT_STANDARD, LOTHARN_FORT_LANDMARKS, NO_CLIMB_REACH, fortById, fortGateShut, fortUnclimbable, fortKeepsClear,
 } from '../src/lotharn-forts.js';
@@ -27,6 +30,15 @@ import {
  * the caves counted as the ways they are. With the gates as built a walker out of the mountains reaches no
  * lowland by any fall he lives through, and nobody from the lowlands gets up into the mountains at all;
  * with the gates open every one of them is a way; and nobody is shut in anywhere, gates open or shut.
+ *
+ * **And Varn's own reach is held here too** (the user, 2 October 2026: "There should be a very difficult
+ * climber's route", read by the coordinator as: a hard climb is the only way round Varn, and no fall gets
+ * anyone past it). This is the only lattice that has the whole of both massifs either side of the city and
+ * the ways up them, so it is the one that can say it: from the valleys, inside that reach, nothing of the
+ * Empire's ground is come to by any fall at all, nor by a climber who never tires - but by the slabs.
+ *
+ * Every flood is given Varn's rims as risers, and the wicket in Varn's Amod Gate as a step the lattice
+ * cannot see (tests/lattice-flood.js; below).
  */
 const RANGES = ['East Lotharn Mountains', 'West Lotharn Mountains'], LOWLANDS = ['Amod', 'Vastos', 'Meneth', 'Isareos'];
 
@@ -158,6 +170,26 @@ const L = (() => {
   return sampleLattice(world, BOX, STEP, mask);
 })();
 const links = caveLinks(L, [...world.lotharnCaves, ...world.westLotharnCaves]);
+/**
+ * **The wicket.** Varn's Amod Gate is shut like the others, with a door a man wide in one leaf that opens from
+ * inside and from nowhere else (src/varn-world.js, `VARN_WICKET`). A lattice a metre and a half apart has no
+ * point in a gap of 1.2 m - a body has half a metre of it to stand in - so this file's flood could not find it,
+ * and said a fall where there is a door. It is walked here with the traveler's own step (`moveCharacter`,
+ * `canWalkSlope` and the closed-place rule, as tests/varn-world.test.js walks it), both ways; and what the step
+ * says is given to the lattice as a step it cannot see, like a passage through the rock - one way, out.
+ */
+const wicket = (() => {
+  if (!LOTHARN_PASSES_SHUT) return null;
+  const w = varnWicket(), g = w.gate, inside = { x: w.x, z: g.centre.z + g.inward.z * 6 }, outside = { x: w.x, z: g.centre.z - g.inward.z * 6 };
+  const step = (x, z, nx, nz) => canWalkSlope(x, z, nx, nz, world) && !closedRegionEntered({ x, z }, { x: nx, z: nz });
+  const walks = (from, to) => {
+    const at = { x: from.x, z: from.z, y: world.heightAt(from.x, from.z) };
+    for (let i = 0; i < 400 && Math.hypot(to.x - at.x, to.z - at.z) > .3; i++) { const d = Math.hypot(to.x - at.x, to.z - at.z); moveCharacter(at, (to.x - at.x) / d * .12, (to.z - at.z) / d * .12, world, .34, { canTraverse: step }); at.y = world.heightAt(at.x, at.z); }
+    return Math.hypot(to.x - at.x, to.z - at.z) <= .3;
+  };
+  return { inside, outside, out: walks(inside, outside), in: walks(outside, inside), from: L.near(inside.x, inside.z, 4), to: L.near(outside.x, outside.z, 4) };
+})();
+if (wicket?.out && wicket.from >= 0 && wicket.to >= 0) links.set(wicket.from, [...(links.get(wicket.from) ?? []), wicket.to]);
 const seed = ([name, x, z]) => ({ name, k: L.near(x, z, 9) });
 const VALLEYS = [['the Col', -1080, -895], ['Kemrath', -1330, -835], ['Stonegate', -1080, -1080], ['Upper Olveth', -1330, -1060], ['the long valley', -1817, -651], ['the long valley’s eastern reach', -1690, -665],
   ['the western reach', -2150, -500], ['the north valley', -1876, -890]].map(seed);
@@ -171,7 +203,7 @@ const LOWLAND = [{ name: 'Amod, below Varn', k: L.near(VARN.x, -650, 9) },
   ...LOTHARN_FORTS.map(fort => ({ name: `${fort.opens}, behind ${fort.name}`, k: nearestOf(fort.opens, fort.empireSide.x, fort.empireSide.z) }))];
 const GATES = [VARN_PASS_GATE, ...LOTHARN_FORTS.map(fort => fort.gateId)];
 // The peaks' own ways are walked at their grade whatever the lattice makes of the face under them (tests/lattice-flood.js).
-const flood = (seeds, options = {}) => leastFall(L, world, seeds.map(one => one.k), { links, ways: onPeakWay, ...options });
+const flood = (seeds, options = {}) => leastFall(L, world, seeds.map(one => one.k), { links, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock, ...options });
 const fall = value => (value === Infinity ? 'no way at all' : value === 0 ? 'walked to' : `a fall of ${value.toFixed(1)} m`);
 
 test('the measuring ground: every valley and every lowland has ground to stand on, and the caves are in it', t => {
@@ -180,6 +212,12 @@ test('the measuring ground: every valley and every lowland has ground to stand o
   assert.deepEqual(LOWLAND.map(one => L.region[one.k]), LOWLANDS);
   const through = [...world.lotharnCaves, ...world.westLotharnCaves].filter(cave => cave.kind !== 'chamber');
   assert.ok(through.length >= 10 && links.size > 60, `${through.length} passages, ${links.size} points at their mouths`);
+  // The wicket: a traveler walks out through it and not in, and the lattice has a point either side of it to carry the step.
+  if (LOTHARN_PASSES_SHUT) {
+    assert.equal(wicket.out, true, 'a traveler inside Varn does not get out by the wicket'); assert.equal(wicket.in, false, 'a traveler outside Varn gets in by the wicket');
+    assert.ok(wicket.from >= 0 && wicket.to >= 0 && VARN_CIRCUIT.inside(L.at(wicket.from).x, L.at(wicket.from).z) && !VARN_CIRCUIT.inside(L.at(wicket.to).x, L.at(wicket.to).z), 'no lattice point either side of the wicket');
+    assert.ok(links.get(wicket.from).includes(wicket.to) && !(links.get(wicket.to) ?? []).includes(wicket.from), 'the wicket is a step out and never in');
+  }
   let used = 0; for (let k = 0; k < L.used.length; k++) used += L.used[k];
   t.diagnostic(`${used} points of ground, ${STEP} m apart; ${through.length} passages through the rock joined at ${links.size} points`);
 });
@@ -209,7 +247,7 @@ test('the built forts: three walls, their towers, gates, keeps and barracks are 
 test('with the gates as built a walker out of the mountains reaches no lowland by any fall he lives through, and nobody comes up from below', { skip: !LOTHARN_PASSES_SHUT }, t => {
   const down = flood(VALLEYS), up = flood(LOWLAND);
   // The mountains are one country inside the walls: from Kemrath every other valley is walked to (the long valley by the passage under the east arm).
-  const kemrath = leastFall(L, world, [VALLEYS[1].k], { links, ways: onPeakWay });
+  const kemrath = leastFall(L, world, [VALLEYS[1].k], { links, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock });
   for (const valley of VALLEYS) assert.equal(kemrath[valley.k], 0, `${valley.name} is ${fall(kemrath[valley.k])} from Kemrath`);
   for (const low of LOWLAND) {
     t.diagnostic(`${low.name}: ${fall(down[low.k])} from the valleys`);
@@ -225,6 +263,57 @@ test('with the gates as built a walker out of the mountains reaches no lowland b
   for (const valley of VALLEYS) { assert.equal(up[valley.k], Infinity, `${valley.name} is reached from the lowlands by ${fall(up[valley.k])}`); }
   const below = reachedByCountry(L, up, Infinity);
   t.diagnostic(`ground reached from the lowlands by any fall, m2: ${JSON.stringify(below)}`);
+});
+
+test('Varn’s reach: from the valleys, nothing of the Empire’s ground by any fall at all, nor by a climber who never tires - but by the slabs', { skip: !LOTHARN_PASSES_SHUT }, t => {
+  // The reach is where Varn's no-hold rock and its rims are (src/varn-world.js, `VARN_ROCK`): from fifty metres beyond the
+  // Vastos Gate's eastern end to the eastern massif's far end - both massifs either side of the city, whole. A flood kept
+  // to it knows nothing of the mountains west of it, which are as they always were and are the forts' business (above).
+  const inReach = (x, z) => x >= VARN_ROCK.minX, forecourt = (x, z) => z < -783 && Math.abs(x - VARN.x) < 60;
+  assert.ok(VARN_ROCK.minX < LOTHARN_FORTS[0].b.x - 40 && VARN_ROCK.minX > LOTHARN_FORTS[0].gateAt.x, 'the reach begins beyond the Vastos Gate’s eastern end, and short of its gate');
+  const here = VALLEYS.filter(one => inReach(L.at(one.k).x, L.at(one.k).z));
+  assert.deepEqual(here.map(one => one.name), ['the Col', 'Kemrath', 'Stonegate', 'Upper Olveth']);
+  /** The Empire's ground a flood came to, by any fall: how much, and the first of it. Varn's forecourt, before the shut Pass Gate, is Amod's hex and the pass's ground. */
+  const empire = cost => {
+    let area = 0, first = null;
+    for (let k = 0; k < cost.length; k++) if (cost[k] < Infinity && LOWLANDS.includes(L.region[k])) { const p = L.at(k); if (forecourt(p.x, p.z)) continue; area += STEP * STEP; first ??= `${p.x}, ${p.z}, ${fall(cost[k])}`; }
+    return { area, first };
+  };
+  const mountains = cost => { let area = 0; for (let k = 0; k < cost.length; k++) if (cost[k] === 0 && RANGES.includes(L.region[k])) area += STEP * STEP; return area; };
+  // A walker, whatever he is willing to fall and whatever his health.
+  const walker = flood(here, { within: inReach });
+  assert.ok(mountains(walker) > 60000, `the flood ran: ${mountains(walker)} m2 of the mountains walked`);
+  assert.equal(walker[LOWLAND[0].k], Infinity, `Amod below Varn is reached from the valleys by ${fall(walker[LOWLAND[0].k])}`);
+  assert.deepEqual(empire(walker), { area: 0, first: null }, 'a walker out of the valleys is on the Empire’s ground inside Varn’s reach');
+  // A climber who never tires, the slabs' rock made no-hold like the rest of it: the same. So no climb but the slabs goes
+  // round the city - not the eastern peak's first ramp from the forecourt, which was the easy way before, nor anything else.
+  const climber = flood(here, { within: inReach, climber: true, forbidden: (x, z) => world.unclimbableAt(x, z) || !!onSlab(x, z, .5) });
+  assert.ok(mountains(climber) >= mountains(walker), 'a climber goes where a walker goes');
+  assert.equal(climber[LOWLAND[0].k], Infinity, `but for the slabs a climber is in Amod below Varn by ${fall(climber[LOWLAND[0].k])}`);
+  assert.deepEqual(empire(climber), { area: 0, first: null }, 'but for the slabs a climber out of the valleys is on the Empire’s ground inside Varn’s reach');
+  // And with the slabs as they are he is there, with no fall that costs him anything: the slabs are the way.
+  const bySlabs = flood(here, { within: inReach, climber: true, forbidden: world.unclimbableAt });
+  assert.ok(bySlabs[LOWLAND[0].k] < TERRAIN_FALL.safeDrop, `by the slabs a climber is in Amod below Varn by ${fall(bySlabs[LOWLAND[0].k])}`);
+  // Three doors nobody comes to. The eastern peak's high chimney and its eastern chamber open on shelves no wider than the
+  // rim, and the rim stops two metres short of a cave's mouth (src/varn-world.js, `DOOR`), so the brink before each of those
+  // doors is open; and a body set down at one of them comes to the Empire's ground by falls (docs/varn-report.md: the
+  // chamber's is over Amod). They are no way past Varn because nobody gets to them: not a walker, not a climber who never
+  // tires, with the slabs or without, by any fall. If somebody builds a way to one of those caves, this is what goes red.
+  for (const id of ['eastern-high-chimney', 'eastern-chamber']) {
+    const cave = world.lotharnCaves.find(one => one.id === id);
+    assert.ok(cave, `${id} is not a cave of the East Lotharn`);
+    for (const at of cave.kind === 'chamber' ? [0] : [0, cave.length]) {
+      const door = cave.at(at);
+      let points = 0;
+      for (let dz = -3; dz <= 3; dz += STEP) for (let dx = -3; dx <= 3; dx += STEP) {
+        const k = L.cell(door.x + dx, door.z + dz); if (!L.used[k]) continue;
+        points++;
+        for (const [who, cost] of [['a walker', walker], ['a climber', climber], ['a climber, by the slabs,', bySlabs]]) assert.equal(cost[k], Infinity, `${who} is at ${id}'s door (${L.at(k).x}, ${L.at(k).z}) by ${fall(cost[k])}`);
+      }
+      assert.ok(points >= 9, `${id}'s door at ${door.x.toFixed(0)}, ${door.z.toFixed(0)} is off the measured ground`);
+    }
+  }
+  t.diagnostic(`inside Varn's reach: a walker has ${mountains(walker)} m2 of the mountains and none of the Empire's ground by any fall; a tireless climber ${mountains(climber)} m2 and none; with the slabs open the same climber’s worst fall on the way to Amod below Varn is ${bySlabs[LOWLAND[0].k].toFixed(1)} m`);
 });
 
 test('the passages through the rock are inside the walls: both mouths of each are the mountains’ own ground', { skip: !LOTHARN_PASSES_SHUT }, () => {
@@ -254,13 +343,13 @@ test('nobody is sealed in, gates shut: from every valley a walker walks out of t
   const north = L.near(PASS_ROAD_LINE.at(-1).x, PASS_ROAD_LINE.at(-1).z, 12);
   assert.ok(north >= 0, 'the pass road’s northern end can be stood at');
   for (const valley of VALLEYS) {
-    const from = leastFall(L, world, [valley.k], { links, ways: onPeakWay });
+    const from = leastFall(L, world, [valley.k], { links, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock });
     assert.equal(from[north], 0, `from ${valley.name} the pass road’s northern end is ${fall(from[north])}`);
   }
   // And the yard behind each gate opens onto its own country: nobody is shut in on the Empire's side either.
   for (const [index, fort] of LOTHARN_FORTS.entries()) {
     const yard = L.near(fort.way[2].x, fort.way[2].z, 4);
-    assert.ok(yard >= 0 && leastFall(L, world, [yard], { links, ways: onPeakWay })[LOWLAND[index + 1].k] === 0, `${fort.id}'s yard is cut off from ${fort.opens}`);
+    assert.ok(yard >= 0 && leastFall(L, world, [yard], { links, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock })[LOWLAND[index + 1].k] === 0, `${fort.id}'s yard is cut off from ${fort.opens}`);
   }
 });
 
@@ -275,18 +364,18 @@ test('each wall, close to: no walker past it or round its ends at a metre, and n
     assert.ok(front >= 0 && back >= 0, `${fort.id}: nowhere to stand either side of the gate`);
     const crossed = cost => { let n = 0; for (let k = 0; k < cost.length; k++) if (cost[k] < Infinity) { const s = side(k); if (s.behind > 3 && s.along > 0 && s.along < fort.length) n++; } return n; };
     const crossedAlive = cost => { let n = 0; for (let k = 0; k < cost.length; k++) if (cost[k] < LETHAL_FALL) { const s = side(k); if (s.behind > 3 && s.along > 0 && s.along < fort.length) n++; } return n; };
-    const walker = leastFall(local, world, [front], { midpoints: true, ways: onPeakWay });
+    const walker = leastFall(local, world, [front], { midpoints: true, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock });
     assert.equal(crossed(walker), 0, `${fort.id}: a walker is behind the wall`);
     assert.equal(walker[back], Infinity);
     // A climber: no way behind the wall that a hundred health lives through. (By any fall at all is measured, not held:
     // where a peak's own ramp passes a wall's end, he is on the ledge above it and can step off.)
-    const climber = leastFall(local, world, [front], { midpoints: true, climber: true, forbidden: world.unclimbableAt, ways: onPeakWay });
+    const climber = leastFall(local, world, [front], { midpoints: true, climber: true, forbidden: world.unclimbableAt, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock });
     assert.equal(crossedAlive(climber), 0, `${fort.id}: a climber is behind the wall, alive`);
     assert.ok(climber[back] > LETHAL_FALL + 5, `${fort.id}: a climber is behind the gate by ${fall(climber[back])}`);
     // Were the rock at its ends climbable: the same flood with the rule lifted. At the Vastos Gate and the Meneth Gate he
     // is then behind the wall without a fall, so there the rule is what holds him; at the Reach Gate the cliffs are too
     // steep for a hand in any case, and the rule only makes sure of it.
-    const free = leastFall(local, world, [front], { midpoints: true, climber: true, ways: onPeakWay });
+    const free = leastFall(local, world, [front], { midpoints: true, climber: true, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock });
     assert.ok(free[back] <= climber[back], `${fort.id}: lifting the rule made it harder`);
     lifted.push(free[back]);
     t.diagnostic(`${fort.name}: a climber, with the no-hold rule: behind the gate by ${fall(climber[back])}; with the rule lifted, ${fall(free[back])}`);

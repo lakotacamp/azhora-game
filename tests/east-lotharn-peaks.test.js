@@ -10,6 +10,7 @@ import {
 } from '../src/east-lotharn-world.js';
 import { CAVE, CAVE_LINES, createCaveWalk, caveOutside, nearestPlain } from '../src/east-lotharn-caves.js';
 import { createLotharnCaveWalk } from '../src/east-lotharn-cave-walk.js';
+import { lipRib } from '../src/varn-world.js';
 
 /**
  * The East Lotharn's peaks and caves (the user, 27 September 2026: "make the very tall so that
@@ -75,6 +76,9 @@ test('four summits, the eastern about four hundred and twenty metres, each a bal
     for (let dz = -35; dz <= 35; dz += 1.5) for (let dx = -35; dx <= 35; dx += 1.5) {
       const x = peak.x + dx, z = peak.z + dz, onTop = u => u >= PEAK_TOPS[peak.id] - .5;
       if (!onTop(peakUplift(x, z)) || onRamp(x, z, 3.5) || onRamp(x + 1.5, z, 3.5) || onRamp(x, z + 1.5, 3.5)) continue;
+      // The eastern peak stands within Varn's reach (src/varn-world.js, 2 October 2026): the rim of stone Varn raises on
+      // every ledge's brink there stands round its bald's edge too, and is a rim, not the bald.
+      if (lipRib(x, z) > 0 || lipRib(x + 1.5, z) > 0 || lipRib(x, z + 1.5) > 0) continue;
       area += 2.25;
       if (onTop(peakUplift(x + 1.5, z))) steepest = Math.max(steepest, Math.abs(g(x + 1.5, z) - g(x, z)) / 1.5);
       if (onTop(peakUplift(x, z + 1.5))) steepest = Math.max(steepest, Math.abs(g(x, z + 1.5) - g(x, z)) / 1.5);
