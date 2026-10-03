@@ -6,8 +6,27 @@ import { landDistance,SEA_LEVEL } from './region-world.js';
 import { LEGEMUM_CELLS,legemumOwns,legemumHabitat,legemumSlope,legemumClear } from './legemum-world.js';
 import { legemumWildlifeClear } from './legemum-wildlife.js';
 import { telemoniaDrawsGround } from './telemonia-world.js';
+import { GALA_TELEMONIA_STREAM,GALA_TELEMONIA_MOUTH,courseDistance } from './west-regions.js';
+import { courseSample } from './west-ground.js';
 
 const TAU=Math.PI*2;
+/** The Treloss runs down Legemum's border with Gala to the sea (src/west-regions.js), and since 2026-10-03 its
+ * mouth is cut through to the shore. This country's cover is still decided where it was drawn, from the one
+ * seeded stream, so not one thing in the other twenty-three cells moves; what would stand in the stream's water
+ * is only drawn square off its line onto Legemum's own bank, `OFF_WATER` metres past its widest water. */
+const TRELOSS=[GALA_TELEMONIA_STREAM,GALA_TELEMONIA_MOUTH],OFF_WATER=.8;
+function offTreloss(p){
+  let q=p;
+  for(const course of TRELOSS){
+    const reach=course.maxHalf+OFF_WATER;
+    if(courseDistance(course,q.x,q.z,reach)>=reach)continue;
+    const s=courseSample(course,q.x,q.z),across=(q.x-s.x)*s.nx+(q.z-s.z)*s.nz,to=(across<0?-1:1)*reach;
+    const moved={x:q.x+s.nx*(to-across),z:q.z+s.nz*(to-across)};
+    if(!legemumOwns(moved.x,moved.z))return p;
+    q=moved;
+  }
+  return q===p?p:{...p,x:q.x,z:q.z};
+}
 export function createLegemumScenery(...args){return finishBuild(createLegemumScenerySteps(...args));}
 /** Low, ocean-pruned cover outside two sheltered pockets. Trees use harvestable
  * instance handles, not untyped scenery; small flora is batched by atlas cell. */
@@ -15,7 +34,7 @@ export function* createLegemumScenerySteps({parent,heightAt,renderedGroundHeight
   // Along Telemonia's border its own ground is drawn over the world's sunk grid (src/telemonia-world.js).
   const renderedGroundHeight=(x,z)=>telemoniaDrawsGround(x,z)?heightAt(x,z):gridGround(x,z);
   const root=new THREE.Group();root.name='Legemum - wet headlands and tin country';parent.add(root);
-  const metrics={cells:0,trees:0,rocks:0,tors:0,quartzVeins:0,grass:0,heath:0,bogPlants:0,ferns:0,batches:0,vertices:0};
+  const metrics={offTreloss:0,cells:0,trees:0,rocks:0,tors:0,quartzVeins:0,grass:0,heath:0,bogPlants:0,ferns:0,batches:0,vertices:0};
   let seed=590431,work=0;
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   const range=(a,b)=>a+random()*(b-a),treePoints=[];
@@ -44,30 +63,32 @@ export function* createLegemumScenerySteps({parent,heightAt,renderedGroundHeight
     for(let i=0;i<90;i++){
       if(++work%24===0)yield;
       const p=sample(cell);if(!plantable(p.x,p.z))continue;
-      const habitat=legemumHabitat(p.x,p.z),y=renderedGroundHeight(p.x,p.z);
-      grass(b,p.x,y-.04,p.z,range(.18,.63),habitat==='bog'?'#7d855c':habitat==='coast'?'#99a17a':'#81915d');metrics.grass++;
+      const q=offTreloss(p);if(q!==p)metrics.offTreloss++;
+      const habitat=legemumHabitat(p.x,p.z),y=renderedGroundHeight(q.x,q.z);
+      grass(b,q.x,y-.04,q.z,range(.18,.63),habitat==='bog'?'#7d855c':habitat==='coast'?'#99a17a':'#81915d');metrics.grass++;
       if(habitat==='bog'&&i%3===0){
-        b.rock('#66816a',p.x,y+.04,p.z,range(.5,1.1),.10,range(.5,1.1),random()*TAU);
+        b.rock('#66816a',q.x,y+.04,q.z,range(.5,1.1),.10,range(.5,1.1),random()*TAU);
         // Sphagnum hummocks, sedges, and low red sundew rosettes. These are
         // natural wet ground, not new deep lakes or hidden swimming blockers.
         for(let j=0;j<4;j++){
-          const a=j*TAU/4;b.rock('#a36365',p.x+Math.cos(a)*.13,y+.14,p.z+Math.sin(a)*.13,.12,.035,.05,a);
-          b.rock('#c4ae87',p.x+Math.cos(a)*.21,y+.17,p.z+Math.sin(a)*.21,.025,.025,.025);
+          const a=j*TAU/4;b.rock('#a36365',q.x+Math.cos(a)*.13,y+.14,q.z+Math.sin(a)*.13,.12,.035,.05,a);
+          b.rock('#c4ae87',q.x+Math.cos(a)*.21,y+.17,q.z+Math.sin(a)*.21,.025,.025,.025);
         }
         metrics.bogPlants++;
-      } else if(habitat==='wood'&&i%3===0){fern(b,p.x,y,p.z,range(.6,1.1));metrics.ferns++;}
+      } else if(habitat==='wood'&&i%3===0){fern(b,q.x,y,q.z,range(.6,1.1));metrics.ferns++;}
       else if(i%7===0&&!clear(p.x,p.z,.4)){
         const s=range(.3,.85),heather=i%2===0;
-        b.rock(heather?'#65715b':'#637753',p.x,y+s*.28,p.z,s,s*.43,s*.8,random()*TAU);
-        for(let j=0;j<3;j++)b.rock(heather?'#a090a8':'#c1ad67',p.x+range(-s*.6,s*.6),y+s*.6,p.z+range(-s*.6,s*.6),.13,.09,.13);
+        b.rock(heather?'#65715b':'#637753',q.x,y+s*.28,q.z,s,s*.43,s*.8,random()*TAU);
+        for(let j=0;j<3;j++)b.rock(heather?'#a090a8':'#c1ad67',q.x+range(-s*.6,s*.6),y+s*.6,q.z+range(-s*.6,s*.6),.13,.09,.13);
         metrics.heath++;
       }
     }
     for(let i=0;i<10;i++){
       const p=sample(cell);if(!plantable(p.x,p.z)||clear(p.x,p.z,2))continue;
-      const y=renderedGroundHeight(p.x,p.z),s=range(.38,1.6),tint=i%3?'#81867d':'#b3b3a1';
-      b.rock(tint,p.x,y+s*.19,p.z,s,s*.53,s*.82,random()*TAU);metrics.rocks++;
-      if(s>1.1)colliders.push({x:p.x,z:p.z,r:s*.7,minY:y-.5,maxY:y+s*.8,kind:'rock',id:`legemum-stone-${cell.q}-${cell.r}-${i}`});
+      const q=offTreloss(p);if(q!==p)metrics.offTreloss++;
+      const y=renderedGroundHeight(q.x,q.z),s=range(.38,1.6),tint=i%3?'#81867d':'#b3b3a1';
+      b.rock(tint,q.x,y+s*.19,q.z,s,s*.53,s*.82,random()*TAU);metrics.rocks++;
+      if(s>1.1)colliders.push({x:q.x,z:q.z,r:s*.7,minY:y-.5,maxY:y+s*.8,kind:'rock',id:`legemum-stone-${cell.q}-${cell.r}-${i}`});
     }
     for(let i=0;i<28;i++){
       const p=sample(cell);if(!plantable(p.x,p.z)||clear(p.x,p.z,1.7)||landDistance(p.x,p.z)<18||legemumSlope(p.x,p.z,heightAt)>.6)continue;
@@ -99,8 +120,9 @@ export function* createLegemumScenerySteps({parent,heightAt,renderedGroundHeight
     trunk.name='Legemum typed living trunks';crowns.name='Legemum wind-pruned crowns';
     root.add(trunk,crowns);trunk.castShadow=true;trunk.receiveShadow=true;crowns.castShadow=true;crowns.receiveShadow=true;
     const dummy=new THREE.Object3D(),color=new THREE.Color();
-    for(const [i,t]of treePoints.entries()){
+    for(const [i,laid]of treePoints.entries()){
       if(++work%12===0)yield;
+      const t=offTreloss(laid);if(t!==laid){metrics.offTreloss++;treePoints[i]=t;}
       const y=renderedGroundHeight(t.x,t.z),h=t.height,r=t.radius;
       dummy.position.set(t.x,y+h*.46-.55,t.z);dummy.rotation.set(0,t.yaw,0);dummy.scale.set(r,h*.92+1.1,r);dummy.updateMatrix();trunk.setMatrixAt(i,dummy.matrix);
       trunk.setColorAt(i,color.set(t.species==='silver-birch'?'#b6b9a7':t.species==='black-alder'?'#65664e':'#776b50'));

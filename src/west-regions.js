@@ -845,7 +845,9 @@ export const OVETH_REACH = river('oveth-reach', 'The Oveth', shortOf(atlasCourse
 /**
  * **The Treloss**: small on the atlas, a step across here, running south
  * down Gala's whole western side and out to the sea at its south-western corner.
- * It tapers out onto the beach (`shoreward`, `taper`), the way a stream reaching sand does.
+ * The course stops where the beach would start (`shoreward`) and its mouth, below, carries the water on
+ * down the Legemum line to the sea (`GALA_TELEMONIA_MOUTH`). It used to taper out there instead (`taper: 30`),
+ * which a stream reaching sand does and a stream reaching the foot of a hill does not.
  *
  * **Mittoli for "the border river", and both halves of it are the profile's**: the `mittoli` profile's
  * `lexical_roots.border` is `["trel", "dor"]` and its suffix list carries `-oss`, which is the ending
@@ -864,7 +866,58 @@ export const OVETH_REACH = river('oveth-reach', 'The Oveth', shortOf(atlasCourse
  * the other ending the profile offers.
  */
 export const GALA_TELEMONIA_STREAM = river('gala-telemonia-stream', 'The Treloss',
-  shoreward(atlasCourse('Gala,Legemum,Telemonia')), { halfWidth: 1.5, halfWidthEnd: 2.2, cut: 1, cutEnd: .75, bed: .35, taper: 30 });
+  shoreward(atlasCourse('Gala,Legemum,Telemonia')), { halfWidth: 1.5, halfWidthEnd: 2.2, cut: 1, cutEnd: .75, bed: .35 });
+
+/**
+ * The rest of an atlas line past `shoreward`'s cut: from the same point, where it comes within `reach` of the
+ * sea, along the atlas's own line to its last corner on the coast, and on straight the way it was going until
+ * it is `out` metres past the line `landDistance` draws (negative is the sea's side), which is where the
+ * coast field brings the ground down to the water. The last corner is moved out along its own edge rather
+ * than given a stub of its own, so the line keeps its corners and no more: `soften` crowds samples into
+ * every short piece, and a course's level falls by the sample, not by the metre.
+ */
+function seaward(points, reach = 42, out = -2.5) {
+  const first = points.findIndex(p => landDistance(p.x, p.z) < reach);
+  if (first < 1) throw new Error('An atlas line that starts within reach of the sea has no reach above it.');
+  const a = points[first - 1], b = points[first], da = landDistance(a.x, a.z), db = landDistance(b.x, b.z);
+  const t = clamp((da - reach) / (da - db || 1), 0, 1);
+  const line = [point(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t), ...points.slice(first)];
+  const end = line.at(-1), before = line.at(-2), length = Math.hypot(end.x - before.x, end.z - before.z);
+  const ux = (end.x - before.x) / length, uz = (end.z - before.z) / length;
+  let step = 0;
+  while (landDistance(end.x + ux * step, end.z + uz * step) > out && step < 30) step += .25;
+  line[line.length - 1] = point(end.x + ux * step, end.z + uz * step);
+  return line;
+}
+
+/**
+ * **The Treloss's mouth**: its last forty metres, down the Gala | Legemum edge from where `shoreward` stops the
+ * stream to the water's edge. Built 2026-10-03, because the stream had stopped short of the sea in a wall.
+ *
+ * The stream was built with Gala, when Legemum was outland, and it stopped forty-two metres short of the sea
+ * and gave its channel up over its last thirty (`taper`), because the coast field brings the ground down to
+ * the beach over the last forty metres and a western course's level is worked from ground that knows nothing
+ * of the shore. That holds where the land at the cut lies at the water's level. Here it does not: the line
+ * comes down past the foot of Telemonia's rim and the first of Legemum's hills, the blended ground at the cut
+ * stands 7.1 m against the stream's 4.7 and rises to 8.1 a few paces on before it falls to the beach, and the
+ * stream ran out into a bank two and a half metres high, forty-two metres short of the sea.
+ *
+ * So the stream keeps its channel to its last sample now (no taper), and this reach takes the water on: its
+ * first level is the stream's last (`headOf`), and it falls 4.6 m over 44 m to the sea - a steep little run
+ * through a gully, gentle where it leaves the stream and about one in nine below - cut by `west-ground.js`'s
+ * channel into Legemum's ground on its side of the line and Gala's on its own, exactly as the stream above it
+ * is cut. Legemum's own shaping lets go of this border over its last 48 m (`legemumGround`), so on Legemum's
+ * side the cut stands as it is cut. Its `cut` is large and grows fast, and that is the coast again: the lie of
+ * the land a western profile is worked from (`baseBeforeWater`) has no beach in it, and over these metres
+ * stands 7 to 12 m where the real ground falls from 8 m to the sea's level. The two numbers are what bring the
+ * water down to the sea under that ground; they are measured, not derived, and tests/legemum-world.test.js
+ * holds the result on the built world: no step at the join, falling every sample, at the sea's level at its
+ * end, the bed under the water the whole way, no bank over a metre beside it, no cliff off either bank, both
+ * banks walked to the beach. Shallow, `bed` the stream's own, and waded. What it would have drowned of Gala's
+ * scatter and Legemum's cover is moved off it in their own files (`offTheMouth`, `offTreloss`).
+ */
+export const GALA_TELEMONIA_MOUTH = river('gala-telemonia-mouth', 'The Treloss', seaward(atlasCourse('Gala,Legemum,Telemonia')),
+  { halfWidth: 2.2, halfWidthEnd: 2.8, cut: 3.2, cutEnd: 10.05, bed: .35, headOf: 'gala-telemonia-stream' });
 
 /**
  * **The distributary.** The lore of Gala says the south is "well-watered by the Lizeem's
@@ -906,7 +959,7 @@ export const GALA_CHANNEL = river('gala-channel', 'The distributary', shoreward(
   point(-1728, 1273), point(-1757, 1318), point(-1774, 1362), point(-1783, 1398), point(-1788, 1430),
 ]), { halfWidth: 2.2, halfWidthEnd: 4.6, cut: 1.3, cutEnd: .8, bed: .5 });
 
-export const GALA_RIVERS = Object.freeze([GALA_DESERT_STREAM, OVETH_REACH, GALA_TELEMONIA_STREAM, GALA_CHANNEL]);
+export const GALA_RIVERS = Object.freeze([GALA_DESERT_STREAM, OVETH_REACH, GALA_TELEMONIA_STREAM, GALA_CHANNEL, GALA_TELEMONIA_MOUTH]);
 
 // ---------------------------------------------------------------------------
 // The Mithala plain: the channels, which are the country

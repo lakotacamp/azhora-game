@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, landDistance, relief } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
-import { LIZEEM, LIZEEM_REACH, WEST_BRAIDS, GALA_RIVERS, GALA_CHANNEL, GALA_TELEMONIA_STREAM, GALA_DESERT_STREAM, OVETH_REACH, westBareGround } from './west-regions.js';
-import { WEST_PROFILES, westWaterSurface, braidThreadOffset } from './west-ground.js';
+import { LIZEEM, LIZEEM_REACH, WEST_BRAIDS, WEST_RIVERS, GALA_RIVERS, GALA_CHANNEL, GALA_TELEMONIA_STREAM, GALA_TELEMONIA_MOUTH, GALA_DESERT_STREAM, OVETH_REACH, westBareGround, courseDistance } from './west-regions.js';
+import { WEST_PROFILES, westWaterSurface, braidThreadOffset, courseSample } from './west-ground.js';
 import { galaClimate, galaSouthness, galaClear, onWashFloor, washPlace, GALA_WASH, GALA_SEAM } from './gala-world.js';
 
 /**
@@ -46,11 +46,54 @@ export function* createGalaScenerySteps(kit) {
   const gy = (x, z) => groundHeight(x, z);
   const own = (x, z) => hexOwnerAt(x, z) === 'Gala';
   /**
+   * **The Treloss's mouth** (`GALA_TELEMONIA_MOUTH`) was cut on 2026-10-03, after everything here was laid.
+   * Every candidate below draws from the one seeded stream in turn, so a candidate the new water refused
+   * re-rolled every one after it: measured, three olives and figs, three maquis bushes, twenty-one tussocks
+   * and seven thrift cushions came out somewhere else, as far as 165 m from the mouth. So the scatter is still decided
+   * against the water it was laid beside - every western course but the mouth (`laidBare`, `laidWater`) -
+   * and what the mouth would drown is moved square off its line onto Gala's own bank when it is drawn
+   * (`offTheMouth`). Nothing else moves. Far from the mouth both answer exactly what the shared tests do.
+   */
+  const MOUTH = GALA_TELEMONIA_MOUTH, LAID = WEST_RIVERS.filter(course => course !== MOUTH);
+  const nearMouth = (x, z, reach) => courseDistance(MOUTH, x, z, reach) < reach;
+  const laidBare = (x, z, margin) => {
+    if (!nearMouth(x, z, 60)) return westBareGround(x, z, margin);
+    // `inWestWater` without the mouth: the nearest other course, judged by its own widest water. There is
+    // no pool and no sinter within a kilometre of here, which are the other two things `westBareGround` asks.
+    let best = null, distance = Infinity;
+    for (const course of LAID) { const d = courseDistance(course, x, z, Math.min(60, distance)); if (d < distance) { distance = d; best = course; } }
+    return Boolean(best) && distance < best.maxHalf + margin;
+  };
+  const laidWater = (x, z) => {
+    const surface = westWaterSurface(x, z);
+    if (surface === null || !nearMouth(x, z, MOUTH.maxHalf)) return surface;
+    if (courseDistance(MOUTH, x, z, MOUTH.maxHalf) >= courseSample(MOUTH, x, z).half) return surface;
+    // The mouth's water: the stream's own answer where its water covers the point too (it is asked first), else none.
+    const above = GALA_TELEMONIA_STREAM;
+    return courseDistance(above, x, z, above.maxHalf) < courseSample(above, x, z).half ? surface : null;
+  };
+  let movedOffMouth = 0, keptOnMouth = 0;
+  /**
+   * A thing as laid, or moved square off the mouth's line to `clear` metres past its widest water, on its own
+   * side. Never dropped: every batch draws its turns and tints item by item from the same stream, so one thing
+   * fewer would re-tint every batch after it. One that cannot be moved onto Gala stays where it was and is counted.
+   */
+  const offTheMouth = (item, clear) => {
+    const reach = MOUTH.maxHalf + clear;
+    if (!nearMouth(item.x, item.z, reach)) return item;
+    const s = courseSample(MOUTH, item.x, item.z), across = (item.x - s.x) * s.nx + (item.z - s.z) * s.nz;
+    const to = (across < 0 ? -1 : 1) * reach, x = item.x + s.nx * (to - across), z = item.z + s.nz * (to - across);
+    if (!own(x, z) || nearMouth(x, z, reach - .01)) { keptOnMouth++; return item; }
+    movedOffMouth++;
+    return { ...item, x, z };
+  };
+  const offMouth = (items, clear) => items.map(item => offTheMouth(item, clear));
+  /**
    * Ground in Gala something may grow on: its own hex, not in or on the edge of any water, not on
    * the wash's gravel, and above the tideline. `westBareGround` measures from a centre line and so
    * cannot see the braid threads; `westWaterSurface` can, and both are asked.
    */
-  const plantable = (x, z, margin) => own(x, z) && !westBareGround(x, z, margin) && westWaterSurface(x, z) === null
+  const plantable = (x, z, margin) => own(x, z) && !laidBare(x, z, margin) && laidWater(x, z) === null
     && !galaClear(x, z, margin) && landDistance(x, z) > 1.5;
 
   // -------------------------------------------------------------------------
@@ -221,7 +264,7 @@ export function* createGalaScenerySteps(kit) {
       for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < perSide; i++) { if (++buildWork % 32 === 0) yield;
         const offset = sample.half + range(.2, reach);
         const x = sample.x + sample.nx * offset * side, z = sample.z + sample.nz * offset * side;
-        if (!own(x, z) || westWaterSurface(x, z) !== null || landDistance(x, z) < 1) continue;
+        if (!own(x, z) || laidWater(x, z) !== null || landDistance(x, z) < 1) continue;
         out.push({ x, z, s: range(size[0], size[1]), rot: random() * 6.28 });
       } }
     }
@@ -237,13 +280,13 @@ export function* createGalaScenerySteps(kit) {
     for (let i = 0; i < 2; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, offset = MOUTHS.half + range(.2, 2.5);
       const x = point.x + point.nx * offset * side, z = point.z + point.nz * offset * side;
-      if (!own(x, z) || westWaterSurface(x, z) !== null || landDistance(x, z) < 1) continue;
+      if (!own(x, z) || laidWater(x, z) !== null || landDistance(x, z) < 1) continue;
       reeds.push({ x, z, s: range(.9, 1.7), rot: random() * 6.28 });
     }
   }); });
   (yield* waterline(WEST_PROFILES.get(GALA_TELEMONIA_STREAM.id), 2, 1, 2, reeds, [.6, 1.2]));
   (yield* waterline(WEST_PROFILES.get(OVETH_REACH.id), 2, 1, 2.4, reeds, [.7, 1.4]));
-  (yield* reedBatch(reeds, 'Gala reed and sedge'));
+  (yield* reedBatch(offMouth(reeds, .3), 'Gala reed and sedge'));
 
   /**
    * Sand on the braid bars and at the mouths, as on the Flats and in Eer: what a slow river drops on
@@ -256,11 +299,11 @@ export function* createGalaScenerySteps(kit) {
     for (let i = 0; i < 6; i++) { if (++buildWork % 32 === 0) yield;
       const side = random() < .5 ? -1 : 1, out = range(sample.half + .4, offset + MOUTHS.half + 5);
       const x = sample.x + sample.nx * out * side, z = sample.z + sample.nz * out * side;
-      if (!own(x, z) || westWaterSurface(x, z) !== null) continue;
+      if (!own(x, z) || laidWater(x, z) !== null) continue;
       sand.push({ x, z, s: range(.3, .9), rot: random() * 6.28, flat: range(.15, .25) });
     }
   }
-  (yield* stoneBatch(sand, 'Gala mouth sand', () => color.set('#b9a983').offsetHSL(0, range(-.04, .04), range(-.04, .04)), .03));
+  (yield* stoneBatch(offMouth(sand, .4), 'Gala mouth sand', () => color.set('#b9a983').offsetHSL(0, range(-.04, .04), range(-.04, .04)), .03));
   metrics.sand += sand.length;
 
   // -------------------------------------------------------------------------
@@ -389,9 +432,11 @@ export function* createGalaScenerySteps(kit) {
   galleryOf(GALA_DESERT_STREAM, 3, 2, 7, 0);
   galleryOf(LIZEEM_REACH, 2, 2, 12, 0);
   galleryOf(LIZEEM, 3, 2, 10, 0);
-  (yield* treeBatch(tamarisk, 'Gala tamarisk', () => color.set('#8a9577').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'gala-tree'));
-  (yield* bushBatch(oleander, 'Gala oleander', () => color.set('#4d6440').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .55));
-  (yield* bloomBatch(oleander, 'Gala oleander flower', () => color.set(random() < .78 ? '#d98aa6' : '#f1e6e8').offsetHSL(0, range(-.05, .05), range(-.05, .05)), 7));
+  // The arrays as laid stay as they are: the olives below keep their distance from the tamarisk as laid.
+  const oleanderDrawn = offMouth(oleander, 2.2);
+  (yield* treeBatch(offMouth(tamarisk, 2.2), 'Gala tamarisk', () => color.set('#8a9577').offsetHSL(range(-.02, .02), range(-.05, .04), range(-.05, .06)), 'gala-tree'));
+  (yield* bushBatch(oleanderDrawn, 'Gala oleander', () => color.set('#4d6440').offsetHSL(range(-.02, .02), range(-.04, .05), range(-.04, .05)), .55));
+  (yield* bloomBatch(oleanderDrawn, 'Gala oleander flower', () => color.set(random() < .78 ? '#d98aa6' : '#f1e6e8').offsetHSL(0, range(-.05, .05), range(-.05, .05)), 7));
   metrics.tamarisk = tamarisk.length; metrics.oleander = oleander.length;
 
   /**
@@ -468,25 +513,27 @@ export function* createGalaScenerySteps(kit) {
         thrift.push({ x, z, s: range(.3, .55), h: range(.5, .8), rot: random() * 6.28 });
       }
     }
-    (yield* tuftBatch(tufts, 'Gala grass', tuft => {
+    (yield* tuftBatch(offMouth(tufts, 1.2), 'Gala grass', tuft => {
       const c = tuft.c;
       const hue = .115 * c.BSh + .15 * c.Csb + .19 * c.Csa + tuft.coast * .03;
       return color.setHSL(hue + range(-.012, .012), .30 * c.BSh + .30 * c.Csb + .32 * c.Csa + range(-.05, .05), .54 * c.BSh + .46 * c.Csb + .42 * c.Csa + range(-.04, .04));
     }));
   }
   // Wild olive is pale, grey and open; fig a broader, brighter, rounder leaf. Hex, not HSL.
-  (yield* treeBatch(standing, 'Gala olive and fig', tree => tree.fig
+  (yield* treeBatch(offMouth(standing, 5), 'Gala olive and fig', tree => tree.fig
     ? color.set('#5f7a45').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .05))
     : color.set('#8e9a72').offsetHSL(range(-.02, .02), range(-.05, .05), range(-.04, .06)), 'gala-tree'));
-  (yield* bushBatch(steppeShrubs, 'Gala wormwood and saltbush', bush => bush.salt
+  (yield* bushBatch(offMouth(steppeShrubs, 1.5), 'Gala wormwood and saltbush', bush => bush.salt
     ? color.set('#8c9690').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05))
     : color.set('#9a9c86').offsetHSL(range(-.02, .02), range(-.04, .04), range(-.04, .05))));
-  (yield* bushBatch(maquis, 'Gala maquis', () => color.set('#55643f').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.05, .06)), .5));
-  (yield* stoneBatch(stones, 'Gala steppe stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16));
-  (yield* bushBatch(thrift, 'Gala sea grass and thrift', () => color.set('#6f8a5c').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.04, .05))));
-  (yield* bloomBatch(thrift, 'Gala thrift flower', () => color.set('#e3a3bf').offsetHSL(0, range(-.08, .05), range(-.06, .06)), 3));
+  (yield* bushBatch(offMouth(maquis, 1.5), 'Gala maquis', () => color.set('#55643f').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.05, .06)), .5));
+  (yield* stoneBatch(offMouth(stones, 1), 'Gala steppe stones', () => color.set('#8a8578').offsetHSL(0, range(-.03, .03), range(-.05, .05)), .16));
+  const thriftDrawn = offMouth(thrift, 1);
+  (yield* bushBatch(thriftDrawn, 'Gala sea grass and thrift', () => color.set('#6f8a5c').offsetHSL(range(-.03, .03), range(-.05, .05), range(-.04, .05))));
+  (yield* bloomBatch(thriftDrawn, 'Gala thrift flower', () => color.set('#e3a3bf').offsetHSL(0, range(-.08, .05), range(-.06, .06)), 3));
   metrics.shrubs = steppeShrubs.length; metrics.maquis = maquis.length; metrics.stones += stones.length; metrics.thrift = thrift.length;
   metrics.standing = standing.length;
+  metrics.movedOffMouth = movedOffMouth; metrics.keptOnMouth = keptOnMouth;
 
   return {
     group, metrics,

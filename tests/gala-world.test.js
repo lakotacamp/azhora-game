@@ -10,7 +10,7 @@ import {
   REGION_CELLS, REGION_IDS, REGION_TERRAIN, hexAt, hexOwnerAt, regionAt, regions, landDistance, insideRegion, terrainMix, SEA_LEVEL,
 } from '../src/region-world.js';
 import {
-  LIZEEM, LIZEEM_REACH, WEST_BRAIDS, WEST_RIVERS, GALA_RIVERS, GALA_CHANNEL, GALA_DESERT_STREAM, GALA_TELEMONIA_STREAM, OVETH_REACH,
+  LIZEEM, LIZEEM_REACH, WEST_BRAIDS, WEST_RIVERS, GALA_RIVERS, GALA_CHANNEL, GALA_DESERT_STREAM, GALA_TELEMONIA_STREAM, GALA_TELEMONIA_MOUTH, OVETH_REACH,
   courseDistance, inWestWater,
 } from '../src/west-regions.js';
 import { WEST_PROFILES, westGroundAt, westNaturalGround, westWaterSurface, braidThreadOffset, courseSample } from '../src/west-ground.js';
@@ -192,6 +192,8 @@ test('the atlas’s water on Gala’s borders, a ford where the brief left one, 
   for (const pair of sides(GALA_DESERT_STREAM, .1, .9)) assert.equal(pair, 'Gala|Oves Desert');
   for (const pair of sides(OVETH_REACH, .1, .9)) assert.equal(pair, 'Gala|Ovesos');
   for (const pair of sides(GALA_TELEMONIA_STREAM, .05, .9)) assert.ok(['Gala|Telemonia', 'Gala|Legemum'].includes(pair), pair);
+  // Its mouth is the atlas's one Gala | Legemum edge, carried on to the water (tests/legemum-world.test.js asks the rest).
+  for (const pair of sides(GALA_TELEMONIA_MOUTH, 0, .75)) assert.equal(pair, 'Gala|Legemum');
   // Gala's own channel is inside Gala, all of it.
   for (const sample of WEST_PROFILES.get(GALA_CHANNEL.id)) assert.equal(hexOwnerAt(sample.x, sample.z), 'Gala');
   assert.ok(courseDistance(LIZEEM_REACH, GALA_CHANNEL.points[0].x, GALA_CHANNEL.points[0].z, 200) < 120, 'it rises beside the Lizeem');
@@ -206,11 +208,17 @@ test('the atlas’s water on Gala’s borders, a ford where the brief left one, 
       assert.ok(westGroundAt(sample.x, sample.z) <= surface + .01, `${course.id} floats at ${sample.x.toFixed(0)}, ${sample.z.toFixed(0)}`);
     }
   }
-  // Both that reach the coast stop where the beach starts, as Eer's two do.
+  // Both that reach the coast stop where the beach starts, as Eer's two do; the Treloss's mouth then carries it
+  // on from that point to the water, at its level (2026-10-03, when Legemum's ground had walled it off there).
   for (const course of [GALA_TELEMONIA_STREAM, GALA_CHANNEL]) {
     const end = WEST_PROFILES.get(course.id).at(-1);
     assert.ok(landDistance(end.x, end.z) < 45 && landDistance(end.x, end.z) > 35, `${course.id} ends ${landDistance(end.x, end.z).toFixed(0)} m from the sea`);
   }
+  const trelossEnd = WEST_PROFILES.get(GALA_TELEMONIA_STREAM.id).at(-1), trelossMouth = WEST_PROFILES.get(GALA_TELEMONIA_MOUTH.id);
+  assert.equal(GALA_TELEMONIA_MOUTH.headOf, GALA_TELEMONIA_STREAM.id);
+  assert.ok(Math.hypot(trelossMouth[0].x - trelossEnd.x, trelossMouth[0].z - trelossEnd.z) < 1e-6 && Math.abs(trelossMouth[0].surface - trelossEnd.surface) < 1e-6);
+  assert.ok(landDistance(trelossMouth.at(-1).x, trelossMouth.at(-1).z) < 0 && Math.abs(trelossMouth.at(-1).surface - SEA_LEVEL) < .08, 'the Treloss reaches the sea');
+  assert.ok(trelossMouth.every(sample => sample.ford), 'the mouth is waded');
   // The desert stream is waded anywhere; the Oveth over its rocky head and nowhere below it.
   assert.ok(WEST_PROFILES.get(GALA_DESERT_STREAM.id).every(sample => sample.ford));
   assert.equal(OVETH_REACH.headOf, GALA_DESERT_STREAM.id, 'the Oveth cannot stand above the water that runs into it');
