@@ -1100,9 +1100,9 @@ export const TERRACE_VIEW = beltPoint(Math.atan2(ROTHKAR.z - PLAIN_MIDDLE.z, ROT
  */
 export const TELEMONIA_LANDMARKS = freeze([
   freeze({ id: 'telemonia-galmeth', name: 'The Galmeth', x: GALMETH_VIEW.x, z: GALMETH_VIEW.z, radius: 150,
-    description: 'The plain: one enclosed, raised and level plain inside the rim, thirty metres up, with dry washes across it and the rock of Kethorn in the middle. The translators give the word simply as "the plain". Its fields and the people who work them are not built yet.' }),
+    description: 'The plain: one enclosed, raised and level plain inside the rim, thirty metres up, with dry washes across it and the rock of Kethorn in the middle. The translators give the word simply as "the plain". It is farmed to its edges, barley and pulses, by the field people.' }),
   freeze({ id: KETHORN.id, name: 'Kethorn’s rock', x: KETHORN.x, z: KETHORN.z, radius: 50,
-    description: 'An outcrop in the middle of the Galmeth: a rock with cliff on three sides and a wall closing the fourth, twenty metres over the plain, its top level ground. The town is built of the stone it stands on - and is not built yet.' }),
+    description: 'An outcrop in the middle of the Galmeth: a rock with cliff on three sides and a wall closing the fourth, twenty metres over the plain, its top level ground, and on it the town, built of the stone it stands on.' }),
   freeze({ id: 'telemonia-kethorn-gate', name: 'The gate of Kethorn', x: KETHORN_WALL.outside.x, z: KETHORN_WALL.outside.z,
     description: 'The one gate in the only wall in Telemonia, across the head of the spur that comes down off the rock’s south-western end. Nobody is appointed to keep it, because nobody is exempt from keeping it.' }),
   freeze({ id: ROTHKAR.id, name: ROTHKAR.name, x: ROTHKAR.x, z: ROTHKAR.z,
@@ -1117,7 +1117,7 @@ export const TELEMONIA_LANDMARKS = freeze([
     return freeze({ id: p.id, name: p.name, x: at.x, z: at.z, description: words[p.id] });
   }),
   freeze({ id: 'telemonia-terraces', name: 'The terraces', x: TERRACE_VIEW.x, z: TERRACE_VIEW.z,
-    description: 'Dry-stone steps on the rim’s inner faces, from the cliff foot down to the plain: walls a metre and eight high holding treads of bare earth four metres deep, with stairs up through them. Nothing is planted on them yet.' }),
+    description: 'Dry-stone steps on the rim’s inner faces, from the cliff foot down to the plain: walls a metre and eight high holding treads four metres deep, with stairs up through them, and the dry-country vine in a row along every tread.' }),
   freeze({ id: ROTHKAR_WAY.id, name: ROTHKAR_WAY.name, x: ROTHKAR_WAY.points.at(-1).x, z: ROTHKAR_WAY.points.at(-1).z,
     description: 'The one walked way from the Galmeth onto the rim: up the western terraces slantwise and across the inner cliff on a shelf cut into the face, to the ledge at the foot of the Rothkar, sixty metres up with nothing between a man and the rock. It goes up onto the rim and not through it.' }),
   freeze({ id: 'telemonia-belketh', name: 'The Belketh', x: BELKETH.x, z: BELKETH.z,

@@ -270,6 +270,11 @@ import { HARBOUR as SELEMIS_HARBOUR, HEADS as SELEMIS_HEADS, HILLS as SELEMIS_HI
 import { KETHORN as TELEMONIA_KETHORN, KETHORN_WALL as TELEMONIA_WALL, ROTHKAR as TELEMONIA_ROTHKAR, PASSES as TELEMONIA_PASSES,
   passCol as telemoniaPassCol, TERRACE_VIEW as TELEMONIA_TERRACES, BELKETH as TELEMONIA_BELKETH, PLAIN_MIDDLE as TELEMONIA_PLAIN,
   kethornPoint as telemoniaRockPoint, ROTHKAR_WAY as TELEMONIA_WAY } from './telemonia-world.js';
+// Telemonia, stage 2: the town and the farms, the people, and how they meet an outsider (docs/telemonia-stage2-brief.md).
+import * as TelemoniaTown from './telemonia-town.js';
+import { TELEMON_HORSES } from './telemonia-ways.js';
+import { TELEMONIA_PEOPLE, TELEMONIA_PEOPLE_IDS } from './telemonia-people.js';
+import { createTelemoniaHost } from './telemonia-host.js';
 import { inFeradomBox } from './feradom-world.js';
 import { createClimbingUI } from './climbing-ui.js';
 import { HONEYCOMB, createBeekeeper } from './beekeeper.js';
@@ -693,6 +698,10 @@ async function init() {
   for(const person of LUSCIA_RECRUIT_NPCS){world.npcPositions[person.id]={x:person.x,z:person.z};npcData.push({...person});}
   for(const person of FRONTIER_NPCS){world.npcPositions[person.id]={x:person.x,z:person.z};npcData.push({...person,...(person.centaur||person.prince?{make:()=>createFrontierFigure(person)}:{})});}
   world.npcPositions[INQUEST.id]={x:INQUEST.x,z:INQUEST.z};npcData.push({...INQUEST});
+  // The Telemon and the field people (src/telemonia-people.js), stood up after the cast is trimmed (src/cast.js): every
+  // Telemon is a watcher in the rule of the country (src/telemon-watch.js), so none of them is a town's atmosphere,
+  // and the field hands are who a traveler who gets in unseen can speak to.
+  for(const person of TELEMONIA_PEOPLE){world.npcPositions[person.id]={x:person.x,z:person.z};npcData.push({...person});}
   for(const npc of npcData) {
     npc.actor=npc.make?npc.make():npc.ogre?createOgre():npc.dog?createDog({variant:0}):npc.cat?createCat({variant:0}):createLazyCharacter({tunic:npc.color,role:npc.modelRole||npc.id,skin:npc.skin,look:npc.look,hat:npc.hat??false,armed:!!npc.armed},{onMaterialize:()=>{npc.shadows=undefined;npc.detailDirty=true;}});const p=world.npcPositions[npc.id];if(npc.hidden)npc.actor.group.visible=false;
     if(npc.scale)npc.actor.group.scale.setScalar(npc.scale);
@@ -1205,7 +1214,7 @@ async function init() {
   /** Whether that thing is drawn rather than swung. One question, asked in four places. */
   const ranged=()=>!!heldWeapon()?.ranged;
   let strategicBattle=null,strategicReturn=null;
-  let rivalLight=null,sovikViews={},sovikShown=null,ibenwoodDefense=null,frontierRaids=null,baldroHost=null;
+  let telemonia=null,rivalLight=null,sovikViews={},sovikShown=null,ibenwoodDefense=null,frontierRaids=null,baldroHost=null;
   let corpseHost=null,crime=null,magic=null,ambushWatch=null,ambushHost=null,cagneyHost=null,alexHost=null,kaylaHost=null,raceHost=null,cubHost=null,bearFamily=null,batmanHost=null,climbing=null,jesseHost=null,lotharnCave=null,terrainFall=null;let restoringRoad=false;
   const combat=createCombat({world,canMovePlayer:(x,z,nx,nz)=>!sevronHost?.active&&!baldroHost?.active&&!terrainFall?.active&&!lotharnCave?.active&&!climbing?.active&&canWalkSlope(x,z,nx,nz,world),isFallen:(encounterId,id,actor)=>[`npc:${actor.npcId??id}`,`enemy:${encounterId}:${id}`,`ally:${encounterId}:${id}`].some(key=>corpseHost?.model.get(key)?.status==='dead'),position:player.group.position,onEvent:e=>combatEvents.push(e),getWeapon:()=>heldWeapon(),onWeaponContact:id=>{weapons.contact(id);inventory.refresh();},
     // Toughness buys the health, the wind and the length of a dodge; the weapon's own family
@@ -2442,6 +2451,27 @@ async function init() {
       if(view==='telemonia-rim'){return shot({x:-2262,z:972},{x:-2236,z:1070},.12,14);}
       // The Rothkar way from the plain: up the western terraces, across the inner cliff on its shelf and into
       // its walled landing at the foot of the Rothkar.
+      // Stage 2. **The review camera backs off from what it looks at until something stops it**, so every view looks
+      // at a point in the open - never the middle of a hall or a hut, which put the camera inside its walls.
+      // Kethorn from the plain north-east of the rock: aimed at the air over the cliff's foot, at the height of
+      // the top, so the camera backs out over the plain with nothing in its way and the town shows over the lip.
+      if(view==='telemonia-town'){const air=telemoniaRockPoint(-62,-6);
+        return shot({x:air.x+70,z:air.z-62},air,.2,17);}
+      // The street, from the hall at its far end down to the gate and its towers.
+      if(view==='telemonia-street'){const a=telemoniaRockPoint(-30,0),b=telemoniaRockPoint(30,0);
+        return shot(a,b,.12,2);}
+      // Inside the gate, up the street toward the hall at the end of it: "whoever is nearest the gate is the gate".
+      if(view==='telemonia-town-gate'){const a=telemoniaRockPoint(31,0),b=telemoniaRockPoint(-16,0);
+        return shot(a,b,.05,2.2);}
+      // A hall of the bands, from the street, at its door: looked at from between two granaries.
+      if(view==='telemonia-band-hall'){const door=TelemoniaTown.TELEMONIA_TOWN_SITES.hallDoors.find(s=>s.building==='kethorn-band-hall-1')??telemoniaRockPoint(-22,15),a=telemoniaRockPoint(-24,-3);
+        return shot(a,door,.08,2.2);}
+      // The fields from the rim: the barley and the pulses in their blocks round the rock, the vine on the terraces.
+      if(view==='telemonia-fields')
+        return shot({x:-1960,z:1108},{x:-2070,z:1262},.3,2);
+      // A row of the field people's huts at the foot of the terraces, from the field in front of their doors.
+      if(view==='telemonia-huts'){const door=TelemoniaTown.TELEMONIA_TOWN_SITES.hutDoors.find(s=>s.hamlet==='telemonia-east-huts'&&/hut-2/.test(s.id))??{x:-1960,z:1251},dx=TELEMONIA_PLAIN.x-door.x,dz=TELEMONIA_PLAIN.z-door.z,n=Math.hypot(dx,dz);
+        return shot({x:door.x+dx/n*22+dz/n*6,z:door.z+dz/n*22-dx/n*6},door,.12,1.4);}
       if(view==='telemonia-way'){const w=TELEMONIA_WAY,p=w.points[6],q=w.points[7];
         return shot({x:p.x+62,z:p.z+28},{x:(p.x+q.x)/2,z:(p.z+q.z)/2},.16,9);}
     }
@@ -2890,6 +2920,9 @@ async function init() {
   const horseLine=[0,1,2,3].map(i=>{const hitch=world.storySites.horseHitch,x=hitch.x+1.8+i*3.6,z=hitch.z-1.6,actor=createHorse({variant:i,saddled:false});actor.group.position.set(x,world.heightAt(x,z),z);actor.group.rotation.y=Math.PI+.2*(i%2?1:-1);scene.add(actor.group);return {actor,x,z,grazing:i%2===1};});
   const horseLinePeople=horseLine.map((horse,index)=>({id:`line-horse-${index}`,name:'Army stable horse',role:'A horse on the army line',
     kind:'horse',horse:true,model:{variant:index,saddled:false},actor:horse.actor}));
+  // The kingdom's horses on the Galmeth by the head of the east pass (src/telemonia-town.js): the compact Telemon breed,
+  // loose and unsaddled, drawn as the army's line is and as nobody's to take.
+  const telemonHorses=TELEMON_HORSES.map(h=>{const actor=createHorse({variant:h.variant,saddled:false});actor.group.scale.setScalar(.9);actor.group.position.set(h.x,world.heightAt(h.x,h.z),h.z);actor.group.rotation.y=h.yaw;actor.group.visible=false;scene.add(actor.group);return {...h,actor};});
   const ownHorse=createHorse({variant:0,saddled:true});ownHorse.group.position.copy(horseLine[0].actor.group.position);ownHorse.group.rotation.y=horseLine[0].actor.group.rotation.y;ownHorse.group.visible=false;scene.add(ownHorse.group);
   // The testing panel's horse wears a coat nobody could mistake for the army's bay, and stands in its place.
   const devHorse=createHorse({coat:'developer',saddled:true});devHorse.group.visible=false;scene.add(devHorse.group);
@@ -3775,7 +3808,7 @@ async function init() {
     isProtected:npc=>!!peninsulaHost?.active&&(Object.hasOwn(PENINSULA_TEACHERS,npc.id)||npc.id===landingMateId()),
     canRevive:npc=>!fallen.has(npc.id)&&(npc.id!=='killian'||!drent.state().killianDefeated),
     safeToInterrupt:()=>mode==='playing'&&!suspended()&&!reviewFrozen&&!developer.active,
-    stopAutoplay:()=>{if(autopilot.active)stopAutopilot('The watch is stopping you.');},onChange:lawChanged,onAssault:event=>{frontierRaids?.assault(event);kaylaHost?.assault(event);batmanHost?.assault(event);},
+    stopAutoplay:()=>{if(autopilot.active)stopAutopilot('The watch is stopping you.');},onChange:lawChanged,onAssault:event=>{frontierRaids?.assault(event);kaylaHost?.assault(event);batmanHost?.assault(event);if(event.source==='player'&&TELEMONIA_PEOPLE_IDS.has(event.npcId))telemonia?.struck();},
     onDeath:payload=>{if(payload.permanent){batmanHost?.killed(payload.id);republic?.npcKilled(payload.id);if(payload.id===CAT.id)catQuest.died();if(living.actor(payload.id)){living.setAlive(payload.id,false,{position:payload.npc.actor.group.position});fallen.fall(payload.id);}}return corpseHost.captureNpc({...payload,npcId:payload.id,dead:payload.permanent,model:{role:payload.npc.modelRole??payload.npc.id,tunic:payload.npc.color,skin:payload.npc.skin,look:payload.npc.look,...payload.npc.model,...(payload.id===BOSCO.id?{dye:bosco.dye.colour}:{})},yaw:payload.npc.actor.group.rotation.y});},
     onRevive:({id})=>corpseHost.reviveNpc(id),
     onJail:({seconds})=>{living.advance(seconds);playSeconds=living.clock();corpseHost.update(seconds,elapsed,{playing:true});if(riding.mounted)riding.dismount();
@@ -3813,6 +3846,12 @@ async function init() {
     // from in front of the brass reflector rather than inside its bowl.
     const turn=where==='addison'?Math.PI:.8,spot=SOVIK_SPOTS[where];view.group.rotation.y=turn;
     if(spot)view.group.position.set(spot.x+Math.sin(turn)*.95,world.heightAt(spot.x,spot.z)+spot.y,spot.z+Math.cos(turn)*.95);}
+  // The Telemon and an outsider (src/telemonia-host.js): seen, walked out, or fought.
+  // "A weapon in hand" on the walk out is a blow being swung or a bow being drawn: the sword is always at the hip.
+  telemonia=createTelemoniaHost({world,npcData,combat,position:()=>player.group.position,level:regionLevel('Telemonia')??3,
+    sneaking:()=>!!drent?.sneaking&&skills.taught('stealth'),armed:()=>combat.state.player.action==='attack'||combat.drawn>0,
+    isDown:id=>crime.isDown(id)||corpseHost.ownsNpc(id),openDialogue,toast,save:()=>saveRoad(false),
+    stopAutoplay:()=>{if(autopilot.active)stopAutopilot('The Telemon have seen you.');}});
   rivalLight=createRivalLightHost({heist,world,player,combat,inventory,crime,corpses:corpseHost,people:()=>npcData,
     sneaking:()=>!!drent?.sneaking,place:placeTraveler,toast,openDialogue,closeDialogue,
     refresh:refreshQuest,save:()=>saveRoad(false),audio,showSovik:where=>{sovikShown=where;for(const [key,view] of Object.entries(sovikViews))view.group.visible=key===where;}});
@@ -4333,7 +4372,7 @@ async function init() {
     if(mode!=='opening')return;
     campaign.restore(createCampaign().snapshot());
     grantStartingKit();
-    playSeconds=0;refugeeHold=0;peninsulaHost.restore(createPeninsulaTutorial().snapshot());resetLivingStory();
+    playSeconds=0;refugeeHold=0;peninsulaHost.restore(createPeninsulaTutorial().snapshot());resetLivingStory();telemonia?.restore();
     if(path==='legacy')peninsulaHost.restore();else peninsulaHost.choose(path);
     refugeeHold=0;landingSaid=null;wordSaid=null;companionOffTheClock=false;
     // Chris follows his own Jojo/Glun route until both travelers have trained and the player asks.
@@ -4882,7 +4921,7 @@ async function init() {
       acorns:gathered.acorns.filter(s=>s.collected).map(s=>s.id),sticks:gathered.sticks.filter(s=>s.collected).map(s=>s.id),
       fruits:gathered.fruits.filter(s=>s.collected).map(s=>s.id),discoveries:[...discoveries],camp:campcraft.checkpoint()};
     cagneyHost.remember();
-    return {version:1,ambronLayoutVersion:AMBRON_LAYOUT_VERSION,peninsulaTutorial:peninsulaHost?.snapshot(),sevron:sevronHost?.snapshot(),...batmanHost?.snapshot(),kaylaRace:raceHost?.snapshot(),cubHoney:cubHost?.snapshot(),bearFamily:bearFamily?.snapshot(),kayla:kaylaHost?.snapshot(),homes:homeResidents.snapshot(),brandyHome:brandyHome.snapshot(),ibenwoodDefense:ibenwoodDefense?.snapshot(),baldro:baldroHost?.snapshot(),frontierRaids:frontierRaids?.snapshot(),jesseCarriage:jesseHost?.snapshot(),cagney:cagneyQuest.snapshot(),worldScale:METRES_PER_HEX,mode:gameMode.snapshot(),player:playerId,questStage,journey:journey.snapshot(),inventory:inventory.items().map(id=>({id,quantity:inventory.count(id)})),weapons:weapons.snapshot(),journeyGathered:[...journeyGathered],meadowCleared,position:savedFootPosition(),heardDoom,health:combat.state.player.hp,lysaComplete:acornQuest.status==='complete',woodland,forestStory:forestStory.snapshot(),forestHideout:forestHideout.snapshot(),regionalLife:regionalLife.snapshot(),campaign:campaign.snapshot(),luscia:luscia.snapshot(),burying:burying.snapshot(),mapTutorial:mapTutorial.snapshot(),chartLesson:chartLesson.snapshot(),trackedQuestId:questTracker.selectedId,playSeconds,livingStory:living?.snapshot(),lusciaCivilWar:republic?.snapshot?.(),mercenaryWeapons:Object.fromEntries(mercenaryWeapons),moros:moros.snapshot(),border:border.snapshot(),aftermath:aftermath.snapshot(),riding:riding.snapshot(),skills:skills.snapshot(),birding:birding.snapshot(),lakota:lakota.snapshot(),swimming:swimming.snapshot(),companions:companions.snapshot(),teachers:teachers.snapshot(),gear:gear.snapshot(),fishing:fishing.snapshot(),mycology:mycology.snapshot(),mushrooms:mushrooms.state().sites.filter(site=>site.gathered).map(site=>site.id),botany:botany.snapshot(),pipe:pipe.snapshot(),jimson:jimson.snapshot(),katy:katy.snapshot(),troy:troy.snapshot(),vineyard:vineyard.snapshot(),hunt:hunt.snapshot(),light:light.snapshot(),bosco:bosco.snapshot(),heist:heist.snapshot(),refugees:refugees.snapshot(),fallen:fallen.snapshot(),geology:geology.snapshot(),archaeology:archaeology.snapshot(),wine:wine.snapshot(),cooking:cooking.snapshot(),wineAttic:wineAttic.snapshot(),puck:puck.snapshot(),chameleon:chameleon.snapshot(),troupe:troupe.snapshot(),brandy:brandy.snapshot(),salt:salt.snapshot(),woodcutting:wood.snapshot(),construction:building.snapshot(),oldTree:oldTree.snapshot(),stones:stones.state().sites.filter(site=>site.gathered).map(site=>site.id),plants:flora.state().sites.filter(site=>site.gathered).map(site=>site.id),chart:mapFog.snapshot(),cartography:cartography.snapshot(),ferry:ferry.snapshot(),renaLetters:renaLetters.snapshot(),ogreToll:ogreToll.snapshot(),linguist:linguist.snapshot(),longRoad:longRoad.snapshot(),companionOffTheClock,farming:farming.snapshot(),sunflowerLesson:sunflowerLesson.snapshot(),barrettGeography:barrettGeography.snapshot(),sylviaIvy:sylviaIvy.snapshot(),roadLessons:roadLessons.snapshot(),fireMaking:fireMaking.snapshot(),husbandry:husbandry.snapshot(),glunWood:glunWood.snapshot(),fishingLessons:fishingLessons.snapshot(),ambush:ambush.snapshot(),spider:spiderQuest.snapshot(),murder:murder.snapshot(),cat:catQuest.snapshot(),drentCivilWar:drent.snapshot(),crime:crime?.snapshot(),corpses:corpseHost?.snapshot(),magic:magic?.snapshot(),vastos:vastos.snapshot()};
+    return {version:1,ambronLayoutVersion:AMBRON_LAYOUT_VERSION,peninsulaTutorial:peninsulaHost?.snapshot(),sevron:sevronHost?.snapshot(),...batmanHost?.snapshot(),kaylaRace:raceHost?.snapshot(),cubHoney:cubHost?.snapshot(),bearFamily:bearFamily?.snapshot(),kayla:kaylaHost?.snapshot(),homes:homeResidents.snapshot(),brandyHome:brandyHome.snapshot(),ibenwoodDefense:ibenwoodDefense?.snapshot(),baldro:baldroHost?.snapshot(),frontierRaids:frontierRaids?.snapshot(),jesseCarriage:jesseHost?.snapshot(),cagney:cagneyQuest.snapshot(),worldScale:METRES_PER_HEX,mode:gameMode.snapshot(),player:playerId,questStage,journey:journey.snapshot(),inventory:inventory.items().map(id=>({id,quantity:inventory.count(id)})),weapons:weapons.snapshot(),journeyGathered:[...journeyGathered],meadowCleared,position:savedFootPosition(),heardDoom,health:combat.state.player.hp,lysaComplete:acornQuest.status==='complete',woodland,forestStory:forestStory.snapshot(),forestHideout:forestHideout.snapshot(),regionalLife:regionalLife.snapshot(),campaign:campaign.snapshot(),luscia:luscia.snapshot(),burying:burying.snapshot(),mapTutorial:mapTutorial.snapshot(),chartLesson:chartLesson.snapshot(),trackedQuestId:questTracker.selectedId,playSeconds,livingStory:living?.snapshot(),lusciaCivilWar:republic?.snapshot?.(),mercenaryWeapons:Object.fromEntries(mercenaryWeapons),moros:moros.snapshot(),border:border.snapshot(),aftermath:aftermath.snapshot(),riding:riding.snapshot(),skills:skills.snapshot(),birding:birding.snapshot(),lakota:lakota.snapshot(),swimming:swimming.snapshot(),companions:companions.snapshot(),teachers:teachers.snapshot(),gear:gear.snapshot(),fishing:fishing.snapshot(),mycology:mycology.snapshot(),mushrooms:mushrooms.state().sites.filter(site=>site.gathered).map(site=>site.id),botany:botany.snapshot(),pipe:pipe.snapshot(),jimson:jimson.snapshot(),katy:katy.snapshot(),troy:troy.snapshot(),vineyard:vineyard.snapshot(),hunt:hunt.snapshot(),light:light.snapshot(),bosco:bosco.snapshot(),heist:heist.snapshot(),refugees:refugees.snapshot(),fallen:fallen.snapshot(),geology:geology.snapshot(),archaeology:archaeology.snapshot(),wine:wine.snapshot(),cooking:cooking.snapshot(),wineAttic:wineAttic.snapshot(),puck:puck.snapshot(),chameleon:chameleon.snapshot(),troupe:troupe.snapshot(),brandy:brandy.snapshot(),salt:salt.snapshot(),woodcutting:wood.snapshot(),construction:building.snapshot(),oldTree:oldTree.snapshot(),stones:stones.state().sites.filter(site=>site.gathered).map(site=>site.id),plants:flora.state().sites.filter(site=>site.gathered).map(site=>site.id),chart:mapFog.snapshot(),cartography:cartography.snapshot(),ferry:ferry.snapshot(),renaLetters:renaLetters.snapshot(),ogreToll:ogreToll.snapshot(),linguist:linguist.snapshot(),longRoad:longRoad.snapshot(),companionOffTheClock,farming:farming.snapshot(),sunflowerLesson:sunflowerLesson.snapshot(),barrettGeography:barrettGeography.snapshot(),sylviaIvy:sylviaIvy.snapshot(),roadLessons:roadLessons.snapshot(),fireMaking:fireMaking.snapshot(),husbandry:husbandry.snapshot(),glunWood:glunWood.snapshot(),fishingLessons:fishingLessons.snapshot(),ambush:ambush.snapshot(),spider:spiderQuest.snapshot(),murder:murder.snapshot(),cat:catQuest.snapshot(),drentCivilWar:drent.snapshot(),crime:crime?.snapshot(),telemon:telemonia?.snapshot(),corpses:corpseHost?.snapshot(),magic:magic?.snapshot(),vastos:vastos.snapshot()};
   }
   function saveRoad(notify=true){
     if(restoringRoad||regionLoadDepth||strategicReturn)return false;
@@ -4945,7 +4984,7 @@ async function init() {
     // Their owners keep map access; a pending lesson must also own the chart it asks them to read.
     if(chartLesson.stage!=='unissued'&&!cartography.met)cartography.learn();
     if(questStage===2&&!saved.chartLesson&&cartography.met){chartLesson.restore('open-map');practiceGuards=saved.woodland?.practiceGuards??1;}
-    chameleon.restore(saved.chameleon??createChameleon({seed:chameleonSeed}).snapshot());placeChameleon();brandy.restore(saved.brandy??createBrandy().snapshot());salt.restore(saved.salt??createSaltSultan().snapshot());placeSalt();restoreWood(saved.woodcutting);building.restore(saved.construction??createConstruction().snapshot());world.homestead.setStages(building.stages);for(const spot of BIRDHOUSE_POSTS)world.homestead.setPost(spot.id,building.post(spot.id));troupe.restore(saved.troupe??createTroupe().snapshot());placeTroupe(true);digs.mark(id=>archaeology.hasFound(id));oldTree.restore(saved.oldTree??createTalkingTree().snapshot());stones.restoreGathered(saved.stones??[]);refugees.restore(saved.refugees??refugees.snapshot());burying.restore(saved.burying??createBurying().snapshot());world.lauvelField?.setBuried(burying.buried);for(const npc of npcData)npc.fallen=fallen.has(npc.id);flora.restoreGathered(saved.plants??[]);linguist.restore(saved.linguist??createLinguist().snapshot());longRoad.restore(saved.longRoad??createLongRoad().snapshot());farming.restore(saved.farming??createFarming().snapshot());sunflowerLesson.restore(saved.sunflowerLesson);barrettGeography.restore(saved.barrettGeography);sylviaIvy.restore(saved.sylviaIvy);ivyView.update();roadLessons.restore(saved.roadLessons);fireMaking.restore(saved.fireMaking,{legacyCooking:!!saved.cooking?.met});husbandry.restore(saved.husbandry);glunWood.restore(saved.glunWood);fishingLessons.restore(saved.fishingLessons);fishingRoutes.clear();for(const id of Object.keys(FISHING_TEACHERS)){const teacher=npcById.get(id);teacher.fishingLessonActive=false;teacher.fishingLessonPose=null;teacher.actor.setFishing(!!teacher.fishing);world.npcPositions[id]={...fishingHome(id)};}if(fishingLessons.view().active){const lesson=fishingLessons.view(),teacher=npcById.get(lesson.teacher),at=lesson.position;teacher.actor.group.position.set(at.x,world.heightAt(at.x,at.z),at.z);world.npcPositions[lesson.teacher]={...at};}acting.cancel();visualArts.cancel();artTools.set(false);farmView.update(playSeconds,player.group.position);ambush.restore(saved.ambush??createRoadAmbush({seed:ambushSeed}).snapshot());spiderQuest.restore(saved.spider??createSpiderQuest().snapshot());murder.restore(saved.murder??createMurderQuest().snapshot());catQuest.restore(saved.cat??createCatQuest().snapshot());vastos.restore(saved.vastos);drent.restore(saved.drentCivilWar);corpseHost.restore(saved.corpses);crime.restore(saved.crime);cagneyQuest.restore(saved.cagney);cagneyHost.restore();if(crime.health(CAT.id)?.status==='dead')catQuest.died();refreshQuest();questTracker.select(saved.trackedQuestId??'main');refreshQuest();companionOffTheClock=saved.companionOffTheClock??(Object.hasOwn(saved,'longRoad')&&(!longRoad.released||longRoad.released.releasedAt>0||longRoad.released.releasedDistance>0));rebuildCompany();resetLivingStory(saved);republic.restore(saved.lusciaCivilWar);restoreLivingFeet();settleMercenaries();jimsonClock=elapsed;wordSaid=wordToastAt(arrivalClock())?.key??null;landingSaid=landingAt(arrivalClock())?.key??null;
+    chameleon.restore(saved.chameleon??createChameleon({seed:chameleonSeed}).snapshot());placeChameleon();brandy.restore(saved.brandy??createBrandy().snapshot());salt.restore(saved.salt??createSaltSultan().snapshot());placeSalt();restoreWood(saved.woodcutting);building.restore(saved.construction??createConstruction().snapshot());world.homestead.setStages(building.stages);for(const spot of BIRDHOUSE_POSTS)world.homestead.setPost(spot.id,building.post(spot.id));troupe.restore(saved.troupe??createTroupe().snapshot());placeTroupe(true);digs.mark(id=>archaeology.hasFound(id));oldTree.restore(saved.oldTree??createTalkingTree().snapshot());stones.restoreGathered(saved.stones??[]);refugees.restore(saved.refugees??refugees.snapshot());burying.restore(saved.burying??createBurying().snapshot());world.lauvelField?.setBuried(burying.buried);for(const npc of npcData)npc.fallen=fallen.has(npc.id);flora.restoreGathered(saved.plants??[]);linguist.restore(saved.linguist??createLinguist().snapshot());longRoad.restore(saved.longRoad??createLongRoad().snapshot());farming.restore(saved.farming??createFarming().snapshot());sunflowerLesson.restore(saved.sunflowerLesson);barrettGeography.restore(saved.barrettGeography);sylviaIvy.restore(saved.sylviaIvy);ivyView.update();roadLessons.restore(saved.roadLessons);fireMaking.restore(saved.fireMaking,{legacyCooking:!!saved.cooking?.met});husbandry.restore(saved.husbandry);glunWood.restore(saved.glunWood);fishingLessons.restore(saved.fishingLessons);fishingRoutes.clear();for(const id of Object.keys(FISHING_TEACHERS)){const teacher=npcById.get(id);teacher.fishingLessonActive=false;teacher.fishingLessonPose=null;teacher.actor.setFishing(!!teacher.fishing);world.npcPositions[id]={...fishingHome(id)};}if(fishingLessons.view().active){const lesson=fishingLessons.view(),teacher=npcById.get(lesson.teacher),at=lesson.position;teacher.actor.group.position.set(at.x,world.heightAt(at.x,at.z),at.z);world.npcPositions[lesson.teacher]={...at};}acting.cancel();visualArts.cancel();artTools.set(false);farmView.update(playSeconds,player.group.position);ambush.restore(saved.ambush??createRoadAmbush({seed:ambushSeed}).snapshot());spiderQuest.restore(saved.spider??createSpiderQuest().snapshot());murder.restore(saved.murder??createMurderQuest().snapshot());catQuest.restore(saved.cat??createCatQuest().snapshot());vastos.restore(saved.vastos);drent.restore(saved.drentCivilWar);corpseHost.restore(saved.corpses);crime.restore(saved.crime);telemonia.restore(saved.telemon);cagneyQuest.restore(saved.cagney);cagneyHost.restore();if(crime.health(CAT.id)?.status==='dead')catQuest.died();refreshQuest();questTracker.select(saved.trackedQuestId??'main');refreshQuest();companionOffTheClock=saved.companionOffTheClock??(Object.hasOwn(saved,'longRoad')&&(!longRoad.released||longRoad.released.releasedAt>0||longRoad.released.releasedDistance>0));rebuildCompany();resetLivingStory(saved);republic.restore(saved.lusciaCivilWar);restoreLivingFeet();settleMercenaries();jimsonClock=elapsed;wordSaid=wordToastAt(arrivalClock())?.key??null;landingSaid=landingAt(arrivalClock())?.key??null;
     {const ben=npcById.get(BEN.id);
       if(ben){
         ben.escorting=false;ben.walkingWith=false;ben.pace=undefined;ben.combatPosition=null;
@@ -5476,6 +5515,7 @@ async function init() {
     if(crime?.isDown(npc.id))return;
     if(crime?.converse(npc))return;
     if(mode!=='playing'||!npc||combat.state.phase==='active')return;
+    if(telemonia?.converse(npc))return;
     if(npc.id===CUB.id){cubHost.conversation({openDialogue,closeDialogue});return;}
     if(circusConversation(npc,{openDialogue,closeDialogue,kaylaNear:()=>!!bearFamily?.roaming}))return;
     if(npc.id===LIZ.id&&cubHost.state().alerted){toast('Liz is furious. Leave the apiary and give her time to calm down.','LIZ');return;}
@@ -5869,7 +5909,7 @@ async function init() {
     $('test-here').textContent=`You are at ${p.x.toFixed(1)}, ${p.z.toFixed(1)} — ${country}`
       +(near?`, ${near.away<1?'in':`${Math.round(near.away)} m from`} ${near.name}.`:'.');
   }
-  function prepareLivingScenario(){peninsulaHost?.restore();mainPlaytest=null;leaveOpening();combat.finishPractice();stopAutopilot();reviewFrozen=false;reviewTarget=null;testingEnabled=true;questStage=QUEST_DONE;lessonSet=true;practiceHits=2;practiceGuards=1;practiceDodges=1;chartLesson.restore('complete');cartography.learn();
+  function prepareLivingScenario(){peninsulaHost?.restore();telemonia?.restore();mainPlaytest=null;leaveOpening();combat.finishPractice();stopAutopilot();reviewFrozen=false;reviewTarget=null;testingEnabled=true;questStage=QUEST_DONE;lessonSet=true;practiceHits=2;practiceGuards=1;practiceDodges=1;chartLesson.restore('complete');cartography.learn();
           crime.restore();corpseHost.restore();ambush.restore(createRoadAmbush({seed:ambushSeed}).snapshot());republic.restore();combat.revive();campaign.restore(createCampaign().snapshot());inventory.grant('harbor-letter');inventory.grant('road-token');journey.restore(createJourney().snapshot());journey.start();luscia.restore(createLusciaChapter().snapshot());moros.restore(createMorosChapter().snapshot());border.restore(createBorderChapter().snapshot());
           fallen.restore(createFallen().snapshot());companions.restore(createCompanions().snapshot());companionOffTheClock=false;longRoad.restore(createLongRoad().snapshot());riding.restore(createRiding().snapshot());
           mapTutorial.restore(3);show('map-tutorial',false);clearTimeout(toastTimer);$('toast').classList.remove('visible');clearTimeout(regionCardTimer);$('region-card').classList.remove('visible');
@@ -5903,7 +5943,7 @@ async function init() {
     if(raceHost?.mounted){race.abandon('You left the race to travel elsewhere.');raceHost.sync();}
   }
   function prepareTesting(){
-    peninsulaHost?.restore();
+    peninsulaHost?.restore();telemonia?.restore();
     leaveRaceForTesting();
     testingEnabled=true;
     forestHideout.endEncounter(hideoutEncounter.id);
@@ -7182,7 +7222,9 @@ async function init() {
     return null;
   }
   // Villagers caught near a raid are drawn into it: they fight or run, and can die.
-  const SOLDIERLY=new Set(['legion-soldier','legion-officer','suvali-guard','elodi-guard','feradom-soldier','feradom-officer','mercenary']);
+  // Every Telemon, man and woman, comes to a fight rather than backing off from it (the play-through found the second
+  // one called to a Telemon fight standing off at 26 m as a villager does, so he never joined it); the field people still do.
+  const SOLDIERLY=new Set(['legion-soldier','legion-officer','suvali-guard','elodi-guard','feradom-soldier','feradom-officer','mercenary','telemon-man','telemon-woman']);
   const civilian=npc=>!npc.bear&&!npc.dog&&!npc.cat&&!npc.ogre&&!npc.armed&&!SOLDIERLY.has(npc.modelRole)&&!mercenaryIds.has(npc.id)&&!garrisonIds.has(npc.id);
   function caughtIn(encounter){
     const people=npcData.filter(npc=>civilian(npc)&&!npc.hidden&&!npc.fallen&&!raidSeen.has(npc.id))
@@ -7220,7 +7262,7 @@ async function init() {
         if(outcome){finishStrategicBattle(outcome);return;}continue;}
       const lawEvent=crime.combatEvent(e);kaylaHost.combatEvent(e);batmanHost.combatEvent(e);frontierRaids.combatEvent(e);
       corpseHost.combatEvent(e,combat.state);
-      ambushHost.combatEvent(e);cagneyHost.combatEvent(e);rivalLight?.combatEvent(e);
+      ambushHost.combatEvent(e);cagneyHost.combatEvent(e);rivalLight?.combatEvent(e);telemonia?.combatEvent(e);
       if(lawEvent&&['victory','retreat','defeat'].includes(e.type)){saveRoad(false);continue;}
 
       if(raid.ids.includes(e.id)){const npc=npcById.get(e.id);
@@ -7762,6 +7804,7 @@ async function init() {
       const roadAwareness=drent.frame(dt,{playing:mode==='playing'&&!reviewFrozen,canSneak:!suspended()&&!raceHost.mounted&&!inWater&&!riding.mounted&&combat.state.phase!=='active'});
       cubHost.frame(dt,{playing:mode==='playing'&&!reviewFrozen,talking:activeDialogue?.npc?.id===LIZ.id});
       rivalLight.frame(dt,{playing:mode==='playing'&&!reviewFrozen&&!suspended()});
+      telemonia.frame(dt,{playing:mode==='playing'&&!reviewFrozen&&!reviewTarget&&!suspended()});
       touch.setPlaying(mode==='playing');
       // Sovik flickers wherever he is; carried, he is held out in front of the traveler at the chest.
       if(sovikShown==='carried'){const p=player.group.position,r=player.group.rotation.y;sovikViews.carried.group.position.set(p.x+Math.sin(r)*.5,p.y+1.08,p.z+Math.cos(r)*.5);sovikViews.carried.group.rotation.y=r;}
@@ -7771,12 +7814,12 @@ async function init() {
       const apiaryNear=['learning','carrying'].includes(cubHost.state().stage)&&Math.hypot(player.group.position.x-HONEY_STORE.x,player.group.position.z-HONEY_STORE.z)<35;
       const elvenAwareness=ibenwoodDefense.frame(dt,{position:player.group.position,sneaking:drent.sneaking,taught:skills.taught('stealth'),stealthLevel:skills.level('stealth'),
         paused:mode!=='playing'||reviewFrozen,disabled:developer.active||airMounted()||ibenwoodDefense.testingDisabled});
-      const awareness=elvenAwareness.inside?elvenAwareness:apiaryNear?cubHost.awareness:rivalLight.watching?rivalLight.awareness:roadAwareness;
+      const awareness=elvenAwareness.inside?elvenAwareness:apiaryNear?cubHost.awareness:rivalLight.watching?rivalLight.awareness:telemonia.watching?telemonia.awareness:roadAwareness;
       const raceState=race.state();$('bear-race-status').hidden=!(mode==='playing'&&raceHost.mounted);
       $('bear-race-detail').textContent=raceState.stage==='countdown'?`Ready in ${Math.ceil(raceState.countdown)}…`:raceState.stage==='returning'?'Kayla is carrying you back to Ambron.':`${raceState.kayla.next>raceState.ed.next?'You lead':'Race Ed to the crossroads'} · Shift to run · G to withdraw`;
       const stealthHud=$('stealth-status');stealthHud.hidden=!(drent.sneaking||awareness.suspicion>.01);
       $('stealth-meter').value=awareness.suspicion;
-      $('stealth-caption').textContent=awareness.detected?(elvenAwareness.inside?'Spotted by elven rangers · find cover':apiaryNear?'Liz spotted you · run!':rivalLight.watching?'Seen · you have no papers':'Spotted · leave the yard'):awareness.visible?'In sight · find cover':awareness.danger?(elvenAwareness.inside?'Hidden near elven rangers · X to stand':apiaryNear?'Hidden from Liz · X to stand':'Hidden near guards · X to stand'):'Sneaking · X to stand';
+      $('stealth-caption').textContent=awareness.detected?(elvenAwareness.inside?'Spotted by elven rangers · find cover':apiaryNear?'Liz spotted you · run!':rivalLight.watching?'Seen · you have no papers':telemonia.watching?'Seen by the Telemon':'Spotted · leave the yard'):awareness.visible?'In sight · find cover':awareness.danger?(elvenAwareness.inside?'Hidden near elven rangers · X to stand':apiaryNear?'Hidden from Liz · X to stand':telemonia.watching?'Unseen by the Telemon · X to stand':'Hidden near guards · X to stand'):'Sneaking · X to stand';
       stealthHud.dataset.alert=String(awareness.detected||awareness.visible);
       chopping(dt,movement);
       const weaponPose=chop?{action:'attack',progress:((SWING-chop.next)/SWING+.46)%1,combo:0,armed:true,alert:false,weaponId:'bearded-axe',weaponUsable:true}:combat.pose();
@@ -8225,6 +8268,7 @@ async function init() {
       // Work at the nearer fire even when a teacher is standing nearby or walking past.
       if(currentNPC&&currentFire&&fireKeepsPrompt(Math.hypot(p.x-currentNPC.actor.group.position.x,p.z-currentNPC.actor.group.position.z),Math.hypot(p.x-currentFire.x,p.z-currentFire.z)))currentNPC=null;
       // The horses on the line breathe, graze and swish only while the traveler is near enough to see them.
+      for(const [i,horse] of telemonHorses.entries()){horse.actor.group.visible=Math.hypot(p.x-horse.x,p.z-horse.z)<140;if(horse.actor.group.visible)horse.actor.animate(elapsed+i*2.3,0,true,{grazing:Math.sin(elapsed*.13+i*1.7)>-.2});}
       {const near=Math.hypot(p.x-horseLine[0].x,p.z-horseLine[0].z)<160;for(const [i,horse] of horseLine.entries()){horse.actor.group.visible=near&&!crime.isDown(`line-horse-${i}`);if(horse.actor.group.visible)horse.actor.animate(elapsed+i*1.7,0,true,horse.grazing?{grazing:Math.sin(elapsed*.11+i)>0}:{});}}
       currentHideoutSite=null;
       if(mode==='playing'){
@@ -8830,6 +8874,19 @@ async function init() {
           open:()=>{testingEnabled=true;mode='playing';},
           travel:at=>{testGoTo(at,'WEST OREMINDI','Expedition test');reviewFrozen=true;reviewTarget=null;combat.finishPractice();},
           frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);}});
+      },
+      // The Telemon's challenge, played in the running game (src/telemonia-smoke.js): --telemonia-checks.
+      async runTelemoniaChecks(){
+        const {runTelemoniaChecks}=await import('./telemonia-smoke.js');
+        window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();closeDialogue();skillAnnouncements.clear();reviewFrozen=false;reviewTarget=null;mode='playing';
+        const frames=async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);};
+        const live=()=>{reviewFrozen=false;reviewTarget=null;mode='playing';};
+        return runTelemoniaChecks({host:telemonia,player,combat,npcById,state,frames,reset:()=>telemonia.restore(),
+          travel:async at=>{const r=testGoTo(at,'TELEMONIA','Telemonia test');if(r?.then)await r;live();await frames(2);live();},
+          sneak:on=>{if(on&&!skills.taught('stealth'))skills.learn('stealth');if(drent.sneaking!==on)drent.toggleSneak();},
+          camera:(y,p,d)=>{yaw=y;pitch=p;distance=targetDistance=d;},capture:name=>console.log('TELEMONIA_CAPTURE '+name),progress:line=>console.log('TELEMONIA_PROGRESS '+line),
+          keepAlive:()=>{const hero=combat.state.player;if(hero.hp>0)hero.hp=hero.maxHp;},
+          saveAndReload:async()=>{if(!writeRoadCheckpoint(sessionCheckpoint))return false;continueRoad(true);await frames(3);live();await frames(2);live();return true;}});
       },
       async runBaldroChecks(){
         const {runBaldroChecks}=await import('./baldro-smoke.js');

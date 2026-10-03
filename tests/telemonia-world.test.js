@@ -31,6 +31,7 @@ import {
 } from '../src/telemonia-world.js';
 import { closedRegionEntered } from '../src/closed-border.js';
 import { TELEMONIA_WILDLIFE_ZONES } from '../src/telemonia-wildlife.js';
+import { TELEMONIA_TOWN_LANDMARKS } from '../src/telemonia-ways.js';
 
 /**
  * Telemonia, stage 1: the country and not its people (docs/telemonia-stage1-brief.md,
@@ -722,14 +723,16 @@ test('what grows: bunch grass, wormwood and thorn, scrub oak and juniper in the 
   const wood = trees.filter(t => belkethShare(t.x, t.z) > .35);
   assert.ok(wood.length > trees.length * .45 && wood.length === m.belkethTrees, `${wood.length} of ${trees.length} trees in the Belketh`);
   for (const pine of trees.filter(t => t.species === 'stone-pine')) assert.ok(belkethShare(pine.x, pine.z) > .35, 'a pine outside the Belketh');
-  // Nothing is anybody's: no field, no building, no person, no beast of anybody's.
+  // Stage 1 put nothing of anybody's here. Stage 2 (docs/telemonia-stage2-brief.md) builds the town and the huts
+  // and stands the people up, and they are its own tests' (tests/telemonia-people.test.js, the town's): here, only
+  // that nobody the world itself places stands in the country, and that every solid thing is stage 1's or the town's.
   assert.deepEqual([...country.npcIds], []);
   for (const [id, stand] of Object.entries(world.npcPositions ?? {})) assert.notEqual(hexOwnerAt(stand.x, stand.z), TELEMONIA, `${id} stands in Telemonia`);
   const kinds = new Set(world.colliders.filter(c => hexOwnerAt(c.x, c.z) === TELEMONIA).map(c => c.kind));
-  for (const kind of kinds) assert.ok(['telemonia-tree', 'ridge-rock', 'kethorn-wall', 'kethorn-tower'].includes(kind), `${kind} stands in Telemonia`);
+  for (const kind of kinds) assert.ok(['telemonia-tree', 'ridge-rock'].includes(kind) || /^(kethorn|telemonia)-/.test(kind), `${kind} stands in Telemonia`);
 });
 
-test('every animal is somebody the neighbours already have, nothing is domestic, and nothing can be walked down', () => {
+test('every wild animal is somebody the neighbours already have, and nothing can be walked down', () => {
   const species = TELEMONIA_WILDLIFE_ZONES.map(zone => zone.species);
   assert.deepEqual(species.sort(), ['harrier', 'plateau-hawk', 'upland-hare']);
   for (const zone of TELEMONIA_WILDLIFE_ZONES) {
@@ -769,16 +772,17 @@ test('every animal is somebody the neighbours already have, nothing is domestic,
 });
 
 test('the chart, the tongue, the polity and the travel stop know the country, and every name is the lore’s or plain', () => {
+  const places = [...TELEMONIA_LANDMARKS, ...TELEMONIA_TOWN_LANDMARKS];
   for (const id of country.landmarks) {
-    const place = TELEMONIA_LANDMARKS.find(item => item.id === id);
+    const place = places.find(item => item.id === id);
     assert.ok(place, `${id} is not a place`);
     assert.ok(world.landmarks.some(landmark => landmark.id === id), `the chart knows ${id}`);
     assert.equal(regionAt(place.x, place.z)?.name, TELEMONIA, `${id} stands outside Telemonia`);
     assert.ok(canStand(place.x, place.z, world, RADIUS), `${id} is on nothing`);
     assert.ok(place.description.length > 60);
   }
-  assert.equal(country.landmarks.length, TELEMONIA_LANDMARKS.length);
-  const names = TELEMONIA_LANDMARKS.map(place => place.name).join(' ');
+  assert.equal(country.landmarks.length, places.length);
+  const names = places.map(place => place.name).join(' ');
   for (const word of ['Galmeth', 'Kethorn', 'Rothkar', 'Belketh', 'Tarnel']) assert.match(names, new RegExp(word));
   assert.doesNotMatch(names, /\bCrom\b/, 'the hero is Cromb, and nothing here is named Crom');
   const areas = SUBREGIONS.filter(area => area.region === TELEMONIA);
@@ -789,7 +793,7 @@ test('the chart, the tongue, the polity and the travel stop know the country, an
   assert.doesNotMatch(LANGUAGES.kellith.where, /Zorkys/);
   const status = regionBuildStatus(TELEMONIA);
   assert.equal(status.state, 'early');
-  assert.match(status.work, /Stage 2/);
+  assert.match(status.work, /border market/i, 'what is left after stage 2 is named');
   const destination = DEV_WORLD_DESTINATIONS.find(item => item.regionId === TELEMONIA);
   assert.ok(destination && destination.region === REGION_IDS[TELEMONIA] && destination.travelTarget === 'telemonia');
   const design = describeRegion(TELEMONIA);

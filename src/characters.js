@@ -981,7 +981,7 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
         chestX = .07 + breath * .012; chestZ = Math.sin(seconds * .25 + offset) * .016;
         headX = -.042 + nod * .083; headY = Math.sin(seconds * .31 + offset) * .12;
         knee[0] = .10; knee[1] = .12; hip[0] = -.033; hip[1] = -.025;
-      } else if (role === 'legion-soldier' || role === 'feradom-soldier') {
+      } else if (role === 'legion-soldier' || role === 'feradom-soldier' || role === 'telemon-man') {
         // At attention: the spear planted by the right foot, the shield hung
         // from the left forearm, a slow shift of weight and a look down the road.
         const shift = Math.sin(seconds * .27 + offset);
@@ -1174,6 +1174,11 @@ function makeAnimator({ body, chest, head, arms, elbows, wrists, legs, knees, an
       clothPivot.rotation.y = THREE.MathUtils.lerp(clothPivot.rotation.y, -chestY * 0.15, settle);
       clothPivot.rotation.z = THREE.MathUtils.lerp(clothPivot.rotation.z, Math.sin(seconds * 1.35 + offset) * 0.018 + step * movementBlend * 0.035, settle);
     }
+    // **A Telemon carries his shield as a soldier does, whatever he is doing**: hung on the left forearm, the
+    // forearm forward, so the board stands upright with its face out in front of him - walking, in a fight and
+    // at rest. Left to the villager's hanging arm, the forearm points down and the round board lies flat across
+    // his belly like a tray (the user, 2026-10-03). Not while he guards, climbs or lies dead: those have their own arm.
+    if (role === 'telemon-man' && !climbing && action !== 'dead' && !pose.guarding) { arm[0] = -.14; elbow[0] = -1.0; armOut[0] = -.14; }
     // A falconer carries the bird on the left fist: upper arm in at the side, forearm level and forward.
     if (pose.falconer && !climbing) { arm[0] = -0.28; elbow[0] = -1.35; armOut[0] = -0.1; }
     // The face turns to meet what is in front of him. The arm alone brings the shield up but
@@ -1367,6 +1372,11 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   // "men in mail to the knee, shields to the chin". The officer is a pass-lord's captain.
   const isFeradomi = role === 'feradom-soldier' || role === 'feradom-officer', isFeradomOfficer = role === 'feradom-officer';
   const isSoldier = isLegionary || isOfficer || isSuvaliGuard || isElodiGuard || isFeradomi;
+  // The Telemon (src/telemonia-people.js): every man a warrior with a long spear, a shield and a knife in a
+  // scabbard; every woman a knife at her belt; and the field people, the toreth, who carry nothing. Plain
+  // undyed wool and home iron: no colour of display, no device, no plume.
+  const isTelemonMan = role === 'telemon-man', isTelemonWoman = role === 'telemon-woman', isTelemon = isTelemonMan || isTelemonWoman;
+  const isToreth = role === 'toreth';
   // Ambron's own: a man-at-arms of the Empire in mail and plate under the red tabard, and his officers.
   const isAmbroni = isLegionary || isOfficer;
   // A hired sword from abroad: the traveler's kind of cloth and sword, a leather jerkin,
@@ -1400,7 +1410,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   const soleMat = material(0x302b24);
   // A hired sword's legs take their colour from his own cloth, so eleven men do
   // not stand in eleven different tunics above one shared pair of olive trousers.
-  const trousers = material(isDyer ? 0x8e44ec : isMercenary ? new THREE.Color(tunic).multiplyScalar(0.66).lerp(new THREE.Color(0x585244), 0.45) : isSoldier ? (isSuvaliGuard ? 0x4a4a45 : isElodiGuard ? 0x2c2c30 : isFeradomi ? 0x46503f : 0x5a4a3c) : isLocalWorker ? isReedWorker ? 0x5a685c : 0x655a48 : isWoodcutter ? 0x635846 : isVineKeeper ? 0x584b3a : isWinemaker ? 0x4d4a44 : isRivalKeeper ? 0x232427 : isLightKeeper ? 0x3c4a4e : isBirdWatcher ? 0x3b3129 : isGardenKeeper ? 0x4a4436 : isTraveler ? 0x68523c : role === 'fisher' ? 0x667779 : 0x76714e);
+  const trousers = material(isTelemon ? 0x5a4a37 : isToreth ? 0x6b6352 : isDyer ? 0x8e44ec : isMercenary ? new THREE.Color(tunic).multiplyScalar(0.66).lerp(new THREE.Color(0x585244), 0.45) : isSoldier ? (isSuvaliGuard ? 0x4a4a45 : isElodiGuard ? 0x2c2c30 : isFeradomi ? 0x46503f : 0x5a4a3c) : isLocalWorker ? isReedWorker ? 0x5a685c : 0x655a48 : isWoodcutter ? 0x635846 : isVineKeeper ? 0x584b3a : isWinemaker ? 0x4d4a44 : isRivalKeeper ? 0x232427 : isLightKeeper ? 0x3c4a4e : isBirdWatcher ? 0x3b3129 : isGardenKeeper ? 0x4a4436 : isTraveler ? 0x68523c : role === 'fisher' ? 0x667779 : 0x76714e);
   const hairMat = material(Number.isInteger(look?.hair) ? look.hair : isWineSeller ? 0x241b16 : isWineClerk ? 0xb2461f : isKaty ? 0xead38e : isKeeperKin ? 0x9c8355 : isWinemaker ? 0x53381f : isVineKeeper ? 0x1b1512 : isKeeper ? 0x87301a : isDyer ? 0x6b3a26 : isBirdWatcher ? 0x5c4430 : isGardenKeeper ? 0x877b62 : isShelterKeeper ? 0x797368 : isReedWorker ? 0x403b32 : isMiller ? 0x624731 : isCustodian ? 0x8e8b7d : isBridgeKeeper ? 0x42382e : isClerk ? 0x685445 : isTraveler ? 0x806044 : isCook ? 0x624330 : isDoomsayer ? 0xa2a293 : isPondFisher ? 0x5d5140 : role === 'harbormaster' ? 0x79776b : role === 'warden' ? 0x503d30 : 0x6b462c);
   const hairColors = hairStyle === 'long-tied' && Array.isArray(look?.hairColors)
     ? look.hairColors.filter(Number.isInteger).map(color => material(color)) : [];
@@ -1519,7 +1529,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     elbow.position.set(side * 0.019, -0.245, 0);
     pivot.add(elbow);
     elbows.push(elbow);
-    if (isBridgeKeeper || isWoodcutter || isCarriageMechanic || isMiller || isReedWorker || bareForearms || isWineSeller || isVineKeeper || isWinemaker || isKeeperKin) {
+    if (isBridgeKeeper || isWoodcutter || isCarriageMechanic || isMiller || isReedWorker || bareForearms || isWineSeller || isVineKeeper || isWinemaker || isKeeperKin || isToreth || isTelemonMan) {
       // Rolled sleeves show bare working forearms, not bracers or armor.
       part(elbow, UNIT_CYLINDER, garment === 'sleeveless' ? skinMat : linen, [0, -.017, .003], [.085, .067, .088]);
       round(elbow, skinMat, [0, -.103, .007], [.067, .082, .07]);
@@ -3229,6 +3239,47 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     else if (kit === 'sword-shield') authoredShield = makeShield(elbows[0], { face: 0x6b4a2a, rim: 0x3f3128, round: true, width: 0.3 });
   }
 
+  // **The Telemon and the field people** (src/telemonia-people.js). The user: "The Telemon warriors should
+  // carry long spears and shield and knives in scabbards. The women also carry knives." Plain: no device on
+  // the shield, no colour in the cloth, the spearhead, the shield's rim and boss and the knife all home iron.
+  let telemonKnife = null;
+  if (isTelemon) {
+    const iron = material(0x7f817a, { metalness: 0.42, roughness: 0.62 }), sheath = material(0x4a3727), grip = material(0x3a2c21);
+    // The knife: a plain leather scabbard on the belt at the left hip, the grip standing out of it.
+    telemonKnife = new THREE.Group(); telemonKnife.name = isTelemonMan ? 'Telemon knife in its scabbard' : 'Telemon woman’s knife in its scabbard'; body.add(telemonKnife);
+    const scabbard = box(telemonKnife, sheath, [-0.215, 0.83, 0.1], [0.05, isTelemonMan ? 0.26 : 0.22, 0.034]);
+    scabbard.rotation.z = 0.32;
+    box(telemonKnife, iron, [-0.255, 0.955, 0.1], [0.075, 0.016, 0.03]).rotation.z = 0.32;
+    const hilt = part(telemonKnife, UNIT_CYLINDER, grip, [-0.27, 1.0, 0.1], [0.017, 0.05, 0.017]);
+    hilt.rotation.z = 0.32;
+    // A cloak of the same undyed wool for the men, short, pinned at the right shoulder so the spear arm is free.
+    if (isTelemonMan) {
+      const cloak = new THREE.Group(); cloak.name = 'Telemon cloak'; body.add(cloak);
+      part(cloak, new THREE.CylinderGeometry(0.23, 0.32, 0.6, 9, 1, true, Math.PI / 2 + 0.15, Math.PI - 0.3), material(new THREE.Color(tunic).multiplyScalar(0.72), { side: THREE.DoubleSide }), [0, 1.03, -0.05], [1, 1, 0.86]);
+      round(cloak, iron, [0.19, 1.31, 0.14], [0.03, 0.03, 0.014]);
+      // A short dark beard, close to the jaw.
+      round(head, hairMat, [0, 0.1, 0.122], [0.152, 0.088, 0.1]);
+      // The long spear stands planted by the right foot; the shield, round and big, plain hide on a wooden
+      // board, iron-rimmed with an iron boss, rides the left forearm.
+      if (!armed) staff = makeSpearProp(wrists[1], 'Telemon long spear', 2.95, 0.32);
+      authoredShield = makeShield(elbows[0], { face: 0x6a5135, rim: 0x6a6b66, round: true, width: 0.38 });
+      authoredShield.name = 'Telemon shield';
+    }
+    // A water jar, carried on the left shoulder: "a woman with a knife at her belt and a water jar on her shoulder".
+    if (look?.jar) {
+      const jar = new THREE.Group(); jar.name = 'Telemon water jar'; arms[0].add(jar);
+      const clay = material(0xa56a42), rim = material(0x8b5434);
+      const shape = [[0.02, 0], [0.11, 0.04], [0.15, 0.16], [0.13, 0.3], [0.06, 0.38], [0.05, 0.44], [0.07, 0.47]].map(([r, y]) => new THREE.Vector2(r, y));
+      part(jar, new THREE.LatheGeometry(shape, 9), clay, [0, 0, 0]);
+      part(jar, new THREE.TorusGeometry(0.055, 0.014, 4, 9), rim, [0, 0.47, 0]).rotation.x = Math.PI / 2;
+      jar.position.set(-0.06, 0.1, -0.02); jar.rotation.set(0.15, 0, 0.55);
+    }
+  }
+  if (isToreth) {
+    // A rope belt, and nothing in it: "They carry no weapons."
+    part(body, new THREE.TorusGeometry(0.235, 0.018, 4, 12), material(0x9b8a62), [0, 0.92, 0], [1, 1, 0.74]).rotation.x = Math.PI / 2;
+  }
+
   const idleOffset = isMiller ? 1.35 : isReedWorker ? 3.55 : isShelterKeeper ? 5.15 : isWoodcutter ? 2.1 : isCourier ? .8 : isBridgeKeeper ? 2.8 : isCustodian ? 4.4 : isClerk ? 5.6 : isCook ? 2.35 : isDoomsayer ? 1.1 : isPondFisher ? 3.8 : role === 'harbormaster' ? 1.8 : role === 'fisher' ? 3.1 : role === 'warden' ? 4.7 : 0;
   const chest = addChestPivot(body, legs, 0.935);
   // A soldier called to fight draws his sword instead of planting his spear.
@@ -3238,10 +3289,12 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
   // A soldier at rest can draw a blade or demonstrate a tool later. Keep an
   // empty hand mount even when his original spawn did not request a weapon.
   const weapon = isTraveler || isMercenary ? makeWeaponMount(wrists[1], 'Traveler weapon grip') : isSoldier ? makeWeaponMount(wrists[1], 'Soldier weapon grip')
-    : villagerHolds ? makeWeaponMount(wrists[1], 'Villager weapon grip') : null;
+    : isTelemon ? makeWeaponMount(wrists[1], 'Telemon weapon grip') : villagerHolds ? makeWeaponMount(wrists[1], 'Villager weapon grip') : null;
   // Everything the traveler carries from the start, built once and shown one at a time.
   const weapons = isPlayer ? { 'simple-sword': makeSword(weapon), 'forest-stick': makeStick(weapon), 'iron-mace': makeMace(weapon), 'long-dagger': makeDagger(weapon), 'bearded-axe': makeAxe(weapon), greatsword: makeGreatsword(weapon) }
     : isMercenary ? mercenaryHeldWeapons(weapon, look?.weapon, Boolean(look?.trades)) : fights ? { 'simple-sword': makeSword(weapon) }
+    // A Telemon in a fight holds the spear he carries, or the knife at her belt; the knife stays in its scabbard on him.
+    : isTelemonMan ? { 'telemon-spear': makeSpearProp(weapon, 'Telemon long spear (held)', 2.5, 0.3) } : isTelemonWoman ? { 'long-dagger': makeDagger(weapon) }
     : villagerHolds ? { [villagerHolds]: VILLAGER_WEAPONS[villagerHolds](weapon) } : {};
   // Subtractidaughter always has her clock in her hand, fighting or not (`look.clock`).
   if (isRivalKeeper && look?.clock) staff = makeHandClock(wrists[1]);
@@ -3322,6 +3375,11 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     spectacles(head, 'Imani’s spectacles', material(0x53575c, { metalness: .62, roughness: .34 }),
       material(0xdfe7ea, { roughness: .12, metalness: .1 }), { radius: .049, y: .214, z: .202, spread: .067 });
   }
+  if (isTelemonMan) {
+    // "A compact, dark-complexioned people": a little shorter and broader than the lowland build.
+    body.scale.set(1.05, 0.96, 1.05);
+    head.scale.set(1 / Math.sqrt(1.05), 1 / 0.96, 1 / Math.sqrt(1.05));
+  }
   if (slight) {
     body.scale.set(0.92, 0.93, 0.92);
     head.scale.set(0.98 / Math.sqrt(0.92), 0.98 / 0.93, 0.98 / Math.sqrt(0.92));
@@ -3370,7 +3428,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     if (id !== null && !Object.hasOwn(weapons, id)) return false;
     selectedWeapon = id;
     for (const [weaponId, model] of Object.entries(weapons)) model.visible = weaponId === id;
-    if (staff && isSoldier) staff.visible = id === null;
+    if (staff && (isSoldier || isTelemonMan)) staff.visible = id === null;
     setArmed(id !== null);
     if (weapon && fishing) weapon.visible = false;
     return true;
@@ -3385,7 +3443,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     if (!fishingGrip) return false;
     fishing = Boolean(value); fishingGrip.visible = fishing; fishingGrip.scale.setScalar(fishing ? 1 : 0);
     if (weapon) weapon.visible = !fishing && selectedWeapon !== null;
-    if (staff && isSoldier) staff.visible = !fishing && selectedWeapon === null;
+    if (staff && (isSoldier || isTelemonMan)) staff.visible = !fishing && selectedWeapon === null;
     return true;
   }
   function animate(time, speed = 0, grounded = true, pose = {}) {
@@ -3430,6 +3488,7 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       : focusTipWorld.set(.014 + Math.sin(.12) * .12, .83 + Math.cos(.12) * .12, 0).applyMatrix4(model.matrixWorld);
   }
   if (isPlayer || fights) setWeapon('simple-sword');
+  if (isTelemon) setWeapon(armed ? (isTelemonMan ? 'telemon-spear' : 'long-dagger') : null);
   if (isMercenary && !isPlayer) setWeapon(KIT_HELD[look?.weapon] ?? null);
   if (fishingGrip) setFishing(isPondFisher);
   return { group, animate, setArmed, setShield, setWeapon, setFishing, fishingTip, focusTip };

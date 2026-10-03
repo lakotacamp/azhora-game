@@ -10,7 +10,9 @@
  * (`holds` and `region`, see occupation.js) and are out only while their side
  * holds the Moros Plain. The Empire's garrison of Varn and the Lotharn forts
  * (src/varn-garrison.js) is figures only: a few of them walk a stretch of wall
- * (`walk`), and the men inside a gate stand on the ground (`ground`). Pure: no
+ * (`walk`), and the men inside a gate stand on the ground (`ground`). The field
+ * people in the Galmeth's far fields (src/telemonia-people.js) are figures on the
+ * ground too, and nobody's watcher. Pure: no
  * three, no DOM; `createWallWatch` is handed the character factory by its caller.
  */
 import { PLACE_STANDS } from './places.js';
@@ -21,6 +23,7 @@ import { isOut } from './occupation.js';
 import { SUVAL_HILL_GUARDS } from './frontier-ridges.js';
 import { FERADOM_GARRISON, FERADOM_WALL_FIGURES } from './feradom-people.js';
 import { LOTHARN_GARRISON_FIGURES } from './varn-garrison.js';
+import { TELEMONIA_FIGURES } from './telemonia-people.js';
 
 const EMPIRE = Object.freeze({ holds: 'empire', region: 'Moros Plain' });
 const COALITION = Object.freeze({ holds: 'coalition', region: 'Moros Plain' });
@@ -175,6 +178,8 @@ export const WALL_FIGURES = Object.freeze([
   ...FERADOM_WALL_FIGURES,
   // The Empire on Varn's walls and the Lotharn forts'.
   ...LOTHARN_GARRISON_FIGURES,
+  // The field people in the Galmeth's far fields (src/telemonia-people.js): on the ground, in the rows, nobody's watcher.
+  ...TELEMONIA_FIGURES,
 ]);
 
 /**

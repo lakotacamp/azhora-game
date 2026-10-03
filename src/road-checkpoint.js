@@ -13,6 +13,7 @@ import { createRoadsideLessons, validateRoadsideLessons } from './roadside-lesso
 import { createAnimalHusbandry, validateHusbandrySnapshot } from './animal-husbandry.js';
 import { validateMagicSnapshot } from './magic.js';
 import { createCrime, validCrimeState } from './crime.js';
+import { validTelemonWatchState } from './telemon-watch.js';
 import { createCorpses, validateCorpsesSnapshot } from './corpses.js';
 import { INVENTORY_ITEMS } from './inventory.js';
 import { QUEST_DONE } from './game-state.js';
@@ -484,6 +485,9 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (Object.hasOwn(data, 'vastos')) { const water = createVastosCivilWar(); water.restore(data.vastos); result.vastos = water.snapshot(); }
     if (Object.hasOwn(data,'magic')) result.magic=JSON.parse(JSON.stringify(data.magic));
     if (Object.hasOwn(data,'crime')) { const law=createCrime(); law.restore(data.crime); result.crime=law.snapshot(); }
+    // How the Telemon stand toward the traveler (src/telemon-watch.js): absent in a save from before Telemonia had
+    // people, and a bad one is a clean one - it is dropped, rather than costing the traveler the whole save.
+    if (validTelemonWatchState(data.telemon)) result.telemon={ version: 1, walkedOut: data.telemon.walkedOut, fights: data.telemon.fights };
     if (Object.hasOwn(data,'corpses')) {
       const bodies=createCorpses(), saved=data.corpses && { ...data.corpses,
         bodies:data.corpses.bodies.filter(body => !REMOVED_PORT_CALOS_CIVILIANS.has(body.npcId)

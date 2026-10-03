@@ -8,6 +8,10 @@ import {
   telemoniaPlace, plainLevel, stairDistance, passAt, gullyAt, washWeight, onPassFloor, kethornLift, onKethornTop, kethornFrame,
   belkethShare, ridgeShare, borderDepth, plainDistance, TELEMONIA_PATCH_REACH, ROTHKAR_WAY, wayAt, onWayFloor, INNER,
 } from './telemonia-world.js';
+// What stage 2 builds and ploughs over (src/telemonia-town.js), if it says: read through the namespace, so the
+// country's own scenery never fails to load for want of it.
+import * as Town from './telemonia-town.js';
+const townCovers = (x, z) => !!Town.townCovers?.(x, z);
 
 /**
  * What the Telemon highland looks like (its ground is src/telemonia-world.js), stage 1: the rock, the
@@ -55,7 +59,7 @@ export function createTelemoniaScenery(kit) {
   const smooth = (a, b, x) => { const v = Math.max(0, Math.min(1, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
   const metrics = { batches: 0, groundVertices: 0, terraceWalls: 0, terraceWallMetres: 0, checkWalls: 0, wallMetres: 0, wallStones: 0, wayWallMetres: 0,
     rockLedgeStones: 0, tufts: 0, shrubs: 0, wormwood: 0, thorn: 0,
-    trees: 0, oaks: 0, junipers: 0, pines: 0, belkethTrees: 0, rocks: 0, talus: 0, washStones: 0, gravel: 0, wall: 0 };
+    trees: 0, oaks: 0, junipers: 0, pines: 0, belkethTrees: 0, rocks: 0, talus: 0, washStones: 0, gravel: 0, wall: 0, underTown: 0 };
   const push = collider => { colliders.push(collider); return collider; };
   const gy = (x, z) => groundHeight(x, z);
   const ours = (x, z) => hexOwnerAt(x, z) === TELEMONIA;
@@ -527,8 +531,11 @@ export function createTelemoniaScenery(kit) {
   if (tufts.length) {
     const batch = new THREE.InstancedMesh(grassGeometry, grassMaterial, tufts.length);
     tufts.forEach((tuft, i) => {
+      // Stage 2 ploughs the plain and builds on the rock (src/telemonia-town.js): what grew there is not drawn,
+      // and every number it drew from the stream is still drawn, so nothing after it moves.
+      const gone = townCovers(tuft.x, tuft.z); if (gone) metrics.underTown++;
       dummy.position.set(tuft.x, gy(tuft.x, tuft.z) + .02, tuft.z);
-      dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(tuft.s); dummy.updateMatrix();
+      dummy.rotation.set(0, tuft.rot, 0); dummy.scale.setScalar(gone ? 0 : tuft.s); dummy.updateMatrix();
       batch.setMatrixAt(i, dummy.matrix);
       // Buff bunch grass, eleven months of the year; a little green in the hollows.
       batch.setColorAt(i, tuft.green ? color.setHSL(range(.18, .24), range(.22, .32), range(.34, .44))
@@ -540,10 +547,11 @@ export function createTelemoniaScenery(kit) {
   if (shrubs.length) {
     const batch = new THREE.InstancedMesh(round, shrubMaterial, shrubs.length);
     shrubs.forEach((bush, i) => {
-      const tall = bush.kind === 'maquis' ? .55 : bush.kind === 'thorn' ? .5 : .3;
+      const tall = bush.kind === 'maquis' ? .55 : bush.kind === 'thorn' ? .5 : .3, gone = townCovers(bush.x, bush.z);
+      if (gone) metrics.underTown++;
       dummy.position.set(bush.x, gy(bush.x, bush.z) + bush.s * tall * .45, bush.z);
       dummy.rotation.set(range(-.15, .15), bush.rot, range(-.15, .15));
-      dummy.scale.set(bush.s * .6, bush.s * tall, bush.s * .55); dummy.updateMatrix();
+      dummy.scale.set(gone ? 0 : bush.s * .6, gone ? 0 : bush.s * tall, gone ? 0 : bush.s * .55); dummy.updateMatrix();
       batch.setMatrixAt(i, dummy.matrix);
       // Wormwood is silver-grey; thorn dark and twiggy; the Belketh's understory a dark glossy green.
       batch.setColorAt(i, bush.kind === 'wormwood' ? color.setHSL(range(.17, .24), range(.06, .13), range(.5, .62), THREE.SRGBColorSpace)
@@ -557,13 +565,16 @@ export function createTelemoniaScenery(kit) {
   if (rocks.length) {
     const batch = new THREE.InstancedMesh(round, rockMaterial, rocks.length);
     rocks.forEach((rock, i) => {
+      // Cleared off the fields, the street, and the floors of the halls and the huts (stage 2).
+      const gone = townCovers(rock.x, rock.z); if (gone) metrics.underTown++;
       dummy.position.set(rock.x, gy(rock.x, rock.z) + rock.s * .15, rock.z);
       dummy.rotation.set(range(-.3, .3), rock.rot, range(-.3, .3));
-      dummy.scale.set(rock.s, rock.s * range(.5, .8), rock.s * range(.75, 1.3)); dummy.updateMatrix();
+      const sy = range(.5, .8), sz = range(.75, 1.3);
+      dummy.scale.set(gone ? 0 : rock.s, gone ? 0 : rock.s * sy, gone ? 0 : rock.s * sz); dummy.updateMatrix();
       batch.setMatrixAt(i, dummy.matrix);
       batch.setColorAt(i, stone(rock.talus ? .4 : .44, rock.talus ? .52 : .58));
       // Only a big stone with room round it is solid; fallen rock at a cliff's foot is drawn and walked through.
-      if (rock.s > 1.25 && !rock.talus && !nearSpawn(rock.x, rock.z, 5) && roomy(rock.x, rock.z, rock.s + 1.5)) push({ x: rock.x, z: rock.z, r: rock.s * .55, kind: 'ridge-rock' });
+      if (!gone && rock.s > 1.25 && !rock.talus && !nearSpawn(rock.x, rock.z, 5) && roomy(rock.x, rock.z, rock.s + 1.5)) push({ x: rock.x, z: rock.z, r: rock.s * .55, kind: 'ridge-rock' });
       if (rock.talus) metrics.talus++;
     });
     batch.castShadow = true; batch.receiveShadow = true; batch.computeBoundingSphere(); batch.name = 'Telemonia stone'; group.add(batch);

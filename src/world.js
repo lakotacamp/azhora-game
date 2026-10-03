@@ -145,6 +145,8 @@ import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
 import { createSelemisScenery } from './selemis-scenery.js';
 import { SELEMIS_LANDMARKS } from './selemis-world.js';
 import { createTelemoniaScenery } from './telemonia-scenery.js';
+import { createTelemoniaTownScenery } from './telemonia-town-scenery.js';
+import { TELEMONIA_TOWN_LANDMARKS } from './telemonia-ways.js';
 import { TELEMONIA_LANDMARKS, telemoniaTerrainSink } from './telemonia-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
@@ -1616,6 +1618,11 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // already built moves for it. Stage 1: nothing planted and nobody's.
   yield 'Telemonia';
   const telemoniaScenery=yield* regionBuild('telemoniaScenery',[55],stage=>immediate(()=>createTelemoniaScenery({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round })),{});
+  // Telemonia, stage 2 (src/telemonia-town-scenery.js): Kethorn on its rock - the halls of the bands, the hall at the
+  // end of the street, the granaries and the cisterns - the barley and the pulses on the Galmeth, the vine on the
+  // terraces, and the field people's huts. Its own seeded stream, after stage 1's, so nothing already built moves.
+  yield 'Kethorn';
+  const telemoniaTown=yield* regionBuild('telemoniaTown',[REGION_IDS.Telemonia],stage=>immediate(()=>createTelemoniaTownScenery({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round })),{metrics:{}});
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   yield 'Roads and landmarks';
   const stakedProps = [];
@@ -2266,6 +2273,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     varnMetrics: varn.metrics,
     lotharnFortsMetrics: lotharnForts.metrics,
     telemoniaMetrics: telemoniaScenery.metrics,
+    telemoniaTownMetrics: telemoniaTown.metrics,
     // Faces no climber can hold, whatever the skill (src/climbing.js reads it): one table of them, a row to a
     // place (src/no-climb-zones.js) - the rock Varn's walls are built into, the cliffs the pass forts stand
     // between, and Kethorn's rock and its wall in Telemonia, whose gate is the only way onto the top.
@@ -2439,6 +2447,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...SOUTHWEST_LANDMARKS,
       ...SELEMIS_LANDMARKS,
       ...TELEMONIA_LANDMARKS,
+      ...TELEMONIA_TOWN_LANDMARKS,
     ],
     paths,
     update(time, dt) {
