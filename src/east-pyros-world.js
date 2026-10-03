@@ -41,6 +41,84 @@ function eastPyrosFeatherDistance(x,z){
   for(const [a,b] of TELEMONIA_EDGES)sum+=Math.exp(-eastPyrosSegment(x,z,a,b).distance/SOFT_SEAM);
   return Math.min(other,sum>0?-SOFT_SEAM*Math.log(sum):Infinity);
 }
+// The border with the Oves Desert (2026-10-03). Both sides are handed the world's hex blend, which steps along that
+// line where this country's outland roll (6 m on a 150 m wave) meets the desert's 320 m one, and the desert's basin
+// and rim, gated by the same blend's weights, step with it: up to 5.7 m between two points half a metre apart across
+// the line, and 1.6 m at the corner with Telemonia, where the desert and Telemonia agree and this side stood low.
+// The desert is the older country and its ground is left exactly as it is: this side's handed ground is moved to
+// meet it. The step from this side to the far one is measured every half metre along each edge this country shares
+// with the Oves Desert, and with Telemonia (its side met this one already, with `telemoniaSeamBedrock`, except by
+// the corner the three share; elsewhere the step and so the move there are nothing). A point is moved by the step
+// read off its nearest edges - a soft nearest, which hardens to the edge itself at the line, so the zigzag's
+// corners crease nothing - and averaged along the border over as many metres either way as the point stands in
+// (`widen`): the two blends' ribs are out of step, so the step swings by five metres in ten along the line, and
+// carried straight in it stood up new ribs of its own. The move lets go over `reach` metres in. `baseAt` is the
+// ground handed to this country, asked on both sides of the line (src/world-terrain.js); without it nothing moves.
+export const EAST_PYROS_SEAM=freeze({reach:40,probe:.05,step:.5,widen:1,neighbours:freeze(['Oves Desert','Telemonia'])});
+let SEAM_LINES=null;
+function seamLines(baseAt){
+  if(SEAM_LINES)return SEAM_LINES;
+  const S=EAST_PYROS_SEAM,lines=[],box={minX:Infinity,maxX:-Infinity,minZ:Infinity,maxZ:-Infinity};
+  for(const [a,b] of EAST_PYROS_EDGES){
+    const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz),mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+    let nx=dz/length,nz=-dx/length;
+    if(hexOwnerAt(mx+nx,mz+nz)===EAST_PYROS){nx=-nx;nz=-nz;}
+    if(!S.neighbours.includes(hexOwnerAt(mx+nx,mz+nz)))continue;
+    const count=Math.max(1,Math.ceil(length/S.step)),steps=new Float64Array(count+1);
+    for(let i=0;i<=count;i++){
+      // A hand's breadth in from either end, so neither probe lands in the third hex at a corner.
+      const s=Math.max(.1,Math.min(length-.1,length*i/count)),x=a.x+dx*s/length,z=a.z+dz*s/length;
+      steps[i]=baseAt(x+nx*S.probe,z+nz*S.probe)-baseAt(x-nx*S.probe,z-nz*S.probe);
+    }
+    // The step's running integral at each sample, the step being straight between samples: any stretch's mean in two reads.
+    const h=length/count,sums=new Float64Array(count+1);
+    for(let i=1;i<=count;i++)sums[i]=sums[i-1]+(steps[i-1]+steps[i])/2*h;
+    lines.push({a,b,length,h,steps,sums,count});
+    for(const p of [a,b]){box.minX=Math.min(box.minX,p.x-S.reach);box.maxX=Math.max(box.maxX,p.x+S.reach);box.minZ=Math.min(box.minZ,p.z-S.reach);box.maxZ=Math.max(box.maxZ,p.z+S.reach);}
+  }
+  // The edges end to end, as runs of border measured along: the average reads across a corner as along an edge.
+  const joined=(p,q)=>Math.hypot(p.b.x-q.a.x,p.b.z-q.a.z)<1e-6,breakAt=lines.findIndex((l,i)=>!joined(lines[(i+lines.length-1)%lines.length],l));
+  const ordered=breakAt>0?[...lines.slice(breakAt),...lines.slice(0,breakAt)]:lines;
+  let run=null;
+  for(const [i,line] of ordered.entries()){
+    if(!i||!joined(ordered[i-1],line))run={lines:[],before:[],length:0};
+    line.run=run;line.start=run.length;run.before.push(run.lines.length?run.before.at(-1)+run.lines.at(-1).sums.at(-1):0);
+    run.lines.push(line);run.length+=line.length;
+  }
+  return SEAM_LINES=freeze({lines:freeze(lines),box:freeze(box),distance:new Float64Array(lines.length),along:new Float64Array(lines.length)});
+}
+function seamIntegral(line,s){
+  const f=s/line.h,j=Math.min(line.count-1,Math.floor(f)),u=f-j,a=line.steps[j],b=line.steps[j+1];
+  return line.sums[j]+line.h*(a*u+(b-a)*u*u/2);
+}
+function runIntegral(run,s){
+  let e=0;while(e<run.lines.length-1&&run.lines[e+1].start<=s)e++;
+  const line=run.lines[e];
+  return run.before[e]+seamIntegral(line,Math.max(0,Math.min(line.length,s-line.start)));
+}
+/** The step `s` metres along one edge, averaged over `w` metres either way along the border it is part of. */
+function seamStep(line,s,w){
+  const run=line.run,at=line.start+s,from=Math.max(0,at-w),to=Math.min(run.length,at+w);
+  if(to-from<1e-6){const f=s/line.h,j=Math.min(line.count-1,Math.floor(f));return mix(line.steps[j],line.steps[j+1],f-j);}
+  return (runIntegral(run,to)-runIntegral(run,from))/(to-from);
+}
+/** How far this side's handed ground is moved to meet the Oves Desert's (and Telemonia's) across the border. */
+export function eastPyrosSeamMove(x,z,baseAt){
+  if(!baseAt)return 0;
+  const {lines,box,distance,along}=seamLines(baseAt);
+  if(x<box.minX||x>box.maxX||z<box.minZ||z>box.maxZ)return 0;
+  let near=Infinity;
+  for(let i=0;i<lines.length;i++){const p=eastPyrosSegment(x,z,lines[i].a,lines[i].b);distance[i]=p.distance;along[i]=p.t;near=Math.min(near,p.distance);}
+  if(near>=EAST_PYROS_SEAM.reach)return 0;
+  const soft=.1+.5*near;
+  let sum=0,total=0;
+  for(let i=0;i<lines.length;i++){
+    const k=(distance[i]-near)/soft;if(k>24)continue;
+    const w=Math.exp(-k),line=lines[i];
+    total+=w;sum+=w*seamStep(line,along[i]*line.length,distance[i]*EAST_PYROS_SEAM.widen);
+  }
+  return sum/total*(1-smooth(near/EAST_PYROS_SEAM.reach));
+}
 export function eastPyrosRiverClearance(x,z){
   return courseDistance(VAELLIR,x,z)-courseHalfAt(VAELLIR,coursePosition(VAELLIR,x,z));
 }
@@ -113,10 +191,13 @@ export const EAST_PYROS_VIEWS=freeze({
   'east-pyros-border-from-telemonia':freeze({eye:freeze({x:-2385,z:1330,y:40}),target:freeze({x:-2450,z:1385,y:24})}),
 });
 
-export function eastPyrosGround(x,z,incoming){
-  if(!inEastPyrosBox(x,z)||hexOwnerAt(x,z)!==EAST_PYROS)return incoming;
+export function eastPyrosGround(x,z,handed,baseAt=null){
+  if(!inEastPyrosBox(x,z)||hexOwnerAt(x,z)!==EAST_PYROS)return handed;
   const shore=landDistance(x,z),edge=eastPyrosBoundaryDistance(x,z),river=eastPyrosRiverClearance(x,z);
-  if(shore<=8||edge<.001||river<=25)return incoming;
+  if(shore<=8||river<=25)return handed;
+  // The handed ground, met to the Oves Desert's across the border (`eastPyrosSeamMove`); the country feathers to that.
+  const incoming=handed+eastPyrosSeamMove(x,z,baseAt);
+  if(edge<.001)return incoming;
   const weight=smooth(eastPyrosFeatherDistance(x,z)/72)*smooth((shore-8)/48)*smooth((river-25)/36);
   let target=eastPyrosNaturalHeight(x,z);
   for(const pool of EAST_PYROS_POOLS){

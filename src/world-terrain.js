@@ -269,7 +269,7 @@ export function groundBeforeVarn(x, z) {
 export function groundWithRiver(x, z) {
   // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
   const base=groundBeforeFrontier(x,z);
-  return legemumGround(x,z,netherDesertGround(x,z,eastPyrosGround(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier)))))));
+  return legemumGround(x,z,netherDesertGround(x,z,eastPyrosGround(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier)))),groundBeforeFrontier)));
 }
 function groundBeforeFrontier(x,z){
   return feradomGround(x, z, groundBeforeFeradom(x, z), groundBeforeFeradom);

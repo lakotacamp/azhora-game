@@ -54,6 +54,36 @@ test('the region leaves neighbours, the coast and Vaellir banks unchanged, with 
   assert.equal(eastPyrosTint(0,0),null);
 });
 
+test('the ground joins the Oves Desert along the whole border, and Telemonia by the corner the three share',async t=>{
+  const {scopedWorld}=await import('./scoped-world.js');
+  const world=await scopedWorld(new THREE.Scene(),[57,26,55]);
+  const lines=[];
+  for(const loop of EAST_PYROS_OUTLINES)for(let i=0;i<loop.length;i++){
+    const a=loop[i],b=loop[(i+1)%loop.length],length=Math.hypot(b.x-a.x,b.z-a.z),mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+    let nx=(b.z-a.z)/length,nz=-(b.x-a.x)/length;
+    if(hexOwnerAt(mx+nx,mz+nz)===EAST_PYROS){nx=-nx;nz=-nz;}
+    lines.push({a,b,length,nx,nz,across:hexOwnerAt(mx+nx,mz+nz)});
+  }
+  const desert=lines.filter(l=>l.across==='Oves Desert'),ends=desert.flatMap(l=>[l.a,l.b]);
+  assert.equal(desert.length,5);
+  // Both ends of the desert's line: Telemonia's corner, and the Nether Desert's.
+  assert.deepEqual(new Set(lines.filter(l=>l.across!=='Oves Desert'&&ends.some(p=>[l.a,l.b].some(q=>Math.hypot(p.x-q.x,p.z-q.z)<.01))).map(l=>l.across)),new Set(['Telemonia','Nether Desert']));
+  let worst=0,count=0;
+  for(const l of lines){
+    if(l.across!=='Oves Desert'&&l.across!=='Telemonia')continue;
+    for(let s=0;s<=l.length;s+=.5){
+      const x=l.a.x+(l.b.x-l.a.x)*s/l.length,z=l.a.z+(l.b.z-l.a.z)*s/l.length;
+      // Telemonia's own border is its test's (tests/telemonia-world.test.js); here, only its first metres off the corner.
+      if(l.across==='Telemonia'&&!ends.some(p=>Math.hypot(x-p.x,z-p.z)<45))continue;
+      const step=Math.abs(world.heightAt(x+l.nx*.25,z+l.nz*.25)-world.heightAt(x-l.nx*.25,z-l.nz*.25));
+      assert.ok(step<.5,`${l.across} border steps ${step.toFixed(2)} m at ${x.toFixed(1)},${z.toFixed(1)}`);
+      worst=Math.max(worst,step);count++;
+    }
+  }
+  assert.ok(count>600);
+  t.diagnostic(`worst step across the border ${worst.toFixed(2)} m in ${count} half-metre samples`);
+});
+
 test('thermal water is confined to two shallow basins and joins dry ground at the visible shore',()=>{
   assert.equal(EAST_PYROS_POOLS.length,2);
   for(const pool of EAST_PYROS_POOLS){
