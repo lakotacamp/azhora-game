@@ -26,7 +26,7 @@ test('every playable country is offered, in the world’s own order, with somewh
     assert.ok(Number.isFinite(country.spawn.x) && Number.isFinite(country.spawn.z), `${country.name} has a spawn`);
   }
   // Newly integrated regions appear beside the previously built countries, including Iscare.
-  for (const name of ['Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom'])
+  for (const name of ['Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor', 'Eer', 'Isareos', 'Nethereum', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'East Pyros', 'Nether Desert', 'Legemum'])
     assert.ok(countries.some(one => one.name === name), `${name} is reachable`);
 });
 
@@ -46,6 +46,14 @@ test('every named ground on the chart is reachable from its own country, and the
   }
   assert.equal(seen.size, SUBREGIONS.length, 'a named ground the panel cannot reach');
   assert.deepEqual(travelPlaces('Nowhere'), [], 'a country that does not exist offers nothing');
+});
+
+test('the three new western environments offer their named natural landmarks', () => {
+  for (const [name, count] of [['East Pyros', 7], ['Nether Desert', 4], ['Legemum', 6]]) {
+    const places = travelPlaces(name).slice(1);
+    assert.ok(places.length >= count, `${name} is more than an unnamed arrival`);
+    assert.ok(places.every(p => p.note.length > 20 && p.radius > 0), `${name} has described map discoveries`);
+  }
 });
 
 test('a landing is inside the ground, standable, and the same one every time', () => {

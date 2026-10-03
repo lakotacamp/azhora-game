@@ -30,6 +30,9 @@
   color: #fff5dc;
 }
 #testing .test-group-heading { margin: 18px 0 8px; font: 600 12px 'Segoe UI', sans-serif; letter-spacing: .07em; text-transform: uppercase; color: #e8e5d7; }
+#testing .test-strategy-card { width: 100%; margin: 0; background: #234b48; border-color: #8bbab0; box-shadow: inset 3px 0 #a7d3c6; }
+#testing .test-strategy-card:hover { background: #305d55; }
+#testing .test-strategy-card .test-card-description { color: #d9e5db; }
 #testing .test-gold-heading { color: #f1d18b; }
 #testing .test-silver-heading { color: #d5e1e5; }
 #testing .test-gold-card { background: #454936; border-color: #c8a85c; box-shadow: inset 3px 0 #eac776; }

@@ -535,6 +535,21 @@ if (ownsInstance) app.whenReady().then(async () => {
           fs.writeFileSync(path.join(artifactDir,`${shotName(view)}.${reviewJpeg?'jpg':'png'}`),reviewJpeg?picture.toJPEG(82):picture.toPNG());
           console.log(view,JSON.stringify(await win.webContents.executeJavaScript('window.__AZHORA__.camera?.()')));
         }
+        if(reviewViews.some(view=>view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum'))){
+          const checks=await win.webContents.executeJavaScript('window.__westernEnvironmentChecks');
+          fs.writeFileSync(path.join(artifactDir,'western-environments-checks.json'),JSON.stringify({regions:checks,errors},null,2));
+          console.log(JSON.stringify({westernEnvironments:checks,errors},null,2));
+        }
+        if(reviewViews.some(view=>view.startsWith('aevis-'))){
+          const checks=await win.webContents.executeJavaScript('window.__aevisChecks');
+          fs.writeFileSync(path.join(artifactDir,'aevis-checks.json'),JSON.stringify({...checks,errors},null,2));
+          console.log(JSON.stringify({aevis:checks,errors},null,2));
+        }
+        if(reviewViews.some(view=>view.startsWith('nylon-'))){
+          const checks=await win.webContents.executeJavaScript('window.__nylonChecks');
+          fs.writeFileSync(path.join(artifactDir,'nylon-checks.json'),JSON.stringify({...checks,errors},null,2));
+          console.log(JSON.stringify({nylon:checks,errors},null,2));
+        }
         console.log(JSON.stringify({views:reviewViews,errors},null,2));app.exit(errors.length?1:0);return;
       }
       if(drawReviewOnly){

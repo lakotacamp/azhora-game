@@ -278,7 +278,12 @@ test('the rim: high, broken rock round the plain, ridges on the north-east grain
   for (const name of ['Gala', 'Oves Desert', 'Legemum', 'East Pyros']) {
     const across = [...new Set(BORDER.filter(edge => edge.neighbour === name).map(edge => edge.across.join(',')))]
       .map(k => { const [q, r] = k.split(',').map(Number); const c = hexCentre(q, r); return H(c.x, c.z); });
-    assert.ok(level - mean(across) > 10, `the plain stands only ${(level - mean(across)).toFixed(1)} m over ${name}’s border hexes`);
+    // Legemum and East Pyros were unbuilt outland when this was written. Built (3 October 2026), Legemum is hill
+    // country at its own base and East Pyros rises toward the divide: their border hexes stand 6.6 m and 3.6 m
+    // under the plain where the outland's stood more than ten. The rim between is what stops a walker, and that
+    // is held below; here it is enough that the plain is still the higher ground.
+    const need = { Legemum: 5, 'East Pyros': 3 }[name] ?? 10;
+    assert.ok(level - mean(across) > need, `the plain stands only ${(level - mean(across)).toFixed(1)} m over ${name}’s border hexes`);
   }
   // The rim: its crest stands everywhere at least a cliff over the plain, and the Rothkar is the highest
   // ground in the country, where the rim is thickest.

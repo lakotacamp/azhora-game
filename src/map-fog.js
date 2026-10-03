@@ -10,6 +10,11 @@ import { BALDRO_KINGDOMS, BALDRO_PATHS, baldroRegionAt } from './baldro-world.js
 import { FARMSTEADS } from './regional-farmland.js';
 import { WINERY } from './winery.js';
 import { CARICAS_TOWN } from './caricas-settlement.js';
+import { NYLON } from './nylon-city.js';
+import { AEVIS } from './aevis-city.js';
+import { EAST_PYROS_LANDMARKS } from './east-pyros-world.js';
+import { NETHER_DESERT_LANDMARKS } from './nether-desert-world.js';
+import { LEGEMUM_LANDMARKS } from './legemum-world.js';
 import { ISCARE_RUIN_SITES, ISCARE_REGION } from './iscare-world.js';
 import { IBENWOOD_GROVES, IBENWOOD_ARRIVALS, IBENWOOD_PILOT } from './ibenwood-environment.js';
 
@@ -39,6 +44,11 @@ export const SUBREGIONS = Object.freeze([
         'A winding natural traverse through unequal ridges and sheltered rock basins. The path joins the approaches to the two independent dwarf holds.')];
   }),
   ...FARMSTEADS.map(farm => area(farm.id, farm.name, farm.region, farm.x, farm.z, 28, 'Worked fields, an open tool shelter and shared garden beds. Take seeds, sow, water, and return for the harvest.')),
+  ...[
+    ['East Pyros', EAST_PYROS_LANDMARKS, 'Volcanic grassland, mineral springs and weathered outcrops in the open eastern Pyrosi country.'],
+    ['Nether Desert', NETHER_DESERT_LANDMARKS, 'Exposed stony plateau, dry rain pans and shallow scrub-lined washes above the upper Neth.'],
+    ['Legemum', LEGEMUM_LANDMARKS, 'Tin-bearing hills, slate headlands and sheltered woodland around the damp heath and peat hollows.'],
+  ].flatMap(([region, landmarks, note]) => landmarks.map(p => area(p.id, p.name, region, p.x, p.z, Math.max(28, p.radius ?? 40), p.description ?? note))),
   ...ISCARE_RUIN_SITES.map(site => area(site.id, site.name, ISCARE_REGION, site.x, site.z, 45, 'Burned, roofless stone and charred beams remain from the Blood Prince\'s passage. The islands have wildlife, but these settlements are abandoned.')),
   area('imlamdris-rebuilding', 'Imlamdris rebuilding', 'South Suval', -126, 1154, 40, 'Four small timber homes and a new building frame stand beside the razed city.'),
   // Drent
@@ -129,6 +139,8 @@ export const SUBREGIONS = Object.freeze([
   area('nesdor-flats', 'The Nesdor Flats', 'Nesdor', -1420, 730, 120, 'Dark alluvial ground with the relief measured in feet, cattle standing about on it, and an open horizon that goes on being open until it is the Moros. Nothing here breaks the sky.'),
   area('lizeem-bend', 'The Lizeem Bend', 'Nesdor', -1630, 740, 90, 'Where the great river turns south-east along the foot of the Flats and takes everything off them with it. A hundred paces of deep water; the far bank is another country and there is no way to it here.'),
   // Eer: a country with one line drawn across it, and the chart records which side of it you are on.
+  area('aevis', 'Aevis', 'Southern Ascarth', AEVIS.x, AEVIS.z, 74, 'The bronze city of the Avites: massive landward gates, verdigris roofs, a martial palace court and a working harbor open to the sea. Bronze-armored soldiers guard its streets.'),
+  area('nylon', 'Nylon', 'Eer', NYLON.x, NYLON.z, 82, 'The independent city at the Lizeem estuary: immensely high walls surround tall scholarly houses, an immaculate Great Library and the tower palace. Its protected harbour keeps the city supplied when its hinterland is lost.'),
   area('eer-loam', 'The Black Loam', 'Eer', -1250, 1000, 110, 'The heavy inland half: alluvium the great river has been laying down since before anybody counted, black to the depth of a spade, holding water the whole year and carrying grass to the knee. Everybody who has ever wanted this country has wanted this.'),
   area('eer-channels', 'The Two Channels', 'Eer', -1120, 1100, 95, 'Shallow water leaving the loam and going south-east to the sea, widening and slowing until it stops keeping to one bed. Herons stand in all three threads of it and do not move when you do.'),
   area('eer-scrub', 'The Dry Half', 'Eer', -1070, 1180, 100, 'Where the rain stops coming in summer: tawny grass, grey cushion scrub that smells of itself when you walk through it, and wild olives standing singly with nothing near them. Nobody drew a line here; the weather changed under you a hundred paces back.'),

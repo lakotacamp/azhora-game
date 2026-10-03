@@ -17,6 +17,7 @@ import {
 import { WEST_PROFILES, westGroundAt, westWaterSurface, braidThreadOffset } from '../src/west-ground.js';
 import { DEFAULT_SKY, regionSky, composeSky, mixHex } from '../src/region-sky.js';
 import { groundWithRiver } from '../src/world-terrain.js';
+import { nylonGround, nylonReserved } from '../src/nylon-city.js';
 import { SUBREGIONS } from '../src/map-fog.js';
 import { regionBuildStatus } from '../src/build-status.js';
 import { regionLevel, levelWords } from '../src/region-levels.js';
@@ -254,7 +255,10 @@ test('every hex of Eer is honest ground, and nobody is sealed in', () => {
     // every hex: the furthest inland they differ at all is 39.4 m, so 45 is the threshold
     // with room in it, and inside it the difference is the beach and not a bug.
     if (westBareGround(spot.x, spot.z, 4) || landDistance(spot.x, spot.z) < 45) continue;
-    worst = Math.max(worst, Math.abs(groundWithRiver(spot.x, spot.z) - westGroundAt(spot.x, spot.z)));
+    worst = Math.max(worst, Math.abs(groundWithRiver(spot.x, spot.z) - nylonGround(spot.x, spot.z, westGroundAt(spot.x, spot.z))));
+    // The built city intentionally has solid buildings and walls; its open gates
+    // and all streets are traversed separately by the Nylon desktop checks.
+    if (nylonReserved(spot.x, spot.z)) continue;
     const standable = canStand(spot.x, spot.z, world, .5)
       || [0, 1, 2, 3, 4, 5, 6, 7].some(i => canStand(spot.x + Math.sin(i / 8 * Math.PI * 2) * 3.4, spot.z + Math.cos(i / 8 * Math.PI * 2) * 3.4, world, .5));
     assert.ok(standable, `penned in at ${spot.x}, ${spot.z}`);
@@ -428,7 +432,7 @@ test('the quick ones of Eer cannot be run down either', () => {
 
 test('Eer is charted, levelled and listed, and nobody lives there', () => {
   const eer = regions.find(region => region.name === 'Eer');
-  assert.deepEqual([...eer.npcIds], [], 'terrain and wildlife only');
+  assert.deepEqual([...eer.npcIds], [], 'Nylon exteriors do not invent a civilian cast');
   for (const id of eer.landmarks)
     assert.ok(world.landmarks.some(landmark => landmark.id === id), `the chart knows ${id}`);
   for (const landmark of WEST_REGION_LANDMARKS.filter(item => eer.landmarks.includes(item.id)))

@@ -238,7 +238,7 @@ export function createStrategicPrototype({ onEvent = () => {} } = {}) {
       armies: state.armies.map(a => { const from = cells.get(a.cellId), next = cells.get(a.order.route[0]), edge = next && edges.get(strategicEdgeId(a.cellId, next.id));
         const t = edge ? Math.min(1, a.order.edgeProgress / edgeHours(a, edge)) : 0;
         return { ...clone(a), at: { x: from.x + ((next?.x ?? from.x) - from.x) * t, z: from.z + ((next?.z ?? from.z) - from.z) * t }, supply: supplyStatus(a.id) }; }),
-      objective: { ...clone(state.objective), title: 'Secure the frontier crossing', detail: 'Meet the raiding band, win one adventure battle, and keep the White Bridge supply connection and Caricas town under Imperial control.' },
+      objective: { ...clone(state.objective), title: 'Secure the frontier crossing', detail: 'Meet the raiding band, win a battle personally or on the chart, and keep the White Bridge supply connection and Caricas town under Imperial control.' },
       ledger: Object.fromEntries(['empire', 'yunethre', 'neutral'].map(faction => [faction, STRATEGIC_HOLDINGS.reduce((sum, h) => { const held = state.holdings[h.id]; if (held.controller === faction) { sum.food += held.reserves.food; sum.coins += held.reserves.coins; } return sum; }, { food: 0, coins: 0 })])),
     };
   }

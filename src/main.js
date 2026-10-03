@@ -53,6 +53,12 @@ import { createCampcraft } from './campcraft.js';
 import { createFireMaking, LEE_ANNE, FIRE_LESSON_FIRE, fireMakingStands, fireMakingConversation } from './fire-making.js';
 import { createWorldMap } from './world-map.js';
 import { MENORA } from './menora-city.js';
+import { NYLON, NYLON_BUILDINGS } from './nylon-city.js';
+import { AEVIS, AEVIS_BUILDINGS } from './aevis-city.js';
+import { EAST_PYROS_VIEWS, EAST_PYROS_ARRIVAL, EAST_PYROS_LANDMARKS, EAST_PYROS_ROUTES } from './east-pyros-world.js';
+import { NETHER_DESERT_VIEWS, NETHER_DESERT_ARRIVAL, NETHER_DESERT_LANDMARKS, NETHER_DESERT_TRAILS } from './nether-desert-world.js';
+import { LEGEMUM_VIEWS, LEGEMUM_ARRIVAL, LEGEMUM_LANDMARKS, LEGEMUM_TRAILS } from './legemum-world.js';
+import { AEVIS_SOLDIERS, createAevisSoldier } from './aevis-soldiers.js';
 import { atlasRevealedCityMarks } from './world-map-detail.js';
 import { createMapTutorial } from './map-tutorial.js';
 import { createChartLesson } from './chart-lesson.js';
@@ -697,6 +703,7 @@ async function init() {
     npcData=npcData.filter(npc=>kept.has(npc.id));}
   for(const person of LUSCIA_RECRUIT_NPCS){world.npcPositions[person.id]={x:person.x,z:person.z};npcData.push({...person});}
   for(const person of FRONTIER_NPCS){world.npcPositions[person.id]={x:person.x,z:person.z};npcData.push({...person,...(person.centaur||person.prince?{make:()=>createFrontierFigure(person)}:{})});}
+  for(const person of AEVIS_SOLDIERS){world.npcPositions[person.id]={x:person.x,z:person.z};npcData.push({...person,make:()=>createAevisSoldier({variant:person.variant,look:person.look})});}
   world.npcPositions[INQUEST.id]={x:INQUEST.x,z:INQUEST.z};npcData.push({...INQUEST});
   // The Telemon and the field people (src/telemonia-people.js), stood up after the cast is trimmed (src/cast.js): every
   // Telemon is a watcher in the rule of the country (src/telemon-watch.js), so none of them is a town's atmosphere,
@@ -5548,6 +5555,7 @@ async function init() {
     if(PEBLOS_NPC_IDS.includes(npc.id)&&peblosConversation(npc,{openDialogue,closeDialogue}))return;
     if(EAST_SUVAL_NPC_IDS.includes(npc.id)&&elodConversation(npc,{openDialogue,closeDialogue}))return;
     if(izol.converse(npc,{control:heldControl??campaign.mapControl(),openDialogue,closeDialogue}))return;
+    if(npc.role==='aevis-soldier'){openDialogue(npc,['These are the bronze gates of Aevis. Keep your weapons lowered inside the city.', 'Tin comes through our harbor; our smiths turn it into the armor you see. The palace and the drill court lie uphill.'],null,'Back to the city',{noWayfinding:true});return;}
     if(isFrontierNpc(npc.id)){openDialogue(npc,frontierConversation(npc.id),null,'Back to the road',{noWayfinding:true});return;}
     if(isElagosNpc(npc.id)&&elagosConversation(npc,{openDialogue,closeDialogue,skills,birding,teachSkill:teachFromAmbron,act:elagosAct}))return;
     if(FERRY_HOST_IDS.includes(npc.id)){ferryConversation(npc,{ferry,openDialogue,closeDialogue,act:ferryAct,
@@ -10145,6 +10153,72 @@ async function init() {
           skillAnnouncements.clear();$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();
           if(view==='inquest-placeholder')conversation(npc);return;
         }
+        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')){
+          const cfg=view.startsWith('east-pyros')?{id:57,name:'East Pyros',field:'eastPyros',arrival:EAST_PYROS_ARRIVAL,landmarks:EAST_PYROS_LANDMARKS,trails:EAST_PYROS_ROUTES,views:EAST_PYROS_VIEWS}:
+            view.startsWith('nether-desert')?{id:58,name:'Nether Desert',field:'netherDesert',arrival:NETHER_DESERT_ARRIVAL,landmarks:NETHER_DESERT_LANDMARKS,trails:NETHER_DESERT_TRAILS,views:NETHER_DESERT_VIEWS}:
+            {id:59,name:'Legemum',field:'legemum',arrival:LEGEMUM_ARRIVAL,landmarks:LEGEMUM_LANDMARKS,trails:LEGEMUM_TRAILS,views:LEGEMUM_VIEWS};
+          const showEnvironment=async()=>{
+            prepareTesting();stopAutopilot();closeDialogue();questStage=QUEST_DONE;combat.finishPractice();testGoTo(cfg.arrival,cfg.name,'');
+            reviewFrozen=true;reviewVista=true;player.group.visible=false;
+            const {runWesternEnvironmentChecks}=await import('./western-environments-smoke.js');
+            const checks=runWesternEnvironmentChecks(world,westLife,cfg);(window.__westernEnvironmentChecks??={})[cfg.name]=checks;
+            let shot=cfg.views[view];
+            if(view.endsWith('-wildlife')){
+              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':'red-deer';
+              const animal=westLife.snapshot().creatures.find(a=>a.region===cfg.name&&a.species===species);
+              if(!animal)throw new Error(`${cfg.name}: no ${species} to review`);
+              const ground=world.heightAt(animal.x,animal.z),close=species==='spine-lizard';
+              shot={target:{x:animal.x,z:animal.z,y:ground+(close?.2:.65)},eye:{x:animal.x+(close?2.4:4),z:animal.z+(close?2.2:4),y:ground+(close?1.1:2)}};
+            }
+            if(!shot)throw new Error(`Unknown environment review: ${view}`);
+            const t=shot.target,e=shot.eye,ty=t.y??world.heightAt(t.x,t.z)+1,ey=e.y??world.heightAt(e.x,e.z)+2;
+            reviewTarget=new THREE.Vector3(t.x,ty,t.z);
+            const dx=e.x-t.x,dz=e.z-t.z,dy=ey-ty;distance=targetDistance=Math.hypot(dx,dz,dy);yaw=Math.atan2(dx,dz);pitch=Math.atan2(dy,Math.hypot(dx,dz));
+            westLife.update(.03,t,true);westLife.setObserver(t);skillAnnouncements.clear();clearTimeout(toastTimer);$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();return checks;
+          };
+          const pending=pendingRegions([cfg.id]);return pending.length?waitForRegions(pending,showEnvironment):showEnvironment();
+        }
+        if(view.startsWith('aevis-')){
+          const showCity=async()=>{
+            prepareTesting();stopAutopilot();closeDialogue();reviewFrozen=true;reviewVista=true;questStage=QUEST_DONE;
+            const {runAevisChecks}=await import('./aevis-smoke.js');window.__aevisChecks=runAevisChecks(world,npcById);
+            const shots={
+              'aevis-overview':[AEVIS.x,AEVIS.z,12,160,.60,-1.0],
+              'aevis-harbor':[-1053,1777,9,100,.34,1.3],
+              'aevis-gate':[-1174,1778,12,68,.20,-Math.PI/2],
+              'aevis-palace':[-1149,1753,16,60,.23,0],
+              'aevis-soldiers':[-1106,1764,1.1,7,.14,1.6],
+            };
+            const p=shots[view];if(!p)throw new Error(`Unknown Aevis review: ${view}`);
+            player.group.position.set(AEVIS.plaza.x,world.heightAt(AEVIS.plaza.x,AEVIS.plaza.z),AEVIS.plaza.z);player.group.visible=false;
+            reviewTarget=new THREE.Vector3(p[0],world.heightAt(p[0],p[1])+p[2],p[1]);distance=targetDistance=p[3];pitch=p[4];yaw=p[5];
+            skillAnnouncements.clear();clearTimeout(toastTimer);$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();return window.__aevisChecks;
+          };
+          const pending=pendingRegions([24]);return pending.length?waitForRegions(pending,showCity):showCity();
+        }
+        if(view.startsWith('nylon-')){
+          const showCity=async()=>{
+            prepareTesting();stopAutopilot();closeDialogue();reviewFrozen=true;reviewVista=true;questStage=QUEST_DONE;
+            const {runNylonChecks}=await import('./nylon-smoke.js');
+            window.__nylonChecks=runNylonChecks(world);
+            const shots={
+              'nylon-overview':[-1320,1115,23,200,.62,-.85],
+              'nylon-library':[-1334,1091,22,54,.22,0],
+              'nylon-palace':[NYLON_BUILDINGS.find(b=>b.kind==='palace').x,NYLON_BUILDINGS.find(b=>b.kind==='palace').z,45,105,.18,.22],
+              'nylon-gate':[-1308,1066,27,110,.13,Math.PI],
+              'nylon-drain':[-1264,1072,11,58,.2,2.25],
+              'nylon-river':[-1362,1136,25,135,.30,-1.0],
+              'nylon-harbor':[-1288,1238,18,190,.55,0],
+            };
+            const p=shots[view];if(!p)throw new Error(`Unknown Nylon review: ${view}`);
+            player.group.position.set(NYLON.plaza.x,world.heightAt(NYLON.plaza.x,NYLON.plaza.z),NYLON.plaza.z);player.group.visible=false;
+            reviewTarget=new THREE.Vector3(p[0],world.heightAt(p[0],p[1])+p[2],p[1]);
+            distance=targetDistance=p[3];pitch=p[4];yaw=p[5];
+            skillAnnouncements.clear();clearTimeout(toastTimer);$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();
+            return window.__nylonChecks;
+          };
+          const pending=pendingRegions([15]);return pending.length?waitForRegions(pending,showCity):showCity();
+        }
         if(view.startsWith('frontier-')){
           testTravel('village');stopAutopilot();closeDialogue();reviewFrozen=true;questStage=QUEST_DONE;
           const shots={
@@ -11112,8 +11186,8 @@ async function init() {
           reviewTarget=new THREE.Vector3(-500.5,world.heightAt(-500.5,26)+.6,26);yaw=.70;pitch=.55;distance=targetDistance=12;
           settleCamera();return;
         }
-        if(view==='map-varn'||view==='map-minora'){
-          const city=view==='map-varn'?VARN:MENORA;
+        if(view==='map-varn'||view==='map-minora'||view==='map-nylon'||view==='map-aevis'){
+          const city=view==='map-varn'?VARN:view==='map-nylon'?NYLON:view==='map-aevis'?AEVIS:MENORA;
           const show=()=>{prepareTesting();stopAutopilot();chartRevealed=true;player.group.position.set(city.x+35,world.heightAt(city.x+35,city.z),city.z);modal('journal');mapTab(true);refreshChart();return worldMap.ready.then(()=>worldMap.focusTraveler());};
           const pending=pendingRegions([city]);return pending.length?waitForRegions(pending,show):show();
         }
@@ -11125,7 +11199,7 @@ async function init() {
         if(view==='skills-sorcery'){combat.finishPractice();modal('journal');journalTab('skills');document.querySelector('.skill-browser-scope[data-scope="all"]').click();const category=document.querySelector('.skill-browser-category');category.value='Sorcery';category.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('.skill-browser-row[data-skill="fire"]').click();}
         // The testing panel itself, so the go-anywhere rows can be looked at rather than believed.
         // Render this one WITHOUT --review-clean: that flag hides every element of the interface.
-        if(view==='testing-panel'){combat.finishPractice();testingWhereAmI();modal('testing');}
+        if(view==='testing-panel'||view==='testing-strategy'){combat.finishPractice();testingWhereAmI();modal('testing');if(view==='testing-strategy')document.getElementById('test-strategic-prototype').scrollIntoView({block:'center'});}
         // The phone's HUD (src/touch-controls.css), rendered with --touch --mobile=WxH: the objectives
         // brought back by the Quest button, and a conversation at a phone's width.
         // (Only if it is off: main.cjs photographs the first view twice, and a second tap puts it away.)

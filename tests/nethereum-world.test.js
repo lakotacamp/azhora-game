@@ -19,6 +19,7 @@ import {
 } from '../src/west-ground.js';
 import { DEFAULT_SKY, regionSky } from '../src/region-sky.js';
 import { groundWithRiver } from '../src/world-terrain.js';
+import { menoraGround } from '../src/menora-city.js';
 import { SUBREGIONS } from '../src/map-fog.js';
 import { regionBuildStatus } from '../src/build-status.js';
 import { regionLevel, levelWords } from '../src/region-levels.js';
@@ -316,12 +317,17 @@ test('every hex of Nethereum is honest ground, and nobody is sealed in', () => {
      * nothing is sealed in, and the two fields agree everywhere past 40 m, measured.
      */
     if (landDistance(spot.x, spot.z) < 45) continue;
-    worst = Math.max(worst, Math.abs(groundWithRiver(spot.x, spot.z) - westGroundAt(spot.x, spot.z)));
+    // Minora's later city foundation feathers into the north-eastern edge of
+    // Nethereum. It is an intentional authored layer over the natural basin,
+    // so compare the composed surface exactly instead of requiring the city
+    // edge to equal the earlier wilderness-only ground.
+    const expected = menoraGround(spot.x, spot.z, westGroundAt(spot.x, spot.z));
+    worst = Math.max(worst, Math.abs(groundWithRiver(spot.x, spot.z) - expected));
     const standable = canStand(spot.x, spot.z, world, .5)
       || [0, 1, 2, 3, 4, 5, 6, 7].some(i => canStand(spot.x + Math.sin(i / 8 * Math.PI * 2) * 3.4, spot.z + Math.cos(i / 8 * Math.PI * 2) * 3.4, world, .5));
     assert.ok(standable, `penned in at ${spot.x}, ${spot.z}`);
   }
-  assert.ok(worst < 1e-9, `west-ground.js and world-terrain.js disagree by ${worst}`);
+  assert.ok(worst < 1e-9, `natural ground plus Minora's foundation and world-terrain.js disagree by ${worst}`);
   const spawn = regions.find(region => region.name === 'Nethereum').spawn;
   assert.equal(hexOwnerAt(spawn.x, spawn.z), 'Nethereum');
   assert.ok(canStand(spawn.x, spawn.z, world, .5), 'the travel button puts the traveler on ground');
@@ -335,7 +341,8 @@ test('every hex of Nethereum is honest ground, and nobody is sealed in', () => {
   // Before that, the southwestern block took it from 36.20 to 45.70, because the Ganesh Desert reaches
   // x = -3900 and the world's western edge -3960.002, nine hundred and fifty metres past the
   // corner this country set. Nethereum is still what set the edge it had; it does not set this one.
-  assert.ok(wide > 49.6 && wide < 50, `the world is ${wide.toFixed(2)} hexes wide`);
+  // The Baldro integration enlarged the eastern extent (documented below).
+  assert.ok(Math.abs(wide - 68.2) < .01, `the world is ${wide.toFixed(2)} hexes wide`);
   // North to south: 30.93 hexes then, untouched by Nethereum; 35.26 since the East Lotharn, 37.00
   // (36.996) since the Ascarth Peninsula's tip, and 45.656 since the four Mithala countries carried
   // the world north to the Acor Wetlands. Nethereum touched none of it.
