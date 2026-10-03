@@ -170,13 +170,15 @@ The storage key and file keep their original road-checkpoint names. **Older vers
 
 Press **F8**, use the opening screen's testing button, or choose **Testing tools** from Pause. F8 also works from a defeat screen.
 
-**Quest playtests** comes first, grouped as Gold (main quests), Silver (side stories), then named quest-givers. The six gold cards cover arrival/training, the road to Nothom, the lost courier, the Moros muster, and both Solis branches; each stops after its selected stage. Silver cards run Glun's Drent investigation and the Republican introduction in Luscia (stopping after the briefing because the next local job is unfinished). The named character demos remain below. Each card starts a fresh isolated run; magic quests stop at the reward choice. Any key or click takes control, and **P** resumes the selected quest. Normal saved adventures remain unchanged.
+**Quest playtests** follows Hacks, grouped as Gold (main quests), Silver (side stories), then named quest-givers. The six gold cards cover the peninsula tutorial, the road to Nothom, the lost courier, the Moros muster, and both Solis branches; each stops after its selected stage. Silver cards run Glun's Drent investigation and the Republican introduction in Luscia (stopping after the briefing because the next local job is unfinished). The named character demos remain below. Each card starts a fresh isolated run; magic quests stop at the reward choice. Any key or click takes control, and **P** resumes the selected quest. Normal saved adventures remain unchanged.
+
+**Frontier command** opens the first strategic prototype on the actual Isareos, Caricas and Yunethre hexes. Select the Imperial force, select the White Bridge, give a March order, then advance time. A meeting with the centaur raid pauses strategic time and offers a local battle. Orders save separately; returning restores your adventure. See [the prototype guide](docs/strategic-prototype.md).
 
 **Main story jumps** offers Iven's satchel assignment, the Republican at the relay, and the Imperial recall decision.
 
 **General travel** is visible directly in the panel. **Go anywhere** lists countries and named places from the world and searches for standable ground near each destination. **Go to a point** accepts coordinates such as `-1050, 982` or `stand-at:-806.1,-521,-1.57`. Regional travel advances earlier main-road prerequisites as before.
 
-**Hacks** contains just the fast developer horse and whole-map reveal. Older character jumps, individual location buttons, supplies, ordinary horses, and ghost view are removed from the panel.
+**Hacks** is at the top, with the developer dragon, developer bat, fast developer horse and whole-map reveal. Older character jumps, individual location buttons, supplies, ordinary horses, and ghost view are removed from the panel.
 
 `npm run test:testing-tools` checks the gold, silver and named playtests, repeatable resets, story jumps, travel controls, and hacks while verifying that the normal checkpoint is unchanged. `npm run test:silver-autoplay` plays both silver demos through ordinary movement, dialogue and combat. Review the panel with `--smoke-test --review-views=testing-tools`.
 
@@ -228,6 +230,45 @@ Existing sources were read from `../world-builder/` and `../../python/Clashverge
 The spelling **Azhora**, **Drent**, **Luscia**, **Elagos**, **Izol**, and **Izolveth** follows those files. **Tidehaven**, the Avrel clearing, the named local NPCs, ponds, roadside landmarks, errands, and dialogue are new connective material; the region shapes, names and neighbours are the authored atlas. They do not modify the source lore or claim to be previously established canon.
 
 The first goblin encounter adapts the requested pacing of `../../cromonsters`: a village introduction, audible warning, visible goblin arrivals, readable combat, and a forgiving retry. The bramble raiders and these particular encounters are original procedural creatures and scenes.
+
+## West Oremindi and the drowned capital
+
+West Oremindi Mountains is now playable through F8's Go anywhere selector.
+Four mountain routes cross steep climbable country, sheltered conifer woods,
+coastal siege ruins and high wildlife habitat. Two goblin-held traverses are
+dangerous at early levels. Follow the southern approach and look for repaired
+stone passages to find Sevron; the ordinary map does not disclose the hidden city.
+
+Press F at a passage to enter its dry galleries above a sea-level drowned dwarf
+city. Anonymous elven residents inhabit the upper court. A concealed inspection
+store contains coins that can only be recovered once. Discovery, the opened
+store and defeated threats persist; saves made inside return safely to the
+exterior entrance. Flooded lower districts remain visible ruins, without diving.
+The first entrance transition abstracts the descent through the mountain.
+
+`npm run test:west-oremindi` covers geography, habitats, routes and interior state.
+`npm run test:sevron:desktop` checks the real scenery, approach and room traversal
+in an isolated native game. Add `--fast-load` to the launch command to exercise
+streamed region construction. See [the design and build record](docs/sevron-west-oremindi-design.md).
+
+## Optional peninsula tutorial
+
+After loading, **Start tutorial** begins the new Drent peninsula lessons;
+**Start game** skips fifteen game minutes to Glun's letter. Full/Fast loading
+remains independent. Learn Walking from Chris, Running and Cooking from Jojo,
+combat from Glun, Cartography from Bear, Swimming from Jess and Fishing from Ryan.
+Jojo's sandwich introduces the satchel. A real caught fish becomes your cooking lesson.
+
+Walking, Running and Swimming improve through actual use. The peninsula exit
+opens after Glun signs your letter, starting Ed's arrival. Chris follows his own
+lessons and waits in Tidehaven until your sign-off. Swimming or flying out early
+triggers a visible, overwhelming creature encounter and returns you to training
+with your lessons and possessions intact. Existing saves keep their previous opening.
+
+**F8 > Quest playtests > Main quests > Peninsula tutorial** plays the lessons
+automatically and stops at the letter. `npm run test:peninsula` runs the focused
+rules; `npm run test:peninsula-native` exercises the live tutorial and recovery.
+See [the design and implementation record](docs/peninsula-tutorial-design.md).
 
 ## Dwarfland in the Baldro Mountains
 

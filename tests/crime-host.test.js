@@ -6,7 +6,7 @@ import {createCombat} from '../src/combat.js';
 import {canStand} from '../src/game-state.js';
 
 const vec=(x,z)=>({x,y:1,z,set(x,y,z){Object.assign(this,{x,y,z});}});
-function fixture({real=false,canRevive,additionalPeople=()=>[]}={}){
+function fixture({real=false,canRevive,isProtected=()=>false,additionalPeople=()=>[]}={}){
   const world={heightAt:()=>1,waterAt:()=>0,bounds:{minX:-100,maxX:100,minZ:-100,maxZ:100},colliders:[],
     npcPositions:{},spawn:{x:5,z:5},pierHead:{x:5,z:5}};
   const people=[{id:'harbormaster',name:'Jojo',x:0,z:1},{id:'merc-gotwood',name:'Chris',x:8,z:2},
@@ -19,7 +19,7 @@ function fixture({real=false,canRevive,additionalPeople=()=>[]}={}){
   const combat=real?createCombat({world,position,onEvent:e=>host?.combatEvent(e)}):{state:{phase:'peaceful',enemies:[],allies:[],encounterId:null},
     startEncounter(config){this.started=config;this.state={phase:'active',encounterId:config.id,enemies:config.enemies.map(e=>({...e,maxHp:e.hp})),allies:[]};return true;},
     revive(){this.state.phase='peaceful';this.state.enemies=[];}};
-  host=createCrimeHost({world,npcById,additionalPeople,inventory,combat,position:()=>position,
+  host=createCrimeHost({world,npcById,additionalPeople,isProtected,inventory,combat,position:()=>position,
     openDialogue(npc,lines,action,leave,options){dialogs.push({npc,lines,...options});},closeDialogue(){closed++;},
     safeToInterrupt:()=>safe,stopAutoplay(){stopped++;},toast:(...args)=>toasts.push(args),onChange(){changes++;},
     onDeath:e=>deaths.push(e),onRevive:e=>revivals.push(e),onCleanup:e=>cleanup.push(e),onJail:e=>jails.push(e),
@@ -212,4 +212,31 @@ test('custom creature and stable-horse deaths persist when their separate animat
   copy.host.frame(400);assert.equal(copy.host.health(horse.id).status,'dead');
   assert.equal(copy.host.handleImpact({type:'arrow-impact',id:'dead-horse',source:'player',targetId:horse.id,damage:20}).externalHits,0);
   assert.equal(copy.host.restore(undefined),true);assert.equal(dog2.hidden,false);assert.equal(horse2.actor.group.visible,true);
+});
+
+test('tutorial protection blocks melee, arrows and spell damage without creating a crime, and ends with the lesson',()=>{
+  let active=true;const protectedIds=new Set(['harbormaster','instructor','merc-gotwood']);
+  const f=fixture({isProtected:npc=>active&&protectedIds.has(npc.id)}),before=f.host.snapshot();
+  assert.equal(f.host.assault({npcId:'harbormaster',damage:9999,source:'player'}).protected,true);
+  assert.equal(f.host.handleImpact(impact()).externalHits,0);
+  assert.equal(f.host.handleImpact({type:'arrow-impact',id:'protected-arrow',targetId:'harbormaster',damage:9999}).externalHits,0);
+  assert.deepEqual(f.host.snapshot(),before,'protection does not even write an injury record');
+  assert.equal(f.host.health('harbormaster').hp,60);assert.equal(f.deaths.length,0);assert.equal(f.changes(),0);
+  assert.equal(f.toasts.length,1,'repeated practice contacts do not flood the screen');
+  assert.match(f.toasts[0][0],/training dummy/);
+  assert.equal(f.host.assault({npcId:'resident',damage:10}).hp,50,'ordinary people retain normal consequences');
+  assert.equal(f.host.view().bounty,20);
+  active=false;assert.equal(attack(f).hp,36,'teachers use ordinary law after tutorial protection ends');
+  assert.equal(f.host.view().bounty,40);
+});
+
+test('protected encounter companions remain alive and a protected instructor never leaves to arrest the player',()=>{
+  const f=fixture({isProtected:npc=>['merc-gotwood','instructor'].includes(npc.id)});
+  const ally={id:'ally-chris',npcId:'merc-gotwood',hp:0,maxHp:200,action:'dead'};f.combat.state.allies=[ally];
+  f.host.handleImpact(impact({source:'enemy',origin:{x:20,z:20},combatantIds:['merc-gotwood'],
+    hits:[{id:ally.id,npcId:ally.npcId,team:'ally',hp:0,maxHp:200}]}));
+  assert.equal(ally.hp,200);assert.equal(ally.action,'idle');assert.equal(f.host.health('merc-gotwood').status,'alive');
+  assert.equal(f.host.view().bounty,0);assert.equal(f.deaths.length,0);
+  f.npcById.get('tidehaven-watch-north').hidden=true;attack(f,'resident',10);f.host.frame(.1);
+  assert.equal(f.host.controlsNpc('instructor'),false);assert.equal(f.dialogs.length,0);
 });

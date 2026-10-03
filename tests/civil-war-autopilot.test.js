@@ -15,6 +15,9 @@ import { createCombat } from '../src/combat.js';
 import { createCrimeHost } from '../src/crime-host.js';
 import { moveCharacter } from '../src/game-state.js';
 import { stepToward } from '../src/bodies.js';
+import { LOCOMOTION } from '../src/locomotion-skills.js';
+const novice={walking:LOCOMOTION.walkStart,running:LOCOMOTION.runStart};
+const mastered={walking:LOCOMOTION.walkCap,running:LOCOMOTION.runCap};
 
 const gap = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const terrain = () => ({ bounds: { minX: -5000, maxX: 5000, minZ: -5000, maxZ: 5000 },
@@ -39,8 +42,8 @@ function dialogueDriver() {
   };
 }
 
-function advance(pilot, position, world, dt) {
-  const { forward, side, basisYaw = pilot.yaw ?? 0, run } = pilot.move, speed = run ? 7.2 : 4.2;
+function advance(pilot, position, world, dt, movementSpeeds=novice) {
+  const { forward, side, basisYaw = pilot.yaw ?? 0, run } = pilot.move, speed = run ? movementSpeeds.running : movementSpeeds.walking;
   const before = { ...position };
   moveCharacter(position, (-Math.sin(basisYaw) * forward + Math.cos(basisYaw) * side) * speed * dt,
     (-Math.cos(basisYaw) * forward - Math.sin(basisYaw) * side) * speed * dt, world);
@@ -166,11 +169,11 @@ test('a completed or unsupported branch is never restarted or silently converted
 // that stride must retain its fractional input, or the player paces either side
 // of it indefinitely despite the collision planner having a valid route.
 test('silver quest approach clears a house at 20 Hz and changing frame rates without overshooting detour corners', () => {
-  for (const cadence of [[1 / 60], [1 / 30], [.05], [.016, .05, .033, .05]]) {
+  for(const movementSpeeds of [novice,mastered])for (const cadence of [[1 / 60], [1 / 30], [.05], [.016, .05, .033, .05]]) {
     const world = terrain();
     world.colliders.push({ x: 0, z: 0, hx: 2, hz: 2, kind: 'house' });
     const position = { x: -5, z: 0 }, target = { x: 6, z: 0 };
-    const s = { ...snapshot(), position, quest: { ambushDefeated: true, accepted: true, evidenceFound: true },
+    const s = { ...snapshot(), movementSpeeds, position, quest: { ambushDefeated: true, accepted: true, evidenceFound: true },
       people: { instructor: target } };
     let interacted = false;
     const pilot = createDrentAutopilot({ world, read: () => ({ ...s,
@@ -178,7 +181,7 @@ test('silver quest approach clears a house at 20 Hz and changing frame rates wit
       act: { interact() { interacted = true; } }, options: pace });
     pilot.start();
     for (let frame = 0; frame < 1800 && pilot.active && !interacted; frame++) {
-      const dt = cadence[frame % cadence.length]; pilot.step(dt); advance(pilot, position, world, dt);
+      const dt = cadence[frame % cadence.length]; pilot.step(dt); advance(pilot, position, world, dt, movementSpeeds);
     }
     assert.ok(interacted, `never reached Glun at cadence ${cadence}: ${JSON.stringify(position)}`);
     assert.ok(gap(position, target) < 2.6);

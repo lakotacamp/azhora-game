@@ -16,6 +16,7 @@ import { SUBREGIONS } from '../src/map-fog.js';
 import { REGION_LANGUAGE, LANGUAGES } from '../src/languages.js';
 import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
 import { describeRegion, FACTIONS } from '../src/campaign-world.js';
+import { NO_CLIMB_ZONES, unclimbableAt } from '../src/no-climb-zones.js';
 import { PLAYABLE, WINDOW } from '../scripts/build-region-survey.mjs';
 import { canWalkSlope, isClimbTerrain, createClimbing, sampleClimbSurface } from '../src/climbing.js';
 import { OWN_SKY } from './own-sky.js';
@@ -449,7 +450,9 @@ test('Kethorn’s rock cannot be climbed: the gate is the only way onto its top,
   // The rule is the climbing rule's own (src/climbing.js, `climbForbidden`): the world marks the rock and
   // the game's climbing check reads the mark. The climbing world is built as the game builds it for the
   // controller (src/main.js), and the same world without the mark shows what the mark refuses.
-  assert.equal(world.unclimbableAt, kethornUnclimbable);
+  // The world answers from one table of such places now (src/no-climb-zones.js); Kethorn's rock is a row of it.
+  assert.equal(world.unclimbableAt, unclimbableAt);
+  assert.ok(NO_CLIMB_ZONES.some(zone => zone.at === kethornUnclimbable), 'Kethorn’s rock is not a row of the no-climb table');
   const climbWorld = { bounds: world.bounds, colliders: world.colliders, heightAt: world.heightAt, waterAt: world.waterAt, regionAt: world.regionAt,
     nearColliders: (x, z, r) => world.nearColliders(x, z, r), unclimbableAt: world.unclimbableAt, canClimbMove: (from, to) => !closedRegionEntered(from, to) };
   const unmarked = { ...climbWorld, unclimbableAt: undefined };

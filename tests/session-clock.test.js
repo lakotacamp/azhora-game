@@ -50,7 +50,7 @@ test('fresh and loaded games reset refugee waiting against the new saved clock',
   // points. Check the actual production entry points rather than counting assignments globally.
   const production = main.slice(0, main.indexOf("if(new URLSearchParams(location.search).has('test'))"));
   const starts = production.split('\n').filter(line => !/^\s*let /.test(line) && /playSeconds=0;|playSeconds=.*saved\.playSeconds/.test(line));
-  assert.equal(starts.length, 2, 'fresh game and Continue both reset the legacy offset');
+  assert.equal(starts.length, 3, 'fresh game, tutorial playtest and Continue reset the legacy offset');
   for (const line of starts) assert.match(line, /refugeeHold=0/);
   const fresh = starts.find(line => line.includes('playSeconds=0;'));
   assert.match(fresh, /resetLivingStory\(\)/, 'fresh entry resets the saved story as well');

@@ -137,7 +137,7 @@ Each contested province has an Empire arc and a Coalition arc (`REGIONAL_ARCS`).
 
 ## Settlements named so far
 
-Tidehaven (Drent, new), the Torn mouth (Drent, lore: seat of the Lord Protector), Ambron (Elagos), Solis (West Suval), Elod (East Suval), Lamdris (South Suval), Mavren (Amod, lore), Gala (West Pyros, lore), the Mithalan river-city (name pending), Izolveth (West Izol).
+Tidehaven (Drent, new), the Torn mouth (Drent, lore: seat of the Lord Protector), Ambron (Elagos), Solis (West Suval), Elod (East Suval), Lamdris (South Suval), Mavren (Amod, lore), Varn (Amod, the user, 2 October 2026: the Empire’s fortress-city on the pass out of the East Lotharn), Gala (West Pyros, lore), the Mithalan river-city (name pending), Izolveth (West Izol).
 
 ## Autoplay
 

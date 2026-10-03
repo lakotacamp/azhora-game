@@ -78,7 +78,7 @@ test('Isareos is a registered region, landlocked, and without a tree the atlas d
   assert.equal(regions.find(region => region.name === 'Isareos').landmarks.some(id => /coast|harbour|inlet|mouth/.test(id)), false);
 });
 
-test('the climate remains humid subtropical while Menora has a clearer long-distance sky', () => {
+test('the climate remains humid subtropical while Minora has a clearer long-distance sky', () => {
   const map = new URL('../../world-builder/map/resources/examples/azhora.wwmap', import.meta.url);
   if (!existsSync(map)) { assert.ok(true, 'World Builder not checked out beside this repo'); return; }
   const atlas = JSON.parse(readFileSync(map, 'utf8').replace(/^﻿/, ''));
@@ -183,7 +183,7 @@ test('the Isa, the three becks that feed it, and the ground kept clear where it 
   assert.ok(WEST_REGION_LANDMARKS.some(mark => /\bIsa\b/.test(mark.name) || /\bIsa\b/.test(mark.description ?? '')),
     'and the chart says so somewhere');
   // The old confluence reservation remains a stable river/scatter anchor. The new
-  // settlement is Menora, not a second town with the older draft name Isamouth.
+  // settlement is Minora, not a second town with the older draft name Isamouth.
   assert.ok(!WEST_REGION_LANDMARKS.some(mark => /Isamouth/.test(mark.name)), 'Isamouth is a town and is not built');
   assert.ok(!SUBREGIONS.some(area => /Isamouth/.test(area.name)));
   const confluence = ISAREOS_RIVER.points.at(-1);
@@ -310,7 +310,7 @@ test('red deer on the open grass, hares on the shoulders, otters on the water an
   life.dispose();
 });
 
-test('a red deer cannot be run down, and Menora joins the charted frontier', () => {
+test('a red deer cannot be run down, and Minora joins the charted frontier', () => {
   /**
    * The law `tests/west-life.test.js` holds for the whole west, spelled out for the animal
    * this country is for — and measured the way that file measures a cornered sheep, because

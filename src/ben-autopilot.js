@@ -143,7 +143,7 @@ export function createBenAutopilot({world,read,act={},options={}}={}){
         stop('Ben is not available to continue. You have control.');return null;
       }else if(stage==='walking'){
         goal='follow';intent='Following Ben to the thorns';
-        ({move,yaw}=follower.step(snapshot.position,snapshot.ben,dt));
+        ({move,yaw}=follower.step(snapshot.position,snapshot.ben,dt,snapshot.movementSpeeds));
         if(gap(snapshot.position,snapshot.ben)<=config.followDistance+.2)intent='Keeping pace with Ben';
       }else if(['unmet','asked','killed'].includes(stage)){
         intent=stage==='killed'?'Returning to Ben for your reward':'Speaking with Ben';

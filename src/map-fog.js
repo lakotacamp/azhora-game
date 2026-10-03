@@ -106,6 +106,7 @@ export const SUBREGIONS = Object.freeze([
   area('ostel-bridge', 'The Ostel Bridge', 'Amod', -772, -488, 34, 'One stone arch over the Tarvel, with an offering shelf on the upstream parapet and the town’s shoulder rising beyond it.'),
   area('ostel', 'Ostel', 'Amod', -814, -504, 44, 'The eastern dry-slope town on its shoulder: stonecutters, hard white wine, a water court and the road house that keeps the toll book.'),
   area('tir-ostel', 'Tir Ostel', 'Amod', -844, -560, 30, 'Ostel’s burial terrace above the town, where the dead lie facing down the watercourse.'),
+  area('varn', 'Varn', 'Amod', -1150, -746, 52, 'The Empire’s fortress-city in the notch at Amod’s northern tip: six walls built into two shoulders of rock, a keep over the Pass Gate, and a town on the one street, which is the pass road out of the East Lotharn. Both gates are kept shut and the walls are manned; the only way past over the mountain is the climbers’ two slabs on the east jamb.'),
   area('vessen', 'Vessen', 'Amod', -874, -594, 34, 'Three roofs and a springhouse on the western flank, the high channel above them, and the gate two households argue about.'),
   // Vastos: a plain with nothing built on it charts by its water and its one outcrop of strange rock.
   area('vastos-range', 'The Open Range', 'Vastos', -1560, -400, 120, 'Cold tussock from one horizon to the other, with watering pans strung across it and longhorn cattle standing in them. Nothing here breaks the wind and nothing here casts a shadow.'),
@@ -134,8 +135,8 @@ export const SUBREGIONS = Object.freeze([
   area('eer-bays', 'The Low Bays', 'Eer', -930, 1250, 95, 'The Iberos coast of Eer: low headlands and small sheltered bays, none of them big enough to be a harbour. No cliff, no proper beach — the grass thins, gives out, and the water is there. Gulls on all of it, and something with a fin out past the surf.'),
   area(CARICAS_TOWN.id, CARICAS_TOWN.name, 'Caricas', CARICAS_TOWN.x, CARICAS_TOWN.z, CARICAS_TOWN.radius, 'An Imperial garrison holds the town, with worked farms on the dry shelf and the old wooded river corridor nearby.'),
   area('caricas-farms', 'The Caricas Fields', 'Caricas', -2000, 240, 65, 'Cultivated fields outside the occupied town; the civil war has not ended simply because the army holds its roads.'),
-  area('menora', 'Menora', 'Isareos', -2345, 120, 112, 'The fortified holy city at the Isa-Lizeem fork. Tall white walls enclose a great temple, the Sorcerers’ Guild tower, gardens and stone streets.'),
-  area('menora-army-muster', 'The Blood Prince’s Army', 'Isareos', -2474, 83, 48, 'Prince Wilhelm and his army camp outside Menora’s western gate. Their role in the later main story is still to unfold.'),
+  area('menora', 'Minora', 'Isareos', -2345, 120, 112, 'The fortified holy city at the Isa-Lizeem fork. Tall white walls enclose a great temple, the Sorcerers’ Guild tower, gardens and stone streets.'),
+  area('menora-army-muster', 'The Blood Prince’s Army', 'Isareos', -2474, 83, 48, 'Prince Wilhelm and his army camp outside Minora’s western gate. Their role in the later main story is still to unfold.'),
   area('yunethre-free-town', 'Lakeside Free Town', 'Yunethre', -3000.0019279391277, -317.41016151377545, 50, 'Independent neutral ground beside the lake below South Oremindi. Humans, elves and centaurs share this town, respected by the neighboring powers.'),
   area('yunethre-centaur-camp', 'Bane’s Camp', 'Yunethre', -2700.0019279391277, -317.41016151377545, 62, 'A nomadic centaur camp in the mountain pass. The clans defend their dwindling plains against encroachment from the north and south, with trade and support from Elfland.'),
   // Isareos: the fortified holy city and the exposed grass-hill frontier.

@@ -1,10 +1,10 @@
-/** Menora occupies the dry Isareos bank of the atlas's Isa–Lizeem confluence.
+/** Minora occupies the dry Isareos bank of the atlas's Isa–Lizeem confluence.
  * Nothing in this layout straightens, relocates, or fills the rivers. */
 import { ISAREOS_RIVER, LIZEEM, ISAREOS_BECKS, courseDistance, coursePosition, courseHalfAt } from './west-regions.js';
 
 const freeze = Object.freeze;
 const pt = (x, z) => freeze({ x, z });
-export const MENORA = freeze({ id: 'menora', name: 'Menora', region: 16,
+export const MENORA = freeze({ id: 'menora', name: 'Minora', region: 16,
   x: -2345, z: 120, elevation: 21.3, wallHeight: 18, towerHeight: 128,
   fork: pt(ISAREOS_RIVER.points.at(-1).x, ISAREOS_RIVER.points.at(-1).z),
   arrival: pt(-2308, -7), templeCourt: pt(-2338, 143), muster: pt(-2470, 85),
@@ -69,7 +69,7 @@ export const MENORA_BUILDINGS=freeze([
     [-2367,200,12,10,11],[-2390,96,12,16,10],[-2385,25,12,14,10],
     [-2347,22,12,12,9],[-2351,55,10,12,10],[-2281,112,13,16,8],
     [-2319,201,10,10,10],[-2286,191,12,13,9],[-2353,190,12,8,8],
-  ].map(([x,z,w,d,h],i)=>building(`menora-house-${i+1}`,'Menora house',x,z,w,d,h,'house',['#526b75','#727c83','#809080','#836c75'][i%4])),
+  ].map(([x,z,w,d,h],i)=>building(`menora-house-${i+1}`,'Minora house',x,z,w,d,h,'house',['#526b75','#727c83','#809080','#836c75'][i%4])),
 ]);
 export const MENORA_NPC_ANCHORS=freeze({
   cedric:freeze({x:-2338,z:138,yaw:0}),wilhelm:freeze({x:-2464,z:67,yaw:0}),

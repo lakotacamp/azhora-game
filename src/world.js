@@ -26,6 +26,10 @@ import { AVREL_POND, avrelPondGround } from './avrel-pond.js';
 import { createVisualArtsScenery } from './visual-arts-view.js';
 import { SYLVIA_PATH } from './visual-arts.js';
 import * as THREE from 'three';
+import {createPeninsulaTutorialScenery} from './peninsula-tutorial-scenery.js';
+import {WEST_OREMINDI_LANDMARKS,westOremindiOwns} from './west-oremindi-world.js';
+import {refineWestOremindiGroundSteps} from './west-oremindi-ground.js';
+import {createWestOremindiScenerySteps} from './west-oremindi-scenery.js';
 import {BALDRO_PATHS,baldroOwns,baldroWaterAt} from './baldro-world.js';
 import {refineBaldroGroundSteps} from './baldro-ground.js';
 import {buildBaldroScenerySteps} from './baldro-scenery.js';
@@ -38,7 +42,7 @@ import {
   CALOSS, CALOSS_BANK, WOOD_EDGE, FERNWAY_REST, FRONTIER, STORY_SITES, AVREL_CLEARING,
   calossDistance, landDistance, SOLIS, solisPoint,
 } from './region-world.js';
-import { villageWeight, villageBase, bedrockHeight, groundWithRiver, groundTint, calossSurface, puethRiverSurface, smooth, lerp } from './world-terrain.js';
+import { villageWeight, villageBase, bedrockHeight, groundWithRiver, groundBeforeVarn, groundTint, calossSurface, puethRiverSurface, smooth, lerp } from './world-terrain.js';
 import { toWorld, WORLD_SCALE } from './world-scale.js';
 import { createSigns, SIGN_COLOURS } from './signs.js';
 import { buildMorosWorks } from './moros-works.js';
@@ -93,6 +97,11 @@ import { createEastSuvalScenerySteps } from './east-suval-world.js';
 import { createSouthSuvalScenerySteps } from './south-suval-scenery.js';
 import { createEastLotharnScenerySteps } from './east-lotharn-scenery.js';
 import { createWestLotharnScenerySteps } from './west-lotharn-scenery.js';
+import { createVarnScenerySteps } from './varn-scenery.js';
+import { createLotharnFortsScenerySteps } from './lotharn-forts-scenery.js';
+import { LOTHARN_FORT_LANDMARKS } from './lotharn-forts.js';
+import { VARN_ROAD, VARN_ROAD_HALF, VARN_LANDMARKS, varnTerrainSink } from './varn-world.js';
+import { unclimbableAt } from './no-climb-zones.js';
 import { createFeradomScenerySteps } from './feradom-scenery.js';
 import { feradomTerrainSink } from './feradom-world.js';
 import { FERADOM_LANDMARKS } from './feradom-forts.js';
@@ -136,7 +145,7 @@ import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
 import { createSelemisScenery } from './selemis-scenery.js';
 import { SELEMIS_LANDMARKS } from './selemis-world.js';
 import { createTelemoniaScenery } from './telemonia-scenery.js';
-import { TELEMONIA_LANDMARKS, telemoniaTerrainSink, kethornUnclimbable as telemoniaUnclimbable } from './telemonia-world.js';
+import { TELEMONIA_LANDMARKS, telemoniaTerrainSink } from './telemonia-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
 import { createRoadAmbushScenery } from './road-ambush-scenery.js';
@@ -376,8 +385,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   }
   let roadHeightAt = () => null;
   let portGroundAt = (x,z) => groundHeight(x,z);
-  let southOremindiSurface=null,baldroSurface=null;
+  let southOremindiSurface=null,baldroSurface=null,westOremindiSurface=null;
   function heightAt(x, z) {
+    if(westOremindiSurface&&westOremindiOwns(x,z))return westOremindiSurface(x,z);
     if(baldroSurface&&baldroOwns(x,z))return baldroSurface(x,z);
     if(southOremindiSurface&&southOremindiOwns(x,z))return southOremindiSurface(x,z);
     const local = worldToVillage(x, z);
@@ -581,7 +591,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
     // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
     // src/south-suval-scenery.js); the coarse grid is sunk out of sight beneath them.
-    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z) - telemoniaTerrainSink(x, z), z], index * 3);
+    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z) - varnTerrainSink(x, z) - telemoniaTerrainSink(x, z), z], index * 3);
     groundTint(color, x, z, THREE);
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight > 0) {
@@ -1401,6 +1411,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   for (const path of PORT_CALOS_PATHS) measurePath(path.points, path.width);
   for (const spur of roadSpurs) measurePath(spur, 2.2);
   measurePath(LOTHARN_ROAD_LINE, 4.4);
+  // The Varn road (src/varn-world.js) is deliberately not measured here: these lines are what the countries'
+  // scatter keeps off, and a road told to Amod's would change which of its candidates are taken and so move
+  // every tree and stone after them. Its ground is cleared after the scatter is laid (src/scenery-clearing.js).
   measurePath(WORKINGS_TRACK, 2.2);
   measurePath(PASS_ROAD_LINE, 4.2);   // Imlamdris's road through the hill pass (src/south-suval-world.js)
   for (const path of REGIONAL_PATHS) measurePath(path, 1.85);
@@ -1444,7 +1457,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const amodScenery=yield* regionBuild('amodScenery',[10],stage=>createAmodScenerySteps({
     root:stage, material, mesh, box, post, pebble, barrel, crate, wornPatch, trailSign: (...args) => trailSign(...args),
     groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), wood, woodLight, darkWood, roofGeometry, cylinder, round,
-    riverMaterial: regionScenery.riverMaterial, regionClear,
+    riverMaterial: regionScenery.riverMaterial, regionClear, unbuiltGround: groundBeforeVarn,
   }),{bridge:{...TARVEL_BRIDGE,deckY:TARVEL_DECK_Y}});
   bridgeDecks.push(amodScenery.bridge);
   // Peblos: Cobble and its quay, the island places, the outer islands' landmarks and the ferryman's boat.
@@ -1493,6 +1506,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const eastLotharn=yield* regionBuild('eastLotharn',[20],stage=>createEastLotharnScenerySteps({
     root:stage, material, mesh, box, post, pebble, wornPatch,
     groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: lotharnCaves,
+    unbuiltGround: groundBeforeVarn,
   }),{});
   // The West Lotharn (src/west-lotharn-scenery.js): the massifs' own close-drawn ground, the courses
   // of cliff and the balds, the caves' rock, the four becks and the old forest to the tree line.
@@ -1501,6 +1515,11 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     root:stage, material, mesh, box, post, pebble, wornPatch,
     groundHeight, renderedGroundHeight: treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: westLotharnCaves,
   }),{});
+  // Varn (src/varn-scenery.js): the Empire's fortress-city in Amod's notch, on the pass out of the East
+  // Lotharn. Built after both the countries it stands between, so that their scatter is already down
+  // and what fell on its ground can be lifted off again without moving either country's seeded stream.
+  yield 'Varn';
+  const varn=yield* regionBuild('varn',[10, 20],stage=>createVarnScenerySteps({ root:stage, scene:world, material, groundHeight, colliders, treeRegistry }),{metrics:{}});
   // The Ascarth Peninsula (src/ascarth-scenery.js): grass, scrub and stone on the finger, the wood on
   // its interior hills, the green stone, and the rock fallen at the foot of its cliffs. Nobody's.
   yield 'South Oremindi ground';
@@ -1515,9 +1534,18 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   yield 'Baldro approaches';
   const baldro=yield* regionBuild('baldro',[52, 53],stage=>buildBaldroScenerySteps(stage,{heightAt,treeGroundAt:baldroSurface,colliders}),{landmarks:[],taskSites:[],entrances:[],trees:[]});
   baldro.ground=baldroGround;
+  yield 'West Oremindi ground';
+  const westOremindiGround=yield* regionBuild('westOremindiGround',[56],stage=>refineWestOremindiGroundSteps({THREE,terrainRoot,heightAt:groundHeight,coarseHeightAt:treeGroundAt}),{heightAt:groundHeight},built=>{westOremindiSurface=built.heightAt;});
+  westOremindiSurface=(x,z)=>westOremindiGround.heightAt(x,z);
+  yield 'West Oremindi mountains';
+  const westOremindi=yield* regionBuild('westOremindi',[56],stage=>createWestOremindiScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:westOremindiSurface,colliders,terrainRoot}),{metrics:{},update:()=>{}});
+  westOremindi.ground=westOremindiGround;
   const inquestHome=yield* regionBuild('inquestHome',[37],stage=>immediate(()=>createInquestHome({parent:stage,cottage,material,box,post,heightAt,colliders})),{path:[]},built=>{if(fast&&built.path)paths.push(built.path);});
   const yunethre=yield* regionBuild('yunethre',[38],stage=>createYunethreScenerySteps({parent:stage,heightAt,colliders}),{paths:[],walkSurfaces:[]},built=>{if(fast){outdoorWalkSurfaces.push(...built.walkSurfaces);paths.push(...built.paths.map(p=>Object.assign([...p.points],{width:p.width})));}});
-  const outdoorWalkSurfaces=[...ibenwoodForest.walkSurfaces,...yunethre.walkSurfaces];
+  const peninsulaTutorial=createPeninsulaTutorialScenery({parent:scene,heightAt,colliders,movingGroups});
+  paths.push(...peninsulaTutorial.paths);
+  fishingSpots.push(peninsulaTutorial.fishingSpot);
+  const outdoorWalkSurfaces=[...ibenwoodForest.walkSurfaces,...yunethre.walkSurfaces,...peninsulaTutorial.walkSurfaces];
   const forestWalks=createWalkSurfaces(outdoorWalkSurfaces,heightAt);
   const ascarth=yield* regionBuild('ascarth',[23, 24],stage=>createAscarthScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
@@ -1541,12 +1569,18 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     backLabel: 'Nothom', back: MAIN_ROAD[22], parent: world });
   // The four western regions (src/west-regions-scenery.js): their water, their gravel,
   // their sedge and Vastos's sulfur ground. Terrain and wildlife only; nobody lives there.
-  yield 'Menora';
+  yield 'Minora';
   const menora=yield* regionBuild('menora',[16],stage=>createMenoraScenerySteps({parent:stage,heightAt:groundHeight,colliders}),{});
   yield 'Caricas';
   const caricasSettlement=yield* regionBuild('caricasSettlement',[13],stage=>immediate(()=>createCaricasSettlement({parent:stage,heightAt:groundHeight,colliders})),{});
   yield 'Western country';
   const westScenery=yield* regionBuild('westScenery',[11, 12, 13, 14, 15, 16, 17],stage=>createWestScenerySteps({ root:stage, material, mesh, pebble, groundHeight, colliders, wornPatch, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  // The Empire's forts on the other three ways south out of the two ranges (src/lotharn-forts-scenery.js):
+  // one wall from cliff to cliff at each. Built after the mountains for the same reason Varn is, and after
+  // the western country too: the Vastos Gate's yard stands on the tip of Vastos, whose scatter must be laid
+  // before it can be lifted.
+  yield 'The pass forts';
+  const lotharnForts=yield* regionBuild('lotharnForts',[20, 27, 11],stage=>createLotharnFortsScenerySteps({ root:stage, scene:world, groundHeight, colliders, treeRegistry }),{metrics:{}});
   // Gala (src/gala-scenery.js): its water, its dry wash, and what grows on the steppe, the maquis and
   // the coast. Its own seeded stream, after the west's, so nothing already built moves for it.
   yield 'Gala';
@@ -1672,6 +1706,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   addPath(PUETH_ROAD, 4.2);
   addPath(PASS_ROAD_LINE, 4.2);
   addPath(LOTHARN_ROAD_LINE, 4.4);
+  addPath(VARN_ROAD, VARN_ROAD_HALF * 2);
   addPath(WORKINGS_TRACK, 2.2);
   paths.push(...suvalHighlands.paths);
   addPath(AMOD_ROAD, 4.2);
@@ -2140,8 +2175,8 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   treeRegistry.configure({reindex:()=>{colliderIndex=null;}});
   const api = {
     loadingMode, loading, onRegionReady(listener){readyListeners.add(listener);return ()=>readyListeners.delete(listener);},
-    menora, caricasSettlement, inquestHome,
-    heightAt, groundHeight, baldro, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater,
+    menora, caricasSettlement, inquestHome, peninsulaTutorial,
+    heightAt, groundHeight, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater,
     supportAt: forestWalks.supportAt, walkSurfaces: outdoorWalkSurfaces,
     roadSurfaceMetrics,
     mapWaters,
@@ -2228,10 +2263,13 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     mithalaMetrics: mithalaScenery.metrics,
     southwestMetrics: southwestScenery.metrics,
     selemisMetrics: selemisScenery.metrics,
+    varnMetrics: varn.metrics,
+    lotharnFortsMetrics: lotharnForts.metrics,
     telemoniaMetrics: telemoniaScenery.metrics,
-    // Faces no climber can hold, whatever the skill (src/climbing.js reads it): Kethorn's rock and its wall,
-    // whose gate is the only way onto the top.
-    unclimbableAt: telemoniaUnclimbable,
+    // Faces no climber can hold, whatever the skill (src/climbing.js reads it): one table of them, a row to a
+    // place (src/no-climb-zones.js) - the rock Varn's walls are built into, the cliffs the pass forts stand
+    // between, and Kethorn's rock and its wall in Telemonia, whose gate is the only way onto the top.
+    unclimbableAt,
     backdropMountains: Object.freeze(backdropMountains),
     ascarthMetrics: ascarth.metrics,
     puethRoute: PUETH_ROAD.map(p => ({ x: p.x, z: p.z })),
@@ -2351,6 +2389,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     },
     landmarks: [
       ...baldro.landmarks,
+      ...WEST_OREMINDI_LANDMARKS,
       {...MENORA,id:"menora-city",description:"White walls, a grand imperial temple and the high Sorcerers’ Guild needle guard the Isa–Lizeem fork."},
       CARICAS_TOWN,
       ...MENORA_BUILDINGS.filter(b=>["temple","sorcerers-tower"].includes(b.kind)).map(b=>({...b,description:b.name})),
@@ -2376,6 +2415,8 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...PLACE_LANDMARKS,
       ...PUETH_LANDMARKS,
       ...AMOD_LANDMARKS,
+      ...VARN_LANDMARKS,
+      ...LOTHARN_FORT_LANDMARKS,
       ...PEBLOS_LANDMARKS, ...PORT_CALOS_LANDMARKS,
       ...RENA_LANDMARKS,
       ...EAST_SUVAL_PLACES,

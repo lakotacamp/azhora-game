@@ -21,7 +21,7 @@ export async function runFrontierChecks(h){
  check(!metrics.blockedPeople.length,'Every new resident starts outside trees, buildings, tents and river water');
  metrics.bridges=MENORA_BRIDGES.map(b=>({id:b.id,standable:canStand(b.x,b.z,h.world),height:h.world.heightAt(b.x,b.z),water:h.world.waterAt(b.x,b.z)}));
  check(metrics.bridges.every(b=>b.standable&&b.height>b.water),'Both river bridges and all garden footbridges are solid above the existing water');
- check(h.world.menora.metrics&&h.world.menora.mapFeatures.length>=15,'Menora contains its walls, guild tower, temple and city buildings');
+ check(h.world.menora.metrics&&h.world.menora.mapFeatures.length>=15,'Minora contains its walls, guild tower, temple and city buildings');
  check(h.world.caricasSettlement.metrics.buildings>=8,'Caricas contains its actual occupied town');
  check(FARMSTEADS.filter(f=>f.region==='Caricas').length===5,'Five Caricas farms are connected to the existing farming system');
  for(const prince of FRONTIER_PRINCES){

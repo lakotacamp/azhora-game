@@ -57,9 +57,9 @@ test('with the switch off nobody is taken out at all', () => {
 });
 
 test('every id on the list is somebody the world actually places', async () => {
-  const { createWorld } = await sourceModule('../src/world.js');
+  const { scopedWorld } = await import('./scoped-world.js');
   const { VASTOS_POSITIONS } = await sourceModule('../src/vastos-camp.js');
-  const world = createWorld(new THREE.Scene());
+  const world = await scopedWorld(new THREE.Scene(), [1]);
   // The world places most of them; the rest are pushed in by their own module in the host, so
   // this checks the ones it can and holds the shape of the list for the others.
   const placed = new Set(Object.keys(world.npcPositions));
@@ -74,7 +74,8 @@ test('every id on the list is somebody the world actually places', async () => {
     'rival-keeper', 'tidehaven-smith', 'moros-armourer', 'ambron-armourer', 'lumber-ostler',
     'aftermath-tribune', 'aftermath-captain', 'aftermath-envoy', 'post-camp-legate',
     'solis-captain', 'coalition-envoy', 'coalition-captain', 'battle-tribune', 'courier-satchel',
-    'lauvel-bearer-front', 'lauvel-bearer-back', 'lauvel-seeker']);   // the burying party, laid by the chapter
+    'lauvel-bearer-front', 'lauvel-bearer-back', 'lauvel-seeker',   // the burying party, laid by the chapter
+    'kayla', 'kayla-cub', 'kayla-michael', 'kayla-ava', 'kayla-elle', 'smedley']);   // the bear circus (src/bear-circus.js)
   const strangers = [...QUEST_IDS, ...SMITH_IDS, ...OWN_IDS, ...DROP_IDS].filter(id => !known.has(id));
   assert.deepEqual(strangers, [], 'the list names somebody the game does not have');
   assert.equal(typeof TRIMMED, 'boolean');

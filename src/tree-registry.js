@@ -96,6 +96,23 @@ function createTreeRegistry(colliders) {
     showStump(entry, !standing); return true;
   }
 
+  /**
+   * Take a tree out of the world for good: its drawn pieces hidden, its collider gone, no stump left, and
+   * the tree itself struck off the register - it is not a felled tree, it was never there. For ground
+   * something is built on after the forest was laid (src/scenery-clearing.js): the forest's own seeded
+   * stream is left exactly as it was, and the trees in the way are lifted afterwards.
+   */
+  function remove(id) {
+    const entry = entries.get(id); if (!entry) return false;
+    moving.delete(entry); blocker(entry, false);
+    for (const piece of entry.pieces) setPiece(piece, null, true);
+    if (entry.stump) entry.stump.visible = false;
+    entries.delete(id);
+    const at = trees.indexOf(entry.tree); if (at >= 0) trees.splice(at, 1);
+    const cell = cells.get(bucket(entry.tree.x, entry.tree.z)), slot = cell ? cell.indexOf(entry) : -1; if (slot >= 0) cell.splice(slot, 1);
+    return true;
+  }
+
   function fell(id, from = null) {
     const entry = entries.get(id); if (!entry || !entry.standing || entry.tree.harvestable === false) return false;
     entry.standing = false; entry.age = 0; entry.away = from ? Math.atan2(entry.tree.x - from.x, entry.tree.z - from.z) : 0;
@@ -146,7 +163,7 @@ function createTreeRegistry(colliders) {
     return best;
   }
 
-  return { trees, register, get: id => entries.get(id)?.tree ?? null, nearest, fell, set, regrow: id => set(id, true), chip, update,
+  return { trees, register, get: id => entries.get(id)?.tree ?? null, nearest, fell, set, remove, regrow: id => set(id, true), chip, update,
     standing: id => entries.get(id)?.standing ?? false,
     configure(options) { root = options.root ?? root; reindex = options.reindex ?? reindex; return this; },
   };

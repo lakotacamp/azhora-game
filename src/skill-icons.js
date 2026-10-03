@@ -9,6 +9,9 @@
 /** The inner markup of each skill's mark, keyed by skill id. */
 export const SKILL_ICONS = Object.freeze({
 
+  walking: '<circle cx="19" cy="6" r="3"/><path d="m18 10-2 10 4 6 1 7M16 20l-5 6-2 7M17 13l-5 5-5 1m11-5 5 5 6 1"/>',
+  running: '<circle cx="24" cy="5" r="3"/><path d="m22 9-7 10 7 4-3 9M15 19l-5 6H3m17-14-7-1-4 5m11-2 5 5 6-5M3 8h6m-7 9h4"/>',
+
   // A songbird on a rail, head up and tail down, the way you first see one.
   birding: '<circle cx="24" cy="11" r="3.6"/><path d="m27.4 9.8 4.6 1.8-4.6 1.8M25.6 10h.01"/>'
     + '<path d="M21.2 13.2C15 14.4 10 18.6 8 25c6.4 1.4 11.6-.6 14.8-4.4 2-2.4 3-4.8 3.2-7"/>'

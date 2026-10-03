@@ -2136,6 +2136,30 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
       round(worn, sail, [-0.176, 0.298, -0.132], [0.052, 0.046, 0.046]);
       ribbon(worn, sail, [-0.19, 0.293, -0.147], [-0.252, 0.163, -0.182], 0.036, 0.02);
       ribbon(worn, sailFold, [-0.183, 0.288, -0.142], [-0.138, 0.148, -0.232], 0.03, 0.018);
+    } else if (headgear === 'peruke') {
+      // Smedley's wig: the powdered peruke of a revolutionary-war portrait, three hundred years
+      // and a continent out of place in Azhora, worn with complete conviction. A high powdered
+      // crown swept back off the brow, three rolled curls stacked over each ear, and a queue down
+      // the nape tied with a black ribbon. The rolls alternate shade so the stack reads as three
+      // and not one sausage.
+      const powder = material(0xece9e0), powderShade = material(0xcbc7b8), wigRibbon = material(0x1b1a20);
+      round(worn, powder, [0, 0.322, -0.03], [0.236, 0.212, 0.228]);
+      round(worn, powderShade, [0, 0.228, -0.152], [0.208, 0.146, 0.132]);
+      round(worn, powder, [0, 0.36, 0.04], [0.178, 0.13, 0.148]);
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < 3; i++) {
+          const r = 0.055 - i * 0.005;
+          const roll = part(worn, new THREE.CylinderGeometry(r, r, 0.214 - i * 0.012, 8),
+            i === 1 ? powderShade : powder, [side * 0.203, 0.248 - i * 0.086, -0.026]);
+          roll.rotation.x = Math.PI / 2;
+        }
+      }
+      // The queue hangs clear of the mass at the back, or it reads as a knob; the ribbon that ties
+      // it has to sit behind the wig's own bulk (which reaches z -0.284) or it is simply inside it.
+      const queue = part(worn, new THREE.CylinderGeometry(0.046, 0.03, 0.32, 8), powder, [0, 0.042, -0.262]);
+      queue.rotation.x = -0.16;
+      round(worn, wigRibbon, [0, 0.188, -0.303], [0.06, 0.046, 0.042]);
+      for (const side of [-1, 1]) round(worn, wigRibbon, [side * 0.074, 0.196, -0.3], [0.044, 0.036, 0.026]);
     } else if (headgear === 'wide-brim') {
       // A port man's drooping felt brim: rain in Izoli, sun on the Moros.
       part(worn, new THREE.CylinderGeometry(0.2, 0.404, 0.07, 10), mercFelt, [0, 0.352, -0.014]);
@@ -3253,6 +3277,23 @@ export function createCharacter({ role = 'traveler', tunic = tunicForRole(role),
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(.062, .07, .12, 8), skinMat);
     neck.position.y = -.02; head.add(neck);
     group.scale.setScalar(.88);
+  }
+  // Smedley's breath (`look.badBreath`). He was built breathing fire and the user took the fire
+  // away (1 October 2026: "instead of breathing fire he just has bad breath"), which is a better
+  // joke and a harder thing to draw: a smell has to be visible without being a weapon. Four small
+  // soft puffs leaving the mouth and rising as they go, sickly green-yellow, each one fainter and
+  // wider than the last, and barely lit - a flame throws light on a face and a stink does not. It
+  // reaches a third of a metre, which is close-talking distance and the whole point of him.
+  if (look?.badBreath) {
+    const breath = new THREE.Group(); breath.name = 'Smedley’s breath'; head.add(breath);
+    breath.position.set(0, 0.108, 0.2);
+    const puff = (radius, forward, rise, colour, opacity) =>
+      round(breath, material(colour, { emissive: 0x3c4a16, emissiveIntensity: 0.12, roughness: 1,
+        metalness: 0, transparent: true, opacity }), [0, rise, forward], [radius, radius * 0.82, radius]);
+    puff(0.045, 0.028, 0.004, 0xcfd98a, 0.5);
+    puff(0.062, 0.1, 0.03, 0xbccb74, 0.38);
+    puff(0.08, 0.196, 0.07, 0xa8bb63, 0.25);
+    puff(0.096, 0.3, 0.124, 0x95aa57, 0.14);
   }
   if (isKaty) {
     // The spyglass is at her right eye and looks where she looks: it rides on the head, and her hands come up to it.

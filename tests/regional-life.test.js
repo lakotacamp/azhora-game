@@ -273,6 +273,9 @@ test('regional perspective follows the intended local arc and all authored activ
     { id: 'commons-miller', modelRole: 'commons-miller', ...toWorld(-233, 59) },
     { id: 'reed-worker', modelRole: 'reed-worker', ...toWorld(-380, 120) },
     { id: 'shelter-keeper', modelRole: 'shelter-keeper', ...toWorld(-152, 322) },
+    // Smedley is the fourth and asks nothing of this arc: no site, no dialogue, no testimony.
+    // He is here so the list keeps holding every authored stand, which is what this guards.
+    { id: 'smedley', modelRole: 'mercenary', ...toWorld(-268, 86) },
   ]);
   assert.deepEqual(REGIONAL_LIFE_SITES.filter(site => ['mill-hoist', 'net-float-west', 'net-float-east', 'shelter-ledger'].includes(site.id))
     .map(({ id, x, z }) => ({ id, x, z })), [

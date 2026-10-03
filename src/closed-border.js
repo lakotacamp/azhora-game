@@ -9,10 +9,18 @@
  * refused wherever along the border it happens, not only at the gate. Somebody
  * already inside (a tester sent there by the F8 tools, an old save) moves about
  * freely; ordinary walls and locked gates still apply. Pure: no three, no DOM.
+ *
+ * **Closed places** are the same rule on a smaller ring: Varn, the Empire's fortress-city on the Lotharn
+ * pass, while its gates are shut (src/varn-world.js, `VARN_CLOSED`). Its wall line is the border; its
+ * wicket is the one gap in its walls a body fits through, and this is what makes the wicket open from
+ * inside only.
  */
 import { insideRegion } from './region-world.js';
+import { VARN_CLOSED } from './varn-world.js';
 
 export const CLOSED_REGIONS = Object.freeze(['East Suval', 'Feradom']);
+/** Each closed place: `name`, `inside(x, z)`, and its own `title` and `lines`. Only the ones that are shut. */
+export const CLOSED_PLACES = Object.freeze([VARN_CLOSED].filter(place => place.shut));
 
 /** The toast the traveler sees when turned back, and how often it may repeat. */
 export const CLOSED_BORDER_TITLE = 'EAST SUVAL · CLOSED BY ELOD';
@@ -33,12 +41,18 @@ export const CLOSED_BORDERS = Object.freeze({
       'Green cloaks move among the trees above you. Feradom’s border is closed, and its passes are held.',
     ]),
   }),
+  ...Object.fromEntries(CLOSED_PLACES.map(place => [place.name, Object.freeze({ title: place.title, lines: place.lines })])),
 });
 
-/** The closed region a move from `from` to `to` would enter, or null. */
+/**
+ * The closed region or place a move from `from` to `to` would enter, or null. The places are asked whenever
+ * the regions are the game's own list; a caller testing the rule with a list of its own is asking about
+ * that list alone.
+ */
 export function closedRegionEntered(from, to, closed = CLOSED_REGIONS, inside = insideRegion) {
   if (!from || !to || ![from.x, from.z, to.x, to.z].every(Number.isFinite)) return null;
   for (const name of closed) if (!inside(name, from.x, from.z) && inside(name, to.x, to.z)) return name;
+  if (closed === CLOSED_REGIONS) for (const place of CLOSED_PLACES) if (!place.inside(from.x, from.z) && place.inside(to.x, to.z)) return place.name;
   return null;
 }
 

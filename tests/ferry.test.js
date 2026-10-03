@@ -14,12 +14,14 @@ import { PORT_CALOS } from '../src/port-calos-world.js';
 import { createSwimming, SWIMMING_LESSON } from '../src/swimming.js';
 import { createSkills } from '../src/skills.js';
 import { keepsNpc } from '../src/cast.js';
+import { PENINSULA_FERRY_LANDING } from '../src/peninsula-tutorial.js';
 
 /** A ferry with a purse, a place to stand and a record of everything the scene asked for. */
-function harness({ purse = STARTING_PURSE, free = false, charges = false, mounted = false, at = FERRY_LANDINGS.drent.ashore } = {}) {
+function harness({ purse = STARTING_PURSE, free = false, charges = false, mounted = false, at = FERRY_LANDINGS.drent.ashore, getLanding } = {}) {
   const log = { veil: [], boat: [], placed: [], stands: [], toasts: [], saves: 0, modes: [], carried: [], arrivals: [] };
   const state = { purse, mode: 'playing', position: { x: at.x, z: at.z } };
   const ferry = createFerry({
+    ...(getLanding ? { getLanding } : {}),
     purse: () => state.purse,
     pay: n => { if (state.purse < n) return false; state.purse -= n; return true; },
     free: () => free,
@@ -447,4 +449,19 @@ test('A different port resident cannot open or board a ferry from the wrong shor
   assert.equal(ferryConversation(FERRY_HOSTS.peblos, { ferry, openDialogue: () => { opened = true; }, closeDialogue() {} }), false);
   assert.equal(opened, false);
   assert.equal(ferry.state.crossing, false);
+});
+
+
+test('a chosen peninsula opening uses its own Drent berth in both directions without changing legacy ferries', () => {
+  const dock=PENINSULA_FERRY_LANDING, f=harness({at:dock.ashore,getLanding:id=>id==='drent'?dock:FERRY_LANDINGS[id]});
+  f.ferry.settle();assert.deepEqual(f.log.boat.at(-1),dock.mooring);assert.deepEqual(f.log.stands.at(-1).point,dock.stand);
+  assert.equal(f.ferry.board('peblos').ok,true);assert.deepEqual(f.log.carried.at(-1),{x:dock.mooring.x,z:dock.mooring.z});
+  f.run(4);assert.equal(f.ferry.state.side,'peblos');assert.deepEqual(f.state.position,{x:FERRY_LANDINGS.peblos.ashore.x,z:FERRY_LANDINGS.peblos.ashore.z});
+  assert.equal(f.ferry.board('drent').ok,true);f.run(4);
+  assert.deepEqual(f.state.position,{x:dock.ashore.x,z:dock.ashore.z});assert.equal(f.ferry.state.crossings,2);
+  assert.deepEqual(harness().ferry.state.side,'drent');
+  const legacy=harness();legacy.ferry.settle();assert.deepEqual(legacy.log.boat.at(-1),FERRY_LANDINGS.drent.mooring);
+  let chosen=false;const switching=harness({getLanding:id=>id==='drent'&&chosen?dock:FERRY_LANDINGS[id]});
+  switching.ferry.settle();chosen=true;switching.ferry.settle();
+  assert.deepEqual(switching.log.boat.at(-1),dock.mooring,'choosing a new opening relocates an already-settled boat');
 });

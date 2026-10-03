@@ -5,7 +5,8 @@ import { createEdModel } from './chameleon-model.js';
 import { createBosco } from './bosco-model.js';
 import { createBatman } from './batman-model.js';
 import { createSpider } from './spider-model.js';
-import { createKaylaBear, createBearCub } from './kayla-character.js';
+import { createKaylaBear, createBearCub, createCircusBear } from './kayla-character.js';
+import { CIRCUS_LOOKS } from './bear-circus.js';
 
 const isBearCub = body => body.model?.cub === true || body.model?.role === 'bear-cub'
   || body.npcId === 'kayla-cub' || body.sourceId === 'kayla-cub';
@@ -99,7 +100,11 @@ function coverBody(item, world) {
 
 export function createCorpseActor(body) {
   if(body.kind==='centaur')return restingActor(createCentaur({variant:body.variant}));
-  if (body.kind === 'bear') return restingBear(isBearCub(body) ? createBearCub() : createKaylaBear());
+  if (body.kind === 'bear') {
+    // Fallen members of Kayla's circus retain their own costume, without floating props.
+    const look = CIRCUS_LOOKS[body.npcId ?? body.sourceId];
+    return restingBear(look ? createCircusBear(look, { props: false }) : isBearCub(body) ? createBearCub() : createKaylaBear());
+  }
   if (body.kind === 'puck') return wrappedActor(createGoblin({ wine: true }));
   if (body.kind === 'chameleon') { const actor = createEdModel(); actor.animate(0, 0, { sober: true }); return restingActor(actor, 1.35); }
   if (body.kind === 'bosco') return restingActor(createBosco({ dye: body.model.dye }));

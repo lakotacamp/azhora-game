@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {WEST_OREMINDI_WILDLIFE_ZONES} from './west-oremindi-wildlife.js';
 import {BALDRO_WILDLIFE_ZONES} from './baldro-wildlife.js';
 import { GROVE_WILDLIFE } from './ibenwood-pilot.js';
 import { IBENWOOD_LIFE_ZONES } from './ibenwood-life.js';
@@ -1270,6 +1271,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...WEST_LOTHARN_WILDLIFE_ZONES,
   ...SOUTH_OREMINDI_WILDLIFE_ZONES,
   ...BALDRO_WILDLIFE_ZONES,
+  ...WEST_OREMINDI_WILDLIFE_ZONES,
   ...YUNETHRE_WILDLIFE_ZONES,
   ...GROVE_WILDLIFE,
   ...IBENWOOD_LIFE_ZONES,

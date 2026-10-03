@@ -57,9 +57,9 @@ export function createCooking({ skills, onEvent = () => {}, canUseFire = () => t
   const state = { met: false, known: new Set(), made: {}, cups: 0, lastCup: -Infinity };
 
   /** A recipe learned; the first one teaches the skill. */
-  function learn(id) {
+  function learn(id, { preparedFire = false } = {}) {
     if (!RECIPES[id]) return { ok: false, reason: 'Nobody makes that.' };
-    if (!canUseFire()) return { ok: false, reason: 'Learn Fire Making from Lee Anne at the Tidehaven fire ring before taking a cooking lesson.' };
+    if (!preparedFire && !canUseFire()) return { ok: false, reason: 'Learn Fire Making from Lee Anne, or take a lesson at a teacher’s already-lit fire.' };
     const first = !state.met, known = state.known.has(id);
     state.met = true; state.known.add(id);
     const learned = skills?.learn?.(COOKING_SKILL) ?? { ok: false };
@@ -81,8 +81,8 @@ export function createCooking({ skills, onEvent = () => {}, canUseFire = () => t
   }
 
   /** Make it at a lit fire (the host checks the fire). */
-  function make(id, inventory) {
-    if (!canUseFire()) return { ok: false, reason: 'Learn Fire Making from Lee Anne before cooking.' };
+  function make(id, inventory, { preparedFire = false } = {}) {
+    if (!preparedFire && !canUseFire()) return { ok: false, reason: 'Learn Fire Making from Lee Anne before cooking.' };
     const entry = RECIPES[id];
     if (!entry) return { ok: false, reason: 'Nobody makes that.' };
     if (!state.known.has(id)) return { ok: false, reason: `You do not know how to make ${entry.name.toLowerCase()} yet.` };

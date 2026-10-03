@@ -6,7 +6,7 @@ test('levels are read from the thresholds, with progress toward the next', () =>
   // Twenty-two that are about the world, then the seven that are about fighting, then the six
   // schools of sorcery - each group under its own heading in the grid (docs/combat-brief.md,
   // src/sorcery.js).
-  assert.deepEqual(SKILL_IDS, ['birding', 'flying', 'husbandry', 'fishing', 'botany', 'geology', 'mycology', 'archaeology', 'wine', 'cooking', 'firemaking', 'smithing', 'dwarvenSmithing', 'woodcutting', 'construction', 'cartography', 'swimming', 'climbing', 'stealth', 'farming', 'visualarts', 'acting', 'linguist',
+  assert.deepEqual(SKILL_IDS, ['walking', 'running', 'birding', 'flying', 'husbandry', 'fishing', 'botany', 'geology', 'mycology', 'archaeology', 'wine', 'cooking', 'firemaking', 'smithing', 'dwarvenSmithing', 'woodcutting', 'construction', 'cartography', 'swimming', 'climbing', 'stealth', 'farming', 'visualarts', 'acting', 'linguist',
     'blades', 'heavy-arms', 'polearms', 'staves', 'bows', 'shield', 'toughness',
     'fire', 'mind', 'beast', 'frost', 'wards', 'time']);
   assert.deepEqual(SKILL_IDS.filter(id => SKILLS[id].group === 'Arms'),
@@ -14,7 +14,7 @@ test('levels are read from the thresholds, with progress toward the next', () =>
   assert.deepEqual(SKILL_IDS.filter(id => SKILLS[id].group === 'Sorcery'), ['fire', 'mind', 'beast', 'frost', 'wards', 'time'],
     'the three released schools and three reserved ones share the group');
   assert.deepEqual(SKILL_IDS.filter(id => SKILLS[id].reserved), ['frost', 'wards', 'time'], 'Time is begun and not yet anybody’s to learn');
-  assert.ok(SKILL_IDS.slice(0, 23).every(id => SKILLS[id].group === undefined), 'ordinary skills and their craft specialization stay outside Arms and Sorcery');
+  assert.ok(SKILL_IDS.slice(0, 25).every(id => SKILLS[id].group === undefined), 'ordinary skills and their craft specialization stay outside Arms and Sorcery');
   for (const id of SKILL_IDS) assert.ok(SKILLS[id].teacher && SKILLS[id].blurb, `${id} says who teaches it`);
   const table = SKILLS.birding.thresholds;
   assert.ok(table.every((xp, i) => i === 0 ? xp === 0 : xp > table[i - 1]), 'thresholds rise');

@@ -32,7 +32,7 @@ test('Integrated frontier settlements retain clear entrances, prince meeting pla
  assert.ok(w.yunethreMetrics.trees>60);assert.equal(w.yunethreMetrics.buildings,6);
 });
 
-test('Actual Menora gates and all five visible bridges carry walkers without closing the river',async()=>{
+test('Actual Minora gates and all five visible bridges carry walkers without closing the river',async()=>{
  const w=await world();
  for(const path of MENORA_PATHS)for(const p of sample(path))assert.ok(!blocked(w,p.x,p.z),`${path.id} blocked ${p.x},${p.z}`);
  for(const b of MENORA_BRIDGES){const x=b.axis==='x'?(b.start+b.end)/2:b.x,z=b.axis==='z'?(b.start+b.end)/2:b.z;

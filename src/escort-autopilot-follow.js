@@ -1,4 +1,5 @@
 import { clearLine, freeDirection, moveInput } from './autopilot.js';
+import { LOCOMOTION } from './locomotion-skills.js';
 
 const gap=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const still=()=>({forward:0,side:0,run:false});
@@ -9,15 +10,26 @@ const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
  * Translation has an explicit yaw basis, so a gently turning camera cannot steer
  * the traveler away from the breadcrumb path and start a correction oscillation.
  * A guide faster than a walk (Cagney runs home) is followed at a run, which is faster still. */
-export function createEscortFollower({world,distance,walkSpeed=4.2,runSpeed=7.2,guideSpeed=2.8}={}){
+export function createEscortFollower({world,distance,walkSpeed=LOCOMOTION.walkStart,runSpeed=LOCOMOTION.runStart,guideSpeed=2.8}={}){
   // Behind a runner he keeps a longer gap and changes pace harder, or her stopping puts him in her back.
-  const running=guideSpeed>walkSpeed,top=running?runSpeed:walkSpeed,brisk=top/walkSpeed;
+  const running=guideSpeed>walkSpeed;
   distance??=running?4.5:3;
   let trail=[],lastGuide=null,sample=null,lastPosition=null,lastDt=0,pace=0,speed=0,stuck=0,detour=0,side=1;
   function reset(){trail=[];lastGuide=sample=lastPosition=null;lastDt=pace=speed=stuck=detour=0;side=1;}
-  function step(position,guide,dt){
+  function step(position,guide,dt,movementSpeeds){
     if(!Number.isFinite(dt)||dt<=0)return {move:still(),yaw:null};
     dt=Math.min(dt,.25);
+    // Inputs are fractions of the current host pace, including skill and combat
+    // modifiers. Keep our smoothed command in metres/second across those changes.
+    const walking=movementSpeeds?.walking??walkSpeed,runningSpeed=movementSpeeds?.running??runSpeed;
+    // Hurt/dodge animations can temporarily make both host speeds zero.
+    if(!(walking>0)||!(runningSpeed>0)){
+      speed=0;lastPosition={...position};lastGuide={...guide};lastDt=dt;
+      return {move:still(),yaw:null};
+    }
+    // Keep running available to catch a running guide even once mastery lets
+    // the traveler match that guide at a walk.
+    const top=(running||guideSpeed>walking)?runningSpeed:walking,brisk=top/walking;
     if(lastGuide&&gap(guide,lastGuide)>Math.max(2,top*lastDt*3)
       ||lastPosition&&gap(position,lastPosition)>Math.max(3,top*lastDt*3))reset();
     const separation=gap(position,guide);
@@ -36,7 +48,9 @@ export function createEscortFollower({world,distance,walkSpeed=4.2,runSpeed=7.2,
     // immediately if already inside personal space rather than pushing their body.
     const wanted=clamp(pace+(separation-distance)*1.8,0,top);
     const change=(wanted>speed?5:8)*brisk*dt;
-    speed+=clamp(wanted-speed,-change,change);
+    // Exhaustion can reduce a requested run to walking immediately. Never
+    // emit more than full input while our previous velocity decelerates.
+    speed=clamp(speed+clamp(wanted-speed,-change,change),0,top);
     if(separation<=Math.max(1.5,Math.min(2.1,distance-.9))||speed<.015&&wanted<.015)speed=0;
     if(lastPosition&&lastDt>0&&speed>.5){
       const actual=gap(position,lastPosition)/lastDt;
@@ -50,7 +64,7 @@ export function createEscortFollower({world,distance,walkSpeed=4.2,runSpeed=7.2,
       detour-=dt;const sideways={x:direction.z*side,z:-direction.x*side};
       if(clearLine(position,{x:position.x+sideways.x,z:position.z+sideways.z},world))direction=sideways;
     }
-    const run=speed>walkSpeed,yaw=Math.atan2(-direction.x,-direction.z),input=moveInput(yaw,direction.x,direction.z),amount=speed/(run?runSpeed:walkSpeed);
+    const run=speed>walking,yaw=Math.atan2(-direction.x,-direction.z),input=moveInput(yaw,direction.x,direction.z),amount=speed/(run?runningSpeed:walking);
     return {yaw,move:{forward:input.forward*amount,side:input.side*amount,run,basisYaw:yaw}};
   }
   return {step,reset};

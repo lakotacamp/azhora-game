@@ -5,6 +5,13 @@ export const REGIONAL_LIFE_NPCS = Object.freeze([
   Object.freeze({ id: 'commons-miller', name: 'Enna', role: 'Commons miller', modelRole: 'commons-miller', color: 0xa18452, ...toWorld(-233, 59), region: 1 }),
   Object.freeze({ id: 'reed-worker', name: 'Merren', role: 'Reed worker and boatkeeper', modelRole: 'reed-worker', color: 0x5f8078, ...toWorld(-380, 120), region: 2 }),
   Object.freeze({ id: 'shelter-keeper', name: 'Oda', role: 'Waystation shelter keeper', modelRole: 'shelter-keeper', color: 0x827b6d, ...toWorld(-152, 322), region: 4 }),
+  // Smedley (the user, 29 September and 1 October 2026: a revolutionary-war wig, purple robes,
+  // and bad breath). He walks and offers no account of himself: no quest, no trade, no errand,
+  // and the model carries the whole of him - the peruke, the robe and the breath - through `look`,
+  // on the mercenary body because that is the only one the robe is cut for.
+  Object.freeze({ id: 'smedley', name: 'Smedley', role: 'A man in a wig', modelRole: 'mercenary',
+    color: 0x6a3f96, skin: 0xe4bb97, look: Object.freeze({ garment: 'robe', headgear: 'peruke', badBreath: true,
+      hairStyle: 'none', beard: false }), ...toWorld(-268, 86), region: 1 }),
 ]);
 
 const site = (id, name, x, z, region, storyId, prompt, lines) => Object.freeze({
@@ -229,6 +236,13 @@ const asChoices = (options, context) => options.map(option => ({ ...option,
 export function regionalLifeConversation(npc, context) {
   if (!npcIds.has(npc?.id)) return false;
   const { regionalLife, openDialogue, closeDialogue, act } = context;
+  // A visual character, not a fourth regional errand or a second Oda.
+  if (npc.id === 'smedley') {
+    openDialogue(npc, ['Smedley inclines his powdered wig. A waft of bad breath answers for him.'], null, 'Step back', {
+      choices: [{ id: 'leave-smedley', label: 'Give him some room.', action: closeDialogue }],
+    });
+    return true;
+  }
   const state = regionalLife.state;
   const back = () => regionalLifeConversation(npc, context);
   const choices = asChoices(regionalLife.availableActions(npc.id), context);

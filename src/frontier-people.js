@@ -14,7 +14,7 @@ export const FRONTIER_PRINCES=freeze([
     look:freeze({hairStyle:'short-cropped',hair:0xe5e1cd,expression:'twisted',noHat:true}),hat:false,armed:true}),
 ]);
 export const MENORA_SOLDIERS=freeze([
-  ...MENORA_NPC_ANCHORS.guards.map((p,i)=>soldier(`menora-guard-${i+1}`,'Menora guard','Temple-city garrison',p,i+1)),
+  ...MENORA_NPC_ANCHORS.guards.map((p,i)=>soldier(`menora-guard-${i+1}`,'Minora guard','Temple-city garrison',p,i+1)),
   ...MENORA_NPC_ANCHORS.army.map((p,i)=>soldier(`blood-prince-soldier-${i+1}`,i?'Blood Prince’s soldier':'Blood Prince’s captain','Prince Wilhelm’s army',p,i,{color:i?0x632d30:0x431d26,maxHp:280})),
 ]);
 export const CARICAS_SOLDIERS=freeze(CARICAS_GUARD_POSTS.map((p,i)=>soldier(`caricas-soldier-${i+1}`,i?'Ambroni soldier':'Caricas garrison officer','Imperial occupation garrison',p,i)));
@@ -41,16 +41,16 @@ export const isFrontierNpc=id=>ids.has(id);
 export function frontierConversation(id){
   if(id==='prince-cedric')return [
     'They have put my half-brother Willard on the throne in Ambron. That does not make it his crown.',
-    'Menora has received me beneath the protection of this temple. Its walls still stand, its guild still watches, and I have not renounced my claim.',
+    'Minora has received me beneath the protection of this temple. Its walls still stand, its guild still watches, and I have not renounced my claim.',
     'My brother Wilhelm is here with his army. What comes next is not yet settled.',
   ];
   if(id==='prince-wilhelm')return [
     'The Blood Prince. They say it as though a name could frighten me.',
-    'My brother Cedric keeps his court in the temple. My soldiers keep their blades close. Menora is a beautiful city. Such very white walls.',
+    'My brother Cedric keeps his court in the temple. My soldiers keep their blades close. Minora is a beautiful city. Such very white walls.',
     'I have no commission for you today. Watch the road.',
   ];
   if(id.startsWith('blood-prince-'))return ['The prince’s camp. Keep the muster ground clear.','We march when Prince Wilhelm gives the order. Until then, we hold here.'];
-  if(id.startsWith('menora-'))return ['Menora’s gates are held. The temple and the Sorcerers’ Guild are under our protection.',
+  if(id.startsWith('menora-'))return ['Minora’s gates are held. The temple and the Sorcerers’ Guild are under our protection.',
     'Centaur bands are raiding the north and west of Isareos. Inside these walls, the watch keeps the peace.'];
   if(id.startsWith('caricas-'))return ['Caricas is occupied in full by the Ambroni Empire. The roads, market and grain stores are under our guard.',
     'That does not mean everyone here has accepted it. There is still a civil war to settle. For now, keep the road clear.'];

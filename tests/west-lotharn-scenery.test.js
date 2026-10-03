@@ -74,7 +74,11 @@ test('West Lotharn tree roots meet the rendered ground on their whole footprint'
   for (const trunks of forest.children.filter(child => child.isInstancedMesh && child.geometry.parameters?.radiusTop === .2)) {
     const vertices = trunks.geometry.attributes.position;
     for (let i = 0; i < trunks.count; i++) {
-      trunks.getMatrixAt(i, matrix); matrix.premultiply(trunks.matrixWorld);
+      trunks.getMatrixAt(i, matrix);
+      // A tree lifted off ground a fort was built on afterwards (src/scenery-clearing.js) is an instance scaled to
+      // nothing, and is struck off the register too: it is not there, so it has no roots to check.
+      if (matrix.elements[0] === 0 && matrix.elements[5] === 0 && matrix.elements[10] === 0) continue;
+      matrix.premultiply(trunks.matrixWorld);
       const gaps = [];
       for (let j = 0; j < vertices.count; j++) {
         if (Math.abs(vertices.getY(j) + .5) > 1e-6) continue;

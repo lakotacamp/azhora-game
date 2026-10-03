@@ -3,9 +3,8 @@
 // The chart is covered by fog: only the hexes the traveler has charted (src/map-fog.js) show through,
 // unless the developer's override lifts the fog and tints each region by how far it is built.
 import { hexAtlasCorners, TRANSFORM as HEX_WORLD_TRANSFORM } from './region-world.js';
-import { MENORA_OUTLINE } from './menora-city.js';
 import { PLAYABLE_SURVEY } from './region-survey.js';
-import { atlasLocalDetail, atlasCityDetail, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from './world-map-detail.js';
+import { atlasLocalDetail, atlasCityBoundaries, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from './world-map-detail.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const polygonPoints = (q, r) => hexAtlasCorners(q, r).map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
@@ -28,7 +27,6 @@ export function createWorldMap() {
   let visited = new Set(), terrainCells = new Map(), terrainSource = null;
   let localDetail = atlasLocalDetail(null);
   let authoredLabels = null;
-  const cityDetail = atlasCityDetail();
   const cityLayer = document.createElementNS(SVG_NS, 'svg');
   cityLayer.id = 'atlas-cities'; cityLayer.setAttribute('aria-hidden', 'true');
   viewport.insertBefore(cityLayer, traveler ?? null);
@@ -48,8 +46,8 @@ export function createWorldMap() {
   // Areas are named as soon as the chart is more than glanced at; the smaller places
   // inside them wait until the traveler has zoomed in far enough to read them.
   const placeShown = place => atlasMarkKnown(place, visited, chart.reveal)
-    && (['quest', 'tracked', 'capital', 'area'].includes(place.kind) || zoom >= (place.kind === 'local' ? DETAIL_ZOOM : 3.5));
-  const placeNamed = place => ['quest', 'tracked'].includes(place.kind) ? zoom >= 3.5 : ['area', 'capital'].includes(place.kind) ? zoom >= 1.8 : zoom >= 5.5;
+    && (['quest', 'tracked', 'capital', 'city', 'area'].includes(place.kind) || zoom >= (place.kind === 'local' ? DETAIL_ZOOM : 3.5));
+  const placeNamed = place => ['quest', 'tracked'].includes(place.kind) ? zoom >= 3.5 : ['area', 'capital', 'city'].includes(place.kind) ? zoom >= 1.8 : zoom >= 5.5;
   function drawPlaces() {
     placeLayer.replaceChildren();
     renderedPlaces = atlasPlaceMarks(places, localDetail.markers);
@@ -60,7 +58,7 @@ export function createWorldMap() {
       const dot = document.createElement('i'), label = document.createElement('span');
       label.textContent = place.name;
       if (place.subtitle) { const subtitle = document.createElement('small'); subtitle.textContent = place.subtitle; label.append(subtitle); }
-      if (place.kind === 'capital') mark.dataset.placeId = place.id;
+      if (['capital', 'city'].includes(place.kind)) mark.dataset.placeId = place.id;
       mark.append(dot, label);
       place.mark = mark; place.label = label; placeLayer.append(mark);
     }
@@ -73,7 +71,7 @@ export function createWorldMap() {
     const tx = travelerPoint ? offsetX + travelerPoint.x * scale : null;
     const ty = travelerPoint ? offsetY + travelerPoint.y * scale : null;
     if (tx !== null) taken.push({ x: tx - 13, y: ty - 25, w: 27, h: 40 }, { x: tx + 12, y: ty - 46, w: 194, h: 25 });
-    const priority = kind => ({ quest: 0, tracked: 1, capital: 2, area: 3, place: 4, local: 5 })[kind] ?? 5;
+    const priority = kind => ({ quest: 0, tracked: 1, capital: 2, city: 2, area: 3, place: 4, local: 5 })[kind] ?? 5;
     const simple = name => String(name).toLowerCase().replace(/\b(the|village|town)\b/g, '').replace(/[^a-z0-9]/g, '');
     const shown = renderedPlaces.filter(place => place.mark && placeShown(place))
       .map(place => ({ place, x: offsetX + place.x * scale, y: offsetY + place.y * scale }))
@@ -88,7 +86,8 @@ export function createWorldMap() {
       let named = placeNamed(place), placement = null;
       const key = simple(place.name);
       if (namedPlaces.some(other => other.key === key && Math.hypot(other.x - x, other.y - y) < 170)) named = false;
-      const w = place.kind === 'capital' ? 126 : Math.min(260, Math.max(65, place.name.length * 7 + 16)), h = place.kind === 'capital' ? 40 : 23;
+      const cityBadge = ['capital', 'city'].includes(place.kind);
+      const w = cityBadge ? Math.max(126, place.name.length * 8 + 16, (place.subtitle?.length ?? 0) * 6 + 16) : Math.min(260, Math.max(65, place.name.length * 7 + 16)), h = cityBadge ? 40 : 23;
       if (named) {
         for (const [dx, dy] of [[12,-10],[12,20],[12,-38],[-w-12,-10],[-w-12,20],[-w-12,-38],[-w/2,43],[-w/2,-63]]) {
           const box = { x: x + dx, y: y + dy, w, h };
@@ -114,8 +113,7 @@ export function createWorldMap() {
     cityLayer.replaceChildren();
     cityLayer.setAttribute('viewBox', `0 0 ${metadata.width} ${metadata.height}`);
     cityLayer.setAttribute('width', metadata.width); cityLayer.setAttribute('height', metadata.height);
-    for (const city of [{ id: 'ambron', boundary: cityDetail.boundary },
-      { id: 'menora', boundary: MENORA_OUTLINE.map(p => HEX_WORLD_TRANSFORM.worldToAtlas(p.x, p.z)) }]) {
+    for (const city of atlasCityBoundaries()) {
       const cityPath = city.boundary.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ') + 'Z';
       cityLayer.append(node('path', { d: cityPath, class: 'atlas-capital-ground', 'data-city': city.id }));
       cityLayer.append(node('path', { d: cityPath, class: 'atlas-capital-wall', 'data-city': city.id, 'vector-effect': 'non-scaling-stroke' }));

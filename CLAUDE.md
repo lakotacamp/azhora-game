@@ -12,12 +12,12 @@ Lore comes from the sibling repo `../world-builder/azhora_lore`. The authored wo
 
 ```sh
 npm start                      # launch the game (or double-click "Play Azhora.cmd")
-npm test                       # Node test suite, ~280 tests, ~75 s, no Electron needed
+npm test                       # full explicit Node test manifest; no Electron needed
 node --test tests/campaign.test.js                                   # one file
 node --test --test-name-pattern="double-dealing" tests/campaign.test.js   # one test
 ```
 
-`npm test` enumerates test files explicitly in `package.json` and runs them in one process (`--test-isolation=none`). A new `tests/*.test.js` file does not run until it is added to that list.
+`npm test` enumerates test files explicitly in `tests/test-manifest.json` via `scripts/run-tests.cjs` and runs one file per sequential Node process (`--test-isolation=none` within that file). This releases large world fixtures between files; grouping even 24 files retained several gigabytes and stalled garbage collection. As of 2 October 2026 the manifest contains 399 files; use the manifest itself as the source of truth. Runtime varies substantially with hardware and full-world geometry fixtures, so no fixed completion time is promised. Pass explicit manifest paths to the runner for a sequential subset, for example `node scripts/run-tests.cjs tests/locomotion-skills.test.js tests/peninsula-autopilot.test.js`. A new `tests/*.test.js` file does not run until it is added to that list.
 
 There is no local `node_modules`; `scripts/launch.cjs` falls back to the Electron install in `../world-builder/map/node_modules`. `npm install` here only if that ever breaks.
 
@@ -83,7 +83,7 @@ The four regions are built (`docs/region-rebuild.md` is the brief, `docs/region-
 
 ### Tests
 
-Node's built-in `node:test` with `node:assert/strict`. Pure modules are imported directly from `../src/`. Modules that import `three` (`world.js`, `characters.js`, scenes) cannot be imported bare in Node; load them with `sourceModule()` from `tests/module-loader.js`, which rewrites `three` and relative specifiers into `data:` URLs. Test names are full sentences describing the rule being checked.
+Node's built-in `node:test` with `node:assert/strict`. Pure modules are imported directly from `../src/`. Modules that import `three` (`world.js`, `characters.js`, scenes) need the resolver registered by `tests/module-loader.js`; its `sourceModule()` helper imports each file normally while mapping bare `three` to the vendored module. Test names are full sentences describing the rule being checked.
 
 ### Saves
 

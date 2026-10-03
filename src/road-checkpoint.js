@@ -1,4 +1,6 @@
+import { createPeninsulaTutorial, validatePeninsulaTutorialSnapshot } from './peninsula-tutorial.js';
 import {validateBaldroSnapshot} from './baldro-state.js';
+import {createSevronState,validateSevronSnapshot} from './sevron-state.js';
 import { validateIbenwoodDefenseSnapshot } from './ibenwood-defense.js';
 import { IBENWOOD_BOUNDARY } from './ibenwood-boundary.js';
 import { validateBarrettGeography } from './barrett-geography.js';
@@ -155,7 +157,9 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     // validated crossing is real saved travel; it grants no tutorial or campaign progress.
     const earlyFerry = validateFerrySnapshot(data.ferry, { allowMissing: false })
       && data.ferry.met && data.ferry.crossings > 0;
-    if (data.questStage === 0 && !imperialRecall && !earlyFerry) return failed('This is not a supported road checkpoint.');
+    if (!validatePeninsulaTutorialSnapshot(data.peninsulaTutorial)) return failed('The saved peninsula tutorial is invalid.');
+    const peninsulaOpening = ['tutorial', 'skip'].includes(data.peninsulaTutorial?.path);
+    if (data.questStage === 0 && !imperialRecall && !earlyFerry && !peninsulaOpening) return failed('This is not a supported road checkpoint.');
     if (!Array.isArray(data.inventory) || data.inventory.length > Object.keys(INVENTORY_ITEMS).length)
       return failed('The saved satchel is invalid.');
     const stock = new Map();
@@ -167,7 +171,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     }
     // A traded sword is fine, an unarmed traveler is not.
     // The token comes with the chart now, from Officer Glun, and the chart is the last step.
-    const required = [...(data.questStage >= 2 ? ['harbor-letter'] : []), ...(data.questStage >= QUEST_DONE ? ['road-token'] : [])];
+    const required = [...(data.questStage >= 2 && (!peninsulaOpening || data.peninsulaTutorial.enlisted) ? ['harbor-letter'] : []), ...(data.questStage >= QUEST_DONE ? ['road-token'] : []), ...(peninsulaOpening && data.peninsulaTutorial.signedOffAt !== null ? ['tutorial-letter'] : [])];
     if (!required.every(id => stock.has(id)) || !Object.keys(WEAPON_TYPES).some(id => stock.has(id)))
       return failed('The road checkpoint is missing your sword, message, or travel token.');
     const inventory = { has: id => stock.has(id) };
@@ -296,6 +300,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.cat !== undefined && !validateCatQuestSnapshot(data.cat)) return failed('The saved errand for Liz is invalid.');
     if (!validBatmanSave(data, stock)) return failed('The saved vigilante quest, carried flight, or bounty proof is inconsistent.');
     if (!validateBaldroSnapshot(data.baldro)) return failed('The saved dwarf gate permissions are invalid.');
+    if (!validateSevronSnapshot(data.sevron)) return failed('The saved West Oremindi discoveries are invalid.');
     if (!validateFrontierRaids(data.frontierRaids)) return failed('The saved frontier patrol is invalid.');
     if (!validateKaylaSnapshot(data.kayla)) return failed('The saved honey rounds are invalid.');
     if (!validateKaylaRaceSnapshot(data.kaylaRace)) return failed('The saved race for Kayla is invalid.');
@@ -439,6 +444,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (data.jesseCarriage) result.jesseCarriage = JSON.parse(JSON.stringify(data.jesseCarriage));
     if (data.brandyHome) result.brandyHome = JSON.parse(JSON.stringify(data.brandyHome));
     if(data.baldro)result.baldro=JSON.parse(JSON.stringify(data.baldro));
+    if(data.sevron){const city=createSevronState();city.restore(data.sevron);result.sevron=city.snapshot();}
     if (data.frontierRaids) result.frontierRaids=JSON.parse(JSON.stringify(data.frontierRaids));
     if (data.ibenwoodDefense) result.ibenwoodDefense = JSON.parse(JSON.stringify(data.ibenwoodDefense));
     if (Object.hasOwn(data, 'salt')) result.salt = { ...data.salt };
@@ -451,6 +457,7 @@ export function createRoadCheckpoint({ storage, key = ROAD_CHECKPOINT_KEY } = {}
     if (Object.hasOwn(data, 'longRoad')) { const road = createLongRoad(); road.restore(data.longRoad); result.longRoad = road.snapshot(); }
     if (data.fireMaking) { const lesson=createFireMaking();lesson.restore(data.fireMaking);result.fireMaking=lesson.snapshot(); }
     if (data.fishingLessons) { const lesson=createFishingLessons();lesson.restore(data.fishingLessons);result.fishingLessons=lesson.snapshot(); }
+    if (data.peninsulaTutorial) { const tutorial=createPeninsulaTutorial();tutorial.restore(data.peninsulaTutorial);result.peninsulaTutorial=tutorial.snapshot(); }
     if (data.glunWood) { const lesson=createGlunWoodcutting();lesson.restore(data.glunWood);result.glunWood=lesson.snapshot(); }
     if (data.roadLessons) { const lessons=createRoadsideLessons();lessons.restore(data.roadLessons);result.roadLessons=lessons.snapshot(); }
     if (data.husbandry) { const care=createAnimalHusbandry();care.restore(data.husbandry);result.husbandry=care.snapshot(); }

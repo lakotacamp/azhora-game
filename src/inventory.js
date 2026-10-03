@@ -52,6 +52,11 @@ export const INVENTORY_ITEMS = Object.freeze({
     brief: 'The report and letter of introduction Jojo the harbourmaster handed over at the head of the pier, for the army’s relay post at Nothom, over the Caloss in Luscia.',
     description: 'The seal is already broken so you can read your errand. Keep the message with you for the road ahead.',
   }),
+  'tutorial-letter': Object.freeze({
+    name: 'Glun’s training certificate', type: 'Quest item', icon: 'letter',
+    brief: 'Officer Glun has signed off your peninsula training. Report to Footman Ottar at Tidewater Haven to enlist.',
+    description: 'To the recruitment post at Tidewater Haven: this traveler has completed our introductory lessons in movement, arms, chart-reading, swimming, fishing and cooking. Register them for Ambroni service and issue their onward orders. — Officer Glun',
+  }),
   'simple-sword': Object.freeze({
     name: 'Simple sword', type: 'Weapon', icon: 'sword',
     brief: 'Your plain iron sword. Reliable work for a mercenary, provided you care for the edge.',

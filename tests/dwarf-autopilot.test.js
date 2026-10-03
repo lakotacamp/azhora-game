@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { sourceModule } from './module-loader.js';
+import { LOCOMOTION } from '../src/locomotion-skills.js';
+const novice={walking:LOCOMOTION.walkStart,running:LOCOMOTION.runStart};
+const mastered={walking:LOCOMOTION.walkCap,running:LOCOMOTION.runCap};
 
 const THREE = await sourceModule('../vendor/three.module.js');
 const { createDwarfAutopilot } = await sourceModule('../src/dwarf-autopilot.js');
@@ -12,7 +15,7 @@ const WEST = BALDRO_KINGDOMS[0];
 const gap = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const still = { forward: 0, side: 0, run: false };
 
-function fixture() {
+function fixture(movementSpeeds=novice) {
   const scene = new THREE.Scene(), player = { group: new THREE.Group() };
   const world = { bounds: { minX: -20000, maxX: 20000, minZ: -20000, maxZ: 20000 }, colliders: [], heightAt: () => 100 };
   const navigation = bodyWorld(world), rewards = [], choices = [], interactions = [], stages = new Set(), events = [];
@@ -26,7 +29,7 @@ function fixture() {
   const at = p => player.group.position.set(p.x, p.y ?? 100, p.z);
   at({ x: WEST.gate.x - 5, y: 100, z: WEST.gate.z + 13 });
   const pilot = createDwarfAutopilot({ world: navigation,
-    read: () => ({ mode, position: player.group.position, quest: host.introductionView(), inside: host.current,
+    read: () => ({ mode, movementSpeeds, position: player.group.position, quest: host.introductionView(), inside: host.current,
       interaction: reduce(host.nearby()), dialogue: dialogue && { npcId: dialogue.npc.id, choices: shown().map(c => ({ id: c.id, enabled: !c.disabled })) },
       combat: { hp: 100, phase: 'peaceful', action: 'idle' } }),
     options: { choicePace: .1, dialoguePace: .1, interactEvery: .1 },
@@ -53,7 +56,7 @@ function fixture() {
     navigation.setBodies(host.bodies()).moving(player.group.position, BODY.traveler, 'traveler');
     pilot.step(dt);
     if (mode === 'playing') {
-      const before = { ...player.group.position }, { forward, side, basisYaw = 0, run } = pilot.move, speed = run ? 7.2 : 4.2;
+      const before = { ...player.group.position }, { forward, side, basisYaw = 0, run } = pilot.move, speed = run ? movementSpeeds.running : movementSpeeds.walking;
       const dx = (-Math.sin(basisYaw) * forward + Math.cos(basisYaw) * side) * speed * dt;
       const dz = (-Math.cos(basisYaw) * forward - Math.sin(basisYaw) * side) * speed * dt;
       if (host.active) host.move(player.group.position, dx, dz);
@@ -70,8 +73,8 @@ function fixture() {
     get feetTravel() { return feetTravel; }, get outsideTravel() { return outsideTravel; }, get maxRoadDistance() { return maxRoadDistance; } };
 }
 
-test('Dwarfland autoplay earns entry, walks the actual hall geometry and makes the three-step rivet through real conversations', () => {
-  const f = fixture(); f.pilot.start();
+for(const movementSpeeds of [novice,mastered])test(`Dwarfland autoplay at ${movementSpeeds.walking}/${movementSpeeds.running} earns entry, walks the actual hall geometry and makes the three-step rivet through real conversations`, () => {
+  const f = fixture(movementSpeeds); f.pilot.start();
   for (let i = 0; i < 5000 && f.pilot.active; i++) f.tick();
   assert.ok(f.host.introductionView().complete, JSON.stringify({ reason: f.pilot.reason, intent: f.pilot.intent, position: f.player.group.position, quest: f.host.introductionView(), choices: f.choices }));
   assert.equal(f.pilot.active, false); assert.equal(f.mode, 'playing'); assert.equal(f.events.at(-1).completed, true);

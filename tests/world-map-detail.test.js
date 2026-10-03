@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { atlasCellKey, atlasLocalDetail, atlasCityDetail, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from '../src/world-map-detail.js';
+import { atlasCellKey, atlasLocalDetail, atlasCityDetail, atlasCityBoundaries, atlasRevealedCityMarks, ATLAS_CITY_DESIGNATIONS, atlasPlaceMarks, atlasMarkKnown, atlasRegionLabelKnown, atlasExplorationScope, splitAtlasRegionLabels, GLIMPSED_TERRAIN } from '../src/world-map-detail.js';
 import { readFileSync } from 'node:fs';
 import { TRANSFORM, hexAt, hexCentre, landDistance, villageToWorld } from '../src/region-world.js';
 import { groundWithRiver } from '../src/world-terrain.js';
 import { buildLocalMapModel } from '../src/local-map-data.js';
 import { regions, regionAt, WORLD_BOUNDS } from '../src/regions.js';
-import { createMapFog } from '../src/map-fog.js';
+import { createMapFog, SUBREGIONS } from '../src/map-fog.js';
+import { VARN, VARN_CORNERS } from '../src/varn-world.js';
 import { createCartography, chartShapes, EXPLORED_HEXES } from '../src/cartography.js';
 import { AMBRON_CENTRE, AMBRON_OUTLINE, inAmbronOutline } from '../src/ambron-city-layout.js';
 import { applyGameAtlasAdjustments, GAME_ATLAS_ADJUSTMENTS } from '../src/game-atlas-adjustments.js';
@@ -33,6 +34,45 @@ test('the capital replaces duplicate ordinary Ambron labels while preserving que
     assert.deepEqual(marks.find(mark => mark.id === 'ambron'), objective);
     assert.deepEqual(marks.find(mark => mark.id === 'ambron-capital'), atlasCityDetail().marker);
   }
+});
+
+test('established cities share a designation badge without turning towns, ruins or hidden places into capitals', () => {
+  const areas = SUBREGIONS.map(area => ({ ...TRANSFORM.worldToAtlas(area.x, area.z), id: area.id, name: area.name, kind: 'area' }));
+  const marks = atlasPlaceMarks(areas);
+  for (const [id, designation] of Object.entries(ATLAS_CITY_DESIGNATIONS)) {
+    if (id === 'sevron-city') continue;
+    const badge = marks.find(p => p.id === id);
+    assert.ok(badge, `The built city ${id} has an authored map area.`);
+    assert.equal(badge.kind, 'city'); assert.equal(badge.name, designation.name); assert.equal(badge.subtitle, designation.subtitle);
+    assert.equal(atlasMarkKnown(badge, new Set()), false, 'The badge cannot reveal its own unvisited hex.');
+    assert.equal(atlasMarkKnown(badge, new Set([atlasCellKey(badge)])), true);
+  }
+  assert.equal(marks.find(p => p.id === 'menora').name, 'Minora', 'The displayed correction preserves the old discovery ID.');
+  assert.equal(marks.find(p => p.id === 'imlamdris').subtitle, 'City ruins');
+  assert.equal(marks.find(p => p.id === 'zecron-ruins').subtitle, 'City ruins');
+  assert.equal(marks.find(p => p.id === 'eastreena').kind, 'area', 'Tidehaven is still a village.');
+  assert.equal(marks.find(p => p.id === 'ostel').kind, 'area', 'Ostel is still a town.');
+  assert.equal(marks.some(p => p.name === 'Sevron'), false, 'The secret settlement is not revealed by a global registry.');
+  assert.deepEqual(atlasRevealedCityMarks(), []);
+  const hidden = atlasRevealedCityMarks({ sevron: true });
+  assert.equal(hidden.length, 1); assert.equal(hidden[0].name, 'Sevron'); assert.equal(hidden[0].subtitle, 'Elven city');
+  assert.equal(atlasPlaceMarks([...areas, ...hidden]).filter(p => p.id === 'sevron-city').length, 1);
+  for (const kind of ['quest', 'tracked']) {
+    const objective = { ...areas.find(p => p.id === 'varn'), name: 'Reach the Pass Gate', kind };
+    assert.deepEqual(atlasPlaceMarks([], [objective]).find(p => p.id === 'varn'), objective);
+  }
+});
+
+test('Varn uses its actual six-wall footprint and discovered fortress location on the atlas', () => {
+  const boundaries = atlasCityBoundaries(), varn = boundaries.find(city => city.id === 'varn');
+  assert.deepEqual(varn.boundary, VARN_CORNERS.map(p => TRANSFORM.worldToAtlas(p.x, p.z)));
+  const area = SUBREGIONS.find(p => p.id === 'varn');
+  assert.deepEqual({ x: area.x, z: area.z }, { x: VARN.x, z: VARN.z });
+  varn.boundary[0].x = 0;
+  assert.notEqual(atlasCityBoundaries().find(city => city.id === 'varn').boundary[0].x, 0);
+  const css = readFileSync(new URL('../src/world-map.css', import.meta.url), 'utf8');
+  assert.match(css, /\.atlas-place\.capital i,\.atlas-place\.city i\{/);
+  assert.match(css, /\.atlas-place\.capital span,\.atlas-place\.city span\{/);
 });
 
 test('the atlas close view uses the same world transform for roads, houses and quest destinations', () => {

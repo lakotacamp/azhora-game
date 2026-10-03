@@ -1,5 +1,6 @@
 import { fightCommand, moveInput, nextWaypoint } from './autopilot.js';
 import { BODY, stepToward } from './bodies.js';
+import { LOCOMOTION } from './locomotion-skills.js';
 import { meleeContacts } from './melee-contact.js';
 import { createEscortFollower } from './escort-autopilot-follow.js';
 import { DRENT_QUEST_ID } from './drent-civil-war.js';
@@ -85,7 +86,7 @@ function createCivilWarAutopilot(kind, { world, read, act = {}, options = {} } =
     // A planned corner can be closer than one rendered frame's stride. Keep
     // that short step: normalizing it to full speed overshoots the corner and
     // oscillates forever at the engine's 20 Hz movement cap.
-    const fraction = Math.min(1, Math.hypot(dx, dz) / ((run ? 7.2 : 4.2) * dt));
+    const fraction = Math.min(1, Math.hypot(dx, dz) / ((run ? snapshot.movementSpeeds?.running ?? LOCOMOTION.runStart : snapshot.movementSpeeds?.walking ?? LOCOMOTION.walkStart) * dt));
     move = { ...input, forward: input.forward * fraction, side: input.side * fraction, basisYaw: yaw };
   }
   function step(dt = 1 / 60) {
@@ -174,7 +175,7 @@ function createCivilWarAutopilot(kind, { world, read, act = {}, options = {} } =
       dialogueClock = 0; lastDialogue = '';
       const target = (targetGoal.site ? s.sites : s.people)?.[targetGoal.id];
       if (!point(target) || target.available === false) { stop(`${spec.name}’s next destination is unavailable. You have control.`); return null; }
-      if (targetGoal.follow) ({ move, yaw } = follower.step(s.position, target, dt));
+      if (targetGoal.follow) ({ move, yaw } = follower.step(s.position, target, dt, s.movementSpeeds));
       else {
         follower.reset();
         const ready = targetGoal.site ? s.interaction?.siteId === targetGoal.id : s.interaction?.npcId === targetGoal.id;

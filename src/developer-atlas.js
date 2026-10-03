@@ -187,6 +187,7 @@ const LOCALS = [
   [REGION_IDS.Selemi, 'Selemis', 'selemis', 'Selemi', selemisAnchor],
   // Telemonia's number is read, not written, for the same reason: it is renumbered the day it lands.
   [REGION_IDS.Telemonia, 'Telemonia', 'telemonia', 'Telemonia', telemoniaAnchor],
+  [56, 'West Oremindi', 'west-oremindi', 'West Oremindi Mountains', point(831.384,2320,-18,96)],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

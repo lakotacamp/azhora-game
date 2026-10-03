@@ -85,7 +85,11 @@ export const AMOD_ROAD = Object.freeze([
   point(-842, -526), point(-864, -530), point(-881, -532),
 ]);
 
-/** Where the built road stops. Beyond it the Kelmod road runs on, unbuilt. */
+/**
+ * Where Amod's own built road stops. Beyond it the Kelmod road runs on, unbuilt - and since 2 October
+ * 2026 a second road leaves from the same gap: north-west up the hills to Varn (src/varn-world.js), the
+ * descent the lore gives to Sareth-am-Vel.
+ */
 export const KELMOD_ROAD_END = Object.freeze({ id: 'kelmod-road', name: 'The Kelmod Road', ...point(-886, -532), halfWidth: 46 });
 
 // ---------------------------------------------------------------------------
@@ -274,7 +278,7 @@ export const AMOD_LANDMARKS = Object.freeze([
   Object.freeze({ id: 'tarvel-bridge', name: 'The Ostel Bridge', ...TARVEL_BRIDGE.crossing,
     description: 'One stone arch over the Tarvel, wide enough for a cart and a mule to disagree. The parapet carries an offering shelf on the upstream side.' }),
   Object.freeze({ ...KELMOD_ROAD_END,
-    description: 'The road west, toward Kelmod’s timber and mules and, beyond it, Mavren where the ledgers meet. A fingerpost, a wall, and a great deal of country nobody has walked yet.' }),
+    description: 'The road west, toward Kelmod’s timber and mules and, beyond it, Mavren where the ledgers meet. A fingerpost, a field wall with its bar stood up against the post, and the road going on through the gap: north-west it climbs the hills to Varn and the pass.' }),
 ]);
 
 /** Ground the Amod scatter keeps clear: the town, the places, the stream head and the stones. */

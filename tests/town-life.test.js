@@ -55,7 +55,8 @@ test('the outpost changes hands: the army’s people and flag are out while the 
   const flags = world.stakedProps;
   assert.deepEqual(flags.map(flag => flag.holds).sort(), ['coalition', 'empire']);
   assert.ok(flags.every(flag => flag.region === 'Moros Plain' && flag.object.isMesh));
-  for (const figure of WALL_FIGURES) assert.ok(figure.lift > 3 || figure.id === 'wall-elodi-behind', `${figure.id} stands up on a wall or tower`);
+  // A figure is up on a wall or a tower, unless he is a man on the ground inside a gate: Elod's behind its frontier gate, the Empire's inside Varn's and the Lotharn forts' (`ground`).
+  for (const figure of WALL_FIGURES) assert.ok(figure.lift > 3 || figure.id === 'wall-elodi-behind' || figure.ground, `${figure.id} stands up on a wall or tower`);
 });
 
 test('every new stand is on walkable ground in its own region, clear of the quest people, the mercenaries’ muster and each other', () => {

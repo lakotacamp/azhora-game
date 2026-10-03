@@ -12,6 +12,7 @@ import { PUETH_RIVERS, TESSEN, TESSEN_BRIDGE, nearestPuethRiver } from './pueth-
 import { elagosGround } from './elagos-world.js';
 import { southSuvalGround } from './south-suval-world.js';
 import { eastLotharnGround } from './east-lotharn-world.js';
+import { varnGround } from './varn-world.js';
 import { feradomGround, feradomSeam } from './feradom-world.js';
 import { ascarthGround, ascarthCliffTint } from './ascarth-world.js';
 import { selemisGround, selemisTint, selemisShoreTint } from './selemis-world.js';
@@ -27,6 +28,7 @@ import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
 import { menoraGround } from './menora-city.js';
 import { caricasSettlementGround } from './caricas-settlement.js';
+import { westOremindiGround, westOremindiTint } from './west-oremindi-world.js';
 import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
 import { yunethreGround, yunethreTint } from './yunethre-world.js';
 import { baldroHeight, baldroTint } from './baldro-world.js';
@@ -243,6 +245,21 @@ function bridgeEmbankment(x, z, ground) {
   return lerp(ground, TESSEN_DECK_Y - .04, weight);
 }
 
+/**
+ * Varn's own layer of the ground, and the same ground with that layer left out.
+ *
+ * The East Lotharn lays its loose stone by how high the ground stands (src/east-lotharn-scenery.js), and a
+ * candidate it takes draws more of its seeded stream than one it refuses - so if it judged by the ground
+ * Varn's jambs raised, every stone, tree and tuft it laid afterwards would move, across the whole range.
+ * It is handed this instead: the ground as it lay before Varn was built on it. Nothing else reads it.
+ */
+let varnLeftOut = false;
+const varnLayer = (x, z, ground) => (varnLeftOut ? ground : varnGround(x, z, ground));
+export function groundBeforeVarn(x, z) {
+  varnLeftOut = true;
+  try { return groundWithRiver(x, z); } finally { varnLeftOut = false; }
+}
+
 /** Ground with the river channels cut, before any deck or pier override. */
 export function groundWithRiver(x, z) {
   // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
@@ -284,6 +301,9 @@ function groundBeforeTelemonia(x, z) {
   // The Ascarth Peninsula lays its plateau, its hills and its cliffs last, over everything else in its
   // own box; it touches nothing within a hundred metres of Gala or of the Lizeem (src/ascarth-world.js).
   // Lotharn's valleys are cut before western water; level the pass road and made places afterward.
+  // Varn (src/varn-world.js) stands where that pass road came down into Amod's notch: its made floor, its
+  // ditch, the two shoulders of rock it is built between and the bench of its road down to Amod's own are
+  // laid straight after, so the floor meets the pass road's end at the road's own grade.
   // Keep the Suval climbing landscape and Iscare ground, then blend Feradom's inland seam.
   // Selemis lays its own ground last of all (src/selemis-world.js). It is an island with no land
   // border, so it has no seam with anything: it writes only where `regionAt` answers `Selemi` and the
@@ -291,8 +311,8 @@ function groundBeforeTelemonia(x, z) {
   // And Telemonia outside even that (`groundBeforeFeradom`, above; src/telemonia-world.js): the Telemon
   // highland writes only on its own hexes, meets the ground across its border line - which is where the
   // Caelin and the Treloss run, cut by the Oves's and Gala's own channels before it - and rises off it.
-  const regional = selemisGround(x, z, yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground)))))))))))));
-  return baldroHeight(x,z,regional);
+  const regional = selemisGround(x, z, yunethreGround(x,z,southOremindiGround(x,z,ascarthGround(x, z, feradomSeam(x, z, iscareGround(x, z, suvalHighlandGround(x, z, southSuvalGround(x, z, wineryGround(x, z, varnLayer(x, z, eastLotharnGround(x, z, westGround(x, z, amodGround(x, z, elagosGround(x, z, ground))))))))))))));
+  return westOremindiGround(x,z,baldroHeight(x,z,regional));
 }
 
 /** Terrain tint before scenery tints, matching the biome and the shore. */
@@ -434,6 +454,7 @@ export function groundTint(color, x, z, THREE) {
   if (cliff?.rock) color.lerp(cliff.stone ? swatch.set(cliff.stone) : rock, cliff.rock);
   const oremindi=southOremindiTint(x,z);if(oremindi!==null)color.set(oremindi);
   const yunethre=yunethreTint(x,z);if(yunethre!==null)color.set(yunethre);
+  const westernOremindi=westOremindiTint(x,z);if(westernOremindi!==null)color.set(westernOremindi);
   const baldro=baldroTint(x,z);if(baldro!==null)color.set(baldro);
   return color;
 }

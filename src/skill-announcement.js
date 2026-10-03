@@ -2,6 +2,8 @@ import { SKILLS } from './skills.js';
 import { skillIconSVG } from './skill-icons.js';
 
 const LESSONS = {
+  walking: { text: 'Chris has introduced Walking. Time spent moving on foot gradually improves your walking pace; a walk always remains slower than a run.', controls: 'WASD to walk - Q / E for diagonal steps' },
+  running: { text: 'Jojo has introduced Running. Running spends stamina; rest or walk to recover. Practice makes your run faster and more efficient.', controls: 'Hold Shift or Tab while moving to run - Ease off to recover stamina' },
   dwarvenSmithing: { title: 'Dwarven Smithing · first technique',
     text: 'The West Hold artisan has shared repair-riveting: controlled heat, fit and peen the joint, then quench. Other dwarven techniques still require their own lessons and trust.',
     controls: 'J → Skills → Smithing → Dwarven Smithing for the technique record' },

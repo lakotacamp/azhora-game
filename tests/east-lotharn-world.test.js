@@ -19,6 +19,7 @@ import {
 import { LOTHARN_WATERS, LOTHARN_BORDER_WATER, KEMRATH_WATER, STONEGATE_WATER, OLVETH_BECK, courseDistance } from '../src/west-regions.js';
 import { WEST_PROFILES, westWaterSurface } from '../src/west-ground.js';
 import { EAST_LOTHARN_WILDLIFE_ZONES } from '../src/east-lotharn-wildlife.js';
+import { varnJambRise } from '../src/varn-world.js';
 
 /**
  * The East Lotharn: the old range north of Amod, built on the user's word of 26 September 2026 -
@@ -66,6 +67,9 @@ test('the peaks stand far over everything else, and the valleys and hills betwee
     const h = world.heightAt(x, z);
     highest = Math.max(highest, h);
     if (peakLiftAt(x, z) > 0 || peakLiftAt(x + .25, z) > 0 || peakLiftAt(x, z + .25) > 0) continue;
+    // The two jambs Varn is built between (src/varn-world.js) are cliffs on purpose, stood on this country's edge
+    // on 2 October 2026: their faces are not the hex blend's seams, which is what this law is about.
+    if (varnJambRise(x, z) > 0) continue;
     if (Math.abs(world.heightAt(x + .25, z) - h) > .6 || Math.abs(world.heightAt(x, z + .25) - h) > .6) steps++;
   }
   assert.ok(highest > 400 && highest < 440, `the range tops out at ${highest.toFixed(0)} m`);

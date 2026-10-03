@@ -27,9 +27,9 @@ const location=npc=>npc?.actor?.group?.position;
 export function createCrimeHost({world,npcById,additionalPeople=()=>[],inventory,combat,position,openDialogue,closeDialogue,
   safeToInterrupt=()=>true,stopAutoplay=()=>{},toast=()=>{},onChange=()=>{},onJail=()=>{},
   onDeath=()=>{},onAssault=()=>{},onRevive=()=>{},onCleanup=()=>{},isGuard=imperialGuard,isEssential=null,
-  canRevive=npc=>!npc.fallen,profile=null,jailSpawn=null}={}){
+  canRevive=npc=>!npc.fallen,isProtected=()=>false,profile=null,jailSpawn=null}={}){
   const crime=createCrime(),controlled=new Map(),fightIds=new Set(),navigators=new Map(),seenImpacts=new Set();
-  let offeredId=null,nextOffer=0,leadId=null,saveClock=0;
+  let offeredId=null,nextOffer=0,leadId=null,saveClock=0,nextProtectionNotice=0;
   // Some authored creatures have their own animation host rather than a row in the
   // ordinary cast. Resolve them here too, without mutating that cast or saving meshes.
   const extraPeople=()=>{const seen=new Set(npcById.keys());return (additionalPeople()??[]).filter(npc=>{
@@ -62,8 +62,23 @@ export function createCrimeHost({world,npcById,additionalPeople=()=>[],inventory
     if(event.type==='revived'&&npc&&canRevive(npc)){npc.crimeDown=false;npc.hidden=false;if(npc.actor?.group)npc.actor.group.visible=true;onRevive({id:event.id,npc});}
     else if(event.type==='cleanup')onCleanup({id:event.id,npc});
   }if(events.length)changed();}
+  // The tutorial host owns this short-lived rule; ordinary residents retain the usual law.
+  // Also repair encounter mirrors, whose combat hit may have been resolved before this host.
+  function protectedContact(npc,source='player'){
+    const person=health(npc);
+    for(const actor of [...(combat.state.enemies??[]),...(combat.state.allies??[])])if(actor.id===npc.id||actor.npcId===npc.id){
+      actor.hp=Number.isFinite(actor.maxHp)&&actor.maxHp>0?actor.maxHp*person.hp/person.maxHp:person.hp;
+      if(actor.hp>0&&['dead','downed','dying'].includes(actor.action))actor.action='idle';
+    }
+    if(source==='player'&&crime.state().time>=nextProtectionNotice){
+      nextProtectionNotice=crime.state().time+4;
+      toast('Keep practice strikes on the training dummy. Your teachers are here to help.','PRACTICE SAFELY');
+    }
+    return {ok:false,reason:'protected',protected:true,id:npc.id,hp:person.hp,maxHp:person.maxHp};
+  }
   function assault({npcId,damage,source='player',selfDefense=false}={}){
     const npc=npcFor(npcId),at=location(npc);if(!npc||!at||!available(npc)||fightIds.has(npcId))return {ok:false,reason:'unavailable'};
+    if(isProtected(npc))return protectedContact(npc,source);
     const result=crime.hit({id:npcId,damage,...config(npc),position:{x:at.x,y:at.y??world.heightAt(at.x,at.z),z:at.z},
       unlawful:source==='player'&&!selfDefense});
     if(!result.ok)return result;
@@ -71,11 +86,11 @@ export function createCrimeHost({world,npcById,additionalPeople=()=>[],inventory
     if(result.crime){nextOffer=0;offeredId=null;toast(`${npc.name??'A resident'} was ${result.hp?'struck':'felled'}. Bounty: ${result.bounty} copper.`,'ASSAULT · IMPERIAL LAW');}
     onAssault({npcId,source,hp:result.hp,damage});changed();return result;
   }
-  function availableGuards(){const p=position();return people().filter(npc=>isGuard(npc)&&location(npc)
+  function availableGuards(){const p=position();return people().filter(npc=>isGuard(npc)&&!isProtected(npc)&&location(npc)
     &&!npc.hidden&&!npc.crimeDown&&!fightIds.has(npc.id)&&health(npc).status==='alive'
     &&gap(location(npc),p)<=LAW.noticeRadius&&(!npc.escorting||npc.lawControlled))
     .sort((a,b)=>gap(location(a),p)-gap(location(b),p));}
-  function nearbyGuard(npc){return npc&&isGuard(npc)&&!npc.hidden&&!isDown(npc.id)&&gap(location(npc),position())<=LAW.talkRange
+  function nearbyGuard(npc){return npc&&isGuard(npc)&&!isProtected(npc)&&!npc.hidden&&!isDown(npc.id)&&gap(location(npc),position())<=LAW.talkRange
     &&guardLineOfSight(world,location(npc),position());}
   function fine(npc){if(!nearbyGuard(npc)||!crime.view().wanted)return false;
     const result=crime.settle('fine',amount=>inventory.count(COPPER_ITEM)>=amount&&inventory.remove(COPPER_ITEM,amount));
@@ -123,7 +138,9 @@ export function createCrimeHost({world,npcById,additionalPeople=()=>[],inventory
     crime.resist();offeredId=null;changed();return true;
   }
   function recordCombatHit({id,hp,maxHp,source='player',selfDefense=false,permanent=false,recoverable=false,notify=true,x,z}={}){
-    const npc=npcFor(id);if(!npc||!Number.isFinite(hp))return {ok:false};const before=health(npc);
+    const npc=npcFor(id);if(!npc||!Number.isFinite(hp))return {ok:false};
+    if(isProtected(npc))return protectedContact(npc,source);
+    const before=health(npc);
     // Encounter actors can be scaled by level. Store their remaining fraction against the
     // named person's own health, so the next encounter cannot heal an injured friend.
     const remaining=Number.isFinite(maxHp)&&maxHp>0?before.maxHp*Math.max(0,hp)/maxHp:Math.max(0,hp);
@@ -208,7 +225,7 @@ export function createCrimeHost({world,npcById,additionalPeople=()=>[],inventory
     for(const id of new Set([...fightIds,...Object.keys(prior.people).filter(id=>prior.people[id].status!=='alive')])){
       const npc=npcFor(id);if(npc&&health(id).status==='alive'&&canRevive(npc)){npc.crimeDown=false;npc.hidden=false;npc.actor.group.visible=true;
         if(prior.people[id]?.status!=='alive')onRevive({id,npc});}}
-    release();fightIds.clear();seenImpacts.clear();nextOffer=0;
+    release();fightIds.clear();seenImpacts.clear();nextOffer=0;nextProtectionNotice=0;
     for(const [id,person] of Object.entries(crime.state().people))if(person.status!=='alive'){
       if(!person.cleaned)death(id,person,'restore');else{const npc=npcFor(id);if(npc){npc.crimeDown=true;npc.hidden=true;npc.actor.group.visible=false;}}}
     return true;

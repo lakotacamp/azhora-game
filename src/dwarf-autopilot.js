@@ -1,5 +1,6 @@
 import { moveInput } from './autopilot.js';
 import { BODY, stepToward } from './bodies.js';
+import { LOCOMOTION } from './locomotion-skills.js';
 import { BALDRO_KINGDOMS, BALDRO_PATHS } from './baldro-world.js';
 import { createBaldroInteriorWalk } from './baldro-interiors.js';
 
@@ -132,7 +133,7 @@ export function createDwarfAutopilot({ world, read, act = {}, options = {} } = {
     const length = Math.hypot(dx, dz);
     if (length <= .001) return;
     yaw = Math.atan2(-dx, -dz);
-    const run = !city && distance > 6, strength = Math.min(1, (distance - radius) / ((run ? 7.2 : 4.2) * dt));
+    const run = !city && distance > 6, strength = Math.min(1, (distance - radius) / ((run ? s.movementSpeeds?.running ?? LOCOMOTION.runStart : s.movementSpeeds?.walking ?? LOCOMOTION.walkStart) * dt));
     const input = moveInput(yaw, dx / length, dz / length, run);
     move = { forward: input.forward * strength, side: input.side * strength, run, basisYaw: yaw };
   }

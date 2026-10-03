@@ -756,14 +756,16 @@ test('they walk in a file, one of them speaks, and none of them is ever a peg', 
   // no other way to learn of one, who is not coming. Empty is spelled as nothing.
   const plan = { road: [{ x: 0, z: 0 }, { x: 40, z: 0 }] }, roster = [{ id: 'merc-gotwood' }];
   const escort = [{ id: 'merc-word', with: true }], dead = ['merc-jerry'];
-  const landing = { id: roster[0].id, departureAt: 42 };
-  let rebuilt;
+  const landing = { id: roster[0].id, departureAt: 99 };
+  let rebuilt, landingBuilds = 0;
   hostFunction('rebuildCompany', { companyBuiltWith: '', companySignature: () => 'changed', company: null,
     companyPlan: plan, roster, landingQuest: landing, companionPlan: () => escort, companyDead: () => dead,
+    makeLandingQuest: () => { landingBuilds++; return landing; }, arrivalStartedAt: () => 42,
     createMercenaryCompany: options => { rebuilt = options; return {}; },
   })();
+  assert.equal(landingBuilds, 1, 'rebuilding refreshes the landing adapter from the current tutorial');
   assert.deepEqual(rebuilt, { ...plan, roster, landingQuest: landing, arrivalStartedAt: 42,
-    companions: escort, dead }, 'the host forwards the party, dead register, and arrival clock together');
+    companions: escort, dead }, 'the party keeps Ed\'s sign-off clock separate from Chris\'s later departure');
   assert.match(main, /const companyDead=\(\)=>roster\.filter\(man=>fallen\.has\(man\.id\)\)/, 'from the one list of the gone');
   assert.match(main, /return all\.length\?all:undefined;/, 'and empty is today’s clock, spelled as nothing');
 });

@@ -8,8 +8,10 @@
  * walks and towers are figures: drawn and animated, never spoken to, shown only
  * when near. Garrison people and figures carry an occupation stake
  * (`holds` and `region`, see occupation.js) and are out only while their side
- * holds the Moros Plain. Pure: no three, no DOM; `createWallWatch` is handed the
- * character factory by its caller.
+ * holds the Moros Plain. The Empire's garrison of Varn and the Lotharn forts
+ * (src/varn-garrison.js) is figures only: a few of them walk a stretch of wall
+ * (`walk`), and the men inside a gate stand on the ground (`ground`). Pure: no
+ * three, no DOM; `createWallWatch` is handed the character factory by its caller.
  */
 import { PLACE_STANDS } from './places.js';
 import { campPoint, gateRoadPoint, OUTPOST_CIRCUIT, OUTPOST_ROAD } from './outpost.js';
@@ -18,6 +20,7 @@ import { FRONTIER_CIRCUIT, frontierPoint, FRONTIER_GATE } from './frontier.js';
 import { isOut } from './occupation.js';
 import { SUVAL_HILL_GUARDS } from './frontier-ridges.js';
 import { FERADOM_GARRISON, FERADOM_WALL_FIGURES } from './feradom-people.js';
+import { LOTHARN_GARRISON_FIGURES } from './varn-garrison.js';
 
 const EMPIRE = Object.freeze({ holds: 'empire', region: 'Moros Plain' });
 const COALITION = Object.freeze({ holds: 'coalition', region: 'Moros Plain' });
@@ -170,30 +173,54 @@ export const WALL_FIGURES = Object.freeze([
   figure('wall-elodi-behind', 'elodi-guard', { ...frontierPoint(8, -4), y: 0 }, toFrontier + Math.PI),
   // Feradom on its towers and walls.
   ...FERADOM_WALL_FIGURES,
+  // The Empire on Varn's walls and the Lotharn forts'.
+  ...LOTHARN_GARRISON_FIGURES,
 ]);
+
+/**
+ * Where a walking figure is at a moment: back and forth along his stretch at his pace, and the way he
+ * faces. `t` is the clock in seconds; `entry.x, z` is one end of the stretch and `entry.walk` the other.
+ */
+export function patrolAt(entry, t) {
+  const dx = entry.walk.x - entry.x, dz = entry.walk.z - entry.z, length = Math.hypot(dx, dz) || 1;
+  const period = length / entry.walk.pace, phase = ((t / period) % 2 + 2) % 2, out = phase < 1, s = out ? phase : 2 - phase;
+  return { x: entry.x + dx * s, z: entry.z + dz * s, yaw: Math.atan2(out ? dx : -dx, out ? dz : -dz) };
+}
 
 /**
  * Draws and wakes the wall figures. `createCharacter` builds an actor,
  * `heightAt` is the world's ground; `update` takes the traveler's position, the
  * occupation control map and a clock, and shows only the figures that are out
- * and within `range`.
+ * and within `range`. A figure stands at `heightAt` under him (or the floor his
+ * structure stands on, `entry.base(heightAt)`) plus his `lift`; one with a
+ * `walk` goes back and forth along it, and is animated walking. When the factory
+ * builds lazily, no more than `materialise` rigs are built in one update, so a
+ * garrison coming into view costs a few frames and never one.
  */
-export function createWallWatch({ scene, createCharacter, heightAt, range = 95 }) {
+export function createWallWatch({ scene, createCharacter, heightAt, range = 95, materialise = 2 }) {
   const figures = WALL_FIGURES.map(entry => {
     const actor = createCharacter({ role: entry.role, tunic: entry.tunic, look: entry.look ?? null });
-    actor.group.position.set(entry.x, heightAt(entry.x, entry.z) + entry.lift, entry.z);
+    const floor = entry.base ? entry.base(heightAt, entry.x, entry.z) : heightAt(entry.x, entry.z);
+    actor.group.position.set(entry.x, floor + entry.lift, entry.z);
     actor.group.rotation.y = entry.yaw; actor.group.visible = false; actor.group.name = `Wall figure ${entry.id}`;
     scene.add(actor.group);
-    return { entry, actor };
+    return { entry, actor, floor };
   });
   return {
     figures,
     update(position, control, seconds) {
-      for (const { entry, actor } of figures) {
-        const near = Math.hypot(entry.x - position.x, entry.z - position.z) < range;
-        const show = near && isOut(entry, control);
+      let built = 0;
+      for (const { entry, actor, floor } of figures) {
+        const near = Math.hypot(entry.x - position.x, entry.z - position.z) < range + (entry.walk ? 20 : 0);
+        let show = near && isOut(entry, control);
+        if (show && actor.materialized === false) { if (built >= materialise) show = false; else built++; }
         actor.group.visible = show;
-        if (show) actor.animate(seconds + entry.x * .01, 0, true, {});
+        if (!show) continue;
+        if (entry.walk) {
+          const at = patrolAt(entry, seconds), under = entry.base ? entry.base(heightAt, at.x, at.z) : heightAt(at.x, at.z);
+          actor.group.position.set(at.x, under + entry.lift, at.z); actor.group.rotation.y = at.yaw;
+          actor.animate(seconds + entry.x * .01, entry.walk.pace, true, {});
+        } else actor.animate(seconds + entry.x * .01, 0, true, {});
       }
     },
   };

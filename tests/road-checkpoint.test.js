@@ -33,6 +33,7 @@ import { createKaylaRace, KAYLA_RACE_ROUTE } from '../src/kayla-race.js';
 import { createCubHoneyQuest, CUB_STAND, CUB_HONEY_ITEM, CUB_HONEY_SOURCE } from '../src/cub-honey-quest.js';
 import { BEAR_HOME_ROUTE } from '../src/bear-family.js';
 import { LIZ_STAND } from '../src/cat-quest.js';
+import {createSevronState} from '../src/sevron-state.js';
 
 function memoryStorage() {
   const values = new Map();
@@ -61,6 +62,14 @@ function fixture() {
 }
 
 const cubHostSnapshot = quest => ({ version: 1, quest, alerted: false, alertTime: 0, patrol: 0, wait: -1, liz: { ...LIZ_STAND } });
+test('Sevron discovery and recovered treasure persist without leaking references or accepting corrupt progress',()=>{
+ const {data,checkpoint}=fixture(),city=createSevronState();city.discoverCity();city.openSecret();city.takeTreasure();city.defeat('west-oremindi-pass-goblins');
+ const saved={...data,sevron:city.snapshot()};assert.equal(checkpoint.save(saved).ok,true);
+ saved.sevron.defeatedThreats.length=0;const loaded=checkpoint.read().data.sevron;assert.deepEqual(loaded,city.snapshot());
+ const restored=createSevronState();assert.equal(restored.restore(loaded),true);assert.equal(restored.takeTreasure(),null);
+ for(const sevron of [null,{}, {...loaded,treasureTaken:'yes'}, {...loaded,secretOpen:false}, {...loaded,defeatedThreats:['unknown']}, {...loaded,defeatedThreats:['west-oremindi-pass-goblins','west-oremindi-pass-goblins']}])assert.equal(checkpoint.save({...data,sevron}).ok,false);
+ assert.equal(checkpoint.save(data).ok,true,'older saves without Sevron remain valid');
+});
 function bearQuestState() {
   const race = createKaylaRace(); race.accept();
   const won = race.snapshot(); won.stage = 'won'; won.kayla.next = KAYLA_RACE_ROUTE.length;

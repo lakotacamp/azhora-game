@@ -464,6 +464,18 @@ export const PLAYABLE_SURVEY = Object.freeze({
         r:121,terrain:'hills'},{q:-16,r:121,terrain:'hills'},{q:-15,r:121,terrain:'plains'},{q:-14,r:121,terrain:'plains'},{q:-13,r:121,terrain:'plains'},
         {q:-12,r:121,terrain:'hills'},{q:-17,r:122,terrain:'hills'},{q:-16,r:122,terrain:'hills'},{q:-15,r:122,terrain:'hills'},{q:-14,r:122,terrain:'hills'},
         {q:-13,r:122,terrain:'hills'}]) }),
+    Object.freeze({ id: "West Oremindi Mountains", name: "West Oremindi Mountains",
+      bounds: Object.freeze({"x":831.385,"y":2112,"width":152.42,"height":224}), centerX: 901.76, centerY: 2229.684,
+      cells: Object.freeze([{q:-12,r:88,terrain:'hills'},{q:-11,r:88,terrain:'high_mountain'},{q:-14,r:89,terrain:'hills'},{q:-13,r:89,terrain:'hills'},{q:-12,r:89,
+        terrain:'high_mountain'},{q:-11,r:89,terrain:'high_mountain'},{q:-15,r:90,terrain:'hills'},{q:-14,r:90,terrain:'hills'},{q:-13,r:90,
+        terrain:'high_mountain'},{q:-12,r:90,terrain:'high_mountain'},{q:-11,r:90,terrain:'high_mountain'},{q:-15,r:91,terrain:'hills'},{q:-14,r:91,
+        terrain:'high_mountain'},{q:-13,r:91,terrain:'high_mountain'},{q:-12,r:91,terrain:'high_mountain'},{q:-11,r:91,terrain:'high_mountain'},{q:-16,r:92,
+        terrain:'hills'},{q:-15,r:92,terrain:'high_mountain'},{q:-14,r:92,terrain:'high_mountain'},{q:-13,r:92,terrain:'high_mountain'},{q:-12,r:92,
+        terrain:'high_mountain'},{q:-16,r:93,terrain:'hills'},{q:-15,r:93,terrain:'high_mountain'},{q:-14,r:93,terrain:'high_mountain'},{q:-13,r:93,
+        terrain:'high_mountain'},{q:-17,r:94,terrain:'hills'},{q:-16,r:94,terrain:'high_mountain'},{q:-15,r:94,terrain:'high_mountain'},{q:-14,r:94,
+        terrain:'high_mountain'},{q:-17,r:95,terrain:'high_mountain'},{q:-16,r:95,terrain:'high_mountain'},{q:-15,r:95,terrain:'high_mountain'},{q:-14,r:95,
+        terrain:'high_mountain'},{q:-18,r:96,terrain:'hills'},{q:-17,r:96,terrain:'high_mountain'},{q:-16,r:96,terrain:'high_mountain'},{q:-15,r:96,
+        terrain:'high_mountain'},{q:-14,r:96,terrain:'high_mountain'}]) }),
   ]),
 });
 

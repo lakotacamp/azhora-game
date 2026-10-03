@@ -12,7 +12,7 @@ export function createMenoraScenery(...args) { return finishBuild(createMenoraSc
 
 export function* createMenoraScenerySteps({parent,heightAt,colliders}) {
   let buildWork = 0;
-  const root=new THREE.Group();root.name='Menora — white walls at the river fork';parent.add(root);
+  const root=new THREE.Group();root.name='Minora — white walls at the river fork';parent.add(root);
   const metrics={buildings:0,towers:0,wallSegments:0,bridges:0,gardens:0,tents:0,batches:0,vertices:0,colliders:0};
   const push=c=>{colliders.push(c);metrics.colliders++;return c;};
   const finish=function* (b) {metrics.vertices+=b.vertexCount;if((yield* b.finishSteps(root)))metrics.batches++;};
@@ -34,7 +34,7 @@ export function* createMenoraScenerySteps({parent,heightAt,colliders}) {
   }
 
   // Paved lanes follow the sampled ground and cross streams on physical decks.
-  const streets=createSceneryBuilder('Menora paving, plazas and quiet courts');
+  const streets=createSceneryBuilder('Minora paving, plazas and quiet courts');
   for(const p of MENORA_PATHS){ if (++buildWork % 8 === 0) yield; for(let i=1;i<p.points.length;i++) { if (++buildWork % 8 === 0) yield;
     const a=p.points[i-1],c=p.points[i],dx=c.x-a.x,dz=c.z-a.z,len=Math.hypot(dx,dz);
     (yield* streets.patchSteps(PAVING,ground,(a.x+c.x)/2,(a.z+c.z)/2,p.width,len,Math.atan2(dx,dz),.045,Math.max(2,Math.ceil(len/4))));
@@ -86,7 +86,7 @@ export function* createMenoraScenerySteps({parent,heightAt,colliders}) {
   // stays open below an overhead arch instead of being silently filled in.
   for(let e=0;e<MENORA_OUTLINE.length;e++) { if (++buildWork % 8 === 0) yield;
     const a=MENORA_OUTLINE[e],c=MENORA_OUTLINE[(e+1)%MENORA_OUTLINE.length],dx=c.x-a.x,dz=c.z-a.z,len=Math.hypot(dx,dz),yaw=Math.atan2(dx,dz);
-    const b=createSceneryBuilder(`Menora white curtain ${e}`),steps=Math.ceil(len/3),step=len/steps;
+    const b=createSceneryBuilder(`Minora white curtain ${e}`),steps=Math.ceil(len/3),step=len/steps;
     const gate=MENORA_GATES.find(g=>g.edge===e);
     for(let i=0;i<steps;i++) { if (++buildWork % 8 === 0) yield;
       const t=(i+.5)/steps,x=a.x+dx*t,z=a.z+dz*t;
@@ -104,7 +104,7 @@ export function* createMenoraScenerySteps({parent,heightAt,colliders}) {
     }
     (yield* finish(b));
   }
-  function* turret(x,z,r=5.3,h=26,name='Menora curtain tower') {
+  function* turret(x,z,r=5.3,h=26,name='Minora curtain tower') {
     const b=createSceneryBuilder(name),y=heightAt(x,z);
     b.cylinder(SHADE,x,y-.5,z,r+1,h*.18);
     b.cylinder(WHITE,x,y+1,z,r,h-1);
@@ -205,7 +205,7 @@ export function* createMenoraScenerySteps({parent,heightAt,colliders}) {
 
   // Formal flowers and low shrubs make the sanctuary cared for without
   // inventing residents or adding unregistered decorative tree species.
-  const gardens=createSceneryBuilder('Menora temple gardens and fountains');
+  const gardens=createSceneryBuilder('Minora temple gardens and fountains');
   for(const g of MENORA_GARDENS) { if (++buildWork % 8 === 0) yield;
     (yield* gardens.patchSteps('#758667',ground,g.x,g.z,g.width,g.depth,0,.06,6));
     for(const sx of [-1,1]){ if (++buildWork % 8 === 0) yield; gardens.box(SHADE,g.x+sx*g.width/2,ground(g.x+sx*g.width/2,g.z)+.2,g.z,.4,.4,g.depth); }

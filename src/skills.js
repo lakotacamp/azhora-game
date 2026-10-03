@@ -36,6 +36,23 @@ export const RUNESCAPE_TABLE = Object.freeze((() => {
 const unlock = (level, text) => Object.freeze({ level, text });
 
 export const SKILLS = Object.freeze({
+  walking: Object.freeze({
+    id: 'walking', name: 'Walking', kind: 'working',
+    blurb: 'A steady pace through the world. Time spent actually walking on foot earns experience and gradually improves your pace. Even a master walker remains slower than a beginner runner.',
+    teacher: 'Chris Scotwood on the tutorial peninsula',
+    thresholds: RUNESCAPE_TABLE,
+    unlocks: Object.freeze([unlock(1, 'Walk at 4.2 metres per second; practice earns experience while moving'),
+      unlock(25, 'A steadier stride, close to 4.8 metres per second'), unlock(99, 'A comfortable maximum walking pace of 5.4 metres per second')]),
+  }),
+  running: Object.freeze({
+    id: 'running', name: 'Running', kind: 'working',
+    blurb: 'Moving faster while spending stamina. Time spent actually running on foot improves both speed and efficiency. Rest or walk to recover after exhaustion; running always costs stamina.',
+    teacher: 'Jojo on the tutorial peninsula',
+    thresholds: RUNESCAPE_TABLE,
+    unlocks: Object.freeze([unlock(1, 'Run at 7.2 metres per second for 8 stamina per second'),
+      unlock(25, 'Close to 7.9 metres per second for about 6.5 stamina per second'),
+      unlock(99, 'Run at 8.6 metres per second for 5 stamina per second')]),
+  }),
   birding: Object.freeze({
     id: 'birding', name: 'Birding',
     blurb: 'Finding birds, keeping your distance, and looking at them properly. Every kind of bird you see for the first time teaches you something.',
@@ -104,7 +121,7 @@ export const SKILLS = Object.freeze({
   }),
   cooking: Object.freeze({
     id: 'cooking', name: 'Cooking',
-    blurb: 'Learn Fire Making first, then turn ingredients into nourishing meals at a lit fire. Every dish you actually cook earns experience.',
+    blurb: 'Turn ingredients into nourishing meals at a lit fire. Jojo provides a prepared fire for your first lesson; Fire Making teaches you to build your own. Every dish you actually cook earns experience.',
     teacher: 'Jojo at the landing, Stanley at the Avrel farm, and Lakota for hot chocolate',
     // Hot chocolate is worth 20 and the fish 10: level 1 with both — the first log is the smallest.
     thresholds: RUNESCAPE_TABLE,

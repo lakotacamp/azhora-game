@@ -7,7 +7,7 @@ export const KAYLA_VERSION = 1;
 export const KAYLA_RADIUS = .8;
 export const KAYLA_SPEED = 2.2;
 export const KAYLA = Object.freeze({
-  id: 'kayla', name: 'Kayla', role: 'A very large bear looking for honey',
+  id: 'kayla', name: 'Kayla', role: 'Strongbear of the family circus, looking for honey',
   species: 'bear', modelRole: 'kayla', maxHp: 450, talk: 4.6,
 });
 
@@ -145,8 +145,11 @@ export const KAYLA_LINES = Object.freeze({
   greeting: 'Oh, hello. I am Kayla. Do mind your toes; I have rather a lot of feet. You look as though you could use a quiet minute.',
   honey: 'I follow the flowers through Drent, Pueth and Luscia. Then I follow the bees. Then, if everybody agrees, there is honey. A very good system.',
   liz: 'Liz sometimes saves me a little comb when I visit her clearing in Pueth. I ask first. They are her bees, and being bigger than the beekeeper does not make them mine.',
-  strength: 'Yes, I am quite strong. It is useful when a branch falls across the path. It is more useful if I remember that most things are much smaller than I am.',
-  home: 'Drent has good shade, Pueth has Liz, and Luscia has whole hillsides of flowers. I walk between them. There is always something worth stopping for.',
+  strength: 'Yes, I am quite strong. It is my act in the circus: I lift the iron bar over my head and the children count. It is also useful when a branch falls across the path, if I remember that most things are much smaller than I am.',
+  home: 'Drent has good shade, Pueth has Liz, and Luscia has whole hillsides of flowers. We walk between them, all five of us, and wherever we stop we put on the show. There is always somebody worth stopping for.',
+  // The circus (src/bear-circus.js; the user, 26 September 2026).
+  circus: 'We are, dear. A family one. My husband Michael is the ringmaster; he has the hat for it, and he juggles. Our daughters are Ava, who balances on the big ball, and Elle, who dances, and our son Bodhi tumbles, mostly on purpose.',
+  show: 'There is no tent. The road is the ring, and anybody who stops is the audience. Michael will tell you it is free. It is. Honey is welcome.',
   farewell: 'Take your time on the road, dear. A person need not hurry just because their legs are smaller.',
 });
 
@@ -161,6 +164,7 @@ export function kaylaConversation(npc, context) {
     ask('kayla-honey', 'What are you looking for?', [KAYLA_LINES.honey, KAYLA_LINES.liz]),
     ask('kayla-home', 'Where do you live?', [KAYLA_LINES.home]),
     ask('kayla-strength', 'You look very strong.', [KAYLA_LINES.strength]),
+    ask('kayla-circus', 'Are you with a circus?', [KAYLA_LINES.circus, KAYLA_LINES.show]),
   ];
   if (typeof hasHoney === 'function' ? hasHoney() : hasHoney) choices.push({
     id: 'kayla-give-honey', label: 'Give her a honeycomb.', action: () => {

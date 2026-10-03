@@ -164,6 +164,11 @@ export function* createAmodScenerySteps(kit) {
     const p = AMOD_PATCH;
     const columns = Math.ceil((p.maxX - p.minX) / STEP) + 1, rows = Math.ceil((p.maxZ - p.minZ) / STEP) + 1;
     const heights = new Float32Array(columns * rows);
+    // The ground as Amod itself cut it (`kit.unbuiltGround`; src/world-terrain.js, `groundBeforeVarn`), where the
+    // world has one to give: the risers are found on that, so a work that regrades some of this ground afterwards
+    // (the Varn road's bed) does not change how many walls there are. Every wall draws three numbers from this
+    // country's seeded stream, and one more or fewer would move every tree and stone laid after them.
+    const cut = kit.unbuiltGround ? new Float32Array(columns * rows) : heights;
     const positions = new Float32Array(columns * rows * 3), colours = new Float32Array(columns * rows * 3);
     let jitter = 7331;
     const shade = () => { jitter = (Math.imul(jitter, 1664525) + 1013904223) >>> 0; return .955 + jitter / 4294967296 * .09; };
@@ -171,6 +176,7 @@ export function* createAmodScenerySteps(kit) {
       const x = p.minX + i * STEP, z = p.minZ + j * STEP, index = j * columns + i;
       const y = groundHeight(x, z);
       heights[index] = y;
+      if (cut !== heights) cut[index] = kit.unbuiltGround(x, z);
       positions.set([x, y, z], index * 3);
       groundTint(color, x, z, THREE).multiplyScalar(shade());
       colours.set([color.r, color.g, color.b], index * 3);
@@ -208,12 +214,12 @@ export function* createAmodScenerySteps(kit) {
       && tarvelDistance(x, z) > 4.5 && roadDistance(x, z) > 3.6 && hexOwnerAt(x, z) === 'Amod';
     const sample = (a, b) => heights[Math.min(rows - 1, Math.max(0, b)) * columns + Math.min(columns - 1, Math.max(0, a))];
     for (let j = 0; j < rows; j++) { if (++buildWork % 32 === 0) yield; for (let i = 0; i < columns; i++) { if (++buildWork % 32 === 0) yield;
-      const here = heights[j * columns + i], level = terraceLevel(here);
+      const here = heights[j * columns + i], level = terraceLevel(cut[j * columns + i]);
       for (const [di, dj] of [[1, 0], [0, 1]]) { if (++buildWork % 32 === 0) yield;
         const ni = i + di, nj = j + dj;
         if (ni >= columns || nj >= rows) continue;
         const there = heights[nj * columns + ni];
-        if (terraceLevel(there) === level) continue;
+        if (terraceLevel(cut[nj * columns + ni]) === level) continue;
         const x = p.minX + (i + di / 2) * STEP, z = p.minZ + (j + dj / 2) * STEP;
         if (!ribbable(x, z)) continue;
         // The wall lies along the contour, which means square across the fall line.
@@ -504,9 +510,11 @@ export function* createAmodScenerySteps(kit) {
     colliders.push({ x: spot.x, z: spot.z, r: 1.2, kind: 'culvert' });
   }
   {
-    // The Kelmod road: where the built world stops, a field wall runs north and south
-    // across the way west, with a pole laid over the gap the road would go through.
-    // The road runs east and west here, so the wall and its collider run along z.
+    // The Kelmod road: where Amod's own built road stops, a field wall runs north and south
+    // across the way west. Until 2 October 2026 a pole lay over the gap the road would go
+    // through; the road goes on now, up the hills to Varn (src/varn-world.js), so the pole
+    // stands against its post, the gap is open, and the wall either side of it is still a wall.
+    // The road runs east and west here, so the wall and its colliders run along z.
     const k = KELMOD_ROAD_END, y = groundHeight(k.x, k.z);
     for (let i = -8; i <= 8; i++) { if (++buildWork % 32 === 0) yield;
       const x = k.x + i * .15, z = k.z + i * 2.4;
@@ -515,8 +523,9 @@ export function* createAmodScenerySteps(kit) {
       stone.rotation.y = .04 * i;
     }
     for (const side of [-1, 1]) { if (++buildWork % 32 === 0) yield; post(wood, k.x, groundHeight(k.x, k.z + side * 2.6) + .7, k.z + side * 2.6, .1, 1.4, group); }
-    box(woodLight, k.x, y + 1.05, k.z, .14, .14, 5.4, group).name = 'Kelmod road bar';
-    colliders.push({ x: k.x, z: k.z, hx: .2, hz: k.halfWidth, kind: 'frontier' });
+    const bar = box(woodLight, k.x + .22, y + 2.5, k.z - 2.6, .14, 5.0, .14, group); bar.name = 'Kelmod road bar'; bar.rotation.x = .1;
+    const GAP = 3.1, run = (k.halfWidth - GAP) / 2;
+    for (const side of [-1, 1]) colliders.push({ x: k.x, z: k.z + side * (GAP + run), hx: .2, hz: run, kind: 'frontier' });
   }
   for (const sign of AMOD_SIGNS) { if (++buildWork % 32 === 0) yield; trailSign(sign.x, sign.z, 1, sign.label, sign.yaw, sign.returnLabel, root); }
 

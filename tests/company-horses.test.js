@@ -14,6 +14,8 @@ import { createCompanions, COMPANION_IDS } from '../src/companions.js';
 import { createMercenaryCompany } from '../src/mercenaries.js';
 import { createFallen } from '../src/bystanders.js';
 import { BODY } from '../src/bodies.js';
+import { hostFunction } from './host-function.js';
+import { peninsulaCompanyStamp } from '../src/peninsula-company.js';
 
 const source = name => readFileSync(fileURLToPath(new URL(`../src/${name}`, import.meta.url)), 'utf8');
 const { createHorse } = await sourceModule('../src/characters.js');
@@ -235,8 +237,21 @@ test('a companion set walking by a restore is placed, and not lost between the t
   assert.match(main, /if\(companySignature\(\)!==companyBuiltWith\)rebuildCompany\(\);/,
     'placeMercenaries asks, so nobody has to remember');
   assert.match(main, /companyBuiltWith=companySignature\(\);/, 'and rebuilding records what it built with');
-  assert.match(main, /const companySignature=\(\)=>JSON\.stringify\(\[companionPlan\(\)\?\?null,companyDead\(\)\]\);/,
-    'and the signature is the plan and the dead, because the company is built off both');
+  let currentPlan = null, dead = [];
+  const tutorial = { path: 'tutorial', signedOffAt: null, chris: { departedAt: null } };
+  const peninsulaHost = { chosen: false, view: () => tutorial };
+  const signature = hostFunction('companySignature', { companionPlan: () => currentPlan, companyDead: () => dead,
+    peninsulaHost, peninsulaCompanyStamp, roster: [{ id: 'merc-gotwood' }] });
+  const initial = signature(); currentPlan = [{ id: 'merc-word', with: true }];
+  assert.notEqual(signature(), initial, 'a changed companion plan rebuilds the company');
+  const joined = signature(); dead = ['merc-jerry'];
+  assert.notEqual(signature(), joined, 'a death rebuilds the company');
+  const beforeTutorial = signature(); peninsulaHost.chosen = true;
+  assert.notEqual(signature(), beforeTutorial, 'starting peninsula training rebuilds the landing adapter');
+  const training = signature(); tutorial.signedOffAt = 42;
+  assert.notEqual(signature(), training, 'Glun\'s letter starts Ed\'s arrival clock');
+  const signedOff = signature(); tutorial.chris.departedAt = 99;
+  assert.notEqual(signature(), signedOff, 'Chris\'s later physical departure updates his separate road clock');
   assert.doesNotMatch(main, /companyBuiltWith=companions\.companions/, 'never the companions list: it has no Chris in it');
   // The review views are the first callers to have needed it, and they say so. They ask for the
   // two who go through the companions list, and get Chris the way a real game gets him: off the
@@ -269,7 +284,8 @@ test('the two review views compose the same whether they are run once or twice',
   // horse's own yaw and would move with him.
   assert.match(body, /const facing=view==='company-mounted'\?fits\.yaw:hitch\.yaw;/);
   assert.match(main, /function cameraPullIn\(focus,want,bearing\)\{/, 'one arithmetic for the camera and for the chooser');
-  assert.match(main, /const actualDistance=cameraPullIn\(cameraFocus,viewDistance,yaw\);/, 'and the camera itself uses it');
+  assert.match(main, /let actualDistance=reviewVista&&reviewTarget\?viewDistance:cameraPullIn\(cameraFocus,viewDistance,yaw\);/,
+    'the ordinary camera uses collision pull-in; only explicit review vistas preserve their authored distance');
   // The view reports every link in the chain, so one render says which is broken.
   for (const fact of ['owned:riding.owned', 'mounted:riding.mounted', 'mountBlock:riding.mountBlock',
     'walking:companions.companions.map(one=>one.id)', 'placed:[...(company.companionIds??[])]',

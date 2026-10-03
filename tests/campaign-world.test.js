@@ -65,10 +65,10 @@ test('describeRegion merges design with the survey and falls back to provisional
   const adjacency = computeAdjacency(survey.regions);
   const drent = describeRegion('Drent', survey.regions, adjacency);
   assert.equal(drent.level, 0); assert.equal(drent.levelName, 'Tutorial'); assert.equal(drent.faction.id, 'empire');
-  assert.equal(drent.hexes, 39); assert.equal(drent.neighbors[0].id, 'Pueth');
+  assert.equal(drent.hexes, 42); assert.equal(drent.neighbors[0].id, 'Pueth');
   assert.deepEqual(drent.threats.map(threat => threat.id), ['bramble-goblin']);
   assert.deepEqual(drent.settlements.map(place => place.name), ['Tidehaven', 'The Torn mouth']);
-  assert.match(drent.terrain, /grassland 87%/);
+  assert.match(drent.terrain, /grassland 81%, open plains 14%, forest 5%/);
   const coldStones = describeRegion('Cold Stones', survey.regions, adjacency);
   assert.equal(coldStones.provisional, true); assert.equal(coldStones.level, 4); assert.equal(coldStones.control, 'wild');
   assert.equal(coldStones.hexes, 61);

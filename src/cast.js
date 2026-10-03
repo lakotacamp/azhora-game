@@ -89,7 +89,9 @@ export const OWN_IDS = Object.freeze([
   'doomsayer',           // Mark, who reads the signs and teaches Botany and Geology on Tidehaven's shore
   'ben-sorcerer',        // Ben, of the sorcerer's guild, and the only man who teaches fire
   'kayla-cub',          // Bodhi, Kayla's cub, teaching Stealth at the Drent river.
-  'kayla',              // The kind talking bear on her honey rounds
+  'kayla',              // The kind talking bear on her honey rounds, and the strongbear of the family circus
+  'kayla-michael', 'kayla-ava', 'kayla-elle',   // Her husband Michael the ringmaster and their daughters (src/bear-circus.js)
+  'smedley',            // The user's purple-robed character with a peruke and bad breath
   'liz-beekeeper',       // Liz, who keeps the Pueth skeps and the game's honeycomb
   'cobble-boatwright', 'cobble-ledgerkeeper', 'cobble-kelp-trader', 'cobble-weighmaster', // Cobble witnesses
   'bee-keeper',          // Troy, who kept the user's bees and now keeps a murder in Cobble

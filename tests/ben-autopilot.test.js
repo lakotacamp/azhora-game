@@ -11,6 +11,7 @@ import { createWeapons } from '../src/weapons.js';
 import { createSkills } from '../src/skills.js';
 import { createMagic } from '../src/magic.js';
 import { createConsumables } from '../src/consumables.js';
+import { LOCOMOTION } from '../src/locomotion-skills.js';
 
 const flatWorld=()=>({bounds:{minX:-1500,maxX:1500,minZ:-1000,maxZ:1000},colliders:[],heightAt:()=>1.5});
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -70,7 +71,7 @@ test('the full Ben pilot follows the moving guide, wins through real contacts, a
   let mode='playing',dialogue=null,frame=0,handled=0,walked=0,cameraYaw=0;
   const navigation=bodyWorld(world),guideNavigation=bodyWorld(world);
   const currentBen=()=>combat.state.phase==='active'?combat.state.allies.find(actor=>actor.id===BEN.id)??ben:ben;
-  const read=()=>({mode,position:{...position},quest:quest.state,ben:{...currentBen(),available:true},weapon:weapons.profile(),
+  const read=()=>({mode,movementSpeeds:{walking:LOCOMOTION.walkStart*combat.movementScale(),running:LOCOMOTION.runStart*combat.movementScale()},position:{...position},quest:quest.state,ben:{...currentBen(),available:true},weapon:weapons.profile(),
     dialogue,interaction:{npcId:distance(position,currentBen())<2.8?BEN.id:null},inventory:{pawpaws:inventory.count('pawpaw')},
     combat:{...combat.state.player,phase:combat.state.phase,encounterId:combat.state.encounterId,hasShield:true,guardCost:18,
       enemies:combat.state.enemies,allies:combat.state.allies}});
@@ -90,7 +91,7 @@ test('the full Ben pilot follows the moving guide, wins through real contacts, a
     pilot.step(dt);
     if(Number.isFinite(pilot.yaw))cameraYaw+=Math.atan2(Math.sin(pilot.yaw-cameraYaw),Math.cos(pilot.yaw-cameraYaw))*(1-Math.exp(-3.5*dt));
     if(mode==='playing'){
-      const {forward,side}=pilot.move,yaw=pilot.move.basisYaw??cameraYaw,speed=4.2*combat.movementScale();
+      const {forward,side}=pilot.move,yaw=pilot.move.basisYaw??cameraYaw,speed=(pilot.move.run?LOCOMOTION.runStart:LOCOMOTION.walkStart)*combat.movementScale();
       moveCharacter(position,(-Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed*dt,
         (-Math.cos(yaw)*forward-Math.sin(yaw)*side)*speed*dt,navigation);
       combat.guard(pilot.guard,pilot.yaw===null?combat.state.player.yaw:pilot.yaw+Math.PI);

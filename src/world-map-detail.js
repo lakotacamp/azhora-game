@@ -1,6 +1,23 @@
 import { TRANSFORM, hexAt } from './region-world.js';
 import { MARKER_STYLE } from './quest-markers.js';
 import { AMBRON_CENTRE, AMBRON_OUTLINE } from './ambron-city-layout.js';
+import { MENORA_OUTLINE } from './menora-city.js';
+import { VARN_CORNERS } from './varn-world.js';
+import { SEVRON_ENTRANCES } from './west-oremindi-world.js';
+
+// Only built cities (including identifiable ruins) have this designation.
+// Stable discovery/save IDs deliberately retain the former spelling of Minora.
+export const ATLAS_CITY_DESIGNATIONS = Object.freeze({
+  menora: Object.freeze({ name: 'Minora', subtitle: 'Holy city' }),
+  varn: Object.freeze({ name: 'Varn', subtitle: 'Fortress city' }),
+  solis: Object.freeze({ name: 'Solis', subtitle: 'City' }),
+  elod: Object.freeze({ name: 'Elod', subtitle: 'City-state' }),
+  'west-baldro-gate': Object.freeze({ name: 'West Hold', subtitle: 'Dwarven city' }),
+  'east-baldro-gate': Object.freeze({ name: 'East Hold', subtitle: 'Dwarven city' }),
+  imlamdris: Object.freeze({ name: 'Imlamdris', subtitle: 'City ruins' }),
+  'zecron-ruins': Object.freeze({ name: 'Zecron', subtitle: 'City ruins' }),
+  'sevron-city': Object.freeze({ name: 'Sevron', subtitle: 'Elven city' }),
+});
 
 export const questMapColour = kind => `#${(Object.hasOwn(MARKER_STYLE, kind) ? MARKER_STYLE[kind] : MARKER_STYLE.main).colour.toString(16).padStart(6, '0')}`;
 
@@ -15,12 +32,30 @@ export function atlasCityDetail() {
     boundary: AMBRON_OUTLINE.map(point) };
 }
 
+/** Authored wall footprints, not circles that imply unbuilt defenses. */
+export function atlasCityBoundaries() {
+  return [{ id: 'ambron', boundary: AMBRON_OUTLINE.map(point) },
+    { id: 'menora', boundary: MENORA_OUTLINE.map(point) },
+    { id: 'varn', boundary: VARN_CORNERS.map(point) }];
+}
+
+/** A secret city gains a map badge only after its living galleries are found. */
+export function atlasRevealedCityMarks({ sevron = false } = {}) {
+  if (!sevron) return [];
+  return [{ id: 'sevron-city', ...ATLAS_CITY_DESIGNATIONS['sevron-city'], kind: 'city',
+    ...point(SEVRON_ENTRANCES.find(entrance => entrance.kind === 'city')) }];
+}
+
 /** An ordinary local Ambron label yields to the capital. A tracked destination
  * or quest keeps its own marker so the city never erases the player's goal. */
 export function atlasPlaceMarks(places = [], local = []) {
   const capital = atlasCityDetail().marker;
   const entries = [...places, ...local].filter(p => p && !(p.id === 'ambron' && !['quest', 'tracked'].includes(p.kind)));
-  return [...new Map([...entries, capital].map(mark => [mark.id, { ...mark }])).values()];
+  return [...new Map([...entries, capital].map(mark => {
+    const designation = ATLAS_CITY_DESIGNATIONS[mark.id];
+    return [mark.id, designation && !['quest', 'tracked'].includes(mark.kind)
+      ? { ...mark, ...designation, kind: 'city' } : { ...mark }];
+  })).values()];
 }
 
 /** The atlas and the playable ground use one transform, even at street scale. */

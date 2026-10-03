@@ -1,3 +1,4 @@
+import { tutorialSceneryClearAt } from './peninsula-tutorial-scenery.js';
 import { forEachBuild } from './build-each.js';
 import { finishBuild } from './build-steps.js';
 import { DRENT_PENINSULA_HEXES } from './game-atlas-adjustments.js';
@@ -199,7 +200,7 @@ export function* createRegionScenerySteps(kit) {
         // A copse grows with the hex it stands in, so its trees keep their spacing.
         const spread = clusters ? 9 * WORLD_SCALE : METRES_PER_HEX * .48;
         const x = anchor.x + range(-spread, spread), z = anchor.z + range(-spread * 1.1, spread * 1.1);
-        if (!owns(x, z) || kit.insideVillage(x, z)) continue;
+        if (!owns(x, z) || kit.insideVillage(x, z) || name === 'Drent' && tutorialSceneryClearAt(x,z,1.2)) continue;
         if (regionClear(x, z, 2.5) || kit.roadDistance(x, z) < 4.2 || kit.riverDistance(x, z) < 12) continue;
         if (groundHeight(x, z) < 1.4) continue;
         if (trees.some(tree => Math.hypot(tree.x - x, tree.z - z) < (dense ? 3.1 : 5.2))) continue;
@@ -210,7 +211,7 @@ export function* createRegionScenerySteps(kit) {
       }
       for (let i = 0; i < biome.rocksPerHex; i++) { if (++buildWork % 32 === 0) yield;
         const x = cell.x + range(-26 * WORLD_SCALE, 26 * WORLD_SCALE), z = cell.z + range(-28 * WORLD_SCALE, 28 * WORLD_SCALE);
-        if (!owns(x, z) || kit.insideVillage(x, z) || regionClear(x, z, 2) || kit.roadDistance(x, z) < 3.4) continue;
+        if (!owns(x, z) || kit.insideVillage(x, z) || name === 'Drent' && tutorialSceneryClearAt(x,z,1.2) || regionClear(x, z, 2) || kit.roadDistance(x, z) < 3.4) continue;
         rocks.push({ x, z, s: range(.55, biome.id === 'stone-hills' ? 3.1 : 1.3), rot: range(0, 6.28) });
       }
       for (let i = 0; i < tuftsPerHex(biome); i++) { if (++buildWork % 32 === 0) yield;

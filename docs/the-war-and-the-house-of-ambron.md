@@ -10,8 +10,8 @@ farming hinterland, which foreign powers take in order to starve the city (`eer.
 ## Current frontier ruling (30 September 2026)
 
 The latest user brief supersedes the older draft in which Cedric was murdered,
-Menora was razed and Wilhelm was trapped in Nylon. **None of those events has
-happened at the start of this build.** Menora is the living holy frontier city at
+Minora was razed and Wilhelm was trapped in Nylon. **None of those events has
+happened at the start of this build.** Minora is the living holy frontier city at
 the Isa-Lizeem fork, near the meeting of Isareos, Caricas and Nethereum. Its great
 temple shelters Cedric; its western muster ground holds Wilhelm and his army.
 The main-story consequences are reserved for later Chapter 3/4 design.
@@ -24,8 +24,8 @@ The main-story consequences are reserved for later Chapter 3/4 design.
 | **Valdemar the younger** | The eldest son. Died before his father. |
 | **Ruzo** | Valdemar the younger's son — christened Valdemar too, and goes by **Ruzo**, the name he took when he renounced his family. The old king thought him the ablest of them. He did not believe in the Empire's mission and would not take the throne he arguably had the first claim to. He is friendly with Willard and backs the constitutional monarchy. In the game he is already named, unwitting, in the Coalition's roster: "the prince who renounced his family". |
 | **Valroy** | Second son, and the eldest living. Abroad across the eastern sea on a colonial crusade when his father died, and claimed the throne from there. **Has just landed in the east with his army** — the news that opens Chapter 3 on both branches. Determined, independent, and deaf to argument. |
-| **Cedric** | Third son; half-brother to Willard. Took the throne while Valroy was away. Driven out of Ambron by the revolution, he remains alive in Menora's grand temple in Isareos and still claims the crown. Long dirty-blonde hair. His later story is undecided. |
-| **Wilhelm** | Younger than Cedric, older than Willard. **The Blood Prince.** Worships Nanvir, the taboo blood god. Devastated Suval and the Iscare islands. He and his army are now present at intact Menora. Short very pale blonde, almost silver hair; a twisted, maniacal expression. |
+| **Cedric** | Third son; half-brother to Willard. Took the throne while Valroy was away. Driven out of Ambron by the revolution, he remains alive in Minora's grand temple in Isareos and still claims the crown. Long dirty-blonde hair. His later story is undecided. |
+| **Wilhelm** | Younger than Cedric, older than Willard. **The Blood Prince.** Worships Nanvir, the taboo blood god. Devastated Suval and the Iscare islands. He and his army are now present at intact Minora. Short very pale blonde, almost silver hair; a twisted, maniacal expression. |
 | **Willard** | The youngest. Installed as **constitutional monarch in Ambron** by the republicans, one day before the traveler arrives. |
 
 ## King, or emperor?
@@ -77,9 +77,9 @@ the kit. (Decided 2026-09-19; the game used Legion, Legate, Tribune and Latin na
 - **978** - The Blood Prince sails south with his army. Little is heard from him for
   two years.
 - **980, before the game** - The revolution in Ambron drives Cedric out. He takes
-  refuge at Menora's great temple in Isareos and continues to claim the crown. The
+  refuge at Minora's great temple in Isareos and continues to claim the crown. The
   rebels install his half-brother Willard. Wilhelm and his army are also now at
-  Menora, which remains intact, stable and exceptionally well defended. The date
+  Minora, which remains intact, stable and exceptionally well defended. The date
   and route of Wilhelm's return, and the princes' later dealings, are still open.
 - **980, the game** — The traveler lands at Tidehaven. Chapter 2 ends at the border battle
   and their own side's ground. Chapter 3 opens in Ambron a day after the revolution, and
@@ -131,7 +131,7 @@ carry short paragraphs).
   a Cref of the rock appointed from Ambron. The steward still holds it.
 - **The legitimacy crisis.** The oath was sworn to a man in the rock, not a house on a lake. With
   the old king dead and his sons at war - Valroy claiming from abroad, Cedric still
-  claiming from Menora, Wilhelm and his army there too, Willard a king by a republic's
+  claiming from Minora, Wilhelm and his army there too, Willard a king by a republic's
   leave, Ruzo having renounced the family -
   the kings of the north are asking whether the oath has an object at all. This is the major
   issue the traveler meets on going north into the Alliance's country.
@@ -150,6 +150,6 @@ roll with no ground yet.
   Krefar, Stornul, Grethal, Fordun, Vrakel, Harsk, Vralketh, Skordun).
 - **Olo and Blizard**: which ground on the atlas.
 
-- What role do Cedric, Wilhelm and Menora play in Chapter 3 or Chapter 4? The city is intact and stable; no betrayal or destruction is predetermined.
+- What role do Cedric, Wilhelm and Minora play in Chapter 3 or Chapter 4? The city is intact and stable; no betrayal or destruction is predetermined.
 - Nanvir is new: he wants a place in `../world-builder/azhora_lore/culture/azhoran_religions.md`.
 - Is Prince Maro alive in 980, and where?

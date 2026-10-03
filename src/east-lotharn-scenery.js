@@ -36,6 +36,7 @@ export function* createEastLotharnScenerySteps(kit) {
   const range = (a, b) => a + random() * (b - a);
   const pick = list => list[Math.floor(random() * list.length)];
   const gy = (x, z) => groundHeight(x, z);
+  const unbuilt = kit.unbuiltGround ?? gy;
   const push = collider => { colliders.push(collider); return collider; };
   const metrics = { water: 0, trees: 0, tufts: 0, crops: 0, vines: 0, rocks: 0, outcrops: 0, buildings: 0, batches: 0, rushes: 0 };
   const own = (x, z) => hexOwnerAt(x, z) === LOTHARN;
@@ -480,7 +481,9 @@ uniform float time; varying vec3 p; void main(){${body}
       // Stone shows where the soil is thin: on the balds, and on the steep ground of the tops.
       for (let i = 0; i < 16; i++) { if ((++buildWork & 31) === 0) yield;
         const x = cell.x + range(-50, 50), z = cell.z + range(-57, 57);
-        if (!own(x, z) || inWestWater(x, z, 2) || gy(x, z) < 70 || passRoadAt(x, z).distance < PASS_ROAD_HALF + 3 || atMouth(x, z) || onRamp(x, z, 1)) continue;
+        // Judged on the ground as the range itself made it (`kit.unbuiltGround`; src/world-terrain.js, `groundBeforeVarn`):
+        // a work built on this country afterwards must not change which stones are taken, or every one after them moves.
+        if (!own(x, z) || inWestWater(x, z, 2) || unbuilt(x, z) < 70 || passRoadAt(x, z).distance < PASS_ROAD_HALF + 3 || atMouth(x, z) || onRamp(x, z, 1)) continue;
         rocks.push({ x, z, s: range(.4, 1.5), rot: range(0, 6.28) });
       }
     }

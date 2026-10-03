@@ -15,10 +15,10 @@ test('every skill and specialization has its own mark, drawn the way the satchel
   // Twenty-two about the world, seven about fighting, and six about sorcery (src/sorcery.js) -
   // of which three can be taught, one teacher each: Ben fire, Troy mind, Liz beast. Time is the
   // sixth, begun for Subtractidaughter and reserved.
-  assert.equal(SKILL_IDS.length, 36, 'twenty-two of the world, one guarded specialization, seven of fighting, six of sorcery');
+  assert.equal(SKILL_IDS.length, 38, 'twenty-four of the world, one guarded specialization, seven of fighting, six of sorcery');
   const shown = SKILL_IDS.filter(id => !hiddenSkillsIn('normal').includes(id));
-  assert.equal(shown.length, 35, 'normal mode keeps the specialization and excludes the linguist');
-  assert.equal(shown.filter(id => SKILLS[id].group === undefined).length, 22, 'twenty-one ordinary skills and one specialization');
+  assert.equal(shown.length, 37, 'normal mode keeps the specialization and excludes the linguist');
+  assert.equal(shown.filter(id => SKILLS[id].group === undefined).length, 24, 'twenty-three ordinary skills and one specialization');
   assert.deepEqual(Object.keys(SKILL_ICONS), [...SKILL_IDS], 'one mark each, in the skills’ own order');
   const seen = new Set();
   for (const id of SKILL_IDS) {

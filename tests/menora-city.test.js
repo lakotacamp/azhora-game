@@ -9,7 +9,7 @@ import { sourceModule } from './module-loader.js';
 import { describeRegion } from '../src/campaign-world.js';
 import { SUBREGIONS } from '../src/map-fog.js';
 
-test('Menora occupies the actual Isareos side of the Isa–Lizeem confluence',()=>{
+test('Minora occupies the actual Isareos side of the Isa–Lizeem confluence',()=>{
   assert.deepEqual(MENORA.fork,ISAREOS_RIVER.points.at(-1));
   assert.ok(courseDistance(LIZEEM,MENORA.fork.x,MENORA.fork.z)<LIZEEM.maxHalf);
   assert.equal(regionAt(MENORA.x,MENORA.z).name,'Isareos');
@@ -19,7 +19,7 @@ test('Menora occupies the actual Isareos side of the Isa–Lizeem confluence',()
   for(const b of MENORA_BUILDINGS){assert.ok(inMenora(b.x,b.z),b.id);assert.equal(regionAt(b.x,b.z).name,'Isareos',b.id);}
 });
 
-test('Every Menora building footprint leaves the original rivers and garden beck open',()=>{
+test('Every Minora building footprint leaves the original rivers and garden beck open',()=>{
   for(const b of MENORA_BUILDINGS)for(let x=-b.width/2;x<=b.width/2;x+=2)for(let z=-b.depth/2;z<=b.depth/2;z+=2)
     assert.ok(menoraRiverClearance(b.x+x,b.z+z)>1.5,`${b.id} overlaps water at ${x},${z}`);
   for(const river of [ISAREOS_RIVER,LIZEEM,...ISAREOS_BECKS])for(const p of river.points)
@@ -70,12 +70,12 @@ test('The named princes have clear separate temple and army meeting places',()=>
   }
 });
 
-test('The frontier chart distinguishes Imperial Menora and Caricas from independent Yunethre',()=>{
+test('The frontier chart distinguishes Imperial Minora and Caricas from independent Yunethre',()=>{
   assert.equal(describeRegion('Isareos').control,'empire');
   assert.equal(describeRegion('Caricas').control,'empire');
   assert.deepEqual(describeRegion('Caricas').arcs,['empire','coalition']);
   assert.equal(describeRegion('Yunethre').control,'yunethre');
-  assert.equal(describeRegion('Isareos').settlements[0].name,'Menora');
+  assert.equal(describeRegion('Isareos').settlements[0].name,'Minora');
   assert.ok(describeRegion('Isareos').threats.some(t=>t.id==='centaur-raider'));
   for(const id of ['menora','menora-army-muster','caricas-garrison-town','yunethre-free-town','yunethre-centaur-camp'])
     assert.equal(SUBREGIONS.filter(s=>s.id===id).length,1,id);

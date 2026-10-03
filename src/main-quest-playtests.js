@@ -1,6 +1,6 @@
 /** The built gold arc, broken into fresh, bounded demonstrations. */
 export const MAIN_QUEST_PLAYTESTS = Object.freeze([
-  { id: 'arrival', title: 'Arrival and training', description: 'Jojo, Glun and your first chart', stop: 'training' },
+  { id: 'arrival', title: 'Peninsula tutorial', description: 'Eight lessons, then Glun’s letter', stop: 'training' },
   { id: 'road', title: 'The road to Nothom', description: 'Greenway ambush and the Caloss crossing', stop: 'drent-road' },
   { id: 'lauvel', title: 'The lost courier', description: 'Recover the Lauvel satchel for Iven', stop: 'luscia-aftermath' },
   { id: 'moros', title: 'The Moros muster', description: 'Report to the Marshal and claim your horse', stop: 'moros-camp' },
@@ -13,7 +13,7 @@ export const mainQuestPlaytest = id => MAIN_QUEST_PLAYTESTS.find(entry => entry.
 // Wait for the final conversation to finish before handing the controls back.
 export function mainQuestPlaytestFinished(entry, snapshot) {
   if (!entry || snapshot.mode !== 'playing') return false;
-  if (entry.stop === 'training') return snapshot.chartLesson === 'complete' && !!snapshot.journey?.started;
+  if (entry.stop === 'training') return snapshot.tutorial?.completed ?? (snapshot.chartLesson === 'complete' && !!snapshot.journey?.started);
   if (entry.stop === 'aftermath') return !!snapshot.aftermath?.complete;
   return snapshot.campaign?.completed?.includes(entry.stop) ?? false;
 }

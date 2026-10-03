@@ -1344,15 +1344,15 @@ The user separately requested a design plan for the rest of the regions, explici
 
 The user requested beginning South Oremindi Mountains terrain and wildlife after the Elfland work. The implemented environment follows the atlas footprint, with mountain relief, wooded feet, alpine ground, both mapped lakes and persistent wild fauna. NPCs, settlements and quests were not requested and are not part of this phase. The implementation record is [South Oremindi Mountains environment](south-oremindi-environment.md); its height and habitat tuning are build choices rather than additional user canon.
 
-### 2026-09-30: Menora, the occupied Caricas and independent Yunethre
+### 2026-09-30: Minora, the occupied Caricas and independent Yunethre
 
-The user requested a beautiful holy frontier city called **Menora** (also dictated
-as Minora) at the actual Isa-Lizeem fork in **Isareos**, by the Caricas/Nethereum
+The user requested a beautiful holy frontier city called **Minora** (spelling
+confirmed on 2 October) at the actual Isa-Lizeem fork in **Isareos**, by the Caricas/Nethereum
 crossroads. It has great white walls, a spectacular Sorcerers' Guild tower and a
 grand temple. Cedric is alive there, a claimant expelled from Ambron by rebels who
 installed his half-brother Willard; he has long dirty-blonde hair. Wilhelm and his
 army are also here; his hair is short, almost silver-blonde, with no bun or hat,
-and his expression is twisted and maniacal. Menora remains stable and well
+and his expression is twisted and maniacal. Minora remains stable and well
 defended. Their Chapter 3/4 story is not decided, and old notes about Cedric's death,
 a destroyed holy city or Wilhelm trapped at Nylon are superseded.
 
@@ -1367,7 +1367,7 @@ them. Their mounted culture may draw inspiration from Mongolian nomadic peoples
 without treating real-world culture as a monster stereotype. Like elves and
 dwarves, they have lost most of their former lands to expanding humans.
 Bane's Camp is their base; another camp in Henborth is explicitly for later.
-Northern and western Isareos suffer raids, while Menora is protected.
+Northern and western Isareos suffer raids, while Minora is protected.
 
 A small western Yunethre town beside the lake below South Oremindi is neutral,
 independent of Ambron, Celder and Elfland, and respected by surrounding sides.
@@ -1512,3 +1512,60 @@ completed lessons and legitimate inventory/XP on recovery and removing the
 restrictions at graduation. A visible land gate, exact creature art, and tuning
 are proposals rather than implemented or finalized details. No game code was
 changed for this design request.
+
+
+### 2026-10-02: Peninsula tutorial and West Oremindi implementation authorized
+
+The user asked to implement the peninsula tutorial and its sea/air escape
+encounters, together with the existing West Oremindi/Sevron plan. This supersedes
+the earlier planning-only status. The initial implementation uses the recommended
+visible timber gate, Running as the stamina-efficiency skill, and a fifteen-game-
+minute skip anchored before Ed's arrival. Completed lessons and possessions remain
+after either boundary creature defeats the player. Glun's letter, not Chris's
+training progress, triggers Ed's arrival. Existing saves retain their prior opening.
+
+See [the tutorial implementation record](peninsula-tutorial-design.md) and
+[West Oremindi and Sevron](sevron-west-oremindi-design.md). The separate
+[strategic layer brainstorm](strategic-layer-brainstorm.md) remains design only.
+
+### 2026-10-02: City map designations and Minora spelling
+
+The user confirmed **Minora** as the holy city's name and requested that Varn and
+other established cities use the same map designation styling as Ambron and
+Minora. The city badge uses the existing castle symbol and parchment name plaque;
+subtitles distinguish the capital, holy city, fortress city, dwarven cities and
+city ruins. It does not designate unbuilt lore settlements as cities or reveal
+unvisited ground. Existing `menora` discovery IDs and save references remain
+stable; all visible names use Minora. Varn's map footprint follows its six real
+walls. Ordinary towns and villages retain their existing smaller map marks.
+
+
+### 2026-09-26 - Kayla's family is a circus
+
+The user: "Can we make Kayla's bear family a circus family? Michael is her husband. Ava is a
+daughter. Elle is her other daughter."
+
+- Five bears: **Kayla**, the strongbear, who presses an iron barbell over her head; **Michael**,
+  her husband and the ringmaster (top hat, red coat), who juggles three balls; their daughters
+  **Ava**, who balances on a big striped ball, and **Elle**, who dances and twirls on her hind
+  paws; and their son **Bodhi**, the cub of the Stealth lesson, who tumbles (the user: "Bodhi is a
+  boy"). Bodhi stays in the family and in the quest.
+- Everyone wears circus costume (ruffs; Kayla's belt, Michael's hat and coat, the girls' tutus,
+  Ava's and Bodhi's party hats, Elle's plume). There is no tent: the road is the ring.
+- Until Kayla's race and Bodhi's lesson are both done, Michael, Ava and Elle wait in camp on the
+  grass beside Bodhi at the Tessen crossing, practising. After the reunion all five walk Kayla's
+  honey rounds in one file (Bodhi, Ava, Elle, then Michael at the back); Kayla waits for anyone
+  who falls behind, and a bear that dies drops out of the file.
+- The family performs whenever it is together and at rest: in camp, and at Kayla's three stops
+  (not while she is eating honey, walking, fighting or talking). The show runs sixteen seconds in
+  every twenty-two.
+- Michael, Ava and Elle can be talked to about the show. Kayla has a new "Are you with a
+  circus?" question.
+- Code: src/bear-circus.js (who, acts, camp, dialogue), src/kayla-character.js (looks and acts),
+  src/bear-family.js (camp, file and show; save version 2, and older saves put the circus in camp).
+  Review views `bear-circus` and `bear-circus-close`.
+
+
+### 2026-10-02: Compatible Smedley and circus work integrated
+
+Imported Claude's existing Smedley and bear-family work without replacing the newer opening tutorial, regions or strategic layer. Smedley retains the requested purple robe, powdered peruke and bad breath; he has no regional errand and does not inherit Oda's conversation. Both Smedley and the three circus relatives remain in the default cast. Circus progress accepts the older mother-and-cub saves, and malformed family positions are rejected before moving any bear. Corpses preserve each bear's costume while omitting performance props. The original source worktrees remain untouched.

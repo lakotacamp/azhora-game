@@ -4,6 +4,9 @@ import { createCagneyAutopilot } from '../src/cagney-autopilot.js';
 import { createBenAutopilot } from '../src/ben-autopilot.js';
 import { createEscortMotionChecks } from '../src/escort-motion-checks.js';
 import { createEscortFollower } from '../src/escort-autopilot-follow.js';
+import { LOCOMOTION } from '../src/locomotion-skills.js';
+const novice={walking:LOCOMOTION.walkStart,running:LOCOMOTION.runStart};
+const mastered={walking:LOCOMOTION.walkCap,running:LOCOMOTION.runCap};
 import { CAGNEY_AMBUSH, CAGNEY_QUEST } from '../src/cagney-quest.js';
 
 const world={bounds:{minX:-2000,maxX:2000,minZ:-2000,maxZ:2000},colliders:[],heightAt:()=>1.5};
@@ -53,8 +56,8 @@ test('failure and unrelated encounters stop autoplay without choosing a recovery
 
 // Drive the same ordinary movement and camera smoothing as the renderer. A
 // screenshot cannot detect the old 40 full-speed/start-stop changes per second.
-function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30,pace=2.8,settle=3,turnAt=10}={}){
-  const position={x:0,z:0},guide={x:0,z:-4,available:true},s={...base(),position,ben:guide,cagney:guide,quest:{stage,walk:{}}};
+function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30,pace=2.8,settle=3,turnAt=10,movementSpeeds=novice}={}){
+  const position={x:0,z:0},guide={x:0,z:-4,available:true},s={...base(),position,movementSpeeds,ben:guide,cagney:guide,quest:{stage,walk:{}}};
   const pilot=create({world,read:()=>s});pilot.start();
   const motion=createEscortMotionChecks();
   let cameraYaw=0,camera={x:0,z:10},lastSpeed=0,switches=0,maxSpeedDelta=0,maxCameraTurn=0,minGap=Infinity,maxGap=0;
@@ -63,8 +66,8 @@ function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30,pa
     if(time<stopAt){if(turn&&time>=turnAt)guide.x+=pace*dt;else guide.z-=pace*dt;}
     pilot.step(dt);assert.equal(pilot.active,true,pilot.stopReason);
     if(Number.isFinite(pilot.yaw))cameraYaw+=Math.atan2(Math.sin(pilot.yaw-cameraYaw),Math.cos(pilot.yaw-cameraYaw))*(1-Math.exp(-3.5*dt));
-    // As the game does: a run is 7.2 at full input, a walk 4.2.
-    const {forward,side}=pilot.move,basis=pilot.move.basisYaw??cameraYaw,top=pilot.move.run?7.2:4.2,speed=Math.hypot(forward,side)*top;
+    // Apply the real host velocity, not just the controller input fraction.
+    const {forward,side}=pilot.move,basis=pilot.move.basisYaw??cameraYaw,top=pilot.move.run?movementSpeeds.running:movementSpeeds.walking,speed=Math.hypot(forward,side)*top;
     position.x+=(-Math.sin(basis)*forward+Math.cos(basis)*side)*top*dt;
     position.z+=(-Math.cos(basis)*forward-Math.sin(basis)*side)*top*dt;
     const previousLook=Math.atan2(position.x-camera.x,position.z-camera.z);
@@ -84,19 +87,19 @@ function followRun(create,stage,{fps=60,turn=false,stopAt=Infinity,seconds=30,pa
   return {switches,maxSpeedDelta,maxCameraTurn,minGap,maxGap,speed:lastSpeed,position,guide,motion:motion.result()};
 }
 
-// Cagney runs home (6.4, faster than a walk), so the traveler following her runs too, a little
-// further back; and his run is only a little faster than hers, so closing up from a standing start
-// takes him a while. Ben walks.
+// Cagney runs home at 6.4: novice travelers run behind her; masters can
+// match her at a walk but still need running available to close an initial gap.
+// Ben walks.
 const FOLLOWS=[['Cagney',createCagneyAutopilot,'escorting',{pace:CAGNEY_QUEST.pace,gap:4.5,settle:12,turnAt:14,seconds:36}],
   ['Ben',createBenAutopilot,'walking',{pace:2.8,gap:3,settle:3,turnAt:10,seconds:30}]];
 for(const [name,create,stage,{pace,gap,settle,turnAt,seconds}] of FOLLOWS){
   test(`${name} autoplay keeps a continuous guide pace across frame rates instead of pumping forward`,()=>{
-    for(const fps of [30,60,120]){
-      const run=followRun(create,stage,{fps,pace,settle,turnAt,seconds});
+    for(const movementSpeeds of [novice,mastered])for(const fps of [20,30,60,120]){
+      const run=followRun(create,stage,{fps,pace,settle,turnAt,seconds,movementSpeeds});
       assert.equal(run.switches,0,JSON.stringify({fps,...run}));
       assert.ok(run.maxSpeedDelta<.02,JSON.stringify({fps,...run}));
       assert.ok(Math.abs(run.speed-pace)<.01,JSON.stringify({fps,...run}));
-      assert.ok(run.minGap>gap-.3&&run.maxGap<gap+.1,JSON.stringify(run));
+      assert.ok(run.minGap>gap-pace/fps-.05&&run.maxGap<gap+.1,JSON.stringify(run));
       assert.ok(run.motion.seconds>seconds-settle-5&&run.motion.stopRate===0&&run.motion.inputStopRate===0,JSON.stringify(run.motion));
       assert.equal(run.motion.cameraReversalRate,0);
     }
@@ -106,7 +109,7 @@ for(const [name,create,stage,{pace,gap,settle,turnAt,seconds}] of FOLLOWS){
     assert.ok(run.maxCameraTurn<.06,JSON.stringify(run));
     // Stopping behind her from a run takes him closer than he follows, but never into her back.
     assert.ok(run.minGap>2.1&&run.maxGap<gap+.3,JSON.stringify(run));
-    const brisk=pace>4.2?7.2/4.2:1;
+    const brisk=pace>novice.walking?novice.running/novice.walking:1;
     assert.ok(run.maxSpeedDelta<=8*brisk/60+.001,JSON.stringify(run));
     assert.ok(run.switches<=1,JSON.stringify(run));
     assert.equal(run.speed,0,'the traveler stays still after the guide stops');
@@ -135,4 +138,51 @@ test('a testing teleport discards old escort breadcrumbs instead of steering bac
   const {forward,side,basisYaw}=command.move;
   const x=-Math.sin(basisYaw)*forward+Math.cos(basisYaw)*side,z=-Math.cos(basisYaw)*forward-Math.sin(basisYaw)*side;
   assert.ok(x>0&&Math.abs(z)<1e-6,'only the guide at the new location steers the traveler');
+});
+
+
+test('a temporary combat movement lock does not poison escort velocity when walking resumes',()=>{
+  const follower=createEscortFollower({world}),position={x:0,z:0},guide={x:0,z:-4},dt=1/60;
+  for(let frame=0;frame<240;frame++){
+    guide.z-=2.8*dt;
+    const speeds=frame>=60&&frame<90?{walking:0,running:0}:mastered;
+    const {move}=follower.step(position,guide,dt,speeds);
+    assert.ok(Number.isFinite(move.forward)&&Number.isFinite(move.side));
+    if(!speeds.walking)assert.deepEqual(move,{forward:0,side:0,run:false});
+    else{
+      const top=move.run?speeds.running:speeds.walking,basis=move.basisYaw??0;
+      position.x+=(-Math.sin(basis)*move.forward+Math.cos(basis)*move.side)*top*dt;
+      position.z+=(-Math.cos(basis)*move.forward-Math.sin(basis)*move.side)*top*dt;
+    }
+  }
+  assert.ok(Math.abs(Math.hypot(position.x-guide.x,position.z-guide.z)-3)<.2);
+});
+
+
+test('escort exhaustion and recovery keep actual velocity bounded and settle back to guide pace',()=>{
+  for(const speeds of [novice,mastered])for(const fps of [20,60]){
+    const guideSpeed=CAGNEY_QUEST.pace,dt=1/fps,position={x:0,z:0},guide={x:0,z:-8};
+    const follower=createEscortFollower({world,guideSpeed});
+    let lastRun=false,switches=0,lastSpeed=0,maxDelta=0;
+    for(let frame=0;frame<30*fps;frame++){
+      const time=frame*dt,exhausted=time>=8&&time<13;
+      const actual={...speeds,running:exhausted?speeds.walking:speeds.running};
+      guide.z-=guideSpeed*dt;
+      const {move}=follower.step(position,guide,dt,actual),amount=Math.hypot(move.forward,move.side);
+      assert.ok(Number.isFinite(amount)&&amount<=1+1e-9,`bounded input at ${time}s: ${amount}`);
+      const top=move.run?actual.running:actual.walking,speed=amount*top,basis=move.basisYaw??0;
+      if(exhausted)assert.ok(speed<=speeds.walking+1e-9,'exhausted run requests cannot outrun walking');
+      position.x+=(-Math.sin(basis)*move.forward+Math.cos(basis)*move.side)*top*dt;
+      position.z+=(-Math.cos(basis)*move.forward-Math.sin(basis)*move.side)*top*dt;
+      if(time>20){
+        if(move.run!==lastRun)switches++;
+        maxDelta=Math.max(maxDelta,Math.abs(speed-lastSpeed));
+        assert.ok(amount>0,'following remains continuous after recovery');
+      }
+      lastRun=move.run;lastSpeed=speed;
+    }
+    assert.equal(switches,0,'recovery does not alternate walking and running');
+    assert.ok(maxDelta<.02);assert.ok(Math.abs(lastSpeed-guideSpeed)<.01);
+    assert.ok(Math.abs(Math.hypot(position.x-guide.x,position.z-guide.z)-(4.5-guideSpeed*dt))<.05);
+  }
 });

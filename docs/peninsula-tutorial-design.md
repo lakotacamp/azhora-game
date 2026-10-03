@@ -1,6 +1,6 @@
 # Peninsula tutorial and foundational movement skills
 
-Design draft, 2 October 2026. **Planning only: no gameplay implementation is authorized by this document.** This records the requested replacement opening, the user's timing answers, and the subsequent escape encounters. Recommendations and unresolved choices are labeled below. Existing opening behavior remains unchanged until implementation is requested.
+Design and implementation record, 2 October 2026. **Implementation authorized by the user** together with West Oremindi/Sevron. The confirmed opening, lesson sequence, independent Chris routine, and escape encounters are implemented. The tuning decisions adopted for this first pass are recorded below; they remain adjustable.
 
 ## 1. Confirmed direction
 
@@ -51,7 +51,7 @@ Recommended layout, subject to measured ground and water checks:
 
 Keep the recently added oak/pine forest, wildlife, sandy edges and open harbor channel. Do not expand the peninsula again or connect it to Peblos. Exact pier and trail coordinates need a layout pass against the real terrain; the two new hexes are `(16,105)` and `(16,106)`.
 
-**Land exit recommendation, awaiting the user's answer:** a visible timber gate at the mainland neck opens for the player after the letter. Chris earns his own clearance after his lessons and can leave independently. Plan an actual controlled crossing for him, with a fallback that returns a player who tailgates, climbs around or clips through to the safe side with a clear “finish your training” explanation. Do not rely on an unexplained invisible wall or accidentally cage Chris until the player is ready.
+**Land exit adopted for the implementation:** a visible timber gate at the mainland neck opens for the player after the letter. Chris earns his own clearance after his lessons and can leave independently. Plan an actual controlled crossing for him, with a fallback that returns a player who tailgates, climbs around or clips through to the safe side with a clear “finish your training” explanation. Do not rely on an unexplained invisible wall or accidentally cage Chris until the player is ready.
 
 Move daytime teaching posts, not the established family houses by assumption. Jess/Ryan/Bear/Rip's house and Glun/Jojo's house and their mailboxes remain in Tidehaven unless separately relocated. Ensure the teachers are available throughout an active tutorial. Jess stays one person: her peninsula lesson stand and Drent ferry berth need a coherent shared placement/routine. Suspend outbound ferry choices until sign-off; afterward preserve her existing travel network. Do not move the houses, add residents or remove Glun's other optional lessons silently.
 
@@ -92,11 +92,11 @@ Keep novice movement comfortable. The “learning to walk” idea introduces the
 
 Walking and Running count movement time, not held keys against a wall. Normal wandering, backtracking, repeated routes and computer autoplay all count. Do not substitute a novelty/exploration-only XP rule for the user's time-practiced rule. Pauses, teleportation, boats, mounts, falling, knockback and scripted relocations do not award either foot-travel skill. Sneaking and climbing retain their own systems and are not counted as ordinary walking practice.
 
-Provisional tuning to test, **not approved balance values**: retain today's 4.2 m/s novice walk and 7.2 m/s novice run; cap advanced walking near 5.4 m/s and advanced running near 8.6 m/s. Begin with running drain around 8 stamina/s, improving toward 5/s, then tune against actual routes and combat. Use diminishing gains so early practice is perceptible but the late game never turns ordinary travel into developer turbo.
+Revised travel tuning, 2 October 2026: begin Walking at 6 m/s and Running at 9.5 m/s. Walking caps at 6.6 m/s and Running at 10.5 m/s. Peaceful running drains 4 stamina/s, improving toward 2.5/s; active combat doubles that cost to 8-5/s. Keep diminishing gains: learning improves an already enjoyable pace instead of unlocking tolerable movement. See [movement-tuning.md](movement-tuning.md) for rationale and validation.
 
 The strict invariant is `maximum walk speed < minimum run speed` under equivalent ground/status conditions. Store Running's own speed curve rather than multiplying the player's improving walk speed and accidentally stacking both skills.
 
-Running shares the combat/swimming/climbing stamina pool. Suppress ordinary regeneration while it drains, otherwise today's regeneration can erase the new cost. Exhaustion drops to walking; walking/rest recovers stamina. Require deliberate recovery or a meaningful recovery threshold before running resumes, preventing rapid run/walk flicker while the key stays held. Starting stamina, food and combat balance need a review together with this change.
+Running shares the combat/swimming/climbing stamina pool. Suppress ordinary regeneration while it drains, otherwise today's regeneration can erase the new cost. Exhaustion drops to walking; walking/rest recovers stamina. After exhaustion, Running resumes only at half of maximum stamina; ordinary walking continues throughout recovery. This prevents rapid run/walk flicker while the key stays held. Starting stamina, food and combat balance need a review together with this change.
 
 Swimming already awards one XP per four actual metres and scales both speed and drain. Recommended first pass: preserve that working progression and its crossing balance; the user asks improvement through use, not identical units for every skill. Do not make its speed inherit Walking upgrades. Measure the new lesson against the weakest starting swimmer, with a generous return margin.
 
@@ -150,7 +150,7 @@ The player sees the attack and defeat, then returns to a safe peninsula checkpoi
 
 Fast travel, Go Anywhere/Go to a Point and ghost movement must not silently bypass an active tutorial. Out-of-zone destinations should be unavailable with an explanation until graduation. A separate isolated testing scenario can deliberately start outside the tutorial without altering the normal save; it must be visibly separate from escaping within that save. Add a final zone check for clipping, climbing, knockback or reload outside the area, returning the player to the safe side. These fallback repairs do not replace the requested visible sea/air encounters for ordinary escape attempts.
 
-## 9. Implementation outline for a later authorized pass
+## 9. Implementation outline
 
 Keep a small versioned tutorial state separate from the old numeric main-quest stage: chosen path, introduced/practiced lesson flags, exactly-once item grants, final sign-off clock, Chris's task and route state, warnings seen, boundary encounter phase and safe respawn. Derive UI from this state rather than from physical proximity alone.
 
@@ -166,7 +166,7 @@ Keep a small versioned tutorial state separate from the old numeric main-quest s
 
 Old adventures keep their location, taught skills, inventory, family identities, Ed's actual arrival history and campaign progress. Do not move an existing save onto the peninsula, replay Ed, resurrect Chris, or force new lessons on a veteran. Missing Walking/Running data receives a safe starting baseline. Old unfinished openings need an explicit legacy-continuation path rather than silently dropping them inside the new locked tutorial.
 
-Recommended implementation order: state/skip contract; peninsula placements and lesson route; movement/stamina progression; Chris and event timing; boundary encounters; save compatibility; autoplay and visual review. No implementation begins as part of this plan.
+Recommended implementation order: state/skip contract; peninsula placements and lesson route; movement/stamina progression; Chris and event timing; boundary encounters; save compatibility; autoplay and visual review. The user subsequently authorized this implementation on 2 October 2026.
 
 ## 10. Acceptance and playtest plan
 
@@ -184,10 +184,44 @@ Verify:
 - Gate tailgating, climbing, fast travel and invalid restored positions do not bypass the tutorial. Completing or skipping releases every boundary restriction.
 - Existing saves, family homes, ferry routes, Bear's geography cooldown, Glun's optional teaching, subsequent army recruitment and the rebel ambush retain coherent behavior.
 
-## Remaining decisions
+## First implementation decisions
 
-1. Land exit: timber gate is proposed; user response pending.
-2. Keep Running as the skill governing running endurance, or create a separately named Stamina skill? Recommendation: keep Running.
-3. Final display spelling for Chris, and whether Bear becomes Barrett's displayed name. Preserve current IDs either way.
-4. Exact lesson length, skip time advance, numerical movement curves, and final monster/demon art. These are tuning/art decisions, not settled canon.
-5. The receiving recruitment post/person in Tidewater Haven. Reuse an appropriate existing Imperial soldier rather than invent a named civilian or silently send the player directly to Nothom.
+- Keep Running as the endurance skill; no separate Stamina skill. Walking progresses from 6 to 6.6 metres/second, below beginner Running at 9.5. Running caps at 10.5, with peaceful stamina drain improving from 4 to 2.5 per second and combat drain from 8 to 5. Exhaustion permits walking and requires half a bar before running resumes. XP requires actual unassisted foot travel.
+- The skip advances the shared calendar fifteen game minutes before starting Ed's arrival. It grants beginner instruction and the cooked catch, with no simulated travel XP. Footman Ottar, an existing Imperial soldier, receives the letter in Tidewater Haven.
+- Bear is the displayed tutorial name for the existing Barrett. Existing IDs and the Chris/Cromb playable-character substitution are preserved.
+- A timber gate and coastal fences close the neck. Chris has a personal pass. Glun remains by his practice target for the final conversation; the skip places the player on the inside approach to the now-open gate.
+- The sea creature and winged demon have a visible reveal, a lethal strike at 3.15 seconds, and recovery at 4.6 seconds. Escape interception checks the traveled segment, including turbo flight and an 85-metre tutorial ceiling. These limits disappear on sign-off.
+- Teachers are protected during active training. Completed lessons, inventory and XP survive boundary recovery. Legacy saves continue under the old opening rules.
+- Family houses stay in Tidehaven. Optional teaching excursions use the new home stations, and Jess retains the ferry network after graduation.
+
+## Implementation and validation entry points
+
+The state is in `src/peninsula-tutorial.js`, with the game integration in
+`src/peninsula-tutorial-host.js` and `src/main.js`. Scenery, opening camera,
+movement progression, independent company timing and the autoplay controller
+have separate modules. `src/tutorial-boundary-visuals.js` owns the two temporary
+encounter models. Checkpoints store lesson facts and Chris's physical route
+progress without granting rewards on load.
+
+Use **F8 > Quest playtests > Main quests > Peninsula tutorial** to demonstrate
+the eight lessons. The computer stops at Glun's handoff before army enlistment.
+Use **Start game** on a fresh opening to skip training. Full/Fast loading is
+still a separate choice.
+
+`npm run test:peninsula` exercises the lesson rules, routes, save compatibility,
+host interactions and movement progression. `npm run test:peninsula-native`
+drives the live F8 autoplay, Continue and skip flows, then attempts ordinary
+swimming and developer-dragon escape and checks the visible defeats/recovery.
+Native screenshots and results are written under `tests/artifacts/`.
+
+### Validation record — October 2, 2026
+
+Validation is composite; the complete native command has not yet exited successfully in a single uninterrupted run. The 317.6-second player autoplay and 252-simulation-second Chris measurements below predate the later 6 m/s walking and 9.5 m/s running adjustment. After that adjustment, focused locomotion/autoplay tests and native movement controls passed, but the complete tutorial was not repeated; these are not timings for the new pace.
+
+- The live F8 autoplay completed all eight lessons, real movement/combat/fishing/cooking, and Glun's letter in 317.6 wall seconds in the latest run. It stopped before enlistment, started Ed's arrival at sign-off, and passed Continue checks without duplicating the letter or cooked fish.
+- Chris's independent route passed an accelerated native preflight using the real host and collision resolver: he performed his lessons and reached Tidehaven after 252 simulation seconds, then waited because the player had not graduated. No route positions or lesson-completion flags were granted by the driver.
+- In the subsequent real-time run Chris continued through his own lessons and along the land route. The old four-minute post-graduation wall deadline expired while he was still advancing, with another normal desktop game sharing the renderer resources. This was not a completed real-time departure check. The future wall budget is twelve minutes; pure timeline tests also cover sign-off, waiting and departure ordering.
+- The separate final opening/escape run passed **23 assertions**, exited successfully in **33.2 seconds**, and recorded no renderer errors. It checked skip timing/supplies and actual swimming and developer-dragon boundary crossings, visible defeat, paused reveal timing, Continue during both encounters with position/altitude preserved, and alive on-foot return with unfinished lessons unchanged.
+- Sea and air reveal screenshots were reviewed. Both creatures are clearly visible before damage; the region-arrival card no longer obscures the sea encounter.
+
+The retained evidence is `tests/artifacts/peninsula-full-player-and-chris-route.log`, `peninsula-opening-final.log`, `peninsula-checks.json`, and the `peninsula-*.png` captures. Artifacts are local and gitignored.

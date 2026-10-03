@@ -1,6 +1,6 @@
 # Azhora strategic layer: discussion draft
 
-30 September 2026. **Design only.** The user wants country-level control, regional and hex holdings, and moving armies, with a large Ambroni realm, a small Ascarth and roughly five-region Lond. All mechanics below are recommendations, not accepted decisions or new canon. No gameplay implementation is included.
+30 September 2026 discussion draft; updated 2 October. The user authorized the recommended first prototype, now available through **F8 > Quest playtests > Frontier command**. See [prototype usage and limits](strategic-prototype.md). The broader country-level systems below remain design recommendations, not accepted canon or implemented gameplay.
 
 ## What already exists
 
@@ -61,7 +61,7 @@ could begin with repairing a bridge, improving a depot or restoring a ruined
 town, all at identifiable sites in the adventure world. This gives the strategy
 layer visible consequences that the traveler can visit.
 
-For example, Menora could feed and shelter an Imperial army while Yunethran
+For example, Minora could feed and shelter an Imperial army while Yunethran
 bands harass its northern supply route. Caricas might remain militarily occupied
 while its towns grow less cooperative under requisition. Negotiating passage
 through the neutral town could matter without anyone having to conquer it.
@@ -94,7 +94,7 @@ An army draws supply through friendly or permitted holdings and crossings. Break
 
 The Ambroni civil war needs competing legitimacy and local loyalties, not just two painted countries. Current regional quests should produce strategic consequences without a second system overwriting their results every tick. The first prototype should preserve the campaign as the authority for scripted settlements and use a single adapter for strategic effects. A later dynamic campaign would require explicit revision of whole-region `resolveArc()` behavior, chapter gates and reward rules.
 
-Cedric's claim from Menora, Willard's installation in Ambron and Wilhelm's presence are now confirmed, but their later story is not. Model claimant and government identities separately from a generic `empire` label; do not infer how their dispute resolves. See the latest [confirmed answers](design-answers.md).
+Cedric's claim from Minora, Willard's installation in Ambron and Wilhelm's presence are now confirmed, but their later story is not. Model claimant and government identities separately from a generic `empire` label; do not infer how their dispute resolves. See the latest [confirmed answers](design-answers.md).
 
 Distinct systems should follow established territory and institutions, with the details still proposed:
 
@@ -104,7 +104,7 @@ Distinct systems should follow established territory and institutions, with the 
 
 ## A small prototype and decisions before expansion
 
-Recommended first prototype: **Isareos, Caricas and Yunethre**, using the newly built city, farms, bridges and camp. One Imperial field force and one centaur band can demonstrate supply, marching, raiding and retreat while Menora's future royal story stays reserved and the lakeside town stays neutral. Start with a small holding ledger, an Imperial supply connection, a centaur resupply rule suited to its camp, one frontier objective and one battle outcome reconciled with the adventure. Keep recruitment types, diplomacy and production deliberately small. Use generic unit records, without inventing civilian characters. This is an isolated strategic scenario, not a new story quest or permission to alter the current chapter.
+Recommended first prototype: **Isareos, Caricas and Yunethre**, using the newly built city, farms, bridges and camp. One Imperial field force and one centaur band can demonstrate supply, marching, raiding and retreat while Minora's future royal story stays reserved and the lakeside town stays neutral. Start with a small holding ledger, an Imperial supply connection, a centaur resupply rule suited to its camp, one frontier objective and one battle outcome reconciled with the adventure. Keep recruitment types, diplomacy and production deliberately small. Use generic unit records, without inventing civilian characters. This is an isolated strategic scenario, not a new story quest or permission to alter the current chapter.
 
 **Luscia, Moros Plain and West Suval** would be a useful second scenario for testing integration with the existing civil-war branch and chapter battles, after their outcome rules have an explicit strategic adapter. Drent/Elagos could provide fixed background context and Elod remain neutral.
 

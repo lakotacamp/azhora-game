@@ -76,7 +76,7 @@ commit before the merge or was known before it. **Compare names and messages, no
   - `Error: ENOENT: no such file or directory, open 'C:\Users\Michael\Programs\typescript\azhora-game-land\tests\artifacts\frontier-world-diagnostics.json'`
 
 ## `isareos-world` (1 failing)
-- a red deer cannot be run down, and Menora joins the charted frontier
+- a red deer cannot be run down, and Minora joins the charted frontier
   - `AssertionError [ERR_ASSERTION]: the chart knows menora`
 
 ## `languages` (1 failing)
@@ -192,3 +192,12 @@ commit before the merge or was known before it. **Compare names and messages, no
 These three laws stop at their first failing band, so the bands after it are not exercised by them.
 
 `frontier-world` fails only where `tests/artifacts/` does not exist (a fresh checkout).
+
+
+## Current integration: Varn west jamb (not a baseline finding)
+
+Measured on the main working tree on 2 October 2026 after importing the latest Varn geometry. The region-scoped Varn suite passes 21 of 22 tests. The remaining assertion seeds the traveler on top of the west jamb and finds a diagonal walk onto a low natural rim followed by a roughly 39-metre fall into Amod behind the city. The ordinary pass and tireless-climber flood checks pass in that fixture. This does not establish that the seeded starting point is unreachable by every possible route.
+
+The exact test, terrain coordinates, source provenance and integration results are recorded in [the Varn report](varn-report.md). Height experiments produced other routes and were reverted; no invisible blocking wall was introduced to hide the failure.
+
+The regional forts suite passes 11 of 12 checks. Its remaining open-gate reachability assertion uses a 1.5 m lattice that has no sample inside Varn's 1.2 m exit wicket after body clearance; the finer production-movement doorway check passes. This sampling limitation is separate from the seeded west-jamb fall route above.

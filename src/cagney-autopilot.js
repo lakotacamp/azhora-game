@@ -71,7 +71,7 @@ export function createCagneyAutopilot({world,read,act={},options={}}={}) {
       }else if(q.stage==='escorting'){
         intent=q.walk?.waiting?'Catching up to Cagney':'Walking with Cagney';
         const guide=s.cagney;if(!guide){stop('Cagney is unavailable.');return null;}
-        ({move,yaw}=follower.step(s.position,guide,dt));
+        ({move,yaw}=follower.step(s.position,guide,dt,s.movementSpeeds));
       }else if(['unmet','asked','home'].includes(q.stage)){
         intent=q.stage==='home'?'Collecting Cagney’s reward':'Speaking with Cagney';
         if(s.interaction?.npcId===CAGNEY.id&&c.action==='idle'){if(touch>.8){actions.push({type:'interact'});touch=0;}}

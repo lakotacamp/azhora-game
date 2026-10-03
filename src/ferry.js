@@ -119,15 +119,17 @@ export function createFerry(hooks = {}) {
     purse = () => 0, pay = () => false, free = () => false, mounted = () => false, charges = () => !FERRY_FREE,
     position = () => ({ x: 0, z: 0 }), place = noop, setMode = noop, veil = noop,
     boat = noop, carry = noop, save = noop, toast = noop, stand = noop, onArrive = noop,
+    getLanding = id => FERRY_LANDINGS[id],
     // Quays can lie outside the atlas's land hexes. Use each landing's actual
     // surroundings so the current departure stays correct while the traveler walks ashore.
     onPeblos = point => Math.hypot(point.x - MAIN_ISLAND.centre.x, point.z - MAIN_ISLAND.centre.z) < 260,
     onPortCalos = point => inPortCalos(point.x, point.z, 25),
   } = hooks;
 
-  let side = 'drent', crossings = 0, met = false, crossing = null, settled = false;
+  let side = 'drent', crossings = 0, met = false, crossing = null, settled = false, settledLanding = null;
 
-  const landing = () => FERRY_LANDINGS[side];
+  const landingFor = id => getLanding(id) ?? FERRY_LANDINGS[id];
+  const landing = () => landingFor(side);
   const fare = () => (charges() && !free() ? FERRY_FARE : 0);
 
   /** Where the traveler is standing, as the ferry sees it. Never asked mid-crossing. */
@@ -135,10 +137,11 @@ export function createFerry(hooks = {}) {
     if (crossing) return side;
     const point = position();
     const next = onPortCalos(point) ? 'port-calos' : onPeblos(point) ? 'peblos' : 'drent';
-    if (settled && next === side) return side;
-    side = next; settled = true;
-    stand(side, FERRY_LANDINGS[side].stand);
-    boat(FERRY_LANDINGS[side].mooring.x, FERRY_LANDINGS[side].mooring.z, FERRY_LANDINGS[side].mooring.yaw);
+    const dock = landingFor(next);
+    if (settled && next === side && dock === settledLanding) return side;
+    side = next; settled = true; settledLanding = dock;
+    stand(side, dock.stand);
+    boat(dock.mooring.x, dock.mooring.z, dock.mooring.yaw);
     return side;
   }
 
@@ -162,7 +165,7 @@ export function createFerry(hooks = {}) {
     const chance = offer(destination);
     if (!chance.ok) return { ok: false, reason: chance.reason };
     if (chance.fare > 0 && !pay(chance.fare)) return { ok: false, reason: 'The fare would not come out of your satchel.' };
-    const from = FERRY_LANDINGS[side], to = FERRY_LANDINGS[chance.to];
+    const from = landingFor(side), to = landingFor(chance.to);
     const caption = from.id === 'port-calos' && to.id === 'drent'
       ? 'The Caloss falls away astern. Tidehaven comes up out of the coastal haze.' : FERRY_CAPTIONS[to.id];
     met = true;
@@ -197,7 +200,7 @@ export function createFerry(hooks = {}) {
       // explicitly rather than exposing a teleport or saving a visible water frame.
       veil(1, crossing.caption);
       crossing.teleported = true;
-      side = to.id; crossings++; settled = true;
+      side = to.id; crossings++; settled = true; settledLanding = to;
       boat(to.mooring.x, to.mooring.z, to.mooring.yaw);
       stand(side, to.stand);
       place(to.ashore.x, to.ashore.z, to.ashore.yaw);
@@ -218,7 +221,7 @@ export function createFerry(hooks = {}) {
 
   function snapshot() { return { version: FERRY_VERSION, crossings, met }; }
   function restore(data) {
-    crossings = 0; met = false; crossing = null; settled = false;
+    crossings = 0; met = false; crossing = null; settled = false; settledLanding = null;
     if (!validateFerrySnapshot(data, { allowMissing: false })) return false;
     crossings = data.crossings; met = data.met;
     return true;
