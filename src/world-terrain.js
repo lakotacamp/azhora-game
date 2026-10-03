@@ -27,6 +27,11 @@ import { wineryGround } from './winery.js';
 import { suvalHighlandGround, suvalLandformRise } from './suval-highlands.js';
 import { iscareGround } from './iscare-world.js';
 import { menoraGround } from './menora-city.js';
+import { nylonGround } from './nylon-city.js';
+import { aevisGround } from './aevis-city.js';
+import { eastPyrosGround, eastPyrosTint } from './east-pyros-world.js';
+import { netherDesertGround, netherDesertTint } from './nether-desert-world.js';
+import { legemumGround, legemumTint, legemumShoreTint } from './legemum-world.js';
 import { caricasSettlementGround } from './caricas-settlement.js';
 import { westOremindiGround, westOremindiTint } from './west-oremindi-world.js';
 import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
@@ -264,7 +269,7 @@ export function groundBeforeVarn(x, z) {
 export function groundWithRiver(x, z) {
   // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
   const base=groundBeforeFrontier(x,z);
-  return menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier));
+  return legemumGround(x,z,netherDesertGround(x,z,eastPyrosGround(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier)))))));
 }
 function groundBeforeFrontier(x,z){
   return feradomGround(x, z, groundBeforeFeradom(x, z), groundBeforeFeradom);
@@ -360,6 +365,9 @@ const GROUND_TINTS = Object.freeze([
   Object.freeze({ id: 'southwest', tint: southwestTint }),
   Object.freeze({ id: 'selemis', tint: selemisTint }),
   Object.freeze({ id: 'telemonia', tint: telemoniaTint }),
+  Object.freeze({id:'east-pyros',tint:eastPyrosTint}),
+  Object.freeze({id:'nether-desert',tint:netherDesertTint}),
+  Object.freeze({id:'legemum',tint:legemumTint}),
 ]);
 /**
  * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
@@ -383,6 +391,7 @@ export const GROUND_TINT_FAMILIES = Object.freeze(GROUND_TINTS.map(family => fam
 const SHORE_TINTS = Object.freeze([
   Object.freeze({ id: 'ascarth', tint: ascarthCliffTint }),
   Object.freeze({ id: 'selemis', tint: selemisShoreTint }),
+  Object.freeze({ id: 'legemum', tint: legemumShoreTint }),
 ]);
 export const SHORE_TINT_FAMILIES = Object.freeze(SHORE_TINTS.map(family => family.id));
 /** One row of the shore table asked on its own, for the guard. */

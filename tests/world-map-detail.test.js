@@ -8,6 +8,8 @@ import { buildLocalMapModel } from '../src/local-map-data.js';
 import { regions, regionAt, WORLD_BOUNDS } from '../src/regions.js';
 import { createMapFog, SUBREGIONS } from '../src/map-fog.js';
 import { VARN, VARN_CORNERS } from '../src/varn-world.js';
+import { NYLON, NYLON_OUTLINE } from '../src/nylon-city.js';
+import { AEVIS, AEVIS_OUTLINE } from '../src/aevis-city.js';
 import { createCartography, chartShapes, EXPLORED_HEXES } from '../src/cartography.js';
 import { AMBRON_CENTRE, AMBRON_OUTLINE, inAmbronOutline } from '../src/ambron-city-layout.js';
 import { applyGameAtlasAdjustments, GAME_ATLAS_ADJUSTMENTS } from '../src/game-atlas-adjustments.js';
@@ -73,6 +75,18 @@ test('Varn uses its actual six-wall footprint and discovered fortress location o
   const css = readFileSync(new URL('../src/world-map.css', import.meta.url), 'utf8');
   assert.match(css, /\.atlas-place\.capital i,\.atlas-place\.city i\{/);
   assert.match(css, /\.atlas-place\.capital span,\.atlas-place\.city span\{/);
+});
+
+test('Nylon keeps its city badge and wall footprint on the Eer side of the estuary', () => {
+  const area = SUBREGIONS.find(p => p.id === 'nylon');
+  assert.deepEqual({ x: area.x, z: area.z }, { x: NYLON.x, z: NYLON.z });
+  assert.equal(regionAt(area.x, area.z).name, 'Eer');
+  assert.deepEqual(atlasCityBoundaries().find(city => city.id === 'nylon').boundary,
+    NYLON_OUTLINE.map(p => TRANSFORM.worldToAtlas(p.x, p.z)));
+  const mark = atlasPlaceMarks([{ id: area.id, name: area.name, kind: 'area', ...TRANSFORM.worldToAtlas(area.x, area.z) }]).find(p => p.id === 'nylon');
+  assert.equal(mark.kind, 'city'); assert.equal(mark.subtitle, 'City-state');
+  assert.equal(atlasMarkKnown(mark, new Set()), false);
+  assert.equal(atlasMarkKnown(mark, new Set([atlasCellKey(mark)])), true);
 });
 
 test('the atlas close view uses the same world transform for roads, houses and quest destinations', () => {
@@ -294,4 +308,13 @@ test('the forested headland has a dry walking connection north of Tidehaven harb
     assert.ok(queue.some(id => Math.hypot(minX + id % width * step - target.x,
       minZ + Math.floor(id / width) * step - target.z) < step), `walkable connection to ${q},${r}`);
   }
+});
+
+test('Aevis uses its coastal city footprint and discovery-gated bronze city badge', () => {
+  const area=SUBREGIONS.find(p=>p.id==='aevis');
+  assert.equal(area.x,AEVIS.x);assert.equal(area.z,AEVIS.z);
+  assert.deepEqual(atlasCityBoundaries().find(city=>city.id==='aevis').boundary,AEVIS_OUTLINE.map(p=>TRANSFORM.worldToAtlas(p.x,p.z)));
+  const mark=atlasPlaceMarks([{id:area.id,name:area.name,kind:'area',...TRANSFORM.worldToAtlas(area.x,area.z)}]).find(p=>p.id==='aevis');
+  assert.equal(mark.kind,'city');assert.equal(mark.subtitle,'Bronze city');
+  assert.equal(atlasMarkKnown(mark,new Set()),false);assert.equal(atlasMarkKnown(mark,new Set([atlasCellKey(mark)])),true);
 });

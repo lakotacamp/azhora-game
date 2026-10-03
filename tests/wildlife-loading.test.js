@@ -61,6 +61,33 @@ test('fast travel and paused observer flight instantiate destinations immediatel
   } finally { life.dispose(); }
 });
 
+test('Fast mode keeps nearby and airborne wildlife hidden until its home region is ready', () => {
+  let ready = false;
+  const requested = [], scene = new THREE.Scene();
+  const streamingWorld = { ...world, loading: { isReady(id) { requested.push(id); return ready; } } };
+  const zones = [zone('legemum-deer', 0, 'red-deer', { region: 'Legemum' }),
+    zone('legemum-offshore', 15, 'sea-plunger', { region: 'Legemum', air: 27, keepRegion: false })];
+  const life = createWestLife(scene, streamingWorld, { zones });
+  try {
+    const before = life.snapshot().creatures, residents = life.state().creatures;
+    life.setObserver({ x: 0, z: 0 });
+    life.update(.1, { x: 0, z: 0 });
+    assert.ok(requested.length > 0 && requested.every(id => id === 59), 'offshore birds follow their home region, not the water below them');
+    assert.equal(life.visualStats().loadedGroups, 0);
+    assert.equal(life.visualStats().loadedSpecies, 0);
+    assert.ok(life.snapshot().groups.every(group => !group.visible && group.ticks === 0));
+    assert.deepEqual(life.snapshot().creatures, before, 'unready regions cannot advance their animal simulation');
+    ready = true;
+    life.setObserver({ x: 0, z: 0 });
+    assert.equal(life.visualStats().loadedGroups, 2);
+    assertPosed(scene);
+    assert.equal(life.state().creatures, residents, 'streaming preserves all animal identities');
+    assert.deepEqual(life.snapshot().creatures, before);
+    life.update(.1, { x: 0, z: 0 });
+    assert.ok(life.snapshot().groups.every(group => group.visible && group.ticks === 1));
+  } finally { life.dispose(); }
+});
+
 test('wildlife release hysteresis retains nearby instances but releases distant GPU buffers', () => {
   const scene = new THREE.Scene(), life = createWestLife(scene, world, { zones: [zone('a')] });
   try {
@@ -81,6 +108,43 @@ test('wildlife release hysteresis retains nearby instances but releases distant 
     life.setObserver({ x: 0, z: 0 });
     assert.notEqual(instances(scene)[0], body);
     assertPosed(scene);
+  } finally { life.dispose(); }
+});
+
+test('small wildlife in the new western regions follows displayed triangles without changing logical footing', () => {
+  for (const region of ['East Pyros', 'Nether Desert', 'Legemum']) for (const difference of [.24, -.19]) {
+    let ready = false, samples = 0;
+    const scene = new THREE.Scene(), displayWorld = { ...world,
+      renderedGroundHeight: () => { samples++; return 3 + difference; },
+      loading: { isReady: () => ready } };
+    const life = createWestLife(scene, displayWorld, { zones: [zone('lizards', 0, 'spine-lizard', { region })] });
+    try {
+      life.setObserver({ x: 0, z: 0 });
+      assert.equal(samples, 0, 'unready regions never force remote terrain samples');
+      ready = true;
+      life.setObserver({ x: 0, z: 0 });
+      const body = scene.getObjectByName('spine-lizard bodies'), matrix = new THREE.Matrix4();
+      body.getMatrixAt(0, matrix);
+      assert.ok(Math.abs(matrix.elements[13] - (3 + difference)) < .00001, `${region}: drawn feet must follow the actual mesh in either direction`);
+      assert.ok(life.snapshot().creatures.every(animal => animal.groundY === 3 && animal.y === 3), 'movement and logical height remain unchanged');
+    } finally { life.dispose(); }
+  }
+});
+
+test('displayed footing does not move older wildlife or replace air and sea heights', () => {
+  const scene = new THREE.Scene();
+  const displayWorld = { ...world, renderedGroundHeight: () => { throw new Error('This creature must retain its existing footing'); } };
+  const life = createWestLife(scene, displayWorld, { zones: [
+    zone('old-deer', 0, 'red-deer', { region: 'Drent' }),
+    zone('air', 0, 'harrier', { region: 'Legemum', air: 20 }),
+    zone('sea', 0, 'dolphin', { region: 'Legemum', sea: true }),
+    zone('floating', 0, 'duck', { region: 'East Pyros', float: true }),
+  ] });
+  try {
+    const before = life.snapshot().creatures;
+    life.setObserver({ x: 0, z: 0 });
+    assertPosed(scene);
+    assert.deepEqual(life.snapshot().creatures, before);
   } finally { life.dispose(); }
 });
 

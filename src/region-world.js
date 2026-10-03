@@ -25,7 +25,7 @@ import { toWorld, toWorldRoad, toWorldIn, AUTHORED_METRES_PER_HEX, WORLD_SCALE }
 export const SURVEY = PLAYABLE_SURVEY;
 export const TRANSFORM = HEX_WORLD_TRANSFORM;
 export const REGION_ORDER = PLAYABLE_REGIONS;
-export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, 'West Baldro Mountains': 52, 'East Baldro Mountains': 53, Selemi: 54, Telemonia: 55, 'West Oremindi Mountains': 56 });
+export const REGION_IDS = Object.freeze({ Drent: 1, Luscia: 2, 'Moros Plain': 3, 'East Suval': 4, 'West Suval': 5, Pueth: 6, Peblos: 7, 'West Izol': 8, Elagos: 9, Amod: 10, Vastos: 11, Meneth: 12, Caricas: 13, Nesdor: 14, Eer: 15, Isareos: 16, Nethereum: 17, 'South Suval': 18, 'Iscare Archipeligo': 19, 'East Lotharn Mountains': 20, Feradom: 21, Gala: 22, 'Northern Ascarth': 23, 'Southern Ascarth': 24, Ovesos: 25, 'Oves Desert': 26, 'West Lotharn Mountains': 27, 'South Mithala': 28, 'West Mithala': 29, 'East Mithala': 30, 'North Mithala': 31, 'East Ibenwood': 32, 'North Ibenwood': 33, 'South Ibenwood': 34, 'West Ibenwood': 35, 'Central Ibenwood': 36, 'South Oremindi Mountains': 37, Yunethre: 38, Navarth: 39, 'West Pyros': 40, 'Ganesh Desert': 41, 'Ganesh Plain': 42, 'North Meroshe Desert': 43, 'West Meroshe Desert': 44, 'Central Meroshe Desert': 45, 'South Meroshe Desert': 46, 'Cape Heth': 47, 'Dinelv Highlands': 48, Hama: 49, Marosh: 50, Trogo: 51, 'West Baldro Mountains': 52, 'East Baldro Mountains': 53, Selemi: 54, Telemonia: 55, 'West Oremindi Mountains': 56, 'East Pyros': 57, 'Nether Desert': 58, Legemum: 59 });
 export const REGION_NAME_BY_ID = Object.freeze(Object.fromEntries(Object.entries(REGION_IDS).map(([name, id]) => [id, name])));
 
 export const ANCHORS = Object.freeze(routeAnchors(SURVEY));
@@ -143,6 +143,9 @@ export const VILLAGE_LOCAL_BOX = Object.freeze({ minX: -112, maxX: 112, minZ: -1
 // Terrain: a base level and relief per biome, blended between neighbouring hexes
 // ---------------------------------------------------------------------------
 export const REGION_TERRAIN = Object.freeze({
+  'East Pyros': Object.freeze({base:11.5,amp:6,wave:150,ground:REGION_BIOMES['East Pyros'].ground}),
+  'Nether Desert': Object.freeze({base:11.5,amp:6,wave:150,ground:REGION_BIOMES['Nether Desert'].ground}),
+  Legemum: Object.freeze({base:11.5,amp:6,wave:150,ground:REGION_BIOMES.Legemum.ground}),
   'West Oremindi Mountains': Object.freeze({base:11.5,amp:6,wave:150,ground:'#818b83'}),
   // Keep the former outland profile at the boundary. The Baldro heightfield
   // builds connected mountain ground only inside the two authored footprints.
@@ -1092,6 +1095,9 @@ function outlineBounds(loops) {
 }
 
 const REGION_TEXT = {
+  'East Pyros': {subtitle:'The volcanic uplands',spawn:point(-2815,1115),description:'Low volcanic ridges, dry eastern grasslands and sheltered woods above the Vaellir.',palette:{ground:'#9e9c61',accent:'#d8cc9e',fog:'#c6c8b7',sky:0xb9d0d3,haze:0xc6c8b7,hazeDensity:.0022},npcIds:[],landmarks:["east-pyros-talermolis","east-pyros-warm-spring","east-pyros-green-spring","east-pyros-ash-columns","east-pyros-red-stone","east-pyros-pumice","east-pyros-southern-grass"]},
+  'Nether Desert': {subtitle:'The rain-shadow country',spawn:point(-2844,694),description:'Fractured stone, gravel exposures and dry washes between Ibenwood and the inner river country.',palette:{ground:'#9b9075',accent:'#e5d2a0',fog:'#d7caae',sky:0xc3d3d8,haze:0xd7caae,hazeDensity:.002},npcIds:[],landmarks:["nether-split-back","nether-rain-pan","nether-scrub-wash","nether-nethward"]},
+  Legemum: {subtitle:'The green headlands',spawn:point(-1970,1535),description:'Rolling green hills, wooded folds, mineral-bearing stone and weathered coastal headlands.',palette:{ground:'#82966b',accent:'#d5d4ac',fog:'#c5d2ce',sky:0xb3d6e0,haze:0xc5d2ce,hazeDensity:.0035},npcIds:[],landmarks:["legemum-tin-saddle","legemum-west-headland","legemum-haur","legemum-peat-hollow","legemum-alder-fold","legemum-south-tor"]},
   Yunethre: { subtitle: 'The grass passage between the mountains', spawn: hexCentre(-14, 102), description: 'Independent centaur plains between the Lotharn and Oremindi, a lakeside free town and the nomadic camp. The neutral town welcomes humans, elves and centaurs.', palette: { ground: '#a4a363', accent: '#e4d8ae', fog: '#cbd1ad', sky: 0xb3cbd3, haze: 0xcbd1ad, hazeDensity: .0017 }, npcIds: [], landmarks: [] },
   'West Oremindi Mountains': { subtitle: 'The hidden ways of the western mountains', spawn: hexCentre(-18,96), description: 'Dangerous sea cliffs, sheltered woodland and high alpine passes. Ancient broken masonry disappears beneath the mountain; its surviving stories are uncertain.', palette: {ground:'#818b83',accent:'#c5cdc6',fog:'#bcc9ca',sky:0xaec2ca,haze:0xbcc9ca,hazeDensity:.0016},npcIds:[],landmarks:[] },
   'West Baldro Mountains': { subtitle: 'The exposed ridges above the West Hold', spawn: hexCentre(46, 68), description: 'Cold ridges and rock basins above one of the two surviving independent dwarf city kingdoms. The West Hold belongs to the confederation of Dwarfland, with working halls beside closed and abandoned districts. Its gate opens to travelers who have earned the kingdom\'s trust.', palette: { ground: '#818575', accent: '#b4b5a4', fog: '#bdc8c8', sky: 0xa9bdcb, haze: 0xbdc8c8, hazeDensity: .0021 }, npcIds: [], landmarks: [] },
@@ -1189,11 +1195,8 @@ const REGION_TEXT = {
     description: 'Where the counted rivers of the branch country give out and the open country begins: shallow broad valleys with hazel and oak on their slopes in the north-west, and east and south of them the Flats — dark alluvial ground, relief measured in feet, shallow water braiding across it toward the Lizeem, cattle on the grass and an open horizon all the way to the Moros.',
     palette: { ground: '#a3a86a', accent: '#ded9a4', fog: '#cbd0b6' },
     npcIds: [], landmarks: ['nesdor-flats', 'nesdor-braids', 'nesdor-head', 'lizeem-bend'] },
-  // Eer is terrain and wildlife only, like the four western regions before it. Everything the
-  // lore of Eer is about belongs to somebody — the villages, the canals and the systems of
-  // drainage, the north road out of Nylon and the eleven occupations that have taxed it — and
-  // none of it is built. Nylon itself is not on the atlas at all: the survey window stops
-  // before it, the way it stops before Minora and the Ibenwood.
+  // Nylon now guards the east bank of the Lizeem mouth. The wider Eer plain
+  // retains its existing water, climate and wildlife; villages and regional quests remain future work.
   //
   // **Eer is the first country in the game with a sky of its own** (src/region-sky.js). It is
   // the only place a traveler can walk from `Cfa` into `Csa` without crossing a border, and
@@ -1202,10 +1205,10 @@ const REGION_TEXT = {
   // because the one thing everybody says about a Mediterranean coast is that you can see a
   // long way. Three new fields and nothing else: `palette.fog` is the chart legend's colour
   // and is left exactly as every other region has it.
-  Eer: { subtitle: 'The Lizeem’s last farmland', spawn: point(-1050, 982),
-    description: 'The plain between the great river and the sea, and the place the green country ends: deep black loam and rank damp grass in the north-west, dry tawny grass and aromatic scrub on the Mediterranean coast, and the change happening under your feet in the middle of the country rather than at either border. Two shallow channels braid across it to a low shore of small bays. Wild olives stand singly on the open grass. The Lizeem is the western wall and there is no way over it anywhere.',
+  Eer: { subtitle: 'Nylon and the Lizeem estuary', spawn: point(-1050, 982),
+    description: 'The plain between the great river and the sea, and the place the green country ends: deep black loam and rank damp grass in the north-west, dry tawny grass and aromatic scrub on the Mediterranean coast, and the change happening under your feet in the middle of the country rather than at either border. Two shallow channels braid across it to a low shore of small bays. Wild olives stand singly on the open grass. The Lizeem is the western boundary, guarded at its mouth by Nylon: enormous walls shelter a vertical city of arcades, scholarly courts, an ornate Great Library and a tower palace above its protected harbour. The river remains unfordable.',
     palette: { ground: '#6d8748', accent: '#ded0a0', fog: '#c4cdb2', sky: 0xbdd8dc, haze: 0xd2d4c2, hazeDensity: .0049 },
-    npcIds: [], landmarks: ['eer-loam', 'eer-braids', 'eer-bays', 'eer-olives', 'lizeem-reach'] },
+    npcIds: [], landmarks: ['nylon', 'nylon-library', 'nylon-palace', 'eer-loam', 'eer-braids', 'eer-bays', 'eer-olives', 'lizeem-reach'] },
   // Minora guards the real Isa-Lizeem fork; its holy city is stable while the outer frontier is raided.
   Isareos: { subtitle: 'Minora and the Imperial frontier', spawn: point(-2308, -7),
     description: 'Minora rises over the Isa-Lizeem fork: great white walls, an immense Sorcerers’ Guild tower and a sacred Imperial temple. Cedric keeps his claim to the crown here; Wilhelm and his army camp outside. Beyond the protected city, northern and western hills are exposed to centaur raids from Yunethre.',
@@ -1259,7 +1262,7 @@ const REGION_TEXT = {
   // (docs/gala-brief.md): the city of Gala, its harbour, its market, the Guild of Assessors and
   // the council hall with its Avite bronze are all somebody's, and none of them is built; nor are
   // the irrigation channels the lore puts in the dry north, because a channel somebody dug is a
-  // work. Nylon across the river is not on the atlas at all.
+  // work. Nylon now guards the estuary on the Eer bank across the river.
   //
   // **A sky of its own**, and the brightest in the west: the country is three climates laid across
   // it, and the traveler who reaches it comes off the steppe - `BSh` over the northern three rows,
@@ -1307,9 +1310,9 @@ const REGION_TEXT = {
     palette: { ground: '#ab9f7c', accent: '#e6dcb4', fog: '#d4cdb4', sky: 0xcedcd2, haze: 0xe3dabd, hazeDensity: .0034 },
     npcIds: [], landmarks: ['rim-hills', 'dry-channels', 'oves-damp-reach', 'oves-dry-wedge', 'oves-apex'] },
   'Southern Ascarth': { subtitle: 'The tip of the finger', spawn: point(-850, 2021),
-    description: 'The finger of the peninsula to its end: open Mediterranean grass and scrub, thin and stony, rolling on a low plateau between two seas, with a wild olive standing alone here and there and nothing taller. Cliffs along the whole of the west and round the tip, two sheltered bays on the east with a beach in each, dolphins off the shore, sea-plungers folding into the shoals off the tip, and Selemi across a narrow channel to the south.',
+    description: 'Aevis, a bronze city with great landward gates, a martial palace, armored garrison and a harbor open to the sea, occupies the northern eastern shore. Beyond its walls, the finger of the peninsula runs to its end: open Mediterranean grass and scrub, thin and stony, rolling on a low plateau between two seas, with a wild olive standing alone here and there and nothing taller. Cliffs along the whole of the west and round the tip, two sheltered bays on the east with a beach in each, dolphins off the shore, sea-plungers folding into the shoals off the tip, and Selemi across a narrow channel to the south.',
     palette: { ground: '#aba66b', accent: '#e0d6a8', fog: '#c4cfc4', sky: 0xb3d6e0, haze: 0xcdd6d0, hazeDensity: .0045 },
-    npcIds: [], landmarks: ['ascarth-east-bays', 'ascarth-tip', 'selemi-channel'] },
+    npcIds: [], landmarks: ['aevis', 'aevis-citadel', 'aevis-harbor', 'ascarth-east-bays', 'ascarth-tip', 'selemi-channel'] },
   // The West Lotharn (src/west-lotharn-world.js). Its own sky, and a colder, thinner one than the
   // East's: the East Lotharn's horizon is a wooded range seen through the Cfa haze it stands in, and
   // this one is five hundred and fifty metres of it. Clearer air (.0027 against the East's .0036),

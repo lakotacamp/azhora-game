@@ -353,11 +353,11 @@ test('the block is one island of ground, and nine hex edges of the Ibenwood now 
   // above was true for all four jobs and is kept as what they built against. What is true now is that
   // the block has a door: Navarth's northern border meets South Ibenwood on five hex edges and East
   // Ibenwood on three, and West Pyros meets East Ibenwood on one. Nine edges, all on the north side,
-  // and every other margin is still unbuilt - East Pyros (20 edges), Alezhor (8), the Nether Desert (1).
+  // and East Pyros (20 edges) and the Nether Desert (1) are now built too; Alezhor (8) remains unbuilt.
   // Nobody has yet walked through that door or looked at the ground on either side of it.
   const builtOutside = Object.fromEntries(Object.entries(neighbours).filter(([other]) => built.has(other)));
-  assert.deepEqual(builtOutside, { 'South Ibenwood': 5, 'East Ibenwood': 4 },
-    'the Ibenwood is the only built country this block touches, and it touches it on nine edges');
+  assert.deepEqual(builtOutside, { 'South Ibenwood': 5, 'East Ibenwood': 4, 'East Pyros': 20, 'Nether Desert': 1 },
+    'the forest belt and the two newly built dryland neighbors share the atlas borders');
   assert.equal(job1 / 2, 46, 'forty-six internal hex edges among job 1\u2019s four');
   assert.equal(job2 / 2, 30, 'thirty among job 2\u2019s four');
   assert.equal(job3 / 2, 8, 'eight among job 3\u2019s three, all of them Cape Heth | Dinelv');
@@ -1956,11 +1956,11 @@ test('every ground tint in the game reaches the screen, which is the guard two j
   // Selemis is the fifth family and the first to arrive as a row (2026-10-01, docs/selemis-report.md):
   // its line here is its line there, which is the arrangement this guard was written to force.
   // Telemonia is the sixth (2026-10-02, docs/telemonia-stage1-report.md), the same way.
-  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis', 'telemonia'],
+  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis', 'telemonia', 'east-pyros', 'nether-desert', 'legemum'],
     'a family was added to groundTint without a line here');
   const probes = { gala: ['Gala'], oves: ['Ovesos', 'Oves Desert'],
     mithala: ['South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'],
-    southwest: [...BLOCK], selemis: ['Selemi'], telemonia: ['Telemonia'] };
+    southwest: [...BLOCK], selemis: ['Selemi'], telemonia: ['Telemonia'], 'east-pyros': ['East Pyros'], 'nether-desert': ['Nether Desert'], legemum: ['Legemum'] };
   const painted = new THREE.Color(), swatch = new THREE.Color();
   for (const family of GROUND_TINT_FAMILIES) {
     let worst = 0, at = null;

@@ -1,10 +1,15 @@
+import { EAST_PYROS_WILDLIFE_ZONES } from './east-pyros-wildlife.js';
+import { NETHER_DESERT_WILDLIFE_ZONES } from './nether-desert-wildlife.js';
+import { LEGEMUM_WILDLIFE_ZONES } from './legemum-wildlife.js';
 import * as THREE from 'three';
 import {WEST_OREMINDI_WILDLIFE_ZONES} from './west-oremindi-wildlife.js';
 import {BALDRO_WILDLIFE_ZONES} from './baldro-wildlife.js';
 import { GROVE_WILDLIFE } from './ibenwood-pilot.js';
 import { IBENWOOD_LIFE_ZONES } from './ibenwood-life.js';
 import { canStand, canSwim } from './game-state.js';
-import { SEA_LEVEL } from './region-world.js';
+import { SEA_LEVEL, REGION_IDS } from './region-world.js';
+import { nylonReserved } from './nylon-city.js';
+import { aevisReserved } from './aevis-city.js';
 import { westWaterSurface } from './west-ground.js';
 import { REGIONAL_WILDLIFE_ZONES, WEST_SUVAL_WILDLIFE_ZONES } from './regional-wildlife.js';
 import { DRENT_WILDLIFE_ZONES } from './drent-wildlife.js';
@@ -102,6 +107,32 @@ function wader(t) {
 function modelFactories() {
   const dark = 0x241f1a;
   return {
+    'road-fox': () => ({
+      body: geometry([
+        S(0x95775a,[0,.29,-.02],[.13,.15,.30]),S(0xd0b999,[0,.23,.06],[.105,.08,.23]),
+        S(0x73634c,[0,.32,-.34],[.08,.085,.17]),S(0xc3ab87,[0,.35,-.56],[.065,.07,.15]),
+      ]),
+      head: geometry([
+        S(0xb09470,[0,0,.035],[.087,.078,.12]),C(0xcfb990,[0,-.018,.16],[.05,.15,.045],[Math.PI/2,0,0]),
+        S(0x26241e,[0,-.018,.238],[.023,.019,.02]),
+        ...both(side=>C(0x806548,[side*.07,.115,-.03],[.053,.16,.039],[0,0,side*.15])),
+        ...both(side=>S(0x211f1c,[side*.065,.024,.095],[.014,.016,.014])),
+      ]),
+      leg: geometry([Y(0x8d7657,[0,-.075,0],[.03,.16,.03]),B(0x4b453a,[0,-.158,.012],[.057,.033,.072])]),
+    }),
+    'spine-lizard': () => ({
+      body: geometry([
+        S(0x887950,[0,.13,0],[.115,.067,.25]),S(0xb7a77a,[0,.09,.03],[.085,.027,.20]),
+        C(0x82734b,[0,.10,-.43],[.07,.47,.053],[-Math.PI/2,0,0]),
+        ...Array.from({length:7},(_,i)=>C(0x4e4e35,[0,.205-i*.003,.19-i*.066],[.026,.075,.029])),
+      ]),
+      head: geometry([
+        R(0x9d8e60,[0,0,.035],[.081,.055,.12]),R(0xc4b27e,[0,-.02,.11],[.065,.023,.08]),
+        ...both(side=>S(0x191e14,[side*.063,.022,.066],[.018,.014,.015])),
+      ]),
+      leg: geometry([Y(0x887950,[0,-.043,0],[.022,.09,.024]),B(0x746845,[0,-.085,.025],[.055,.025,.085])]),
+    }),
+
     /**
      * The Vastos longhorn: "a large, cold-tolerant breed with a constitution
      * suited to open upland grazing and severe winters". Deep-bodied, heavy in
@@ -1279,6 +1310,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...SOUTHWEST_WILDLIFE_ZONES,
   ...SELEMIS_WILDLIFE_ZONES,
   ...TELEMONIA_WILDLIFE_ZONES,
+  ...EAST_PYROS_WILDLIFE_ZONES, ...NETHER_DESERT_WILDLIFE_ZONES, ...LEGEMUM_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -1443,6 +1475,8 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   }
   const valid = (x, z, zone) => inRange(x, z, zone) && footing(x, z, zone) && habitatFits(x, z, zone)
     && (!zone.keepRegion || !world.regionAt || world.regionAt(x, z)?.name === zone.region)
+    && (zone.air || zone.sea || zone.region !== 'Eer' || !nylonReserved(x,z,3))
+    && (zone.air || zone.sea || zone.region !== 'Southern Ascarth' || !aevisReserved(x,z,3))
     && !(zone.exclusions ?? []).some(area => x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ);
   /**
    * What an animal's feet are on. For everything on legs that is the ground, and
@@ -1465,6 +1499,18 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     const water = westWaterSurface(x, z) ?? world.waterAt?.(x, z) ?? null;
     return water === null ? ground : Math.max(ground, water - .04);
   };
+  const renderedFootingRegions = new Set(['East Pyros', 'Nether Desert', 'Legemum']);
+  function visualFootingY(animal) {
+    const y = animal.y + animal.lift, zone = animal.zone;
+    if (!world.renderedGroundHeight || !renderedFootingRegions.has(zone.region)
+      || zone.air || zone.sea || zone.float) return y;
+    // Small creatures can disappear beneath a coarse triangle even when their
+    // logical feet touch the continuous heightfield. Move their drawn origin
+    // by that exact difference, retaining flight lift and every movement rule.
+    // render() runs only after observe() has admitted the fully loaded region.
+    const drawn = world.renderedGroundHeight(animal.x, animal.z);
+    return Number.isFinite(drawn) ? y + drawn - footingY(animal.x, animal.z, zone) : y;
+  }
   // Woodland homes belong beside the roads and settlements, not on their floors
   // or in the middle of a quest interaction. These constraints apply to choosing
   // a home; an animal may still cross an open track naturally while roaming.
@@ -1557,6 +1603,15 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
   const visualDistance = (flock, position) => Math.hypot(position.x - flock.centre.x, position.z - flock.centre.z);
   const visualReach = flock => LIFE_REACH + (flock.zone.air ? (flock.zone.circle ?? CIRCLE_RADIUS) + (flock.zone.quarter ?? 0) : 0);
   function observe(flock, position) {
+    // Fast mode keeps logical residents before their distant terrain is built.
+    // Neither a nearby player nor a paused flying camera should reveal them
+    // until their home region's complete scenery has been committed.
+    const regionId = REGION_IDS[flock.zone.region];
+    if (world.loading && regionId !== undefined && !world.loading.isReady(regionId)) {
+      flock.group.visible = false;
+      releaseVisuals(flock);
+      return false;
+    }
     const distance = visualDistance(flock, position), reach = visualReach(flock);
     flock.group.visible = distance <= reach;
     if (flock.group.visible) ensureVisuals(flock);
@@ -1640,6 +1695,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
    * distance: it has a walk and no run, and what it does when somebody comes at it is `SHUT`.
    */
 const FLEE_AT = {
+    'road-fox':12,'spine-lizard':7,
     'oremindi-snowgoat': 13,
     longhorn: 7.5,
     'hill-sheep': 6.5,
@@ -1667,6 +1723,7 @@ const FLEE_AT = {
     ghubr: 10
 };
 const WALK = {
+    'road-fox':1.1,'spine-lizard':.5,
     'oremindi-snowgoat': .65,
     longhorn: .42,
     'hill-sheep': .48,
@@ -1695,6 +1752,7 @@ const WALK = {
     'canyon-tortoise': .11
 };
 const RUN = {
+    'road-fox':10.2,'spine-lizard':8.8,
     'oremindi-snowgoat': 7.8,
     'hill-sheep': 5.6,
     'upland-hare': 9.6,
@@ -1749,6 +1807,7 @@ const RUN = {
   const SHUT = Object.freeze({ notice: 7, hold: 2.6 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
 const RETURN = {
+    'road-fox':2.2,'spine-lizard':1.4,
     'oremindi-snowgoat': 1.8,
     longhorn: 1.3,
     'hill-sheep': 1.5,
@@ -2039,7 +2098,7 @@ const RETURN = {
         const pull = clamp((fromHome - shade) / Math.max(1, HOME - shade), 0, 1);
         animal.yaw += angleDelta(back, animal.yaw) * pull + Math.sin(animal.clock + animal.index) * 1.7 * (1 - pull);
       } else if (['walk', 'flee', 'withdraw', 'yield', 'shut'].includes(animal.action)) {
-        animal.action = 'graze'; animal.timer = 2.4 + (animal.index % 3) * .8;
+        animal.action = 'graze'; animal.timer = species === 'spine-lizard' ? 9 + (animal.index % 3) * 2 : 2.4 + (animal.index % 3) * .8;
       } else {
         animal.action = 'walk'; animal.timer = 1.3 + (animal.index % 2) * .8;
         animal.yaw += Math.sin(animal.clock + animal.index) * 1.7;
@@ -2219,7 +2278,7 @@ const RETURN = {
       // Only a plunging bird ever pitches; for everything else this is the yaw it has always been.
       rotation.setFromEuler(new THREE.Euler(animal.pitch || 0, animal.yaw, 0, 'YXZ'));
       unit.setScalar(animal.hidden ? 1e-4 : animal.scale);   // an otter under the water is not drawn
-      rootMatrix.compose(new THREE.Vector3(animal.x, animal.y + animal.lift, animal.z), rotation, unit);
+      rootMatrix.compose(new THREE.Vector3(animal.x, visualFootingY(animal), animal.z), rotation, unit);
       const walking = animal.speed > .05, phase = animal.clock * (animal.action === 'flee' ? 13 : 7);
       const breath = Math.sin(animal.clock * 2.1) * .012;
       place(flock.meshes.body, i, 0, 0, 0, 0, 0, 0, 1, 1 + breath, 1);
@@ -2289,6 +2348,12 @@ const RETURN = {
           Math.sin(animal.clock * .7) * .09);
         for (let leg = 0; leg < 4; leg++) place(flock.meshes.legs, i * 4 + leg, leg % 2 ? .17 : -.17, .36,
           leg < 2 ? .26 : -.26, walking ? Math.sin(phase + (leg === 0 || leg === 3 ? 0 : Math.PI)) * .46 : 0);
+        return;
+      }
+      if (species === 'spine-lizard') {
+        place(flock.meshes.head,i,0,.145,.265,walking?.04:Math.sin(animal.clock*.5)*.03,Math.sin(animal.clock*.6)*.10);
+        for(let leg=0;leg<4;leg++)place(flock.meshes.legs,i*4+leg,leg%2?.125:-.125,.10,leg<2?.15:-.15,
+          walking?Math.sin(phase+(leg===0||leg===3?0:Math.PI))*.48:0,0,leg%2?-.45:.45);
         return;
       }
       if (species === 'canyon-tortoise') {

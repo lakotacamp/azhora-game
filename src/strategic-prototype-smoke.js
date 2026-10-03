@@ -10,8 +10,13 @@ export async function runStrategicPrototypeChecks({prepare,model,ui,frames,readA
   check(ui.active&&ui.element.querySelectorAll('[data-cell]').length===90,'F8 entry opens the real ninety-hex frontier chart');
   check(ui.element.textContent.includes('Minora')&&ui.element.textContent.includes('Caricas'),'The existing holdings and regions appear on the chart');
   press('reset');
-  const bridge=model.view().holdings.find(h=>h.id==='menora-lizeem-bridge');
-  ui.element.querySelector(`[data-holding="${bridge.id}"]`).click();press('march');press('advance6');
+  const initial=JSON.stringify(model.snapshot());
+  press('guide-bridge');
+  check(JSON.stringify(model.snapshot())===initial,'Quick start selects the crossing without issuing orders or advancing time');
+  check(document.activeElement?.dataset.action==='march','Quick start brings the march control into keyboard focus');
+  press('march');
+  check(model.view().hour===0&&ui.element.textContent.includes('Order queued.'),'Queuing the march explains that time must advance');
+  press('advance6');
   const partial=JSON.stringify(model.snapshot());press('load');
   check(JSON.stringify(model.snapshot())===partial,'Reload orders preserves partial march progress');
   for(let i=0;i<30&&!model.view().pendingBattle;i++)press('advance24');

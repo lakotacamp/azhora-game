@@ -48,7 +48,7 @@ const desert = regions.find(region => region.name === 'Oves Desert');
 const CELLS = { Ovesos: REGION_CELLS.Ovesos, 'Oves Desert': REGION_CELLS['Oves Desert'] };
 const WWMAP = new URL('../../world-builder/map/resources/examples/azhora.wwmap', import.meta.url);
 const ATLAS = JSON.parse(readFileSync(new URL('../assets/azhora-dev-regions.json', import.meta.url), 'utf8'));
-/** Who owns every hex on the whole atlas: Telemonia, East Pyros and the Nether Desert are outside the survey window. */
+/** The whole atlas remains the authority for neighbour ownership as more regions become playable. */
 const OWNER = (() => {
   const owners = new Map();
   for (const region of ATLAS.regions) for (const cell of region.cells) owners.set(`${cell.q},${cell.r}`, region.name ?? region.id);
@@ -57,6 +57,16 @@ const OWNER = (() => {
 const AXIAL = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 const ownerAt = (x, z) => { const h = hexAt(x, z); return OWNER.get(`${h.q},${h.r}`) ?? 'sea'; };
 const mean = list => list.reduce((sum, value) => sum + value, 0) / list.length;
+// A newly registered neighbour can retain the old outland height profile while
+// its own heightfield is built separately. Its blend weight then has a region
+// name instead of `outland`, although the inherited boundary relief is identical.
+// Test the profile rather than treating registration as a cure for short-wave ribs.
+const retainedOutlandProfiles = Object.keys(REGION_TERRAIN).filter(name =>
+  ['base', 'amp', 'wave'].every(field => REGION_TERRAIN[name][field] === REGION_TERRAIN.outland[field]));
+const retainedOutlandShare = (x, z) => {
+  const weights = terrainMix(x, z).weights;
+  return retainedOutlandProfiles.reduce((sum, name) => sum + (weights[name] ?? 0), 0);
+};
 const edgeKey = (a, b) => `${a}|${b}`;
 const WET_EDGES = new Set(RIVER_EDGES.flatMap(edge => [edgeKey(edge.a, edge.b), edgeKey(edge.b, edge.a)]));
 
@@ -309,17 +319,19 @@ test('the Oves Desert is a wedge falling to its eastern point, with three hills 
     const foot = mean([0, 1, 2, 3].map(i => { const a = i / 4 * Math.PI * 2 + .3; return at(crest.x + Math.sin(a) * (crest.radius + 30), crest.z + Math.cos(a) * (crest.radius + 30)); }));
     assert.ok(top > foot + 14, `${crest.id} stands only ${(top - foot).toFixed(1)} m over its own foot`);
     assert.ok(top - foot < 30, `${crest.id} stands ${(top - foot).toFixed(1)} m over its foot, which is not "low by continental standards"`);
-    // A traveler walks up any of them. Measured on the flanks that are the desert's own ground and
-    // whose blend has no `outland` in it: the western flanks run down into East Pyros, which is not
-    // built, and what happens there is the unbuilt margin's (see the ribs test below).
-    let steepest = 0;
+    // Measure the desert's own flanks away from the retained legacy boundary
+    // profile. East Pyros and Nether Desert are now built, but intentionally
+    // preserve that profile so registration does not change existing rivers.
+    let steepest = 0, measured = 0;
     for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2;
       for (let d = 6; d < crest.radius; d += 4) {
         const x = crest.x + Math.sin(a) * d, z = crest.z + Math.cos(a) * d;
-        if (hexOwnerAt(x, z) !== 'Oves Desert' || (terrainMix(x, z).weights.outland ?? 0) > 0) continue;
+        if (hexOwnerAt(x, z) !== 'Oves Desert' || retainedOutlandShare(x, z) > 0) continue;
+        measured++;
         steepest = Math.max(steepest, Math.abs(at(x + 2, z) - at(x - 2, z)) / 4, Math.abs(at(x, z + 2) - at(x, z - 2)) / 4);
       }
     }
+    assert.ok(measured > 50, `${crest.id}: too little of the actual flank was checked`);
     assert.ok(steepest < .5, `${crest.id} has a face of 1 in ${(1 / steepest).toFixed(1)} on its own ground`);
   }
   // The rim is the atlas's three `hills` hexes and nowhere else.
@@ -371,20 +383,20 @@ test('four channels with no water in any of them, and each stops short of the ri
   assert.ok(world.ovesMetrics.tamarisk > 0, 'nothing grows in the damp reach');
 });
 
-test('the outland ribs are gone wherever two built countries meet, and only there', () => {
+test('the shared long-wave relief stays smooth across Ovesos, the Oves Desert and Gala', () => {
   // Gala reported short steep "ribs" along x ≈ -1900: `relief()` takes its phase from x / wave, the
   // hex blend mixes the wavelengths, and where Gala's 320 m relief blended into `outland`'s 150 the
   // blended wavelength changed across the margin and the relief chirped into ribs up to ten metres
   // deep with slopes past fifty degrees. Every profile in these two countries is on 320, so that
-  // margin is gone — and the measurement has to say exactly where, because the same margin is still
-  // there at every border either country shares with unbuilt ground.
+  // margin is gone. Neighbours that retain the old short-wave boundary profile
+  // remain outside this assertion even after their region names are registered.
   const slopeAt = (x, z) => Math.max(Math.abs(westGroundAt(x + 2, z) - westGroundAt(x - 2, z)) / 4,
     Math.abs(westGroundAt(x, z + 2) - westGroundAt(x, z - 2)) / 4);
-  const scan = (x0, x1, z0, z1, owners, wantOutland) => {
+  const scan = (x0, x1, z0, z1, owners) => {
     let steepest = 0, where = null, counted = 0, over5 = 0;
     for (let x = x0; x <= x1; x += 4) for (let z = z0; z <= z1; z += 4) {
       if (!owners.includes(hexOwnerAt(x, z))) continue;
-      if (((terrainMix(x, z).weights.outland ?? 0) > 0) !== wantOutland) continue;
+      if (retainedOutlandShare(x, z) > 0) continue;
       counted++;
       const slope = slopeAt(x, z);
       if (slope > .2) over5++;
@@ -394,22 +406,16 @@ test('the outland ribs are gone wherever two built countries meet, and only ther
   };
   // **Round x = -1900**, the corner where Ovesos, the Oves Desert and Gala meet, on ground whose
   // blend has no `outland` in it at all: the three countries' own ground and nothing else.
-  const built = scan(-1990, -1780, 620, 1010, ['Ovesos', 'Oves Desert', 'Gala'], false);
+  const built = scan(-1990, -1780, 620, 1010, ['Ovesos', 'Oves Desert', 'Gala']);
   assert.ok(built.counted > 3000, `${built.counted} points of all-built ground checked`);
   assert.ok(built.steepest < .75, `1 in ${(1 / built.steepest).toFixed(2)} at ${built.where}: that is a rib`);
   assert.ok(built.over5 < built.counted * .12, `${built.over5} of ${built.counted} are over 1 in 5`);
   // The whole Ovesos|Oves Desert seam, which is this job's own and is meant to be invisible.
-  const seam = scan(-2300, -1800, 620, 1010, ['Ovesos', 'Oves Desert'], false);
+  const seam = scan(-2300, -1800, 620, 1010, ['Ovesos', 'Oves Desert']);
   assert.ok(seam.counted > 5000 && seam.steepest < .75, `the seam's steepest is 1 in ${(1 / seam.steepest).toFixed(2)} at ${seam.where}`);
-  // **And the margin that is still a margin.** Where either country's blend still carries `outland`
-  // — East Pyros to the west, the Nether Desert to the north, Telemonia to the south, none of them
-  // built — the chirp is exactly what Gala measured, and it is `outland`'s own: the open country
-  // beyond these borders is as steep as the border is. It is not this build's to cure; a cure belongs
-  // in `relief()`/`terrainMix` and would move every border in the world.
-  const margin = scan(-2600, -1600, 600, 1120, ['Ovesos', 'Oves Desert'], true);
-  assert.ok(margin.steepest > 1.2, 'the unbuilt margin has stopped chirping, which would be news');
-  assert.ok(margin.steepest > built.steepest * 2, 'the built-to-built ground is not quieter than the unbuilt margin');
-  // The two countries' own ground, away from the unbuilt margins, is walkable almost everywhere: the
+  // Do not require an old frontier defect to remain steep: later region work
+  // may improve it. Keep the useful whole-country traversal ceiling instead.
+  // The two countries' own ground is walkable almost everywhere: the
   // desert is stonier than Ovesos on purpose, and the rim hills are most of what is left.
   for (const [name, limit] of [['Ovesos', .09], ['Oves Desert', .16]]) {
     let n = 0, steep = 0;

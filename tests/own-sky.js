@@ -48,5 +48,5 @@ export const OWN_SKY = new Set([
   // Telemonia: the Oves Desert's own sky, to the digit - "the same belt as the Oves Desert to its north ...
   // for most of the year it looks like them", and the bands' road north is the desert's southern route
   // (docs/telemonia-stage1-report.md).
-  'Telemonia',
+  'Telemonia', 'West Oremindi Mountains', 'East Pyros', 'Nether Desert', 'Legemum',
 ]);
