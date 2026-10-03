@@ -113,9 +113,10 @@ test('Chris rides: the long road’s own man is in the file, and the file is wha
     'the rule reads the file that was placed');
   assert.match(main, /fileOrder=company\.companionIds/, 'and the file is the company’s, mate included');
   // And the company is remade off the plan, which carries the mate, rather than off the
-  // companions list, which never does.
-  assert.match(main, /const companySignature=\(\)=>JSON\.stringify\(\[companionPlan\(\)\?\?null,companyDead\(\)\]\);/,
-    'the signature is the plan and the dead');
+  // companions list, which never does. Since the peninsula tutorial it is also remade when the
+  // tutorial's own Chris changes hands (src/peninsula-company.js, `peninsulaCompanyStamp`).
+  assert.match(main, /const companySignature=\(\)=>JSON\.stringify\(\[companionPlan\(\)\?\?null,companyDead\(\),peninsulaHost\?\.chosen\?peninsulaCompanyStamp\(peninsulaHost\.view\(\),roster\[0\]\.id\):null\]\);/,
+    'the signature is the plan, the dead and the peninsula tutorial’s stamp');
   assert.match(main, /companyBuiltWith=companySignature\(\);/, 'and rebuilding records what it built with');
   assert.match(main, /if\(companySignature\(\)!==companyBuiltWith\)rebuildCompany\(\);/, 'and placeMercenaries asks every frame');
 });

@@ -1558,7 +1558,6 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const inquestHome=yield* regionBuild('inquestHome',[37],stage=>immediate(()=>createInquestHome({parent:stage,cottage,material,box,post,heightAt,colliders})),{path:[]},built=>{if(fast&&built.path)paths.push(built.path);});
   const yunethre=yield* regionBuild('yunethre',[38],stage=>createYunethreScenerySteps({parent:stage,heightAt,colliders}),{paths:[],walkSurfaces:[]},built=>{if(fast){outdoorWalkSurfaces.push(...built.walkSurfaces);paths.push(...built.paths.map(p=>Object.assign([...p.points],{width:p.width})));}});
   const peninsulaTutorial=createPeninsulaTutorialScenery({parent:scene,heightAt,colliders,movingGroups});
-  paths.push(...peninsulaTutorial.paths);
   fishingSpots.push(peninsulaTutorial.fishingSpot);
   const outdoorWalkSurfaces=[...ibenwoodForest.walkSurfaces,...yunethre.walkSurfaces,...peninsulaTutorial.walkSurfaces];
   const forestWalks=createWalkSurfaces(outdoorWalkSurfaces,heightAt);
@@ -1758,6 +1757,8 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // Region scenery already draws these roads; append navigation only after the original main road.
   paths.push(...yunethre.paths.map(p=>Object.assign([...p.points],{width:p.width})));
   paths.push(...[...MENORA_PATHS,...CARICAS_ROADS,...NYLON_PATHS,...AEVIS_PATHS].map(p=>Object.assign([...p.points],{width:p.width})));
+  // The peninsula tutorial's trails (drawn by its own scenery) go after the main road too: paths[0] is the main road.
+  paths.push(...peninsulaTutorial.paths);
 
   // Footpaths join a road at its edge. Their full centre lines still meet for
   // navigation, but brown faces must not stripe or z-fight across the pale road.
