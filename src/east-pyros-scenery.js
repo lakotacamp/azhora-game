@@ -6,6 +6,7 @@ import { hexOwnerAt, landDistance } from './region-world.js';
 import { EAST_PYROS, EAST_PYROS_CELLS, EAST_PYROS_OUTCROPS, EAST_PYROS_POOLS,
   eastPyrosClear, eastPyrosHabitat, eastPyrosWaterAt } from './east-pyros-world.js';
 import { eastPyrosWildlifeClear } from './east-pyros-wildlife.js';
+import { telemoniaDrawsGround } from './telemonia-world.js';
 
 const TAU=Math.PI*2;
 const tones={
@@ -20,7 +21,9 @@ const geometry={trunk:new THREE.CylinderGeometry(.72,1,1,7),crown:new THREE.Icos
 
 /** Thirty-three independently culled ground batches and a few instanced tree
  * batches. Every trunk has a species, collider and harvestable mesh handles. */
-export function* createEastPyrosScenerySteps({parent,heightAt,renderedGroundHeight=heightAt,colliders}){
+export function* createEastPyrosScenerySteps({parent,heightAt,renderedGroundHeight:gridGround=heightAt,colliders}){
+  // Along Telemonia's border its own ground is drawn over the world's sunk grid (src/telemonia-world.js).
+  const renderedGroundHeight=(x,z)=>telemoniaDrawsGround(x,z)?heightAt(x,z):gridGround(x,z);
   const root=new THREE.Group();root.name='East Pyros volcanic grass country';parent.add(root);
   const material=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.97,flatShading:true});
   const batches=new Map(),pendingTrees=[],trees=[],wisps=[];

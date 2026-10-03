@@ -27,6 +27,20 @@ export function eastPyrosBoundaryDistance(x,z){
   for(const loop of EAST_PYROS_OUTLINES)for(let i=0;i<loop.length;i++)distance=Math.min(distance,eastPyrosSegment(x,z,loop[i],loop[(i+1)%loop.length]).distance);
   return distance;
 }
+// Telemonia's border is a zigzag of hex edges, and the nearest of them changes along the lines halfway between
+// two: a feather laid off that distance creased there, as a lit band down the slope. Off Telemonia's edges alone
+// the distance is a smooth minimum (over SOFT_SEAM metres), so the ground comes down to the rim's foot in one slope.
+const SOFT_SEAM=8;
+const besideTelemonia=(a,b)=>{const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2,dx=b.x-a.x,dz=b.z-a.z,l=Math.hypot(dx,dz)||1;
+  return hexOwnerAt(mx-dz/l,mz+dx/l)==='Telemonia'||hexOwnerAt(mx+dz/l,mz-dx/l)==='Telemonia';};
+const EAST_PYROS_EDGES=EAST_PYROS_OUTLINES.flatMap(loop=>loop.map((a,i)=>[a,loop[(i+1)%loop.length]]));
+const TELEMONIA_EDGES=EAST_PYROS_EDGES.filter(([a,b])=>besideTelemonia(a,b)),OTHER_EDGES=EAST_PYROS_EDGES.filter(([a,b])=>!besideTelemonia(a,b));
+function eastPyrosFeatherDistance(x,z){
+  let other=Infinity,sum=0;
+  for(const [a,b] of OTHER_EDGES)other=Math.min(other,eastPyrosSegment(x,z,a,b).distance);
+  for(const [a,b] of TELEMONIA_EDGES)sum+=Math.exp(-eastPyrosSegment(x,z,a,b).distance/SOFT_SEAM);
+  return Math.min(other,sum>0?-SOFT_SEAM*Math.log(sum):Infinity);
+}
 export function eastPyrosRiverClearance(x,z){
   return courseDistance(VAELLIR,x,z)-courseHalfAt(VAELLIR,coursePosition(VAELLIR,x,z));
 }
@@ -93,13 +107,17 @@ export const EAST_PYROS_VIEWS=freeze({
   'east-pyros-springs':freeze({eye:freeze({x:-2739,z:1100,y:64}),target:freeze({x:-2775,z:1060,y:EAST_PYROS_POOLS[0].surfaceY})}),
   'east-pyros-red-stone':freeze({eye:freeze({x:-2388,z:1325,y:75}),target:freeze({x:-2458,z:1280,y:38})}),
   'east-pyros-south':freeze({eye:freeze({x:-2390,z:1530,y:76}),target:freeze({x:-2490,z:1480,y:25})}),
+  // The border with Telemonia (src/telemonia-world.js, `telemoniaSeamBedrock`): the rim's foot from under the
+  // Red Ridge, and the same foot from over the western rim's outer face.
+  'east-pyros-border':freeze({eye:freeze({x:-2440,z:1250,y:47}),target:freeze({x:-2356,z:1242,y:14})}),
+  'east-pyros-border-from-telemonia':freeze({eye:freeze({x:-2385,z:1330,y:40}),target:freeze({x:-2450,z:1385,y:24})}),
 });
 
 export function eastPyrosGround(x,z,incoming){
   if(!inEastPyrosBox(x,z)||hexOwnerAt(x,z)!==EAST_PYROS)return incoming;
   const shore=landDistance(x,z),edge=eastPyrosBoundaryDistance(x,z),river=eastPyrosRiverClearance(x,z);
   if(shore<=8||edge<.001||river<=25)return incoming;
-  const weight=smooth(edge/72)*smooth((shore-8)/48)*smooth((river-25)/36);
+  const weight=smooth(eastPyrosFeatherDistance(x,z)/72)*smooth((shore-8)/48)*smooth((river-25)/36);
   let target=eastPyrosNaturalHeight(x,z);
   for(const pool of EAST_PYROS_POOLS){
     const r=Math.hypot(x-pool.x,z-pool.z)/pool.radius;

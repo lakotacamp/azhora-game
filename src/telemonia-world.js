@@ -44,7 +44,7 @@
  * the ground it was given: the Caelin and the Treloss run along the border line, and their channels and
  * levels are the Oves's and Gala's.
  */
-import { hexAt, hexCentre, hexOwnerAt, REGION_CELLS, REGION_TERRAIN, terrainMix, seamlessTerrainMix, relief } from './region-world.js';
+import { hexAt, hexCentre, hexOwnerAt, REGION_CELLS, REGION_TERRAIN, terrainMix, seamlessTerrainMix, relief, landDistance, METRES_PER_HEX } from './region-world.js';
 import { fortCircuit, FORT_STANDARD } from './fortification.js';
 import { OVES_BORDER_STREAM, GALA_TELEMONIA_STREAM, GALA_DESERT_STREAM, courseDistance } from './west-regions.js';
 
@@ -881,7 +881,7 @@ function seamSamples(baseAt) {
       // The far side is asked at a hand's breadth and at a forearm's, and the higher answer taken: where it
       // falls away from the border, the nearer is the step a walker meets.
       const far = Math.max(baseAt(x + nx * .05, z + nz * .05), baseAt(x + nx * SEAM.probe, z + nz * SEAM.probe));
-      const lift = (far - (baseAt(ix, iz) + seamlessDelta(ix, iz) * dryOfStreams(ix, iz))) * dryOfStreams(x, z);
+      const lift = (far - (baseAt(ix, iz) + seamlessDelta(ix, iz) * dryOfStreams(ix, iz) * (1 - seamGroundShare(ix, iz)))) * dryOfStreams(x, z);
       if (!(lift > 0)) continue;
       const sample = { x, z, lift };
       for (let bx = Math.floor((x - SEAM.reach) / cell); bx <= Math.floor((x + SEAM.reach) / cell); bx++)
@@ -906,6 +906,89 @@ export function seamLift(x, z, baseAt) {
 }
 
 /**
+ * **The ground either side of the Legemum and East Pyros borders** (2026-10-03). Both were unbuilt
+ * `outland` when this country was built, and both were then built as countries of their own, each
+ * shaping its ground toward the ground it is handed over its last tens of metres (48 m in Legemum, 72 in
+ * East Pyros) - which is the world's hex blend. Along these two borders that blend is at its worst: it
+ * mixes their six metres of roll on a 150 m wave with this country's eighty centimetres on 320, and a blend
+ * of wavelengths is a chirp - ribs of three to five metres every few metres for seventy metres out - and it
+ * steps along hex edges as well. Measured, that was a step of up to 4.9 m at the border line itself, by the
+ * hex corners, and ribs steeper than one in one over much of both neighbours' last forty metres.
+ *
+ * So within `hold` metres of these two borders, on both sides of them and on no one else's ground, the
+ * blend's own ground is laid seamless and unchirped before anybody shapes it (`telemoniaSeamBedrock`,
+ * which src/world-terrain.js lays under everything): every hex in reach weighed as the blend weighs it, and
+ * **each hex's own relief** blended, not its wavelength. Both sides of the border then hand their countries
+ * the same smooth ground, the neighbours feather to it as they did, the outer face rises off it as it did,
+ * and they meet at the line. It lets go over `fade` metres away from the border, out where both
+ * neighbours' own ground has long since taken over from it, and within `corner` metres of every line where
+ * these three countries meet anybody else - Gala, the Oves Desert, the open country - whose ground is left
+ * exactly as it was.
+ */
+export const SEAM_GROUND = freeze({ hold: 75, fade: 110, corner: 40 });
+const SEAM_COUNTRIES = freeze([TELEMONIA, 'Legemum', 'East Pyros']);
+const SEAM_EDGES = freeze(BORDER.filter(edge => edge.neighbour === 'Legemum' || edge.neighbour === 'East Pyros'));
+const SEAM_BOX = (() => {
+  const box = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
+  for (const edge of SEAM_EDGES) for (const p of [edge.a, edge.b]) {
+    box.minX = Math.min(box.minX, p.x - SEAM_GROUND.fade); box.maxX = Math.max(box.maxX, p.x + SEAM_GROUND.fade);
+    box.minZ = Math.min(box.minZ, p.z - SEAM_GROUND.fade); box.maxZ = Math.max(box.maxZ, p.z + SEAM_GROUND.fade);
+  }
+  return freeze(box);
+})();
+/** Every hex's own terrain profile, as the world's blend reads it (`cellProfile` in src/region-world.js). */
+const HEX_PROFILE = (() => {
+  const profiles = new Map();
+  for (const [name, list] of Object.entries(REGION_CELLS)) for (const cell of list)
+    profiles.set(key(cell.q, cell.r), REGION_TERRAIN[name]?.byTerrain?.[cell.terrain] ?? REGION_TERRAIN[name]);
+  return profiles;
+})();
+const ownerOf = (q, r) => { const c = hexCentre(q, r); return hexOwnerAt(c.x, c.z); };
+/** The hex edges between these three countries and anybody else, round the seam: the lines whose ground is left alone. */
+const SEAM_ENDS = (() => {
+  const out = [], inBox = c => c.x > SEAM_BOX.minX - 100 && c.x < SEAM_BOX.maxX + 100 && c.z > SEAM_BOX.minZ - 100 && c.z < SEAM_BOX.maxZ + 100;
+  for (const name of SEAM_COUNTRIES) for (const cell of REGION_CELLS[name] ?? []) {
+    if (!inBox(cell)) continue;
+    for (let i = 0; i < 6; i++) if (!SEAM_COUNTRIES.includes(ownerOf(cell.q + AXIAL[i][0], cell.r + AXIAL[i][1])))
+      out.push(freeze({ a: corner(cell.q, cell.r, (i + 5) % 6), b: corner(cell.q, cell.r, i) }));
+  }
+  return freeze(out);
+})();
+const BLEND_REACH = METRES_PER_HEX * 1.28;
+const WITHIN_TWO = freeze([[0, 0], ...AXIAL, [2, 0], [2, -1], [2, -2], [1, -2], [0, -2], [-1, -1], [-2, 0], [-2, 1], [-2, 2], [-1, 2], [0, 2], [1, 1]]);
+/** How much of a point's ground is laid unchirped: 1 along the two borders, 0 off the three countries and at the lines they share with anybody else. */
+export function seamGroundShare(x, z) {
+  if (x < SEAM_BOX.minX || x > SEAM_BOX.maxX || z < SEAM_BOX.minZ || z > SEAM_BOX.maxZ) return 0;
+  if (!SEAM_COUNTRIES.includes(hexOwnerAt(x, z))) return 0;
+  let seam = Infinity, end = Infinity;
+  for (const edge of SEAM_EDGES) seam = Math.min(seam, segmentDistance(x, z, edge.a, edge.b));
+  if (seam >= SEAM_GROUND.fade) return 0;
+  for (const edge of SEAM_ENDS) end = Math.min(end, segmentDistance(x, z, edge.a, edge.b));
+  return (1 - smooth(SEAM_GROUND.hold, SEAM_GROUND.fade, seam)) * smooth(0, SEAM_GROUND.corner, end);
+}
+/** The blend's inland ground with every hex in reach and each hex's own relief, less the stepped, chirping one the world lays. */
+function unchirpedDelta(x, z) {
+  const home = hexAt(x, z);
+  let total = 0, sum = 0;
+  for (const [dq, dr] of WITHIN_TWO) {
+    const q = home.q + dq, r = home.r + dr, c = hexCentre(q, r);
+    const weight = Math.max(0, 1 - Math.hypot(x - c.x, z - c.z) / BLEND_REACH);
+    if (!weight) continue;
+    const p = HEX_PROFILE.get(key(q, r)) ?? REGION_TERRAIN.outland;
+    total += weight; sum += weight * (p.base + relief(x, z, p.amp, p.wave));
+  }
+  if (!total) return 0;
+  const was = terrainMix(x, z);
+  // `regionBase` (src/world-terrain.js) blends the inland ground into its beach over 2...40 m from the coast.
+  return (sum / total - was.base - relief(x, z, was.amp, was.wave)) * smooth(2, 40, landDistance(x, z));
+}
+/** The bedrock the world lays, with the blend made seamless and unchirped along the Legemum and East Pyros borders. */
+export function telemoniaSeamBedrock(x, z, bedrock) {
+  const share = seamGroundShare(x, z);
+  return share > 0 ? bedrock + unchirpedDelta(x, z) * share : bedrock;
+}
+
+/**
  * **Telemonia's own ground**, from the ground it is handed. Outside the box and on anybody else's hexes
  * it answers with exactly what it was given; at the border line it meets the ground across it (`seamLift`),
  * because the outer face rises off that; inside, it is the country's own. `baseAt` is the ground before
@@ -917,7 +1000,8 @@ export function telemoniaGround(x, z, ground, baseAt = null) {
   if (dry <= 0) return handed;
   if (baseAt) {
     const depth = borderDepth(x, z);
-    if (depth < SEAM.seamless) ground += seamlessDelta(x, z) * seamlessShare(depth) * dryOfStreams(x, z);
+    // Along the Legemum and East Pyros borders the ground handed over is already seamless (`telemoniaSeamBedrock`).
+    if (depth < SEAM.seamless) ground += seamlessDelta(x, z) * seamlessShare(depth) * dryOfStreams(x, z) * (1 - seamGroundShare(x, z));
     if (depth < SEAM.reach + 1) ground += seamLift(x, z, baseAt);
   }
   const f = form(x, z, ground);
@@ -986,6 +1070,14 @@ export function telemoniaTerrainSink(x, z) {
  * neighbours' own (`groundHeight` is theirs) in their own colour.
  */
 export const TELEMONIA_PATCH_REACH = 9;
+/**
+ * Whether the ground drawn at a point is this country's own finer ground (above), as it is out to
+ * `TELEMONIA_PATCH_REACH` past the border, over the world's grid sunk under it. A neighbour's scenery
+ * stands there on `heightAt`, which this ground is drawn from, and not on the grid's triangles
+ * (`renderedGroundHeight`): out there they lie up to sixty metres under the drawn ground, and Legemum's and
+ * East Pyros's grass, stones and trees within a few metres of the border were buried in it (2026-10-03).
+ */
+export const telemoniaDrawsGround = (x, z) => inTelemoniaBox(x, z) && borderDepth(x, z) > -TELEMONIA_PATCH_REACH;
 
 // ---------------------------------------------------------------------------
 // What the ground is made of: the colour and the scatter read it

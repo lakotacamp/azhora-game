@@ -18,6 +18,19 @@ const edges=outline.flatMap(loop=>loop.map((a,i)=>[a,loop[(i+1)%loop.length]]));
 // fall to the established shoreline; no offshore rock becomes new land.
 const mainlandEdges=edges.filter(([a,b])=>landDistance((a.x+b.x)/2,(a.z+b.z)/2)>16);
 export const legemumSeamDistance=(x,z)=>Math.min(...mainlandEdges.map(([a,b])=>legemumSegment(x,z,a,b)));
+// Telemonia's border is a zigzag of hex edges, and the nearest of them changes along the lines halfway between
+// two: a feather laid off that distance creased there, as a lit band down the hills. Off Telemonia's edges alone
+// the distance is a smooth minimum (over SOFT_SEAM metres), so the hills come down to the rim's foot in one slope.
+const SOFT_SEAM=8;
+const besideTelemonia=([a,b])=>{const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2,dx=b.x-a.x,dz=b.z-a.z,l=Math.hypot(dx,dz)||1;
+  return hexOwnerAt(mx-dz/l,mz+dx/l)==='Telemonia'||hexOwnerAt(mx+dz/l,mz-dx/l)==='Telemonia';};
+const telemoniaEdges=mainlandEdges.filter(besideTelemonia),otherEdges=mainlandEdges.filter(edge=>!besideTelemonia(edge));
+function legemumFeatherDistance(x,z){
+  let other=Infinity,sum=0;
+  for(const [a,b] of otherEdges)other=Math.min(other,legemumSegment(x,z,a,b));
+  for(const [a,b] of telemoniaEdges)sum+=Math.exp(-legemumSegment(x,z,a,b)/SOFT_SEAM);
+  return Math.min(other,sum>0?-SOFT_SEAM*Math.log(sum):Infinity);
+}
 export const LEGEMUM_ARRIVAL=point(-1970,1535);
 export const LEGEMUM_LANDMARKS=freeze([
   freeze({id:'legemum-tin-saddle',name:'The Tin Hills',region:59,...LEGEMUM_ARRIVAL,radius:55}),
@@ -61,7 +74,7 @@ export function legemumGround(x,z,incoming){
   target=mix(target,11.5+.45*Math.sin(x*.04)*Math.sin(z*.04),peat);
   // Headlands keep a rocky bluff; sheltered bays have a longer, gentler fall.
   const exposed=x<-2250||z>1875,shoreWeight=smooth(2,exposed?22:40,shore);
-  const seamWeight=smooth(0,48,legemumSeamDistance(x,z));
+  const seamWeight=smooth(0,48,legemumFeatherDistance(x,z));
   return mix(incoming,target,shoreWeight*seamWeight);
 }
 export function legemumTint(x,z){
@@ -84,4 +97,9 @@ export const LEGEMUM_VIEWS=freeze({
   'legemum-hills':freeze({eye:{x:-1980,z:1660,y:67},target:{x:-2140,z:1565,y:28}}),
   'legemum-hollow':freeze({eye:{x:-2168,z:1820,y:38},target:{x:-2058,z:1725,y:12}}),
   'legemum-woods':freeze({eye:{x:-1980,z:1790,y:28},target:{x:-1940,z:1720,y:17}}),
+  // The border with Telemonia (src/telemonia-world.js, `telemoniaSeamBedrock`): the south pass's mouth from the
+  // tin hills' flank, the rim's foot from Legemum, and the same foot from over the rim's outer face.
+  'legemum-south-pass':freeze({eye:{x:-2133,z:1505,y:39},target:{x:-2121,z:1440,y:18}}),
+  'legemum-border':freeze({eye:{x:-1985,z:1535,y:36},target:{x:-2075,z:1462,y:14}}),
+  'legemum-border-from-telemonia':freeze({eye:{x:-2080,z:1440,y:46},target:{x:-2010,z:1500,y:18}}),
 });

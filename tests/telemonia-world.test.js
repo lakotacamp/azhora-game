@@ -27,11 +27,13 @@ import {
   GALMETH, CREST, INNER, ROTHKAR, PASSES, WASHES, GULLIES, KETHORN, KETHORN_WALL, STRATA, TERRACES, TELEMONIA_LANDMARKS, TERRACE_VIEW,
   telemoniaGround, telemoniaPlace, telemoniaTint, plainLevel, plainDistance, borderDepth, passAt, passCol, washAt, washWeight, kethornFrame,
   kethornPoint, kethornLift, onKethornTop, topOutside, stairDistance, belkethShare, crestHeight, ridgePhase, gullyAt,
-  kethornBearing, kethornUnclimbable, ROTHKAR_WAY, wayAt, onPassFloor,
+  kethornBearing, kethornUnclimbable, ROTHKAR_WAY, wayAt, onPassFloor, inTelemoniaBox, TELEMONIA_PATCH_REACH,
 } from '../src/telemonia-world.js';
 import { closedRegionEntered } from '../src/closed-border.js';
 import { TELEMONIA_WILDLIFE_ZONES } from '../src/telemonia-wildlife.js';
 import { TELEMONIA_TOWN_LANDMARKS } from '../src/telemonia-ways.js';
+import { legemumSeamDistance } from '../src/legemum-world.js';
+import { eastPyrosBoundaryDistance } from '../src/east-pyros-world.js';
 
 /**
  * Telemonia, stage 1: the country and not its people (docs/telemonia-stage1-brief.md,
@@ -622,6 +624,119 @@ test('the passes: three, each to its own neighbour, floors a walker takes and wa
     let i = 1; while (i < p.run.length - 1 && p.run[i] < s) i++;
     const a = p.points[i - 1], b = p.points[i], t = Math.max(0, Math.min(1, (s - p.run[i - 1]) / (p.run[i] - p.run[i - 1])));
     return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t };
+  }
+});
+
+test('the Legemum and East Pyros borders: one smooth ground across the line, and the south pass walked from Legemum', () => {
+  // Built after this country, each shaped its ground toward the world's hex blend at the border, which along
+  // these two borders steps at hex edges and ribs (a blend of 150 m and 320 m waves): up to 4.9 m at the line
+  // by the hex corners, and ribs of one in one and more over the neighbours' last forty metres. Measured
+  // 2026-10-03 after the seam was laid unchirped on both sides (`telemoniaSeamBedrock`): 0.44 m and 0.69 m at
+  // the line, and 0.41 m in any half-metre of either neighbour's own ground within forty metres of it.
+  const seam = BORDER.filter(edge => edge.neighbour === 'Legemum' || edge.neighbour === 'East Pyros');
+  const third = BORDER.filter(edge => ![TELEMONIA, 'Legemum', 'East Pyros'].includes(edge.neighbour));
+  // Where a third country meets the line - the Oves Desert at its north end, Gala at its east - its own seam
+  // with the neighbour arrives there too, and nothing laid along this line can meet all three.
+  const corners = [];
+  for (const edge of seam) for (const p of [edge.a, edge.b])
+    if (third.some(o => Math.hypot(o.a.x - p.x, o.a.z - p.z) < .01 || Math.hypot(o.b.x - p.x, o.b.z - p.z) < .01)) corners.push(p);
+  assert.equal(corners.length, 2, 'the line runs from the Oves Desert round to Gala');
+  for (const name of ['Legemum', 'East Pyros']) {
+    let line = 0, side = 0, samples = 0;
+    for (const edge of seam.filter(e => e.neighbour === name)) {
+      const c = hexCentre(edge.cell[0], edge.cell[1]), a = hexCentre(edge.across[0], edge.across[1]), n = Math.hypot(a.x - c.x, a.z - c.z);
+      const nx = (a.x - c.x) / n, nz = (a.z - c.z) / n, length = Math.hypot(edge.b.x - edge.a.x, edge.b.z - edge.a.z);
+      for (let s = 0; s <= length; s += .5) {
+        const x = edge.a.x + (edge.b.x - edge.a.x) * s / length, z = edge.a.z + (edge.b.z - edge.a.z) * s / length;
+        const corner = Math.min(...corners.map(p => Math.hypot(p.x - x, p.z - z)));
+        if (corner < 6) continue;
+        // Every hex corner on the line is in this, and they were the worst of it.
+        const step = Math.abs(H(x + nx * .05, z + nz * .05) - H(x - nx * .05, z - nz * .05));
+        line = Math.max(line, step); samples++;
+        assert.ok(step < 1, `the ground steps ${step.toFixed(2)} m across the ${name} border at ${x.toFixed(1)}, ${z.toFixed(1)}`);
+        if (corner < 40) continue;
+        for (let d = .05; d < 40; d += .5) {
+          const x0 = x + nx * d, z0 = z + nz * d, x1 = x0 + nx * .5, z1 = z0 + nz * .5;
+          if (hexOwnerAt(x0, z0) !== name || hexOwnerAt(x1, z1) !== name) continue;
+          const rise = Math.abs(H(x1, z1) - H(x0, z0));
+          side = Math.max(side, rise);
+          assert.ok(rise < .5, `${name}’s ground ribs ${rise.toFixed(2)} m in half a metre at ${x0.toFixed(1)}, ${z0.toFixed(1)}, ${d.toFixed(1)} m out`);
+        }
+      }
+    }
+    assert.ok(samples > 800, `${samples} samples along the ${name} border`);
+  }
+  // And the neighbours' ground comes down to the rim's foot without creasing where the nearest of the border's
+  // hex edges changes - which their feathers did, off the exact distance, in lit bands down the slope (a second
+  // difference over two metres of up to 0.64 m in Legemum and 1.15 m in East Pyros; 0.42 and 0.45 since).
+  const seg = (x, z, a, b) => { const dx = b.x - a.x, dz = b.z - a.z, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a.x - dx * t, z - a.z - dz * t); };
+  for (const name of ['Legemum', 'East Pyros']) {
+    let worst = { crease: 0 }, counted = 0;
+    for (let x = TELEMONIA_BOX.minX - 60; x < TELEMONIA_BOX.maxX + 60; x += 3) for (let z = TELEMONIA_BOX.minZ - 60; z < TELEMONIA_BOX.maxZ + 60; z += 3) {
+      if (hexOwnerAt(x, z) !== name) continue;
+      const d = Math.min(...seam.map(edge => seg(x, z, edge.a, edge.b)));
+      if (d < 3 || d > 80 || Math.min(...corners.map(p => Math.hypot(p.x - x, p.z - z))) < 40) continue;
+      // Only where this border is the nearest of the neighbour's own: its other borders are its own business.
+      if ((name === 'Legemum' ? legemumSeamDistance(x, z) : eastPyrosBoundaryDistance(x, z)) < d - .01) continue;
+      counted++;
+      const h = H(x, z);
+      for (const [ux, uz] of [[1, 0], [0, 1], [Math.SQRT1_2, Math.SQRT1_2], [Math.SQRT1_2, -Math.SQRT1_2]]) {
+        const crease = Math.abs(H(x + ux * 2, z + uz * 2) - 2 * h + H(x - ux * 2, z - uz * 2));
+        if (crease > worst.crease) worst = { crease, x, z };
+      }
+    }
+    assert.ok(counted > 1000, `${counted} points of ${name}`);
+    assert.ok(worst.crease < .55, `${name}’s ground creases ${worst.crease.toFixed(2)} m in two metres at ${worst.x}, ${worst.z}`);
+  }
+  // The south pass is a way: from Legemum's ground thirty metres short of its line's outer end (forty-six from
+  // the border), through the mouth with no step at the border, up the floor over the col and down onto the
+  // Galmeth - and back - every half-metre at a grade the climbing rule lets a walker take.
+  const south = PASSES.find(p => p.faces === 'Legemum');
+  const [p0, p1] = south.points, l = Math.hypot(p0.x - p1.x, p0.z - p1.z);
+  const at = s => {
+    if (s < 0) return { x: p0.x + (p0.x - p1.x) / l * -s, z: p0.z + (p0.z - p1.z) / l * -s };
+    let i = 1; while (i < south.run.length - 1 && south.run[i] < s) i++;
+    const a = south.points[i - 1], b = south.points[i], t = Math.max(0, Math.min(1, (s - south.run[i - 1]) / (south.run[i] - south.run[i - 1])));
+    return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t };
+  };
+  assert.equal(hexOwnerAt(at(-30).x, at(-30).z), 'Legemum');
+  assert.ok(plainDistance(at(south.length).x, at(south.length).z) < 0, 'it ends on the Galmeth');
+  let crossed = false, worst = 0;
+  for (let s = -30; s < south.length - .5; s += .5) {
+    const a = at(s), b = at(s + .5);
+    assert.ok(canWalkSlope(a.x, a.z, b.x, b.z, world), `the south pass cannot be walked in at ${s.toFixed(1)} m`);
+    assert.ok(canWalkSlope(b.x, b.z, a.x, a.z, world), `the south pass cannot be walked out at ${s.toFixed(1)} m`);
+    worst = Math.max(worst, Math.abs(H(b.x, b.z) - H(a.x, a.z)) / .5);
+    if (!crossed && hexOwnerAt(a.x, a.z) !== TELEMONIA && hexOwnerAt(b.x, b.z) === TELEMONIA) {
+      crossed = true;
+      let lo = s, hi = s + .5;
+      for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2, p = at(m); if (hexOwnerAt(p.x, p.z) === TELEMONIA) hi = m; else lo = m; }
+      const out = at((lo + hi) / 2 - .05), inn = at((lo + hi) / 2 + .05);
+      assert.ok(Math.abs(H(inn.x, inn.z) - H(out.x, out.z)) < .15, `the south pass’s mouth steps ${(H(inn.x, inn.z) - H(out.x, out.z)).toFixed(2)} m at the border`);
+    }
+  }
+  assert.ok(crossed, 'the walk crosses the border');
+  assert.ok(worst < .65, `the way from Legemum onto the Galmeth pitches ${worst.toFixed(2)}`);
+  // And nothing of either neighbour is buried where this country draws its own ground past the border.
+  const m = new THREE.Matrix4(), p = new THREE.Vector3();
+  for (const name of ['legemum', 'eastPyros']) {
+    const root = world[name]?.root;
+    assert.ok(root, `${name}’s scenery`);
+    root.updateMatrixWorld(true);
+    let near = 0;
+    const check = (x, y, z, what) => {
+      if (!inTelemoniaBox(x, z) || borderDepth(x, z) > 0 || borderDepth(x, z) < -TELEMONIA_PATCH_REACH) return;
+      near++;
+      assert.ok(y > H(x, z) - 1, `${what} of ${name} stands ${(H(x, z) - y).toFixed(1)} m under the ground at ${x.toFixed(1)}, ${z.toFixed(1)}`);
+    };
+    root.traverse(o => {
+      if (o.isInstancedMesh) for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); p.setFromMatrixPosition(m).applyMatrix4(o.matrixWorld); check(p.x, p.y, p.z, o.name); }
+      else if (o.isMesh && o.geometry?.attributes?.position) {
+        const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) { p.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); check(p.x, p.y, p.z, o.name); }
+      }
+    });
+    assert.ok(near > 500, `${near} pieces of ${name} near the border`);
   }
 });
 

@@ -16,7 +16,7 @@ import { varnGround } from './varn-world.js';
 import { feradomGround, feradomSeam } from './feradom-world.js';
 import { ascarthGround, ascarthCliffTint } from './ascarth-world.js';
 import { selemisGround, selemisTint, selemisShoreTint } from './selemis-world.js';
-import { telemoniaGround, telemoniaTint } from './telemonia-world.js';
+import { telemoniaGround, telemoniaTint, telemoniaSeamBedrock } from './telemonia-world.js';
 import { amodGround } from './amod-terraces.js';
 import { westGround } from './west-ground.js';
 import { galaGroundColour, inGalaBox } from './gala-world.js';
@@ -280,7 +280,9 @@ export function groundBeforeFeradom(x, z) {
 }
 /** Everything `groundBeforeFeradom` lays but the Telemon highland: the ground its border seam is measured against. */
 function groundBeforeTelemonia(x, z) {
-  const bedrock = bedrockHeight(x, z), distance = calossDistance(x, z);
+  // Along Telemonia's borders with Legemum and East Pyros the hex blend is laid seamless and unchirped on both
+  // sides first, so the three countries shape one smooth ground there and meet on it (src/telemonia-world.js).
+  const bedrock = telemoniaSeamBedrock(x, z, bedrockHeight(x, z)), distance = calossDistance(x, z);
   let ground = distance < CALOSS_BANK_DISTANCE ? calossChannel(x, z, bedrock) : bedrock;
   ground = calossEmbankment(x, z, ground);
   const near = nearestPuethRiver(x, z, PUETH_VALLEY_REACH);
