@@ -96,12 +96,16 @@ export function fighterSpec(npc, at, model) {
   return { id: `${npc.id}-fight`, npcId: npc.id, name: npc.name, kind: side.kind, hp: side.hp, x: at.x, z: at.z, ...(model ? { model } : {}) };
 }
 
+/** At his station when within this of it (metres); turning back to his station's heading at this (radians a second). */
+const STATION_REACH = .5, STATION_TURN = 2.5;
 export function createTelemoniaHost({ world, npcData, combat, position, level = 3, sneaking = () => false, armed = () => false,
   isDown = () => false, openDialogue = () => {}, toast = () => {}, save = () => {},
   stopAutoplay = () => {}, modelOf = npc => ({ role: npc.modelRole, tunic: npc.color, skin: npc.skin, look: npc.look }) } = {}) {
   const watch = telemonWatchFor(world);
   const people = () => npcData.filter(npc => TELEMONIA_PEOPLE_IDS.has(npc.id));
-  const homes = new Map(people().map(npc => [npc.id, { x: world.npcPositions[npc.id]?.x ?? npc.x, z: world.npcPositions[npc.id]?.z ?? npc.z, pace: npc.pace, face: npc.face }]));
+  // Each one's station: where he stands and which way he faces there (his place in src/telemonia-people.js).
+  const homes = new Map(people().map(npc => [npc.id, { x: world.npcPositions[npc.id]?.x ?? npc.x, z: world.npcPositions[npc.id]?.z ?? npc.z, pace: npc.pace, face: npc.face,
+    yaw: Number.isFinite(npc.yaw) ? npc.yaw : npc.actor?.group?.rotation?.y }]));
   const controlled = new Set();
   let last = null, inside = false, view = watch.view(), struck = false;
   const byId = id => npcData.find(npc => npc.id === id) ?? null;
@@ -120,6 +124,21 @@ export function createTelemoniaHost({ world, npcData, combat, position, level = 
     if (npc && h) { world.npcPositions[id] = { x: h.x, z: h.z }; npc.pace = h.pace; npc.face = h.face; npc.telemonControlled = false; }
   }
   const releaseAll = () => { for (const id of [...controlled]) home(id); };
+  /**
+   * **Back at his station, a Telemon faces the way he faced there.** Sent home after a walk out or a fight, he walks
+   * back on main.js's mover (`home` gives him his station's place), which leaves him facing the way he walked; once he
+   * is there this turns him back, at `STATION_TURN`, or at once while he is not drawn. Not one being walked by the rule,
+   * in a fight, or turned to somebody talking to him (`lent`, src/bodies.js).
+   */
+  function keepStations(dt) {
+    for (const npc of people()) {
+      const h = homes.get(npc.id), g = npc.actor?.group;
+      if (!isTelemon(npc) || !g || !h || !Number.isFinite(h.yaw) || controlled.has(npc.id) || npc.combatPosition || npc.lent !== undefined) continue;
+      if (gap(g.position, h) > STATION_REACH) continue;
+      const d = Math.atan2(Math.sin(h.yaw - g.rotation.y), Math.cos(h.yaw - g.rotation.y));
+      if (d) g.rotation.y += g.visible === false ? d : Math.sign(d) * Math.min(Math.abs(d), STATION_TURN * dt);
+    }
+  }
   const ours = () => combat.state.encounterId === TELEMON_FIGHT_ID && combat.state.phase === 'active';
   /** Toward a target by the ways a body walks, when it is on other ground than he is. */
   function stepTarget(npc, target) {
@@ -172,6 +191,7 @@ export function createTelemoniaHost({ world, npcData, combat, position, level = 
     if (last && gap(last, p) > 15 && !ours()) { watch.restore(watch.snapshot()); view = watch.view(); releaseAll(); }
     last = { x: p.x, z: p.z };
     const busy = combat.state.phase === 'active' && !ours();
+    if (playing) keepStations(dt);
     const before = view;
     const r = watch.update(dt, { traveler: { x: p.x, z: p.z, sneaking: !!sneaking(), armed: !!armed(), attacking: struck }, watchers: watchers(), paused: !playing || busy });
     struck = false; view = r;
@@ -207,6 +227,10 @@ export function createTelemoniaHost({ world, npcData, combat, position, level = 
     if (isTelemon(npc)) {
       // Outside his country he has two words for the traveler; inside it, walking up to one is being seen by him.
       if (!inTelemonia(p.x, p.z)) { openDialogue(npc, [TELEMON_WORDS[npc.telemon].outside[0]], null, 'Go'); return true; }
+      // The one walking him out answers, curtly and twice at most (the rule's `ask`): said as his other words on the
+      // walk are, so nothing stops - the walk and its clocks go on, and speaking is not resisting.
+      const answer = watch.ask(npc.id);
+      if (answer) { toast(`${npc.telemon === 'woman' ? 'A Telemon woman' : 'A Telemon man'}: “${answer.text}”`, TITLE); return true; }
       toast(`${npc.telemon === 'woman' ? 'She' : 'He'} looks at you and does not answer.`, TITLE);
       return true;
     }

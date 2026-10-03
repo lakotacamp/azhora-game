@@ -99,6 +99,39 @@ test('walked to the nearest pass mouth and released there; nobody follows past t
   assert.deepEqual(r.fighters, ['a']);
 });
 
+test('spoken to on the walk out, only the escort answers - who they are, then why - and asking is not resisting and moves no clock', () => {
+  // Nobody answers while he is unseen, or while the one who saw him is still coming.
+  const w = watch(), traveler = { x: 0, z: 8 }, watchers = [man('a', 0, 0)];
+  assert.equal(w.ask('a'), null);
+  run(w, 1.5, { traveler, watchers });
+  assert.equal(w.view().phase, 'noticed'); assert.equal(w.ask('a'), null, 'not until he is turned round');
+  // Turned round: the escort answers twice, in order, and then says nothing; nobody else answers at all.
+  const walk = turnedRound();
+  const asked = [walk.w.ask('b'), walk.w.ask('a'), walk.w.ask(undefined), walk.w.ask('a'), walk.w.ask('a')];
+  assert.deepEqual(asked.map(a => a?.text ?? null), [null, TELEMON_LINES.answer[0], null, TELEMON_LINES.answer[1], null]);
+  assert.deepEqual([asked[1].speaker, asked[1].event], ['a', 'answer']);
+  assert.ok(TELEMON_LINES.answer.length <= 2 && TELEMON_LINES.answer.every(line => line.split(' ').length <= 8), 'one or two curt answers');
+  assert.equal(walk.w.view().phase, 'escorting');
+  // Standing still to ask, the dawdle clock runs as it would anyway: warned and fought at the same moment, asked or not.
+  const moment = (pair, ask) => { const out = []; for (let i = 0; i < (WATCH.dawdleSeconds + 1) * 10; i++) { if (ask && i % 5 === 0) pair.w.ask('a');
+    const r = pair.w.update(.1, { traveler: pair.traveler, watchers: pair.watchers }); if (r.line) out.push([i, r.line.event]); } return out; };
+  const quiet = moment(turnedRound(), false), talking = moment(turnedRound(), true);
+  assert.deepEqual(talking, quiet); assert.deepEqual(quiet.map(([, e]) => e), ['dawdle', 'fight']);
+  // Walking steadily out and asking on the way: no warning, released at the mouth, walked out once, never a fight.
+  const out = turnedRound(), events = [];
+  let r;
+  for (let i = 0; i < 2000 && out.traveler.z < 101; i++) {
+    stepTo(out.traveler, { x: 0, z: 101 }, 1.5);
+    if (i % 20 === 0) out.w.ask('a');
+    r = out.w.update(.1, { traveler: out.traveler, watchers: out.watchers });
+    if (r.line) events.push(r.line.event);
+    follow(out.watchers, r, out.traveler);
+  }
+  assert.deepEqual(events, ['release']); assert.equal(r.phase, 'outside'); assert.deepEqual([r.walkedOut, r.fights], [1, 0]);
+  // A new walk out is a new escort's few words.
+  assert.equal(out.w.ask('a'), null, 'outside, nobody answers');
+});
+
 test('standing still too long is resisting, after one warning', () => {
   const { w, traveler, watchers } = turnedRound();
   const { lines, last } = run(w, WATCH.dawdleSeconds + 1, { traveler, watchers });

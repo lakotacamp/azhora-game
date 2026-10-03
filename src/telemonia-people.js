@@ -15,7 +15,8 @@
  *   cattle by the heads of the passes, at the doors of the band halls, sparring in the yard inside the
  *   gate, at the door of the hall at the end of the street, and overseeing the field people at their rows
  *   ("allotted to the band halls and overseen by them"). **There are no guards** ("There are no designated
- *   guards. All the men basically function as the guards"): nobody stands anywhere to watch it.
+ *   guards. All the men basically function as the guards"): nobody stands anywhere only to watch it, and
+ *   the three who face the western rim, where a climber comes in, are men of the bands like the rest.
  * - **The Telemon women** (the user: "The women also carry knives and are no strangers to combat"; the
  *   lore: "a woman with a knife at her belt and a water jar on her shoulder", "how to hold a gate, a
  *   terrace wall, a cistern, a stair"). The same people, a knife at the belt, at ordinary work: at the
@@ -115,6 +116,23 @@ const hamlet = id => HAMLETS.find(h => h.id === id);
 const gate = KETHORN_WALL.gate.centre;
 
 // --- The men ------------------------------------------------------------------------------------
+/**
+ * **The western rim** (the user, 2026-10-03: getting in unseen should be "possible and hard"). The rim on the East
+ * Pyros side is two hexes thick and no pass goes through it, so a climber's way in is over it, down onto the
+ * terraces and across the Galmeth; as first built nobody faced that way. Three men of the bands now do, the same
+ * build as the rest and no more guards than they are: two on the western terraces, looking up at the inner cliff
+ * they would come down - one under its north-western shoulder, one opposite the rock, where the straight way from
+ * the west comes down - and one at the foot of the Rothkar way, looking up the way and along the terraces under it.
+ * Each sees the stealth module's hundred degrees out to the country's forty metres (src/telemonia-host.js), so the
+ * three do not close the rim: between and at the edges of their cones are gaps, and a body kept low and slow (stealth's
+ * crouched sightline and slower noticing) gets through some that a man walking upright does not.
+ * Places measured on the real ground (tests/telemonia-people.test.js): footing, no wash, walked out by the stairs.
+ */
+const WEST_WATCH = freeze([
+  freeze({ role: 'On the north-western terraces, facing the rim', x: -2228, z: 1185, yaw: -112 * Math.PI / 180 }),
+  freeze({ role: 'On the western terraces, facing the rim', x: -2256, z: 1255, yaw: -90 * Math.PI / 180 }),
+  freeze({ role: 'At the foot of the Rothkar way, facing the rim', x: -2168, z: 1368, yaw: -105 * Math.PI / 180 }),
+]);
 const tarnelStand = passHead('telemonia-tarnel', 16, 12), eastStand = { x: HORSE_RANGE.x - 4, z: HORSE_RANGE.z - 12 }, southStand = { x: CATTLE_RANGE.x - 12, z: CATTLE_RANGE.z - 14 };
 const yardA = kethornPoint(25, 3.2), yardB = kethornPoint(25, -3.2);
 const overseer = (h, out = 3) => { const y = hamlet(h).yard; return along(y, out, PLAIN_MIDDLE); };
@@ -131,6 +149,8 @@ export const TELEMON_MEN = freeze([
     // Before his hall's row of huts, looking out over the rows its people work.
     const at = overseer(h); return person(`telemon-man-${n}`, 'man', 'Overseeing the field people of his hall', at, facing(at, PLAIN_MIDDLE));
   }),
+  // Facing the western rim (`WEST_WATCH`): no pass comes in there, and a climber does.
+  ...WEST_WATCH.map((s, i) => person(`telemon-man-${14 + i}`, 'man', s.role, s, s.yaw)),
 ]);
 
 // --- The women ----------------------------------------------------------------------------------

@@ -14,7 +14,9 @@ import { WATCH } from './telemon-watch.js';
  *  2. back in: seen again, a fight at once, the others in earshot join it, never more than the cap;
  *  3. run out of the country: the fight breaks off and nobody crosses the border after him;
  *  4. save and reload through the game's own recovery checkpoint: the standing is still there;
- *  5. set down by the developer's travel on the western terraces under the rim and sneak: not noticed.
+ *  5. set down by the developer's travel where the gap route over the western rim comes down onto the terraces
+ *     (tests/telemonia-people.test.js: north of the cone of the man on the terraces opposite the town) and sneak
+ *     along it, over the terraces and the plain to the foot of the rock's cliffs: not noticed.
  *
  * Kept honest: the traveler's health is topped up while he stands in the fight (it is the rule being watched,
  * not his swordwork), and he never fights back.
@@ -140,17 +142,19 @@ export async function runTelemoniaChecks({ host, player, combat, npcById, travel
   check(reloaded, 'The adventure saves and loads again through the recovery checkpoint');
   check(JSON.stringify(host.snapshot()) === JSON.stringify(standing), `After the reload the standing is still there: ${JSON.stringify(host.snapshot())}`);
 
-  // --- 5. The western terraces, sneaking: not noticed ---------------------------------------------
-  const west = { x: -2255, z: 1255 }, on = { x: -2215, z: 1250 };
+  // --- 5. The gap over the western rim, sneaking: not noticed -------------------------------------
+  // The route the people test proves (it is seen walked upright): down off the rim onto the terraces north of the cone of
+  // the man opposite the town, across them, and over the plain to the foot of the rock's north-western cliffs.
+  const west = { x: -2268, z: 1226.9 }, gapRoute = [{ x: -2252, z: 1226 }, { x: -2217, z: 1223 }, { x: -2172, z: 1214 }, { x: -2136, z: 1203 }];
   await travel(west);
   sneak(true);
   await wait(.5);
-  check(groundKind(p().x, p().z) === 'terrace', 'Set down by the developer’s travel on the western terraces under the rim');
+  check(groundKind(p().x, p().z) === 'terrace', 'Set down by the developer’s travel on the western terraces, where the gap route comes down off the rim');
   let highest = 0;
-  const unseen = !(await go(on, 1.76, { limit: 30, until: () => ['noticed', 'hostile'].includes(view().phase), each: () => { highest = Math.max(highest, view().suspicion ?? 0); } }));
+  const unseen = !(await along(gapRoute, 1.76, { limit: 40, until: () => ['noticed', 'hostile'].includes(view().phase), each: () => { highest = Math.max(highest, view().suspicion ?? 0); } }));
   sneak(false);
   metrics.steps.west = { t: seconds(), at: { x: +p().x.toFixed(1), z: +p().z.toFixed(1) }, highest: +highest.toFixed(2), phase: view().phase };
-  check(unseen && groundKind(p().x, p().z) === 'plain', 'Sneaking down off the terraces onto the plain, nobody notices him', metrics.steps.west);
+  check(unseen && groundKind(p().x, p().z) === 'plain' && Math.hypot(p().x + 2136, p().z - 1203) < 2, 'Sneaking through the gap between the western watchers’ cones, over the terraces and the plain to the rock’s foot, nobody notices him', metrics.steps.west);
   metrics.seconds = +seconds();
   const s = state();
   metrics.state = { region: s.region, frameErrors: s.frameErrors };

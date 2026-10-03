@@ -39,6 +39,10 @@
  *     line      { speaker, event, text } to say now (an edge, at most one a frame), or null.
  *     fighters  every id in the fight now; joined: the ids that joined this frame (start them fighting).
  *     cause     why it is hostile: 'stray' | 'dawdle' | 'armed' | 'attack' | 'returned'; suspicion 0..1.
+ *   watch.ask(id) -> { speaker, event: 'answer', text } or null: the traveler speaks to watcher `id`. Only the escort
+ *               answers, only while he is walking the traveler out, and only TELEMON_LINES.answer's few times a walk
+ *               (who they are, then why he must go); anyone else, or the escort a third time, says nothing (null).
+ *               Asking changes nothing else: it is not resisting, and the walk-out's clocks neither stop nor restart.
  *   watch.snapshot() -> { version: 1, walkedOut, fights }: save it. watch.restore(saved): a missing state is
  *   clean (true), a bad one is clean too (false); live phases are never saved. watch.reset(); watch.view().
  *   validTelemonWatchState(saved) checks a saved state.
@@ -73,6 +77,8 @@ export const TELEMON_LINES = freeze({
   release: freeze(['Go. Do not come back.', 'Go.', 'Out. Stay out.']),
   fight: freeze(['So be it.', 'Then fight.', 'To me!']),
   returned: freeze(['You were told.', 'Told once.']),
+  // Spoken to on the walk out, the escort answers twice, in order - who they are, then why he must go - and no more.
+  answer: freeze(['Telemon. Walk.', 'This is ours. Nobody comes in. Walk.']),
 });
 
 const KINDS = new Set(['man', 'woman']);
@@ -135,7 +141,7 @@ export function createTelemonWatch({ mouths, insideTelemonia, lineOfSight = () =
 
   function clear(phase) {
     live = { phase, escortId: null, mouth: null, best: 0, stall: 0, warned: false, released: false,
-      fighters: new Set(), quiet: 0, cause: null };
+      fighters: new Set(), quiet: 0, cause: null, answered: 0 };
   }
   const result = ({ line = null, joined = [], escortTo = null, suspicion = 0 } = {}) => ({
     phase: live.phase, escortId: live.escortId, escortTo, mouth: live.mouth, released: live.released, line,
@@ -235,6 +241,11 @@ export function createTelemonWatch({ mouths, insideTelemonia, lineOfSight = () =
     return copy(last);
   }
 
+  /** Spoken to: the escort, on the walk out, answers in order while he has words; nobody else does. Touches no clock. */
+  function ask(id) {
+    if (live.phase !== 'escorting' || typeof id !== 'string' || id !== live.escortId || live.answered >= TELEMON_LINES.answer.length) return null;
+    return { speaker: id, event: 'answer', text: TELEMON_LINES.answer[live.answered++] };
+  }
   function wipe() { meters.clear(); said.clear(); clear('unseen'); last = result(); }
   function restore(value) {
     const ok = value === undefined || value === null || validTelemonWatchState(value);
@@ -244,7 +255,7 @@ export function createTelemonWatch({ mouths, insideTelemonia, lineOfSight = () =
   }
   wipe();
   return {
-    update, restore,
+    update, restore, ask,
     reset() { standing = fresh(); wipe(); return copy(last); },
     snapshot: () => ({ ...standing }),
     view: () => copy(last),

@@ -6,9 +6,10 @@ import * as THREE from '../vendor/three.module.js';
 import { canStand } from '../src/game-state.js';
 import { canWalkSlope } from '../src/climbing.js';
 import { REGION_IDS, hexOwnerAt } from '../src/region-world.js';
-import { TELEMONIA, TELEMONIA_BOX, washWeight, borderDepth, onKethornTop, kethornLift } from '../src/telemonia-world.js';
+import { TELEMONIA, TELEMONIA_BOX, PLAIN_MIDDLE, ROTHKAR_WAY, washWeight, borderDepth, onKethornTop, kethornLift } from '../src/telemonia-world.js';
 import { TELEMON_MEN, TELEMON_WOMEN, TORETH_HANDS, TELEMONIA_PEOPLE, TELEMONIA_FIGURES, TELEMON_WORDS, TORETH_WORDS, isTelemon, peopleSummary } from '../src/telemonia-people.js';
-import { PASS_MOUTHS, groundKind, TELEMON_HORSES, TELEMONIA_HERD_ZONES } from '../src/telemonia-ways.js';
+import { PASS_MOUTHS, groundKind, plainEdgePoint, TELEMON_HORSES, TELEMONIA_HERD_ZONES } from '../src/telemonia-ways.js';
+import { TELEMON_LINES } from '../src/telemon-watch.js';
 import { WALL_FIGURES } from '../src/town-life.js';
 import { createRoadCheckpoint } from '../src/road-checkpoint.js';
 import { createInventoryState } from '../src/inventory.js';
@@ -23,7 +24,7 @@ import { METRES_PER_HEX } from '../src/world-scale.js';
  * and the fields are the town's own test (tests/telemonia-town.test.js).
  */
 const { createCharacter } = await sourceModule('../src/characters.js');
-const { telemonWatchFor, telemonSightline, inTelemonia, fighterSpec, TELEMON_FIGHT, TELEMON_MOUTHS } = await sourceModule('../src/telemonia-host.js');
+const { telemonWatchFor, telemonSightline, inTelemonia, fighterSpec, createTelemoniaHost, TELEMON_FIGHT, TELEMON_MOUTHS } = await sourceModule('../src/telemonia-host.js');
 const world = await scopedWorld(new THREE.Scene(), [REGION_IDS[TELEMONIA]]);
 const DT = 1 / 30;
 const watchers = () => [...TELEMON_MEN, ...TELEMON_WOMEN].map(p => ({ id: p.id, x: p.x, z: p.z, yaw: p.yaw, kind: p.telemon, range: TELEMON_FIGHT.vision }));
@@ -31,7 +32,7 @@ const luminance = hex => .2126 * ((hex >> 16) & 255) + .7152 * ((hex >> 8) & 255
 
 test('who they are: Telemon men and women and the field people, nobody named, no child', () => {
   const sum = peopleSummary();
-  assert.deepEqual([sum.men, sum.women, sum.fieldHands, sum.figures], [13, 10, 12, 12]);
+  assert.deepEqual([sum.men, sum.women, sum.fieldHands, sum.figures], [16, 10, 12, 12]);
   assert.equal(new Set(TELEMONIA_PEOPLE.map(p => p.id)).size, TELEMONIA_PEOPLE.length);
   for (const p of TELEMONIA_PEOPLE) {
     // People go by what they are.
@@ -125,7 +126,7 @@ function walk(watch, line, { speed = 3.6, sneaking = false, people = watchers() 
   return { r: null, at: line.at(-1) };
 }
 
-test('walking in by any pass in the open is seen; over the rim, by the west, a traveler reaches the terraces and the rock’s foot unseen', () => {
+test('walking in by any pass in the open is seen; over the western rim, walking in where the three face is seen, and a sneak through the gap between two cones is not', () => {
   for (const m of PASS_MOUTHS) {
     const watch = telemonWatchFor(world), line = [m.outside, ...[...m.line].reverse()], head = line.at(-1), prev = line.at(-2), d = Math.hypot(head.x - prev.x, head.z - prev.z);
     line.push({ x: head.x + (head.x - prev.x) / d * 30, z: head.z + (head.z - prev.z) / d * 30 });
@@ -133,12 +134,45 @@ test('walking in by any pass in the open is seen; over the rim, by the west, a t
     assert.ok(seen.r, `${m.id}: walked in by it in the open and nobody saw`);
     assert.ok(inTelemonia(seen.at.x, seen.at.z), `${m.id}: seen inside the country`);
   }
-  // Over the western rim, where it is two hexes thick and no pass goes: up the outer bands by the climbing skill,
-  // across, down the inner cliff onto the terraces, and across the western plain to the foot of the rock's cliffs.
-  const route = [[-2352, 1250], [-2300, 1252], [-2262, 1254], [-2246, 1256], [-2215, 1250], [-2172, 1226], [-2136, 1203]].map(([x, z]) => ({ x, z }));
-  assert.equal(groundKind(route[2].x, route[2].z), 'terrace', 'the route comes down onto the terraces');
-  assert.ok(kethornLift(route.at(-1).x, route.at(-1).z) < .5 && Math.hypot(route.at(-1).x + 2100, route.at(-1).z - 1241) < 60, 'and ends at the foot of the rock');
-  for (const sneaking of [true, false]) assert.equal(walk(telemonWatchFor(world), route, { speed: sneaking ? 1.76 : 3.6, sneaking }).r, null, `seen on the western route (${sneaking ? 'sneaking' : 'walking'})`);
+  // The western rim is two hexes thick and no pass goes through it; three men of the bands face it (src/telemonia-people.js
+  // `WEST_WATCH`): two on the terraces, one at the foot of the Rothkar way. Each looks at the rim: thirty metres before him is
+  // not the plain but the terraces, the way or the rim's own cliff.
+  const west = TELEMON_MEN.filter(p => /facing the rim/.test(p.role));
+  assert.equal(west.length, 3);
+  for (const p of west) assert.ok(['terrace', 'rim', 'way'].includes(groundKind(p.x + Math.sin(p.yaw) * 30, p.z + Math.cos(p.yaw) * 30)), `${p.id} does not face the rim`);
+  assert.deepEqual(west.map(p => groundKind(p.x, p.z)), ['terrace', 'terrace', 'plain'], 'two on the terraces, one at the foot of the way');
+  assert.ok(Math.hypot(west[2].x - ROTHKAR_WAY.points[0].x, west[2].z - ROTHKAR_WAY.points[0].z) < 8, 'the third at the foot of the Rothkar way');
+  // **Walking over it in the open is seen.** The old way in - up the outer bands by the climbing skill, across, down the inner
+  // cliff onto the terraces opposite the town and over the plain to the foot of the rock's cliffs - is seen before the plain,
+  // walking or sneaking, by the man on the terraces in front of it.
+  const old = [[-2352, 1250], [-2300, 1252], [-2262, 1254], [-2246, 1256], [-2215, 1250], [-2172, 1226], [-2136, 1203]].map(([x, z]) => ({ x, z }));
+  for (const sneaking of [false, true]) {
+    const seen = walk(telemonWatchFor(world), old, { speed: sneaking ? 1.76 : 3.6, sneaking });
+    assert.equal(seen.r?.escortId, west[1].id, `the old way in, ${sneaking ? 'sneaking' : 'walking'}: not seen by the man opposite the town`);
+    assert.notEqual(groundKind(seen.at.x, seen.at.z), 'plain', 'seen only once down on the plain');
+  }
+  // Straight in over the rim, every four degrees round the west from the Rothkar way to the Tarnel's shoulder (bearings from the
+  // Galmeth's middle, x east, z south), from outside the border to twenty-five metres onto the plain, walking upright. The three
+  // see every crossing on the stretches they face - under the north-western shoulder (198-210), opposite the town (174-186) and
+  // up the way (130-142) - and, with the overseer at the western huts and the man at the Tarnel's head, more than half of
+  // them all (measured 2026-10-03: 15 of 25). Between the cones are the gaps: 146-150, 162-170, 190-194 and 214-222.
+  const crossing = degrees => { const a = degrees * Math.PI / 180, dx = Math.cos(a), dz = Math.sin(a); let r = 120;
+    while (borderDepth(PLAIN_MIDDLE.x + dx * r, PLAIN_MIDDLE.z + dz * r) > -6 && r < 400) r++;
+    return [{ x: PLAIN_MIDDLE.x + dx * r, z: PLAIN_MIDDLE.z + dz * r }, plainEdgePoint(a, 25)]; };
+  const fan = new Map();
+  for (let b = 130; b <= 226; b += 4) fan.set(b, walk(telemonWatchFor(world), crossing(b)).r?.escortId ?? null);
+  for (const [from, to, man] of [[198, 210, 0], [174, 186, 1], [130, 142, 2]])
+    for (let b = from; b <= to; b += 4) assert.equal(fan.get(b), west[man].id, `walking straight in over the rim at ${b}°, not seen by ${west[man].id}`);
+  const seenCount = [...fan.values()].filter(Boolean).length;
+  assert.ok(seenCount > fan.size / 2, `only ${seenCount} of ${fan.size} straight crossings of the western rim are seen`);
+  // **And getting in unseen is still possible, and takes a sneak through a gap.** Over the rim a little north of the old way,
+  // where the man opposite the town sees only the edge of the cliff at the edge of his sight, slanting north down onto the
+  // terraces and across them north of his cone, then over the plain to the rock's foot: crouched and slow, nobody notices;
+  // walked upright, the same line is seen, by him.
+  const gap = [[-2357, 1233], [-2287, 1228], [-2252, 1226], [-2217, 1223], [-2172, 1214], [-2136, 1203]].map(([x, z]) => ({ x, z }));
+  assert.ok(['terrace'].includes(groundKind(gap[2].x, gap[2].z)) && groundKind(gap[3].x, gap[3].z) === 'plain', 'the gap route comes down over the terraces onto the plain');
+  assert.equal(walk(telemonWatchFor(world), gap, { speed: 1.76, sneaking: true }).r, null, 'sneaking through the gap, he was seen');
+  assert.equal(walk(telemonWatchFor(world), gap).r?.escortId, west[1].id, 'walking the gap upright, nobody saw');
   // The rock itself is had only by the gate: its cliffs give no hold (stage 1), and whoever is nearest the gate is the gate.
   const spur = walk(telemonWatchFor(world), [{ x: -2176, z: 1318 }, { x: -2136.8, z: 1278.2 }, { x: -2126.9, z: 1268.3 }], { speed: 1.76, sneaking: true });
   assert.ok(spur.r, 'up the spur to the gate, sneaking, and nobody saw');
@@ -183,6 +217,81 @@ test('seen in the world: turned round, walked to a pass mouth with a Telemon beh
   assert.deepEqual([fighterSpec(man, man).kind, fighterSpec(woman, woman).kind], ['soldier', 'rebel']);
   assert.ok(fighterSpec(man, man).hp > fighterSpec(woman, woman).hp);
   assert.ok(TELEMON_MOUTHS.length === 3);
+});
+
+/**
+ * The host as main.js wires it, on the real ground, the traveler 16 m in front of the man with the horses: main.js's mover
+ * is played by a straight step toward where each one is to be (`world.npcPositions`), facing the way he steps, as it does.
+ */
+function hostOnTheGround() {
+  const toasts = [], places = {};
+  const npcData = TELEMONIA_PEOPLE.map(p => { places[p.id] = { x: p.x, z: p.z }; return { ...p, actor: { group: { position: { x: p.x, y: 0, z: p.z }, rotation: { y: p.yaw } } } }; });
+  const hostWorld = { heightAt: world.heightAt, nearColliders: (...a) => world.nearColliders(...a), colliders: world.colliders, treeRegistry: world.treeRegistry, npcPositions: places };
+  const combat = { state: { phase: 'idle', encounterId: null, enemies: [] }, startEncounter: () => false, joinEnemy: () => {}, disengage: () => {} };
+  const byId = id => npcData.find(p => p.id === id), herdsman = npcData.find(p => /horses/.test(p.role));
+  const traveler = { x: herdsman.x + Math.sin(herdsman.yaw) * 16, z: herdsman.z + Math.cos(herdsman.yaw) * 16 };
+  const host = createTelemoniaHost({ world: hostWorld, npcData, combat, position: () => traveler, toast: text => toasts.push(text) });
+  const step = () => {
+    host.frame(DT);
+    for (const npc of npcData) {
+      const to = places[npc.id], at = npc.actor.group.position, d = Math.hypot(to.x - at.x, to.z - at.z), s = Math.min(d, (npc.pace ?? 2.4) * DT);
+      if (d > .1) { npc.actor.group.rotation.y = Math.atan2(to.x - at.x, to.z - at.z); at.x += (to.x - at.x) / d * s; at.z += (to.z - at.z) / d * s; }
+    }
+  };
+  return { toasts, npcData, byId, herdsman, traveler, host, step };
+}
+
+test('spoken to on the walk out, the escort answers twice - who they are, why he must go - and nobody else answers; the walk goes on', () => {
+  const { toasts, byId, herdsman, traveler, host, step } = hostOnTheGround(), other = byId('telemon-man-15'), woman = byId('telemon-woman-1');
+  // Before anybody has seen him, nobody inside the country answers.
+  step(); host.converse(other);
+  assert.deepEqual(toasts, ['He looks at you and does not answer.']);
+  for (let t = 0; t < 30 && host.view().phase !== 'escorting'; t += DT) step();
+  assert.equal(host.view().phase, 'escorting', 'never turned round');
+  const escort = byId(host.view().escortId);
+  assert.equal(escort.id, herdsman.id);
+  toasts.length = 0;
+  for (const npc of [escort, other, escort, woman, escort]) host.converse(npc);
+  assert.deepEqual(toasts, [`A Telemon man: “${TELEMON_LINES.answer[0]}”`, 'He looks at you and does not answer.', `A Telemon man: “${TELEMON_LINES.answer[1]}”`,
+    'She looks at you and does not answer.', 'He looks at you and does not answer.'], 'only the escort answers, and twice');
+  assert.ok(TELEMON_LINES.answer.every(line => line.split(' ').length <= 8), 'curt');
+  assert.doesNotMatch(TELEMON_LINES.answer.join(' '), /\b(Crom|king)\b/i);
+  // Speaking was not resisting: he walks on toward the mouth with the escort behind, and it is still a walk out.
+  for (let t = 0; t < 4; t += DT) {
+    const m = host.view().mouth, d = Math.hypot(m.x - traveler.x, m.z - traveler.z), s = Math.min(d, 3 * DT);
+    traveler.x += (m.x - traveler.x) / d * s; traveler.z += (m.z - traveler.z) / d * s;
+    step();
+    assert.equal(host.view().phase, 'escorting', `asked twice, then ${host.view().phase} (${host.view().cause})`);
+  }
+});
+
+test('walked out, the escort goes back to his station and faces the way he faced there; so does everybody', () => {
+  const { npcData, herdsman, traveler, host, step } = hostOnTheGround();
+  for (let t = 0; t < 30 && host.view().phase !== 'escorting'; t += DT) step();
+  assert.equal(host.view().escortId, herdsman.id);
+  // He walks to the mouth he is told and on out past it; the escort walks behind him and turns back at the border.
+  let seconds = 0;
+  for (; seconds < 240 && host.view().phase !== 'outside'; seconds += DT) {
+    const m = host.view().mouth, goal = host.view().released ? { x: m.x + (m.x - m.stand.x) * 3, z: m.z + (m.z - m.stand.z) * 3 } : m;
+    const d = Math.hypot(goal.x - traveler.x, goal.z - traveler.z), s = Math.min(d, 3 * DT);
+    if (d > 1e-6) { traveler.x += (goal.x - traveler.x) / d * s; traveler.z += (goal.z - traveler.z) / d * s; }
+    step();
+  }
+  assert.equal(host.view().phase, 'outside'); assert.equal(host.view().walkedOut, 1);
+  const walkedFrom = Math.hypot(herdsman.actor.group.position.x - herdsman.x, herdsman.actor.group.position.z - herdsman.z);
+  assert.ok(walkedFrom > 20, `the escort walked only ${walkedFrom.toFixed(1)} m from his station`);
+  // The traveler waits outside the border; the escort walks home, facing the way he walks, and there turns back.
+  const off = npc => Math.abs(Math.atan2(Math.sin(npc.actor.group.rotation.y - npc.yaw), Math.cos(npc.actor.group.rotation.y - npc.yaw)));
+  let arrived = null;
+  for (let t = 0; t < 120; t += DT) {
+    step();
+    if (arrived === null && Math.hypot(herdsman.actor.group.position.x - herdsman.x, herdsman.actor.group.position.z - herdsman.z) < .5) arrived = off(herdsman);
+  }
+  assert.ok(arrived > Math.PI / 2, `he came home facing ${((arrived ?? 0) * 180 / Math.PI).toFixed(0)}° off his heading, so the turn back was not tested`);
+  for (const npc of npcData.filter(isTelemon)) {
+    assert.ok(Math.hypot(npc.actor.group.position.x - npc.x, npc.actor.group.position.z - npc.z) < .5, `${npc.id} is not back at his station`);
+    assert.ok(off(npc) < .01, `${npc.id} faces ${(off(npc) * 180 / Math.PI).toFixed(1)}° off his station's heading`);
+  }
 });
 
 test('the sightline: the open is seen across, the rock’s lip is cover', () => {
