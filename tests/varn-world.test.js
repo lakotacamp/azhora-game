@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
 import { scopedWorld } from './scoped-world.js';
-import { sampleLattice, leastFall, reachedByCountry, shutGate, travel, LETHAL_FALL } from './lattice-flood.js';
+import { sampleLattice, leastFall, reachedByCountry, shutGate, travel, caveLinks, LETHAL_FALL } from './lattice-flood.js';
 import { canStand, moveCharacter } from '../src/game-state.js';
 import { createClimbing, climbForbidden, sampleClimbSurface, canWalkSlope, CLIMBING } from '../src/climbing.js';
 import { hexOwnerAt, hexAt, hexCentre, insideRegion, regions } from '../src/region-world.js';
@@ -10,6 +10,7 @@ import { groundWithRiver, groundBeforeVarn } from '../src/world-terrain.js';
 import { longestTowerGap } from '../src/fortification.js';
 import { AMBRON_STANDARD } from '../src/ambron.js';
 import { PASS_ROAD, PASS_ROAD_LINE, RAMPS, BANDS, peakUplift } from '../src/east-lotharn-world.js';
+import { CAVE_LINES } from '../src/east-lotharn-caves.js';
 import { belowFirstLedge, onPeakWay, RAMPS_KEEP_THEIR_HOLD } from '../src/lotharn-first-course.js';
 import { AMOD_ROAD, KELMOD_ROAD_END } from '../src/amod-world.js';
 import { SUBREGIONS } from '../src/map-fog.js';
@@ -29,6 +30,7 @@ import {
   VARN_SLABS, SLAB, VARN_ROCK, VARN_NEIGHBOURHOOD, RIB, VARN_WICKET, VARN_CLOSED,
   LOTHARN_PASSES_SHUT, varnGateShut, varnWicket, varnFloor, varnJambRise, jambTop, onLanding, varnGround, varnDitchCut, varnKeepsClear, varnUnclimbable, varnSurface,
   onSlab, slabFoot, lipRib, lipRuleApplies, onLip, onWayShoulder, inVarnRock, inVarnNeighbourhood, LIP_STOPS, stopRib, varnBeforeLips,
+  CAVE_WAY, CAVE_RAILS, RAIL, onCaveWay, railRib,
 } from '../src/varn-world.js';
 
 /**
@@ -380,6 +382,54 @@ test('the stop: a rim stood by hand at the head of the south-west peak’s slide
   for (const [x, z] of [[-1418, -651], [-1394, -652], [-1410, -644], [-1250, -740], [-1020, -750]]) assert.equal(stopRib(x, z), 0);
 });
 
+test('the caves’ way and the rails: the eastern peak’s fourth ledge keeps its hold from the peak’s way to the high chimney, off every rim; three doors railed beyond the door', () => {
+  // The user, 3 October 2026: "give the eastern peak back one climbing way to its caves that does not lead past Varn, and rail
+  // the cave doors that open over the Empire's ground". One way: a stretch of one ledge's tread, nothing else.
+  assert.equal(CAVE_WAY.stretches.length, 1);
+  const chimney = CAVE_LINES.find(cave => cave.id === 'eastern-high-chimney');
+  let area = 0, kept = 0;
+  for (const stretch of CAVE_WAY.stretches) {
+    const k = stretch.ledge, [low, high] = stretch.lift, P = BANDS.period;
+    assert.ok(low >= k * P - 1 && high <= (k + 1 - BANDS.riser) * P + 1, `${stretch.id} reaches off its ledge's tread`);
+    const xs = stretch.line.map(p => p.x), zs = stretch.line.map(p => p.z);
+    for (let x = Math.min(...xs) - 4; x <= Math.max(...xs) + 4; x += .5) for (let z = Math.min(...zs) - 4; z <= Math.max(...zs) + 4; z += .5) {
+      if (!onCaveWay(x, z)) continue;
+      area += .25;
+      assert.ok(inVarnRock(x, z) && hexOwnerAt(x, z) === EAST_LOTHARN && !inVarnNeighbourhood(x, z) && varnJambRise(x, z) === 0, `the way at ${x}, ${z}`);
+      const u = peakUplift(x, z); assert.ok(u >= low && u <= high, `the way at ${x}, ${z} is off its ledge (lift ${u.toFixed(1)})`);
+      // A hold on its tread, none on a rim or a rail.
+      assert.equal(varnUnclimbable(x, z), lipRib(x, z) > .05, `the way at ${x}, ${z}`);
+      if (!varnUnclimbable(x, z)) kept += .25;
+    }
+    // It leaves the peak's own way where the fourth ramp tops out, and comes to the high chimney's lower door.
+    const [a, b] = [stretch.line[0], stretch.line.at(-1)];
+    assert.ok([-2, -1, 0, 1, 2].some(dx => [-2, -1, 0, 1, 2].some(dz => onPeakWay(a.x + dx, a.z + dz))), 'the way does not start at the peak’s own way');
+    assert.ok(Math.hypot(b.x - chimney.points[0].x, b.z - chimney.points[0].z) < 3, 'the way does not come to the high chimney’s door');
+  }
+  assert.ok(kept > 250 && area < 600, `${kept} m2 of the ledge keep a hold, of ${area} m2 on the way`);
+  // The rails: the chamber's door and both of the high chimney's, the three over the Empire's ground (docs/varn-report.md).
+  assert.deepEqual(CAVE_RAILS.map(rail => rail.id), ['eastern-chamber', 'eastern-high-chimney-lower', 'eastern-high-chimney-upper']);
+  assert.ok(RAIL.radius - RAIL.inner >= 2 && RAIL.height >= RIB.height && RAIL.height / RAIL.outer > RAIL.height / RAIL.inner, 'outside the door, a rim’s height, steeper outward');
+  const at = (mouth, degrees, r) => [mouth.x + Math.cos(degrees * Math.PI / 180) * r, mouth.z + Math.sin(degrees * Math.PI / 180) * r];
+  for (const rail of CAVE_RAILS) {
+    const line = CAVE_LINES.find(cave => cave.id === rail.cave), mouth = rail.end ? line.points.at(-1) : line.points[0], level = varnBeforeLips(mouth.x, mouth.z);
+    assert.ok(Math.hypot(mouth.x - rail.mouth.x, mouth.z - rail.mouth.z) < 1e-9, `${rail.id} is not at its cave's mouth`);
+    // The crest, all round the arc: the rail's height over the ground at the mouth, and no hold on it.
+    for (let a = rail.from + 1; a <= rail.to - 1; a += 2) {
+      const [x, z] = at(mouth, a, RAIL.radius);
+      assert.ok(groundWithRiver(x, z) >= level + RAIL.height - .01, `${rail.id}'s crest at ${a} degrees is ${(groundWithRiver(x, z) - level).toFixed(2)} m over the door`);
+      assert.equal(unclimbableAt(x, z), true, `a hold on ${rail.id} at ${a} degrees`);
+    }
+    // Nothing in the door: within its two metres no ground stands over the mouth's own but what stood there before (the rail's
+    // fill makes up the brink's roll-off to the mouth's level, and no more), and nothing is raised on the passage's line.
+    for (let r = 0; r <= 1.9; r += .25) for (let a = 0; a < 360; a += 10) {
+      const [x, z] = at(mouth, a, r);
+      assert.ok(groundWithRiver(x, z) <= Math.max(varnBeforeLips(x, z), level) + 1e-6, `${rail.id} stands in the door at ${r} m, ${a} degrees`);
+    }
+    for (const p of rail.end ? line.points.slice(-6) : line.points.slice(0, 6)) assert.equal(railRib(p.x, p.z), 0, `${rail.id} stands on the passage`);
+  }
+});
+
 test('rock that gives no hold: the rule, the table, and Varn’s row of it', () => {
   // The rule itself, on a stand-in slope: a marked face gives no grab and no attached step, and is still fallen down.
   const ground = (_x, z) => 10 + Math.max(0, Math.min(20, z * 2));
@@ -421,7 +471,8 @@ test('rock that gives no hold: the rule, the table, and Varn’s row of it', () 
   let rock = 0, ways = 0;
   for (let x = VARN_ROCK.minX; x <= VARN_ROCK.maxX; x += 6) for (let z = VARN_ROCK.minZ; z <= VARN_ROCK.maxZ; z += 6) {
     if (inVarnNeighbourhood(x, z) || varnJambRise(x, z) > 0) continue;
-    const expect = !onSlab(x, z, .5) && (!(RAMPS_KEEP_THEIR_HOLD && onPeakWay(x, z)) ? hexOwnerAt(x, z) === EAST_LOTHARN || belowFirstLedge(x, z) : onWayShoulder(x, z) && lipRib(x, z) > .05);
+    // The caves' way (`CAVE_WAY`, the user's decision of 3 October) keeps its hold on its ledge's tread, as a way does, but not on a rim or a rail.
+    const expect = !onSlab(x, z, .5) && (RAMPS_KEEP_THEIR_HOLD && onPeakWay(x, z) ? onWayShoulder(x, z) && lipRib(x, z) > .05 : onCaveWay(x, z) ? lipRib(x, z) > .05 : hexOwnerAt(x, z) === EAST_LOTHARN || belowFirstLedge(x, z));
     assert.equal(varnUnclimbable(x, z), expect, `${x}, ${z}`);
     if (expect) rock++; else ways++;
   }
@@ -815,6 +866,51 @@ test('the climber’s route: a tireless climber from the pass is in Amod behind 
     if (createClimbing({ world: unmarked }).probe(at, facing).available) offered++;
   }
   assert.ok(offered > 6 && holds >= 2, `${offered} places where the rock would otherwise take a hand, ${holds} holds at the slabs' feet`);
+});
+
+test('the caves’ way: a climber from the Col comes to the high chimney’s two doors, and from the railed doors nobody comes to the Empire’s ground, by any fall or any climb but the slabs', { skip: !LOTHARN_PASSES_SHUT }, t => {
+  // The whole eastern massif, a metre apart, to its far end and the Empire's ground round it (the reach flood in
+  // tests/lotharn-forts.test.js stops at x -840).
+  const E = sampleLattice(world, { minX: -1120, maxX: -700, minZ: -1000, maxZ: -650 }, 1);
+  const links = caveLinks(E, world.lotharnCaves), walk = { links, ways, risers: lipRib, riserReach: inVarnRock };
+  const slabsShut = (x, z) => world.unclimbableAt(x, z) || !!onSlab(x, z, .5), climb = { ...walk, climber: true, forbidden: slabsShut };
+  /** The Empire's ground a flood came to, by any fall; the forecourt before the shut Pass Gate is Amod's hex and the pass's ground. */
+  const empire = cost => { let n = 0, first = null; for (let k = 0; k < cost.length; k++) if (cost[k] < Infinity && ['Amod', 'Vastos'].includes(E.region[k])) { const p = E.at(k); if (p.z < -783 && Math.abs(p.x - VARN.x) < 60) continue; n++; first ??= `${p.x}, ${p.z}`; } return { area: n, first }; };
+  const doorAt = rail => { const cave = world.lotharnCaves.find(one => one.id === rail.cave); return cave.at(rail.end ? cave.openings[1] : cave.openings[0]); };
+  const atDoor = (cost, p) => { let least = Infinity; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) { const k = E.cell(p.x + dx, p.z + dz); if (E.used[k]) least = Math.min(least, cost[k]); } return least; };
+  const col = E.near(-1080, -895, 9);
+  const walker = leastFall(E, world, [col], walk), climber = leastFall(E, world, [col], climb);
+  assert.deepEqual(empire(walker), { area: 0, first: null }, 'a walker from the Col is on the Empire’s ground');
+  assert.deepEqual(empire(climber), { area: 0, first: null }, 'but for the slabs a climber from the Col is on the Empire’s ground');
+  // The high chimney's two doors: a climber comes to them with no fall that costs anything, by the peak's way and the fourth
+  // ledge; a walker does not (the ledge tilts past his grade). Without the way's hold he does not come to them at all - which
+  // is what cut them off. The chamber's door is railed and nobody comes to it (src/varn-world.js, `CAVE_WAY`).
+  const without = leastFall(E, world, [col], { ...climb, forbidden: (x, z) => slabsShut(x, z) || onCaveWay(x, z) });
+  for (const rail of CAVE_RAILS) {
+    const p = doorAt(rail), reached = rail.cave === 'eastern-high-chimney';
+    t.diagnostic(`${rail.id}'s door at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}: a climber from the Col ${atDoor(climber, p)}, a walker ${atDoor(walker, p)}, without the way ${atDoor(without, p)}`);
+    assert.equal(atDoor(climber, p) < TERRAIN_FALL.safeDrop, reached, `${rail.id}'s door: a climber from the Col by ${atDoor(climber, p)}`);
+    assert.equal(atDoor(walker, p), Infinity, `a walker comes to ${rail.id}'s door`);
+    assert.equal(atDoor(without, p), Infinity, `without the way a climber comes to ${rail.id}'s door`);
+  }
+  // From the doors themselves, walking and climbing, by any fall: none of the Empire's ground.
+  const doors = CAVE_RAILS.map(rail => { const p = doorAt(rail); return E.near(p.x, p.z, 2); });
+  assert.ok(doors.every(k => k >= 0), 'nowhere to stand at a door');
+  assert.deepEqual(empire(leastFall(E, world, doors, walk)), { area: 0, first: null }, 'a walker out of a cave is on the Empire’s ground');
+  assert.deepEqual(empire(leastFall(E, world, doors, climb)), { area: 0, first: null }, 'but for the slabs a climber out of a cave is on the Empire’s ground');
+  // And with the game's own step and fall: a traveler stepping out of each door, and from the ground before it, on every
+  // fifteen degrees, walking and running, is stopped by the rail and never hurt; he stays on the mountain, not below the door.
+  const FRAME = 1 / 30;
+  let sent = 0;
+  for (const rail of CAVE_RAILS) {
+    const level = varnBeforeLips(rail.mouth.x, rail.mouth.z);
+    for (const from of [rail.mouth, doorAt(rail)]) for (let a = 0; a < 360; a += 15) for (const speed of [6.6, 10.5]) {
+      const went = travel(world, { x: from.x, z: from.z, heading: a * Math.PI / 180, speed, seconds: 4, dt: FRAME }); sent++;
+      assert.ok(went.damage === 0 && went.worst < TERRAIN_FALL.safeDrop && went.at.y > level - 6 && hexOwnerAt(went.at.x, went.at.z) === EAST_LOTHARN,
+        `out of ${rail.id} on ${a} degrees at ${speed}: at ${went.at.x.toFixed(1)}, ${went.at.z.toFixed(1)}, ${went.at.y.toFixed(1)} m, worst fall ${went.worst.toFixed(1)} m`);
+    }
+  }
+  t.diagnostic(`${sent} travelers sent out of the three railed doors`);
 });
 
 test('the slabs, climbed with the game’s own controller and its own wind: level 17 finishes both, level 16 falls from under the lip, and a walker cannot use any part of them', t => {

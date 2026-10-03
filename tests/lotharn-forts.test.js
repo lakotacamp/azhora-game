@@ -294,25 +294,37 @@ test('Varn’s reach: from the valleys, nothing of the Empire’s ground by any 
   // And with the slabs as they are he is there, with no fall that costs him anything: the slabs are the way.
   const bySlabs = flood(here, { within: inReach, climber: true, forbidden: world.unclimbableAt });
   assert.ok(bySlabs[LOWLAND[0].k] < TERRAIN_FALL.safeDrop, `by the slabs a climber is in Amod below Varn by ${fall(bySlabs[LOWLAND[0].k])}`);
-  // Three doors nobody comes to. The eastern peak's high chimney and its eastern chamber open on shelves no wider than the
-  // rim, and the rim stops two metres short of a cave's mouth (src/varn-world.js, `DOOR`), so the brink before each of those
-  // doors is open; and a body set down at one of them comes to the Empire's ground by falls (docs/varn-report.md: the
-  // chamber's is over Amod). They are no way past Varn because nobody gets to them: not a walker, not a climber who never
-  // tires, with the slabs or without, by any fall. If somebody builds a way to one of those caves, this is what goes red.
+  // The three doors over the Empire's ground. The eastern peak's high chimney and its eastern chamber open on shelves no wider
+  // than the rim, and the rim stops two metres short of a cave's mouth (src/varn-world.js, `DOOR`), so the brink before each
+  // was open, and a body that stepped off there came to the Empire's ground by falls (docs/varn-report.md). Since the user's
+  // decision of 3 October each carries a rail beyond the door (`CAVE_RAILS`), and the high chimney has a way again: a climber
+  // comes to both its doors along the fourth ledge (`CAVE_WAY`). That ledge is narrower than this lattice resolves - held a
+  // metre apart in tests/varn-world.test.js ("the caves' way"), which floods the eastern massif to its far end - so here
+  // the doors are flooded from: from every door of the two, over both massifs, neither a walker nor a climber who never
+  // tires (the slabs barred) comes to any of the Empire's ground, by any fall. The chamber still has no way: nobody comes
+  // to its door from the valleys, by any fall.
+  const doorCells = [];
   for (const id of ['eastern-high-chimney', 'eastern-chamber']) {
     const cave = world.lotharnCaves.find(one => one.id === id);
     assert.ok(cave, `${id} is not a cave of the East Lotharn`);
-    for (const at of cave.kind === 'chamber' ? [0] : [0, cave.length]) {
+    for (const at of cave.kind === 'chamber' ? [cave.openings[0]] : cave.openings) {
       const door = cave.at(at);
-      let points = 0;
+      let points = 0, least = Infinity;
       for (let dz = -3; dz <= 3; dz += STEP) for (let dx = -3; dx <= 3; dx += STEP) {
         const k = L.cell(door.x + dx, door.z + dz); if (!L.used[k]) continue;
-        points++;
-        for (const [who, cost] of [['a walker', walker], ['a climber', climber], ['a climber, by the slabs,', bySlabs]]) assert.equal(cost[k], Infinity, `${who} is at ${id}'s door (${L.at(k).x}, ${L.at(k).z}) by ${fall(cost[k])}`);
+        points++; least = Math.min(least, climber[k]);
+        if (L.stand[k]) doorCells.push(k);
+        if (id === 'eastern-chamber') for (const [who, cost] of [['a walker', walker], ['a climber', climber], ['a climber, by the slabs,', bySlabs]]) assert.equal(cost[k], Infinity, `${who} is at ${id}'s door (${L.at(k).x}, ${L.at(k).z}) by ${fall(cost[k])}`);
       }
       assert.ok(points >= 9, `${id}'s door at ${door.x.toFixed(0)}, ${door.z.toFixed(0)} is off the measured ground`);
+      t.diagnostic(`${id}'s door at ${door.x.toFixed(0)}, ${door.z.toFixed(0)}: a climber from the valleys on this lattice, ${fall(least)}`);
     }
   }
+  assert.ok(doorCells.length >= 6, `${doorCells.length} points to stand on at the doors`);
+  const outWalker = leastFall(L, world, doorCells, { links, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock, within: inReach });
+  const outClimber = leastFall(L, world, doorCells, { links, ways: onPeakWay, risers: lipRib, riserReach: inVarnRock, within: inReach, climber: true, forbidden: (x, z) => world.unclimbableAt(x, z) || !!onSlab(x, z, .5) });
+  assert.deepEqual(empire(outWalker), { area: 0, first: null }, 'a walker out of a cave door is on the Empire’s ground');
+  assert.deepEqual(empire(outClimber), { area: 0, first: null }, 'but for the slabs a climber out of a cave door is on the Empire’s ground');
   t.diagnostic(`inside Varn's reach: a walker has ${mountains(walker)} m2 of the mountains and none of the Empire's ground by any fall; a tireless climber ${mountains(climber)} m2 and none; with the slabs open the same climber’s worst fall on the way to Amod below Varn is ${bySlabs[LOWLAND[0].k].toFixed(1)} m`);
 });
 

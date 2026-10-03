@@ -99,7 +99,7 @@ A rim on the edge would have stopped the fall and kept the man (nobody walks bac
 - At five, bodies fell (29 to 34 of the 48), and none of the Empire's ground is come to from where they landed, by any further fall: the eastern low chimney's two, the western chimney's upper, the central chamber's, the Olveth passage's northern. They are over the mountains' own side.
 - At **three**, the Empire's ground is come to. The eastern peak's high chimney's two doors (243 m and 285 m, on the massif's west face): a first fall onto the courses over the east jamb's back, and from there a second of 106 m. And its eastern chamber's (170 m, on the south-east face, over Amod): one fall of 92 m onto Amod's hills. A fall costs a hundred, so the first wants over two hundred health and the second over one.
 
-**Those three are no way past Varn only because nobody gets to them.** Off the peaks' own ways the rock gives no hold, the shelves they open on are all rim, the chamber has one door and the chimney's two are both of this kind. The reach flood comes to none of the three - not a walker, not a climber who never tires, with the slabs or without, by any fall - and that is held (`lotharn-forts`, "Varn's reach"). It is a fact about what is built, not a wall: whoever builds a way to one of those caves must rail its door, and the test will say so. With the rim left in the doors, as main had it, the same three doors were as unreachable and the East Lotharn's own law of its caves was red.
+**Superseded on 3 October 2026 (section 10): the high chimney is reached again by a climber's ledge, and all three of these doors are railed, so a body that steps out of one comes to none of the Empire's ground.** As first written: those three are no way past Varn only because nobody gets to them. Off the peaks' own ways the rock gives no hold, the shelves they open on are all rim, the chamber has one door and the chimney's two are both of this kind. The reach flood comes to none of the three - not a walker, not a climber who never tires, with the slabs or without, by any fall - and that is held (`lotharn-forts`, "Varn's reach"). It is a fact about what is built, not a wall: whoever builds a way to one of those caves must rail its door, and the test will say so. With the rim left in the doors, as main had it, the same three doors were as unreachable and the East Lotharn's own law of its caves was red.
 
 ### 2. Every gate shut by default
 
@@ -148,7 +148,7 @@ By falling, without a hand on the rock: the least worst fall from the valleys to
 
 1. *The reach ends.* West of x -1560 the mountains are as they were, and the forts hold walkers only: a climber of level 1 goes round each of them. Whoever is behind a fort walks to Amod below Varn. So "nobody reaches Amod from the mountains except by the Slabs" is **not** true, and was not built to be: it is true of Varn's own ground, from the Vastos Gate's eastern end to the eastern massif's far end.
 2. *A fall is measured as a slide.* The floods bring a falling body down the face to the first ground that holds it. The game's fall also carries a running body sideways, up to eight metres a second. That carry is in every `travel` measurement - at the stop, at the rim by the west jamb, at the caves' doors - and it is not in the floods. No place was found where it matters; not every place was tried.
-3. *Three cave doors are open over the Empire's ground, and nobody gets to them.* That is held, and it is a fact about what is built rather than a wall ("The caves' doors", above).
+3. *Three cave doors opened over the Empire's ground, and nobody got to them* (since railed, and the high chimney reached again: section 10). That is held, and it is a fact about what is built rather than a wall ("The caves' doors", above).
 4. *A measurement, not a proof of the rule.* The rim rule still reads a ledge that tilts past a walker's grade as a ledge. One such place was found in the reach, and it is stopped by hand. The rule itself was not changed, on instruction.
 
 ### The review render of 3 October
@@ -601,26 +601,50 @@ measurement (section 4), and the other two forts' ends and Varn's are seen.
 
 ## 10. Decisions left for the user
 
-Rewritten on 3 October 2026. Three things this list used to ask have been answered by the user and are built -
-the gates' default (all shut), the garrison (twenty-eight men), and falling past Varn (closed) - and are in
-"The user's three decisions", near the top. What is still open:
+Rewritten on 3 October 2026, and again later that day for the user's answers to items 1 to 3. Three earlier
+answers - the gates' default (all shut), the garrison (twenty-eight men), and falling past Varn (closed) - are in
+"The user's three decisions", near the top.
 
-1. **When Varn opens, and for whom.** Both gates are shut and the wicket lets a traveler out and never in, so as
-   built nobody gets into Varn at all except over the Slabs and down into Amod, which is past it and not into it.
-   `LOTHARN_PASSES_SHUT = false` opens every gate on the passes at once. A gate that opens for some travelers, or
-   at some point in the story, is not built and is a design decision.
-2. **The forts hold walkers, and nobody else.** The no-hold rock and the rims are Varn's; each fort has no-hold
-   rock for a few dozen metres round its two ends and nothing more. What it takes to get round each is measured
-   in "The forts' climbers and fallers", above. Whoever is behind a fort walks to Amod below Varn, so the Slabs
-   are the only way past **Varn** and not the only way into the Empire. Closing the forts as Varn is closed means
-   a reach of no-hold rock and rims for each, over the West Lotharn's whole southern face; it was not asked for.
-3. **The eastern peak's caves are cut off.** Its low chimney, its high chimney and its eastern chamber open on
-   shelves that nobody reaches any more: off the peaks' own ways the rock within Varn's reach gives no hold, and
-   the shelves, where they are narrower than the rim, are all rim. The caves are as they were inside, and a
-   traveler set down at a door walks in and through. This came with the rims on the upper courses (2 October)
-   and is not new on 3 October, but it was not written down before. Giving each a way to its door is the
-   East Lotharn's business as much as Varn's - and whoever does it must rail the high chimney's two doors and
-   the eastern chamber's, which open on the brink over the Empire's ground ("The caves' doors", above).
+1. **Varn stays shut for now** (decided). Both gates shut, the wicket out and never in; nobody gets into Varn
+   except over the Slabs and down into Amod, which is past it. A gate that opens for some travelers, or at some
+   point in the story, is for later.
+2. **The forts can be bypassed by climbers** (decided: intended, in the user's words). They hold walkers; a
+   climber of level 1 goes round each ("The forts' climbers and fallers", above). The Slabs are the only way past
+   **Varn**, not the only way into the Empire.
+3. **The eastern peak's caves: a way restored, three doors railed** (decided: "Restore a way to them - give the
+   eastern peak back one climbing way to its caves that does not lead past Varn, and rail the cave doors that open
+   over the Empire's ground").
+   - *What cut them off* (measured on the eastern massif a metre apart, x -1120 to -700, the game's own walking
+     and climbing checks): **the no-hold rock**. The ledges the caves open on are narrow and tilt past a walker's
+     grade, so they were come to with a hand on the rock; with Varn's mark lifted off the East Lotharn's rock
+     (rims kept) a climber from the Col comes to every door, and with the rims taken off but the mark kept nobody
+     does without a fall. The rims fill the shelves as well: walked from its door, the chamber's shelf is 5 m²,
+     the high chimney's two together 19 m².
+   - *The way* (`CAVE_WAY`, src/varn-world.js): the mark is lifted on one stretch of rock, the tread of the
+     eastern peak's **fourth ledge** from the top of its fourth ramp (-938, -759) west along the south face to the
+     high chimney's lower door (-1037, -797), about 110 m; only that ledge's band of lift, within 2.5 m of the
+     line, never on a rim or a rail (358 m² keep a hold). It is a climber's way: about forty short hand's moves
+     where the ledge tilts or steps; a walker does not get along it. The chimney's passage takes him up to its
+     upper door on the fifth ledge. The trees and outcrops on it are lifted, as on the Slabs (`varnKeepsClear`).
+   - *The rails* (`CAVE_RAILS`, `RAIL`): an arc of rim stone round each of the three doors over the Empire's
+     ground (the chamber's, the high chimney's two), from the rim on one side to the rim on the other: crest 3.2 m
+     over the ground at the mouth, 2.9 m out; inner foot 2 m out, so nothing stands in the door; the brink's
+     roll-off between door and rail made up level with the mouth, so a body stepping out stands on flat ground;
+     steeper outward than inward, no hold.
+   - *Measured*: in the built world a climber from the Col (slabs barred) comes to both high-chimney doors with
+     no fall; from the Col, and from all three railed doors, neither a walker nor that climber comes to any of the
+     Empire's ground by any fall; 288 travelers stepped out of the three doors on every fifteen degrees, walking
+     and running, none hurt and none below his door (tests/varn-world.test.js, "the caves' way", a metre apart).
+     The reach flood (tests/lotharn-forts.test.js, "Varn's reach", 1.5 m apart) does not resolve the ledge, so it
+     floods from the three doors instead: over both massifs, none of the Empire's ground by any fall, walker or
+     climber.
+   - *Not restored*: **the eastern chamber** has a rail and no way. Its ledge is all rim between the peak's way
+     (the third ramp's foot) and its door; the one line a hand could take runs on the top of the cliff below the
+     rim, and a climber given it stepped off into Amod (falls of 40 m and 53 m, at (-968, -743)). A way there
+     means building - the rim on that ledge moved out to the cliff's edge for about seventy metres - which was not
+     done. **The low chimney** is still cut off too (its ledges are not on any way), and was not railed: its doors
+     open over Amod east of the massif (a fall of 57 m to (-750, -808), measured on the terrain, outside the reach
+     flood's lattice, which ends at x -840). Whoever gives it a way must rail both its doors.
 4. **The eastern peak keeps its way up** (`RAMPS_KEEP_THEIR_HOLD`), from the forecourt before the Pass Gate, with a
    short climb at its foot that any climber can do. It leads to the first ledge, the east jamb's shelf and the
    summit, and nowhere down. `false` would shut that peak altogether.

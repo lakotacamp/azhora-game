@@ -327,10 +327,8 @@ export const inVarnNeighbourhood = (x, z) => inBoxOf(VARN_NEIGHBOURHOOD, x, z);
  * shelf no wider than its rim it leaves the brink before the door open, as it was before there were rims - and at
  * three doors of the eastern peak a body that steps off there comes to the Empire's ground by falls: the high
  * chimney's two (by two falls, over the east jamb's back) and the eastern chamber's (by one, ninety-two metres, onto
- * Amod's hills). **They are no way past Varn only because nobody gets to them**: off the peaks' own ways the rock
- * gives no hold and those shelves are all rim, so no walker and no climber comes to any of the three, by any fall
- * (held in tests/lotharn-forts.test.js, "Varn's reach"; measured in docs/varn-report.md). Whoever builds a way to
- * one of those caves must rail its door.
+ * Amod's hills). On 3 October nobody came to them; since the user's decision of that day (`CAVE_WAY`, below) a
+ * climber does, and those three doors carry rails (`CAVE_RAILS`): rock beyond the two metres, not in the door.
  */
 const CAVE_MOUTHS = freeze([...EAST_CAVE_LINES, ...WEST_CAVE_LINES].flatMap(cave => cave.kind === 'chamber' ? [cave.points[0]] : [cave.points[0], cave.points.at(-1)]));
 const DOOR = 2;
@@ -385,7 +383,7 @@ export function onWayShoulder(x, z) {
  * the cliff.
  */
 export function lipRib(x, z, unbuilt = varnBeforeLips, here = null) {
-  return Math.max(brinkRib(x, z, unbuilt, here), stopRib(x, z));
+  return Math.max(brinkRib(x, z, unbuilt, here), stopRib(x, z), railRib(x, z, unbuilt, here));
 }
 /**
  * **The stops**: a rim stood by hand where the brink rule has no brink to stand one on. One, so far.
@@ -419,6 +417,88 @@ export function stopRib(x, z) {
     if (x < Math.min(from.x, to.x) - half || x > Math.max(from.x, to.x) + half || z < Math.min(from.z, to.z) - half || z > Math.max(from.z, to.z) + half) continue;
     const dx = to.x - from.x, dz = to.z - from.z, t = clamp(((x - from.x) * dx + (z - from.z) * dz) / (dx * dx + dz * dz), 0, 1);
     rib = Math.max(rib, height * Math.max(0, 1 - Math.hypot(x - from.x - dx * t, z - from.z - dz * t) / half));
+  }
+  return rib;
+}
+
+/**
+ * **The way to the eastern peak's caves** (the user, 3 October 2026: "Restore a way to them - give the eastern peak back
+ * one climbing way to its caves that does not lead past Varn, and rail the cave doors that open over the Empire's
+ * ground"). The rule below took every face within Varn's reach, and with it the caves of the eastern peak: the ledges
+ * they open on are narrow and tilted, and were walked to with a hand on the rock, which the rule took away (measured in
+ * docs/varn-report.md, section 10). The mark is lifted again on one way, and on nothing else: the tread of the peak's
+ * fourth ledge from the top of its fourth ramp west to the high chimney's lower door, whose passage climbs to the upper.
+ * Only that ledge's own band of lift (`lift`), within `half` metres of the line, and never a rim or a rail: the cliffs
+ * above and below and every brink keep no hold. A climber's way: the ledge tilts past a walker's grade in places.
+ * The eastern chamber has no way: its ledge is all rim between the peak's way and its door, and the one line a hand
+ * could take there runs on the cliff below the rim, from which a climber stepped off into Amod (measured, section 10).
+ */
+export const CAVE_WAY = freeze({
+  id: 'eastern-caves-way', name: 'The cave ledges', half: 2.5,
+  stretches: freeze([
+    freeze({ id: 'chimney-ledge', ledge: 4, lift: freeze([159, 189]), line: freeze([
+      point(-938, -759), point(-950, -755), point(-958, -757), point(-961, -757), point(-970, -761), point(-980, -765), point(-991, -766),
+      point(-994, -769), point(-1004, -772), point(-1021, -777), point(-1037, -796), point(-1038, -797)]) }),
+  ]),
+});
+const segmentDistance = (line, x, z) => {
+  let best = Infinity;
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1], b = line[i], dx = b.x - a.x, dz = b.z - a.z, t = clamp(((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz), 0, 1);
+    best = Math.min(best, Math.hypot(x - a.x - dx * t, z - a.z - dz * t));
+  }
+  return best;
+};
+const WAY_BOXES = CAVE_WAY.stretches.map(s => ({ minX: Math.min(...s.line.map(p => p.x)) - CAVE_WAY.half, maxX: Math.max(...s.line.map(p => p.x)) + CAVE_WAY.half,
+  minZ: Math.min(...s.line.map(p => p.z)) - CAVE_WAY.half, maxZ: Math.max(...s.line.map(p => p.z)) + CAVE_WAY.half }));
+/** Within `margin` metres more than the caves' way's reach of one of its lines, on that ledge's band of lift as widened. */
+function nearCaveWay(x, z, margin = 0) {
+  for (let i = 0; i < CAVE_WAY.stretches.length; i++) {
+    const s = CAVE_WAY.stretches[i], b = WAY_BOXES[i];
+    if (x < b.minX - margin || x > b.maxX + margin || z < b.minZ - margin || z > b.maxZ + margin || segmentDistance(s.line, x, z) > CAVE_WAY.half + margin) continue;
+    const u = eastUplift(x, z);
+    if (u >= s.lift[0] - margin && u <= s.lift[1] + margin) return true;
+  }
+  return false;
+}
+/** On the caves' way: within its reach of one of its lines, and on that ledge's own band of lift. Rims and rails are not taken off. */
+export const onCaveWay = (x, z) => nearCaveWay(x, z) && !inVarnNeighbourhood(x, z);
+/**
+ * **The rails at the caves' doors.** At three doors of the eastern peak the rim stops two metres short of the mouth
+ * (`DOOR`) on a shelf no wider than the rim, and the brink before the door was open: a body stepping out came to the
+ * Empire's ground by falls. Each has a rail of the same stone as the rims: an arc round the mouth from the rim on one
+ * side to the rim on the other, over the open brink (`from` to `to`, degrees, 0 along +x and 90 along +z), its crest
+ * `height` over the ground at the mouth, `radius` metres out. Never in the door: its inner foot is `DOOR` metres from
+ * the mouth, and between door and rail the brink's roll-off is made up level with the mouth (`fill`), so a body
+ * stepping out stands on flat ground, is stopped by the rail and walks back in. Steeper outward than inward, so its
+ * crest is no resting place. No hold, like every rim.
+ */
+export const RAIL = freeze({ radius: 2.9, inner: .9, outer: .5, height: 3.2, fill: 1 });
+export const CAVE_RAILS = freeze([
+  freeze({ id: 'eastern-chamber', cave: 'eastern-chamber', end: 0, from: -20, to: 160 }),
+  freeze({ id: 'eastern-high-chimney-lower', cave: 'eastern-high-chimney', end: 0, from: 94, to: 214 }),
+  freeze({ id: 'eastern-high-chimney-upper', cave: 'eastern-high-chimney', end: 1, from: 146, to: 282 }),
+].map(rail => {
+  const line = EAST_CAVE_LINES.find(cave => cave.id === rail.cave), mouth = rail.end ? line.points.at(-1) : line.points[0];
+  return freeze({ ...rail, mouth: point(mouth.x, mouth.z) });
+}));
+const railLevels = new Map();
+/** The ground at a rail's mouth, as it lay before the lips: what the rail and its fill are measured from (read on first use). */
+const railLevel = rail => { if (!railLevels.has(rail.id)) railLevels.set(rail.id, varnBeforeLips(rail.mouth.x, rail.mouth.z)); return railLevels.get(rail.id); };
+/** Whether a bearing from a mouth (degrees) is within a rail's arc. */
+const inArc = (rail, a) => ((a - rail.from) % 360 + 360) % 360 <= ((rail.to - rail.from) % 360 + 360) % 360;
+/** How much a rail raises the ground at a point (its fill, its rise, its crest), over `here`. */
+export function railRib(x, z, unbuilt = varnBeforeLips, here = null) {
+  let rib = 0;
+  for (const rail of CAVE_RAILS) {
+    const dx = x - rail.mouth.x, dz = z - rail.mouth.z;
+    if (Math.abs(dx) > RAIL.radius + RAIL.outer || Math.abs(dz) > RAIL.radius + RAIL.outer) continue;
+    const r = Math.hypot(dx, dz);
+    if (r < RAIL.fill || r > RAIL.radius + RAIL.outer || !inArc(rail, Math.atan2(dz, dx) * 180 / Math.PI)) continue;
+    const level = railLevel(rail), off = r - RAIL.radius;
+    const target = off >= 0 ? level + RAIL.height * (1 - off / RAIL.outer) : level + RAIL.height * Math.max(0, 1 + off / RAIL.inner);
+    if (here === null) here = unbuilt(x, z);
+    rib = Math.max(rib, target - here);
   }
   return rib;
 }
@@ -739,6 +819,8 @@ export function varnTerrainSink(x, z) {
  */
 export function varnKeepsClear(x, z, margin = 0) {
   if (varnRoadDistance(x, z) < VARN_ROAD_HALF + 2.2 + margin) return true;
+  // The caves' way, a metre beyond its reach: a narrow ledge, and a tree on it is a wall.
+  if (nearCaveWay(x, z, 1 + margin)) return true;
   if (!inBox(x, z)) return false;
   // The slabs, their aprons, and the landing they top out on: a climber's way is kept clear like a road.
   if (onSlab(x, z, 1.5 + margin) || onLanding(x, z, -1.5 - margin)) return true;
@@ -801,6 +883,8 @@ export function varnUnclimbable(x, z) {
   // A way keeps its hold - but not the rim on its shoulder, which a climber would otherwise take as a step to the brink.
   if (RAMPS_KEEP_THEIR_HOLD && onPeakWay(x, z)) return onWayShoulder(x, z) && lipRib(x, z) > .05;
   if (inVarnNeighbourhood(x, z)) return true;
+  // The caves' way keeps its hold on its ledges' tread - but not on a rim or a rail (`CAVE_WAY`).
+  if (onCaveWay(x, z)) return lipRib(x, z) > .05;
   const rise = varnJambRise(x, z);
   if (rise > 0 && rise < 1) return true;
   if (!inVarnRock(x, z)) return false;

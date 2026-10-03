@@ -1569,3 +1569,18 @@ daughter. Elle is her other daughter."
 ### 2026-10-02: Compatible Smedley and circus work integrated
 
 Imported Claude's existing Smedley and bear-family work without replacing the newer opening tutorial, regions or strategic layer. Smedley retains the requested purple robe, powdered peruke and bad breath; he has no regional errand and does not inherit Oda's conversation. Both Smedley and the three circus relatives remain in the default cast. Circus progress accepts the older mother-and-cub saves, and malformed family positions are rejected before moving any bear. Corpses preserve each bear's costume while omitting performance props. The original source worktrees remain untouched.
+
+### 2026-10-03: Telemonia and Varn - the user's answers
+
+Asked by question after Telemonia stage 2 and Varn landed. The user's choices:
+
+- **Losing a fight with the Telemon**: the game's ordinary defeat. (The lore would make the traveler a field hand; not built.)
+- **The standing**: forever. Once walked out, every later sighting inside the country is a fight.
+- **The western rim**: watched by three Telemon standing on the terraces and at the foot of the way up to the Rothkar. They see every upright crossing on the stretches
+  they face and fifteen of twenty-five overall; the user chose to leave it at three when told that closing it would take six or seven.
+- **Talking**: the escort gives two curt answers while he walks the traveler out, and nobody else answers.
+- **The Rothkar's landing** stays walled: the three passes are the only walked ways out.
+- **Varn** stays shut for now; nobody enters until a later quest or campaign rule opens it.
+- **The Lotharn pass forts** "can be bypassed by climbers": they stop walkers, and that is what was meant.
+- **The eastern peak's caves**: a way was restored to the high chimney and the three doors over the Empire's ground were railed; asked whether the eastern chamber
+  and the low chimney should be reopened too, the user answered "one is enough".
