@@ -187,13 +187,15 @@ test('the world grows north, and it is the biggest structural change any region 
   // -3010.002 to -3960.002 and the width from 36.20 hexes to 45.70. What this plain is held to is
   // that it spent none of it, which is what its own box being inside -2400...-950 says.
   // ...and 52.20 since West Ibenwood took the western edge to -4610.002 when the forest belt landed
-  // alongside. Still none of it the plain's.
-  assert.ok(Math.abs(wide - 68.20) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
+  // alongside. Still none of it the plain's. ...and 70.70 since Alezhor's coast (to -4660.002) and South Ibenal's
+  // (to -4860.002) took the western edge out again on 4 October 2026: none of that the plain's either.
+  assert.ok(Math.abs(wide - 70.70) < .01, `east to west is ${wide.toFixed(2)} hexes, none of it the plain's`);
   // The other three edges are exactly where they were when this plain was built: it spends northing
   // and nothing else. The western one has moved twice since, and neither time for anything on this
   // plain: -3960.002 for the Ganesh Desert and **-4360.002** for Cape Heth's one `coast` hex - and a
-  // third time, to **-4610.002**, for West Ibenwood when the forest belt landed alongside.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6);
+  // third time, to **-4610.002**, for West Ibenwood when the forest belt landed alongside; and then to -4660.002 for
+  // Alezhor's coast and **-4860.002** for South Ibenal's (4 October 2026).
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4860.001927939128) < 1e-6);
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 2209.9980720608737) < 1e-6);
   // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
   // (docs/southwest-2-report.md), which the plain also spent nothing of.
