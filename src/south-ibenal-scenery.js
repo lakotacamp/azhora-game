@@ -367,7 +367,7 @@ export function ibenalFreshWater(x, z, ground) {
  * the ground itself, as the forest's own does along its rivers (`forestRenderedGround`), and elsewhere on what it is
  * handed: grass, reed and gravel by the water neither float over the two-metre ground nor sink into it.
  */
-export const DRAWN_RIVER_REACH = 40;
+export const DRAWN_RIVER_REACH = 18; // inside the 24 m two-metre river ground src/world.js lays (`ibenalRiverGround`), less its 6 m blend
 let RIVER_INDEX;
 function riverIndex() {
   if (RIVER_INDEX !== undefined) return RIVER_INDEX;
