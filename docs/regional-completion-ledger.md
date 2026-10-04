@@ -254,19 +254,25 @@ Updated 4 October 2026. Claude independently completed and froze the Celder pair
 | Known regional delivery | Celder pair in `../azhora-game-celder`, clean `136b582`; intake recorded, acceptance pending. |
 | Claude connection | Independent Claude session; Celder delivery received through its clean checkout and handoff report. |
 | Next Claude action | East Izol brief is ready; pin its assignment base/worktree before starting. No next worker has been launched from this session. |
-| ChatGPT active assignment | R1 East Lotharn/Varn on `codex/region-review-2026-10-04` in `../azhora-game-region-review`, base `a2e49c3`. Celder owns its West Lotharn seam edits. |
+| ChatGPT active assignment | R1 East Lotharn/Varn. First functional corrections frozen at `bd01a17` on `codex/region-review-2026-10-04`, copied into main working files; broader R1 remains open. Celder's West Lotharn seam remains in its frozen delivery. |
 | New accepted regions under this plan | None |
 | New deliveries awaiting review under this plan | South Celder and North Celder, one frozen pair. |
-| Native Electron test slot | Baseline capture completed in `../azhora-game-land`; release after each launch. Do not run concurrent native captures. |
+| Native Electron test slot | Free. Baseline and final review captures completed; no test Electron process remains. Do not run concurrent native captures. |
 
 | Assignment | Regions | Base / delivery | State | Next action |
 | --- | --- | --- | --- | --- |
 | Celder | South Celder; North Celder | `a2e49c3` -> `136b582`; clean `celder` worktree | Ready for review; intake only | Preserve frozen pair, reconcile its West Lotharn interface during R2; acceptance follows backlog. |
-| R1 first corrections | East Lotharn Mountains; Varn in Amod | `a2e49c3`; active review branch | Correcting and validating | Restore two cave approaches without bypasses; verify woodland additions and tree identities; then complete the wider landscape review. |
-| Inventory coverage | All 131 atlas names | Active review branch | Implemented; four focused checks passed | Integrate with R1 after combined validation; no new regions marked built. |
+| R1 first corrections | East Lotharn Mountains; Varn in Amod | `a2e49c3` -> `bd01a17`; mirrored into main working copy | Functional batch verified; whole R1 still open | Continue broader skyline/tree-belt design, ramp and cave trim, pass-fort checks and Full/Fast journeys before group acceptance. |
+| Inventory coverage | All 131 atlas names | `bd01a17`, mirrored into main | Implemented; focused and combined checks passed | Inventory repaired; no new regions marked built. |
 | East Izol brief | East Izol | Next bounded Claude assignment | Brief preparation only | Ready after Celder handoff; implementation has not started. |
 
 The R1 corrections are not acceptance of the complete R1 group. Wider skyline changes, pass-fort regression, Full/Fast travel and the subsequent R2–R11 review remain outstanding. Keep individual-region acceptance visible when a pair shares a report. Update this ledger after each accepted batch and at shutdown.
+
+The [R1 report](region-reviews/r1-lotharn-review.md) records final code, native captures,
+movement and actual rendered-ground evidence. Main's 25 unrelated dragon files were checked
+byte-for-byte before and after integration; its existing test entries were preserved. The
+combined checkout passed 38 focused checks across five files. No push was performed and main
+HEAD remains `a2e49c3`, with the integrated working changes ready for the next desktop launch.
 
 ## Inventory caveats to carry into implementation
 
@@ -277,4 +283,4 @@ The R1 corrections are not acceptance of the complete R1 group. Wider skyline ch
 - Earlier documents saying 27 built and 104 remaining are historical. This ledger's snapshot is 60 integrated plus 2 delivered but not accepted plus 69 other builds.
 - At the next session, recompute the set difference before starting. Another Claude session may have finished Celder or other work overnight; keep its work and remove duplication from the queue.
 
-The original planning pass changed no game code. The 4 October execution updates record code under review in the isolated worktree; they do not certify unreviewed environments or alter the Claude checkout or user saves.
+The original planning pass changed no game code. The 4 October execution updates record the first verified functional batch in the review branch and main working copy. They do not certify unreviewed environments or alter the Claude checkout or user saves.

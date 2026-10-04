@@ -4,6 +4,12 @@ Started 4 October 2026 from `a2e49c3`, on `codex/region-review-2026-10-04`
 in `../azhora-game-region-review`. **First functional correction batch verified;
 not a complete R1 acceptance.** No Celder source has been copied or edited.
 
+Code and original evidence are frozen in **`bd01a17`** on the review branch. The same
+source/test files were copied into the main desktop checkout on 4 October. Its existing
+developer-dragon work remains uncommitted and byte-identical (25 protected files checked);
+the main test manifest retains all its entries plus the five new review tests. Main HEAD
+remains `a2e49c3`; this is a working-copy integration, not a merge or push.
+
 ## First correction batch
 
 - Restore a walkable ledge from the eastern peak's third ramp to the eastern chamber,
@@ -46,6 +52,7 @@ passing a controller-only route test is insufficient for acceptance.
 | Actual rendered ground | `lotharn-scenery-ground.test.js` 5/5: 2,000 body samples within 0.09924 m of collision ground, 66 anchors within 0.09736 m, 405 active ridge samples within 0.01998 m, seven ramp-boundary samples within 0.05887 m; no missing surface |
 | Habitat and ridge geometry | Eight tests pass, including shelter/soil, safe animal ranges, trunk footprints and joined ridge geometry |
 | Final native views | Six ground-level views, 1440 x 900, Full mode; `r1-final-native-review.log`, renderer `errors: []`. Ridge spikes removed, chamber approach visible, trees grounded and a deer visible in woodland. Same post-capture GPU shutdown error as baseline; not a clean exit-code smoke pass |
+| Combined desktop checkout | 38 checks pass across build inventory, habitat, landscape, cave wrapper and wildlife loading; `tests/artifacts/r1-main-integration-tests.log` in main. CRLF-aware diff check clean |
 
 These are measured checks, not a full saved-game migration or a complete native journey.
 Legacy identity comparison must be repeated after any scenery changes. New tests are in
