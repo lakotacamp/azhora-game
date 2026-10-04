@@ -7,9 +7,10 @@ import { canStand } from '../src/game-state.js';
 import { LEGEMUM_CELLS,LEGEMUM_BOUNDS,LEGEMUM_LANDMARKS,LEGEMUM_TRAILS,legemumOwns,legemumGround,legemumSlope,legemumTint,legemumShoreTint } from '../src/legemum-world.js';
 import { LEGEMUM_WILDLIFE_ZONES } from '../src/legemum-wildlife.js';
 import { timberForSpecies } from '../src/wood-species.js';
-import { GALA_TELEMONIA_STREAM,GALA_TELEMONIA_MOUTH,courseDistance } from '../src/west-regions.js';
+import { GALA_TELEMONIA_STREAM,GALA_TELEMONIA_MOUTH,TRELOSS_PATCH_REACH,TRELOSS_GULLY,trelossGullyDistance,courseDistance } from '../src/west-regions.js';
 import { WEST_PROFILES,westWaterSurface,courseSample } from '../src/west-ground.js';
 import { scopedWorld } from './scoped-world.js';
+import { inTelemoniaBox,borderDepth,TELEMONIA_PATCH_REACH } from '../src/telemonia-world.js';
 
 test('Legemum respects all 24 atlas cells and preserves neighbouring ground and water beds',()=>{
   assert.equal(LEGEMUM_CELLS.length,24);assert.equal(LEGEMUM_CELLS,REGION_CELLS.Legemum);
@@ -79,6 +80,9 @@ test('Dolphins and diving sea-plungers stay over actual ocean throughout their r
 });
 
 
+/** One world scoped to Gala, Legemum and Telemonia, built once for the Treloss's two tests. */
+let trelossBuilt=null;
+const trelossWorld=()=>trelossBuilt??=(async()=>{const scene=new THREE.Scene();return {scene,scoped:await scopedWorld(scene,[22,59,55])};})();
 /**
  * **The Treloss reaches the sea** (2026-10-03). Gala's western border stream comes down its last atlas edge
  * between Gala and Legemum to the shore. Built with Gala when Legemum was outland, it stopped forty-two metres
@@ -87,7 +91,7 @@ test('Dolphins and diving sea-plungers stay over actual ocean throughout their r
  * builds it, scoped to Gala, Legemum and Telemonia, over the stream's last 150 m and the whole of the mouth.
  */
 test('The Treloss runs on to the sea down the Legemum border: one falling water, no wall, banks walked to the shore',async()=>{
-  const scene=new THREE.Scene(),scoped=await scopedWorld(scene,[22,59,55]),H=(x,z)=>scoped.heightAt(x,z);
+  const {scene,scoped}=await trelossWorld(),H=(x,z)=>scoped.heightAt(x,z);
   const stream=WEST_PROFILES.get(GALA_TELEMONIA_STREAM.id),mouth=WEST_PROFILES.get(GALA_TELEMONIA_MOUTH.id),end=mouth.at(-1);
   const along=(a,b,t)=>({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});
   const at=p=>`${p.x.toFixed(1)}, ${p.z.toFixed(1)}`;
@@ -158,6 +162,78 @@ test('The Treloss runs on to the sea down the Legemum border: one falling water,
   });
   for(const c of scoped.colliders){if(!close(c.x,c.z)||c.surface!==undefined)continue;shapes++;assert.ok(!wet(c.x,c.z),`a ${c.kind} stands in the Treloss at ${c.x}, ${c.z}`);}
   assert.ok(instances>100&&blades>100&&shapes>0,`${instances} instances, ${blades} vertices of cover and ${shapes} colliders checked`);
+});
+
+/**
+ * **The Treloss is drawn unbroken to the sea** (2026-10-03). The ground walked was right, but the ground drawn over
+ * the mouth and the stream's last twenty metres was the world's 7.1 m grid, which cannot follow a gully four and a
+ * half metres wide: from above, pale triangles of it stood up through the water at two points in five, by up to
+ * half a metre, and cut the stream into pieces. The gully draws its own ground now, a metre and a half apart, over
+ * the grid sunk beneath it (`TRELOSS_GULLY`, src/west-regions.js; src/gala-scenery.js). Read off the built meshes:
+ * the highest drawn ground - the world's grid, Telemonia's ground or the gully's - and the drawn water.
+ */
+test('The Treloss is drawn unbroken to the sea: no drawn ground over its water, and no hole round the ground drawn for it',async()=>{
+  const {scene,scoped}=await trelossWorld(),H=(x,z)=>scoped.heightAt(x,z);
+  scene.updateMatrixWorld(true);
+  const grounds=[],waters=[];
+  scene.traverse(o=>{
+    if(!o.isMesh)return;
+    if(/^Terrain \d+:\d+$|^Whole-world terrain$|^(Telemonia|Treloss) ground$/.test(o.name))grounds.push(o);
+    if(o.name==='The Treloss')waters.push(o);
+  });
+  assert.equal(grounds.filter(o=>o.name==='Treloss ground').length,1,'the gully draws no ground of its own');
+  const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0),from=new THREE.Vector3();
+  const top=(meshes,x,z)=>{from.set(x,500,z);ray.set(from,down);const hit=ray.intersectObjects(meshes,false)[0];return hit?{y:hit.point.y,name:hit.object.name}:null;};
+  const at=(x,z)=>`${x.toFixed(1)}, ${z.toFixed(1)}`;
+  // The mouth and the stream's last sixty metres, every half metre down it and at five places across its water.
+  const stream=WEST_PROFILES.get(GALA_TELEMONIA_STREAM.id),mouth=WEST_PROFILES.get(GALA_TELEMONIA_MOUTH.id);
+  let first=stream.length-1,run=0;
+  while(first>0&&run<60){run+=Math.hypot(stream[first].x-stream[first-1].x,stream[first].z-stream[first-1].z);first--;}
+  const line=[...stream.slice(first),...mouth.slice(1)];
+  let checked=0,closest=Infinity;
+  for(let i=1;i<line.length;i++){
+    const a=line[i-1],b=line[i],length=Math.hypot(b.x-a.x,b.z-a.z);
+    for(let d=0;d<length;d+=.5)for(const f of[-.8,-.4,0,.4,.8]){
+      const t=d/length,half=a.half+(b.half-a.half)*t,x=a.x+(b.x-a.x)*t+b.nx*half*f,z=a.z+(b.z-a.z)*t+b.nz*half*f;
+      const water=top(waters,x,z),ground=top(grounds,x,z);
+      assert.ok(water,`the drawn Treloss is broken at ${at(x,z)}`);
+      assert.ok(ground,`no ground is drawn under the Treloss at ${at(x,z)}`);
+      assert.ok(ground.y<water.y,`${ground.name} is drawn ${(ground.y-water.y).toFixed(2)} m over the Treloss's water at ${at(x,z)}`);
+      closest=Math.min(closest,water.y-ground.y);checked++;
+    }
+  }
+  assert.ok(checked>1000,`${checked} points of water checked`);
+  // No hole: the world's grid is sunk twelve metres under the gully, and every cell of it the sink tilts must be drawn
+  // over. Over the gully's own ground and four metres past its edge, on Gala's and Legemum's ground (Telemonia draws
+  // its own, and its cliffs are not this ground's to measure), the drawn ground is the walked ground within what a
+  // grid can follow - a metre and a half apart inside, seven metres apart outside, never a hole. And the grid does
+  // not come up through it: past the sink the grid is not sunk, and it was the higher surface at a quarter to a half
+  // of the outer ring until that ring was drawn on the grid's own surface (src/gala-scenery.js). Inside the gully's
+  // ground, off Telemonia's, the grid never stands over it by more than a few centimetres, along a fold of its own,
+  // and hardly anywhere at all.
+  const B=TRELOSS_GULLY.bounds,R=TRELOSS_PATCH_REACH,owners=new Set();
+  const tiles=grounds.filter(o=>o.name.startsWith('Terrain ')),own=grounds.filter(o=>o.name==='Treloss ground');
+  const besideTelemonia=(x,z)=>inTelemoniaBox(x,z)&&borderDepth(x,z)>-TELEMONIA_PATCH_REACH-3;
+  let scanned=0,patch=0,low=0,high=0,inside=0,through=0,deepest=0;
+  for(let x=Math.floor(B.minX-R-4);x<=B.maxX+R+4;x++)for(let z=Math.floor(B.minZ-R-4);z<=B.maxZ+R+4;z++){
+    if(trelossGullyDistance(x,z,R+4)>=R+4)continue;
+    const owner=hexOwnerAt(x,z);
+    if(owner==='Telemonia')continue;
+    const ground=top(grounds,x,z);
+    assert.ok(ground,`nothing is drawn at ${at(x,z)}`);
+    const by=ground.y-H(x,z);
+    assert.ok(Math.abs(by)<.75,`${ground.name} is drawn ${by.toFixed(2)} m off the walked ground at ${at(x,z)} (${owner}), ${trelossGullyDistance(x,z).toFixed(1)} m from the Treloss`);
+    low=Math.min(low,by);high=Math.max(high,by);scanned++;owners.add(owner);if(ground.name==='Treloss ground')patch++;
+    if(trelossGullyDistance(x,z,R)>=R-1.2||besideTelemonia(x,z))continue;
+    const grid=top(tiles,x,z),drawn=top(own,x,z);
+    if(!grid||!drawn)continue;
+    const over=grid.y-drawn.y;inside++;deepest=Math.max(deepest,over);
+    assert.ok(over<.15,`the world's grid stands ${over.toFixed(2)} m over the gully's ground at ${at(x,z)}`);
+    if(over>.005)through++;
+  }
+  assert.ok(inside>3000&&through<inside*.03,`the world's grid comes up through the gully's ground at ${through} of ${inside} points`);
+  assert.ok(scanned>5000&&patch>3000&&owners.has('Gala')&&owners.has('Legemum'),`${scanned} points scanned, ${patch} on the gully's ground, on ${[...owners].join(', ')}`);
+  console.log(`# the Treloss: ${checked} points of water, the drawn ground at least ${closest.toFixed(2)} m under it; ${scanned} points round the gully drawn ${low.toFixed(2)} to +${high.toFixed(2)} m off the walked ground; the grid through it at ${through} of ${inside}, by ${deepest.toFixed(3)} m at most`);
 });
 
 test('slate headlands color both wet and dry shore vertices without changing sheltered bays',()=>{

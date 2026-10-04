@@ -128,7 +128,7 @@ import { createElagosScenerySteps } from './elagos-scenery.js';
 import { AMOD_ROAD, AMOD_NPC_POSITIONS, AMOD_LANDMARKS, tarvelDistance } from './amod-world.js';
 import { amodTerrainSink } from './amod-terraces.js';
 import { createAmodScenerySteps } from './amod-scenery.js';
-import { WEST_REGION_LANDMARKS, westBareGround, westRiverDistance } from './west-regions.js';
+import { WEST_REGION_LANDMARKS, westBareGround, westRiverDistance, trelossTerrainSink } from './west-regions.js';
 import { createMenoraScenerySteps } from './menora-scenery.js';
 import { createNylonScenerySteps } from './nylon-scenery.js';
 import { NYLON_PATHS, NYLON_LANDMARKS, nylonReserved, nylonHarborDeckHeight } from './nylon-city.js';
@@ -606,7 +606,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
     // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
     // src/south-suval-scenery.js); the coarse grid is sunk out of sight beneath them.
-    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z) - varnTerrainSink(x, z) - telemoniaTerrainSink(x, z), z], index * 3);
+    terrainPositions.set([x, groundHeight(x, z) - amodTerrainSink(x, z) - imlamdrisTerrainSink(x, z) - suvalHighlandTerrainSink(x, z) - lotharnTerrainSink(x, z) - westLotharnTerrainSink(x, z) - feradomTerrainSink(x, z) - varnTerrainSink(x, z) - telemoniaTerrainSink(x, z) - trelossTerrainSink(x, z), z], index * 3);
     groundTint(color, x, z, THREE);
     const local = worldToVillage(x, z), weight = villageWeight(local.x, local.z);
     if (weight > 0) {
@@ -1611,7 +1611,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // Gala (src/gala-scenery.js): its water, its dry wash, and what grows on the steppe, the maquis and
   // the coast. Its own seeded stream, after the west's, so nothing already built moves for it.
   yield 'Gala';
-  const galaScenery=yield* regionBuild('galaScenery',[22],stage=>createGalaScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  const galaScenery=yield* regionBuild('galaScenery',[22],stage=>createGalaScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round, terrainGrid:{xs:terrainXs,zs:terrainZs} }),{});
   // Ovesos and the Oves Desert (src/oves-scenery.js): the Oveth's gallery and its reed, four dry
   // channels of gravel, the steppe's grass and scrub, and the desert's stone. Its own seeded stream,
   // after Gala's, so nothing already built moves for it. Nobody's.
