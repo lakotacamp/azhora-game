@@ -2,7 +2,8 @@
  * Ownership covers the 48 m refinement collar, including its North Ibenwood end.
  * The open-country shore is supplied by explicit coarse bounds, not scenery. */
 import { refineIbenwoodRiverGroundSteps } from './ibenwood-rivers.js';
-export const IBENWOOD_ALEZHOR_GROUND_REGIONS = Object.freeze([33, 34, 35, 36, 64]);
+// South and North Ibenal (65, 66) joined 5 October 2026: their streams are the forest's other coastal outlets.
+export const IBENWOOD_ALEZHOR_GROUND_REGIONS = Object.freeze([33, 34, 35, 36, 64, 65, 66]);
 
 export function combinedRiverIndex(...indices) {
   return {

@@ -699,6 +699,8 @@ export const REGION_LANGUAGE = freeze({
   'West Izol': spoken('izoli'),
   'East Izol': spoken('izoli'),
   'Alezhor': spoken('ibnael'),
+  'South Ibenal': spoken('ibnael'),
+  'North Ibenal': spoken('ibnael'),
   Elagos: spoken('ambroni'),
   // The four western regions. The lore is specific: all four are Mittoli-speaking
   // country, each with its own dialect, inside the Empire's reach — so the people

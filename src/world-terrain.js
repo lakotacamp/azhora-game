@@ -39,6 +39,8 @@ import { southCelderGround, southCelderTint, legacyCelderLand, celderOwns } from
 import { northCelderGround, northCelderTint } from './north-celder-world.js';
 import { eastIzolGround, eastIzolTint, eastIzolShoreTint } from './east-izol-world.js';
 import { alezhorGround, alezhorTint, alezhorShoreTint } from './alezhor-world.js';
+import { southIbenalGround, southIbenalTint, southIbenalShoreTint } from './south-ibenal-world.js';
+import { northIbenalGround, northIbenalTint, northIbenalShoreTint } from './north-ibenal-world.js';
 import { caricasSettlementGround } from './caricas-settlement.js';
 import { westOremindiGround, westOremindiTint } from './west-oremindi-world.js';
 import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
@@ -288,7 +290,7 @@ export function legacyWesternGroundHeight(x,z) {
 
 /** Ground with the river channels cut, before any deck or pier override. */
 export function groundWithRiver(x, z) {
-  return alezhorLayer(x,z,eastIzolLayer(x,z,celderLayer(x,z,babonGround(x,z,legemumGround(x,z,netherDesertGround(x,z,groundBeforeNether(x,z),groundBeforeNether))))));
+  return northIbenalLayer(x,z,southIbenalLayer(x,z,alezhorLayer(x,z,eastIzolLayer(x,z,celderLayer(x,z,babonGround(x,z,legemumGround(x,z,netherDesertGround(x,z,groundBeforeNether(x,z),groundBeforeNether))))))));
 }
 // The two Celders lay their ground last of all (src/south-celder-world.js, src/north-celder-world.js). Each writes only on
 // its own hexes; `groundBeforeCelder` answers the ground without either, for measuring their border seams.
@@ -323,6 +325,22 @@ const alezhorLayer = (x, z, ground) => (alezhorLeftOut ? ground : alezhorGround(
 export function groundBeforeAlezhor(x, z) {
   alezhorLeftOut = true;
   try { return groundWithRiver(x, z); } finally { alezhorLeftOut = false; }
+}
+// South Ibenal lays its ground outermost (src/south-ibenal-world.js), on its own hexes only; `groundBeforeSouthIbenal`
+// answers the ground without it, for measuring its border seams.
+let southIbenalLeftOut = false;
+const southIbenalLayer = (x, z, ground) => (southIbenalLeftOut ? ground : southIbenalGround(x, z, ground, groundBeforeSouthIbenal));
+export function groundBeforeSouthIbenal(x, z) {
+  southIbenalLeftOut = true;
+  try { return groundWithRiver(x, z); } finally { southIbenalLeftOut = false; }
+}
+// North Ibenal lays its ground outermost (src/north-ibenal-world.js), on its own hexes only; `groundBeforeNorthIbenal`
+// answers the ground without it, for measuring its border seams.
+let northIbenalLeftOut = false;
+const northIbenalLayer = (x, z, ground) => (northIbenalLeftOut ? ground : northIbenalGround(x, z, ground, groundBeforeNorthIbenal));
+export function groundBeforeNorthIbenal(x, z) {
+  northIbenalLeftOut = true;
+  try { return groundWithRiver(x, z); } finally { northIbenalLeftOut = false; }
 }
 /** Everything `groundWithRiver` lays but the Nether Desert and Legemum: the ground the Nether Desert's border seam is measured against. */
 function groundBeforeNether(x,z){
@@ -434,6 +452,8 @@ const GROUND_TINTS = Object.freeze([
   Object.freeze({id:'north-celder',tint:northCelderTint}),
   Object.freeze({id:'east-izol',tint:eastIzolTint}),
   Object.freeze({id:'alezhor',tint:alezhorTint}),
+  Object.freeze({id:'south-ibenal',tint:southIbenalTint}),
+  Object.freeze({id:'north-ibenal',tint:northIbenalTint}),
 ]);
 /**
  * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
@@ -463,6 +483,9 @@ const SHORE_TINTS = Object.freeze([
   Object.freeze({ id: 'east-izol', tint: eastIzolShoreTint }),
   // Alezhor's southern cliffs and its gold estuary's gravel banks (src/alezhor-world.js); its strands keep the world's sand.
   Object.freeze({ id: 'alezhor', tint: alezhorShoreTint }),
+  // The Ibenals' rocky points and North Ibenal's broken rocky shore (src/south-ibenal-world.js); their bays keep the world's sand.
+  Object.freeze({ id: 'south-ibenal', tint: southIbenalShoreTint }),
+  Object.freeze({ id: 'north-ibenal', tint: northIbenalShoreTint }),
 ]);
 export const SHORE_TINT_FAMILIES = Object.freeze(SHORE_TINTS.map(family => family.id));
 /** One row of the shore table asked on its own, for the guard. */

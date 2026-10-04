@@ -221,7 +221,9 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // -4610.002 and the world 52.20 hexes wide. The block's own reach west is still Cape Heth's -4300.
   // ...and since Alezhor was registered (4 October 2026) the western edge is its west lobe's, (-37,117), whose rim at
   // x = -4600 stands fifty metres past West Ibenwood's: -4660.002.
-  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4660.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
+  // ...and since South Ibenal was registered (the same day) it is South Ibenal's, (-38,115), whose rim at x = -4800 stands two
+  // hundred metres past Alezhor's: -4860.002.
+  assert.ok(Math.abs(WORLD_BOUNDS.minX - -4860.001927939128) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
   // maxX 2209.998, minZ -3899.247, the world 68.20 by 73.369 hexes, the window's maxQ 60 and minR 59.
   // Babon now sets the southern edge at z3437.632, two atlas rows beyond Trogo.
@@ -237,9 +239,9 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3437.6315612998296) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
-  // 49.70 was this block's own doing; the other two and a half hexes are West Ibenwood's (see minX above), and the
-  // last half a hex Alezhor's west lobe's.
-  assert.ok(Math.abs(wide - 68.70) < .01, `east to west is ${wide.toFixed(2)} hexes`);
+  // 49.70 was this block's own doing; the other two and a half hexes are West Ibenwood's (see minX above), the next half
+  // a hex Alezhor's west lobe's, and the last two South Ibenal's coast.
+  assert.ok(Math.abs(wide - 70.70) < .01, `east to west is ${wide.toFixed(2)} hexes`);
   assert.ok(Math.abs(tall - 73.369) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // **Cape Heth alone spends the west now**, and the Ganesh Desert alone spent it before: no other
   // country in eleven reaches past -3900, which is the Dinelv Highlands' own western row.
@@ -285,7 +287,9 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // survey is byte-identical either way.
   // -54 is Alezhor's west lobe's, the same way: its rim at x = -4600 takes the western edge fifty metres further, and
   // the lattice's south-western corner a column with it - open ocean, and the survey byte-identical again.
-  assert.equal(WINDOW.minQ, -54);
+  // -56 is South Ibenal's coast's: its rim at x = -4800 takes the edge two hundred metres further, and the corner two
+  // columns with it - open ocean, and the survey byte-identical once more.
+  assert.equal(WINDOW.minQ, -56);
   assert.equal(WINDOW.maxQ, 60);
   assert.equal(WINDOW.minR, 59);
   assert.equal(WINDOW.maxR, 147);
@@ -1965,12 +1969,13 @@ test('every ground tint in the game reaches the screen, which is the guard two j
   // Selemis is the fifth family and the first to arrive as a row (2026-10-01, docs/selemis-report.md):
   // its line here is its line there, which is the arrangement this guard was written to force.
   // Telemonia is the sixth (2026-10-02, docs/telemonia-stage1-report.md), the same way.
-  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis', 'telemonia', 'east-pyros', 'nether-desert', 'legemum', 'babon', 'south-celder', 'north-celder', 'east-izol', 'alezhor'],
+  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis', 'telemonia', 'east-pyros', 'nether-desert', 'legemum', 'babon', 'south-celder', 'north-celder', 'east-izol', 'alezhor', 'south-ibenal', 'north-ibenal'],
     'a family was added to groundTint without a line here');
   const probes = { gala: ['Gala'], oves: ['Ovesos', 'Oves Desert'],
     mithala: ['South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'],
     southwest: [...BLOCK], selemis: ['Selemi'], telemonia: ['Telemonia'], 'east-pyros': ['East Pyros'], 'nether-desert': ['Nether Desert'], legemum: ['Legemum'], babon: ['Babon'],
-    'south-celder': ['South Celder'], 'north-celder': ['North Celder'], 'east-izol': ['East Izol'], alezhor: ['Alezhor'] };
+    'south-celder': ['South Celder'], 'north-celder': ['North Celder'], 'east-izol': ['East Izol'], alezhor: ['Alezhor'],
+    'south-ibenal': ['South Ibenal'], 'north-ibenal': ['North Ibenal'] };
   const painted = new THREE.Color(), swatch = new THREE.Color();
   for (const family of GROUND_TINT_FAMILIES) {
     let worst = 0, at = null;

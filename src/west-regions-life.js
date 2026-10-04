@@ -6,6 +6,8 @@ import { SOUTH_CELDER_WILDLIFE_ZONES } from './south-celder-wildlife.js';
 import { NORTH_CELDER_WILDLIFE_ZONES } from './north-celder-wildlife.js';
 import { EAST_IZOL_WILDLIFE_ZONES } from './east-izol-wildlife.js';
 import { ALEZHOR_WILDLIFE_ZONES } from './alezhor-wildlife.js';
+import { SOUTH_IBENAL_WILDLIFE_ZONES } from './south-ibenal-wildlife.js';
+import { NORTH_IBENAL_WILDLIFE_ZONES } from './north-ibenal-wildlife.js';
 import * as THREE from 'three';
 import {WEST_OREMINDI_WILDLIFE_ZONES} from './west-oremindi-wildlife.js';
 import {BALDRO_WILDLIFE_ZONES} from './baldro-wildlife.js';
@@ -440,6 +442,30 @@ function modelFactories() {
         ...both(side => S(0x0f0d0c, [side * .045, .03, .06], [.015, .016, .014])),
         ...both(side => S(0x5b4534, [side * .06, .06, -.005], [.028, .025, .018]))]),
       leg: geometry([Y(0x5b4534, [0, -.06, 0], [.028, .12, .028]), B(0x3a2d22, [0, -.12, .015], [.06, .03, .075])]),
+    }),
+
+    /**
+     * The grey seal, hauled out above the tide. The fauna overview names it twice: "the cold waters of the Bay of Lol
+     * and the northern Azhoran coast carry populations of marine mammals - grey seals ...", and "large populations of
+     * southern grey seal" on the cold westernmost strip of Bouén. North Ibenal's shore is the cold open sea between
+     * the two, and its seals are an extension that says so (src/north-ibenal-wildlife.js). A long mottled body
+     * tapering to the hind flippers, the fore flippers flat at its sides; the head and the hind flippers move, and
+     * everything else is one piece.
+     */
+    'grey-seal': () => ({
+      body: geometry([
+        S(0x5f5b53, [0, .25, -.08], [.32, .24, .74]),
+        S(0x8d877a, [0, .16, .02], [.28, .13, .66]),
+        S(0x57534c, [0, .3, .5], [.24, .22, .3]),
+        S(0x4f4b45, [0, .17, -.74], [.17, .12, .3], [-.1, 0, 0]),
+        ...[[.12, .458, .1], [-.1, .466, -.22], [.05, .44, -.48], [-.14, .415, .32], [.16, .43, -.36]]
+          .map(([x, y, z]) => S(0x3d3a35, [x, y, z], [.07, .03, .09])),
+        ...both(side => S(0x4a4640, [side * .26, .09, .38], [.07, .03, .17], [0, side * .45, side * .5])),
+      ]),
+      head: geometry([S(0x5f5b53, [0, 0, 0], [.16, .15, .18]), S(0x6e695f, [0, -.03, .14], [.1, .085, .11]),
+        S(0x1c1a18, [0, -.01, .245], [.04, .03, .02]),
+        ...both(side => S(0x0e0d0c, [side * .085, .05, .09], [.026, .028, .022]))]),
+      tail: geometry([...both(side => S(0x45423c, [side * .07, 0, -.16], [.08, .03, .17], [0, side * .35, 0]))]),
     }),
 
     /**
@@ -1363,7 +1389,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...TELEMONIA_HERD_ZONES,
   ...EAST_PYROS_WILDLIFE_ZONES, ...NETHER_DESERT_WILDLIFE_ZONES, ...LEGEMUM_WILDLIFE_ZONES,
   ...BABON_WILDLIFE_ZONES,
-  ...SOUTH_CELDER_WILDLIFE_ZONES, ...NORTH_CELDER_WILDLIFE_ZONES, ...EAST_IZOL_WILDLIFE_ZONES, ...ALEZHOR_WILDLIFE_ZONES,
+  ...SOUTH_CELDER_WILDLIFE_ZONES, ...NORTH_CELDER_WILDLIFE_ZONES, ...EAST_IZOL_WILDLIFE_ZONES, ...ALEZHOR_WILDLIFE_ZONES, ...SOUTH_IBENAL_WILDLIFE_ZONES, ...NORTH_IBENAL_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -1553,7 +1579,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     const water = westWaterSurface(x, z) ?? world.waterAt?.(x, z) ?? null;
     return water === null ? ground : Math.max(ground, water - .04);
   };
-  const renderedFootingRegions = new Set(['Alezhor', 'East Izol', 'East Pyros', 'Nether Desert', 'Legemum', 'Babon', 'South Celder', 'North Celder',
+  const renderedFootingRegions = new Set(['Alezhor', 'South Ibenal', 'North Ibenal', 'East Izol', 'East Pyros', 'Nether Desert', 'Legemum', 'Babon', 'South Celder', 'North Celder',
     'Drent', 'Luscia', 'Moros Plain', 'West Suval',
     'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
     'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert',
@@ -1762,6 +1788,8 @@ const FLEE_AT = {
     'hill-sheep': 6.5,
     'upland-hare': 9,
     otter: 8,
+    // A seal on a haul-out lets a traveler nearer than a deer does, and then it is in the sea.
+    'grey-seal': 15,
     'wading-bird': 11,
     'river-fox': 0,
     egret: 12,
@@ -1791,6 +1819,7 @@ const WALK = {
     'hill-sheep': .48,
     'upland-hare': 1.9,
     otter: 1.1,
+    'grey-seal': .3,
     'wading-bird': .5,
     'river-fox': .9,
     egret: .5,
@@ -1819,6 +1848,8 @@ const RUN = {
     'hill-sheep': 5.6,
     'upland-hare': 9.6,
     otter: 8.2,
+    // A seal galloping for the water is quicker over a few metres than anybody expects; it is never far from it.
+    'grey-seal': 4.6,
     'wading-bird': 10,
     egret: 10,
     stilt: 10.4,
@@ -1876,6 +1907,7 @@ const RETURN = {
     'hill-sheep': 1.5,
     'upland-hare': 2.8,
     otter: 1.8,
+    'grey-seal': 1.1,
     'wading-bird': 1.4,
     'river-fox': 1.5,
     egret: 1.4,
@@ -1910,7 +1942,10 @@ const RETURN = {
     animal.speed = moved / dt; animal.yaw = facing;
   }
 
-  /** The water an otter can reach: the deep-water colliders in and about its range, found once. */
+  /**
+   * The water an otter or a seal can reach: the deep-water colliders in and about its range, found once, and any water
+   * the range names itself - the open sea off a seal's haul-out, which carries no marker.
+   */
   const waterByZone = new Map();
   let waterColliderCount = -1, waterRevision = -1;
   function waterOf(zone) {
@@ -1918,8 +1953,8 @@ const RETURN = {
     if (waterColliderCount !== (world.colliders?.length ?? 0) || waterRevision !== revision) {
       waterByZone.clear(); waterColliderCount = world.colliders?.length ?? 0; waterRevision = revision;
     }
-    if (!waterByZone.has(zone.id)) waterByZone.set(zone.id, (world.colliders ?? []).filter(c => /water/.test(c.kind ?? '')
-      && c.x > zone.minX - 30 && c.x < zone.maxX + 30 && c.z > zone.minZ - 30 && c.z < zone.maxZ + 30));
+    if (!waterByZone.has(zone.id)) waterByZone.set(zone.id, [...(zone.water ?? []), ...(world.colliders ?? []).filter(c => /water/.test(c.kind ?? '')
+      && c.x > zone.minX - 30 && c.x < zone.maxX + 30 && c.z > zone.minZ - 30 && c.z < zone.maxZ + 30)]);
     return waterByZone.get(zone.id);
   }
   function nearestWater(animal) {
@@ -2126,7 +2161,7 @@ const RETURN = {
         const bx = flock.cx - animal.x, bz = flock.cz - animal.z, b = Math.hypot(bx, bz);
         if (b > 2.5 && bx / b * Math.sin(away) + bz / b * Math.cos(away) > -.3)
           heading = Math.atan2(Math.sin(away) + bx / b * .55, Math.cos(away) + bz / b * .55);
-      } else if (species === 'otter') {
+      } else if (species === 'otter' || species === 'grey-seal') {
         const water = nearestWater(animal);
         if (water && water.edge < 1.6) {
           animal.action = 'dive'; animal.timer = 5 + SLIP.seconds; animal.slip = SLIP.seconds;
@@ -2435,6 +2470,17 @@ const RETURN = {
         place(flock.meshes.head, i, 0, .38, .25, walking ? -.14 : Math.sin(animal.clock * .95) * .07, Math.sin(animal.clock * .73) * .12);
         for (let side = 0; side < 2; side++) place(flock.meshes.ears, i * 2 + side, side ? .07 : -.07, .47, .20,
           walking ? -.4 : Math.sin(animal.clock * 1.5 + side) * .14, 0, (side ? 1 : -1) * .12);
+        return;
+      }
+      if (species === 'grey-seal') {
+        // Hauled out it lies with its head up and turning, or laid down along the stones; going, it humps along on its
+        // belly, the hind flippers lifting with every heave and the head riding it.
+        const resting = animal.action === 'graze', heave = walking ? Math.abs(Math.sin(phase * .5)) : 0;
+        place(flock.meshes.body, i, 0, heave * .05, 0, walking ? -Math.sin(phase * .5) * .06 : 0, 0, 0, 1, 1 + breath, 1);
+        place(flock.meshes.head, i, 0, resting ? .4 : .5 + heave * .04, resting ? .84 : .8,
+          resting ? .12 + Math.sin(animal.clock * .4) * .05 : -.2 + Math.sin(animal.clock * .9) * .06,
+          Math.sin(animal.clock * (resting ? .35 : .7)) * (resting ? .3 : .15));
+        place(flock.meshes.tail, i, 0, .14 + heave * .08, -.95, walking ? .2 + heave * .3 : .1 + Math.sin(animal.clock * .5) * .06);
         return;
       }
       if (species === 'dolphin') return;   // a back and a fin: one piece, and no limb on it

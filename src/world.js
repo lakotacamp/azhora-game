@@ -1,7 +1,7 @@
 import { stageBuildSteps } from './build-steps.js';
 import { createRegionLoading } from './region-loading.js';
 import { createStreamedTerrain } from './streamed-terrain.js';
-import { IBENWOOD_ALEZHOR_GROUND_REGIONS, createIbenwoodAlezhorGroundSteps } from './ibenwood-alezhor-ground.js';
+import { IBENWOOD_ALEZHOR_GROUND_REGIONS, createIbenwoodAlezhorGroundSteps, combinedRiverIndex } from './ibenwood-alezhor-ground.js';
 import { alezhorSwimmingSurface } from './alezhor-water.js';
 import { appendWesternTerrainSamples, preservedTerrainTileRanges, extensionTerrainSeed } from './terrain-extension.js';
 import { deferredScenery } from './deferred-scenery.js';
@@ -178,6 +178,10 @@ import { createEastIzolScenerySteps } from './east-izol-scenery.js';
 import { EAST_IZOL_LANDMARKS } from './east-izol-world.js';
 import { createAlezhorScenerySteps } from './alezhor-scenery.js';
 import { ALEZHOR_LANDMARKS, alezhorMapWaters, alezhorRiverIndex } from './alezhor-world.js';
+import { createSouthIbenalScenerySteps } from './south-ibenal-scenery.js';
+import { SOUTH_IBENAL_LANDMARKS, ibenalMapWaters, ibenalRiverIndex } from './south-ibenal-world.js';
+import { createNorthIbenalScenerySteps } from './north-ibenal-scenery.js';
+import { NORTH_IBENAL_LANDMARKS } from './north-ibenal-world.js';
 import { TELEMONIA_LANDMARKS, telemoniaTerrainSink } from './telemonia-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
@@ -1545,7 +1549,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // (tests/east-lotharn-peaks.test.js counts it); main.js walks both through one cave controller.
 
   yield 'Ibenwood and Alezhor river ground';
-  const ibenwoodAlezhorGround=yield* regionBuild('ibenwoodAlezhorGround',IBENWOOD_ALEZHOR_GROUND_REGIONS,stage=>createIbenwoodAlezhorGroundSteps({THREE,terrainRoot,forest:ibenwoodRivers,coast:alezhorRiverIndex(),heightAt:groundHeight,streamTerrain}),{fineGroundHeight:()=>null});
+  const ibenwoodAlezhorGround=yield* regionBuild('ibenwoodAlezhorGround',IBENWOOD_ALEZHOR_GROUND_REGIONS,stage=>createIbenwoodAlezhorGroundSteps({THREE,terrainRoot,forest:ibenwoodRivers,coast:combinedRiverIndex(alezhorRiverIndex(),ibenalRiverIndex()),heightAt:groundHeight,streamTerrain}),{fineGroundHeight:()=>null});
   const forestRenderedGround=(x,z)=>ibenwoodAlezhorGround.fineGroundHeight(x,z)??treeGroundAt(x,z);
   yield 'Ibenwood groves';
   const ibenwood=yield* regionBuild('ibenwood',[32, 33, 34, 35, 36],stage=>createIbenwoodScenerySteps({parent:stage,heightAt:groundHeight,colliders,terrain:{xs:terrainXs,zs:terrainZs,positions:terrainPositions},terrainRoot}),{});
@@ -1715,6 +1719,12 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // Alezhor (src/alezhor-scenery.js).
   yield 'Alezhor';
   const alezhor=yield* regionBuild('alezhor',[REGION_IDS['Alezhor']],stage=>createAlezhorScenerySteps({parent:stage,heightAt:groundHeight,legacyHeightAt:legacyAlezhorBankHeight,renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
+  // South Ibenal (src/south-ibenal-scenery.js).
+  yield 'South Ibenal';
+  const southIbenal=yield* regionBuild('southIbenal',[REGION_IDS['South Ibenal']],stage=>createSouthIbenalScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
+  // North Ibenal (src/north-ibenal-scenery.js).
+  yield 'North Ibenal';
+  const northIbenal=yield* regionBuild('northIbenal',[REGION_IDS['North Ibenal']],stage=>createNorthIbenalScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   yield 'Roads and landmarks';
   const stakedProps = [];
@@ -2216,6 +2226,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...[...river.samples].reverse().map(p=>mapPoint(p.x+p.nx*p.halfWidth,p.z+p.nz*p.halfWidth))])})),
     ...ibenwoodRivers.mapWaters,
     ...alezhorMapWaters(),
+    ...ibenalMapWaters(),
     ...SOUTH_OREMINDI_LAKES.map(l=>Object.freeze({id:l.id,kind:'polygon',points:l.shore})),
     Object.freeze({ id: 'coast-water', kind: 'polygon', points: Object.freeze([...seaEdge,
       mapPoint(WORLD_BOUNDS.maxX + 120, seaEdge.at(-1).z), mapPoint(WORLD_BOUNDS.maxX + 120, seaEdge[0].z)]) }),
@@ -2282,7 +2293,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const api = {
     loadingMode, loading, onRegionReady(listener){readyListeners.add(listener);return ()=>readyListeners.delete(listener);},
     menora, nylon, aevis, caricasSettlement, inquestHome, peninsulaTutorial,
-    heightAt, groundHeight, westLotharnGround, mithalaWater, eastPyros, netherDesert, legemum, babon, southCelder, northCelder, eastIzol, alezhor, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater, ibenwoodAlezhorGround,
+    heightAt, groundHeight, westLotharnGround, mithalaWater, eastPyros, netherDesert, legemum, babon, southCelder, northCelder, eastIzol, alezhor, southIbenal, northIbenal, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater, ibenwoodAlezhorGround,
     // Displayed terrain triangles, for visual grounding only; collision still uses heightAt.
     renderedGroundHeight: (x,z)=>babonSurface&&babonOwns(x,z)?babonSurface(x,z):(ibenwoodAlezhorGround.fineGroundHeight(x,z)??Math.max(westFineGroundAt(x,z),galaScenery.fineGroundHeight?.(x,z)??-Infinity,suvalSurface.fineGroundHeight(x,z)??-Infinity)),
     supportAt: forestWalks.supportAt, walkSurfaces: outdoorWalkSurfaces,
@@ -2552,7 +2563,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...TELEMONIA_LANDMARKS,
       ...TELEMONIA_TOWN_LANDMARKS,
       ...EAST_PYROS_LANDMARKS, ...NETHER_DESERT_LANDMARKS, ...LEGEMUM_LANDMARKS, ...BABON_LANDMARKS,
-      ...SOUTH_CELDER_LANDMARKS, ...NORTH_CELDER_LANDMARKS, ...EAST_IZOL_LANDMARKS, ...ALEZHOR_LANDMARKS,
+      ...SOUTH_CELDER_LANDMARKS, ...NORTH_CELDER_LANDMARKS, ...EAST_IZOL_LANDMARKS, ...ALEZHOR_LANDMARKS, ...SOUTH_IBENAL_LANDMARKS, ...NORTH_IBENAL_LANDMARKS,
     ],
     paths,
     update(time, dt) {

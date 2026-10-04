@@ -615,11 +615,11 @@ test('both tint tables reach the screen on the island: its own colours inland, a
   assert.ok(GROUND_TINT_FAMILIES.includes('selemis'), 'the island has a row in the ground table');
   // **The shore table's guard**: exactly these rows, and every one of them puts stone on its own
   // country's shore and nothing on the other's. A row that quietly stops painting says so with its id.
-  assert.deepEqual([...SHORE_TINT_FAMILIES], ['ascarth', 'selemis', 'legemum', 'babon', 'east-izol', 'alezhor'], 'a row was added to the shore table without a line here');
-  const probes = { ascarth: ASCARTH_TIP, selemis: SELEMI, legemum: 'Legemum', babon: 'Babon', 'east-izol': 'East Izol', alezhor: 'Alezhor' };
+  assert.deepEqual([...SHORE_TINT_FAMILIES], ['ascarth', 'selemis', 'legemum', 'babon', 'east-izol', 'alezhor', 'south-ibenal', 'north-ibenal'], 'a row was added to the shore table without a line here');
+  const probes = { ascarth: ASCARTH_TIP, selemis: SELEMI, legemum: 'Legemum', babon: 'Babon', 'east-izol': 'East Izol', alezhor: 'Alezhor', 'south-ibenal': 'South Ibenal', 'north-ibenal': 'North Ibenal' };
   for (const family of SHORE_TINT_FAMILIES) {
     let stone = 0, strays = 0;
-    for (const [x, z] of lattice(2, family === 'alezhor' ? { minX: -4680, maxX: -3700, minZ: 880, maxZ: 1240 } : family === 'east-izol' ? { minX: 380, maxX: 880, minZ: 1340, maxZ: 2180 } : family === 'babon' ? { minX: -2120, maxX: -1030, minZ: 2650, maxZ: 3390 } : family === 'legemum' ? { minX: -2480, maxX: -1790, minZ: 1460, maxZ: 2000 } : { minX: -1010, maxX: -590, minZ: 2180, maxZ: 2606 })) {
+    for (const [x, z] of lattice(2, family === 'south-ibenal' ? { minX: -4820, maxX: -4380, minZ: -40, maxZ: 980 } : family === 'north-ibenal' ? { minX: -4420, maxX: -3820, minZ: -660, maxZ: 0 } : family === 'alezhor' ? { minX: -4680, maxX: -3700, minZ: 880, maxZ: 1240 } : family === 'east-izol' ? { minX: 380, maxX: 880, minZ: 1340, maxZ: 2180 } : family === 'babon' ? { minX: -2120, maxX: -1030, minZ: 2650, maxZ: 3390 } : family === 'legemum' ? { minX: -2480, maxX: -1790, minZ: 1460, maxZ: 2000 } : { minX: -1010, maxX: -590, minZ: 2180, maxZ: 2606 })) {
       const d = landDistance(x, z);
       if (d < 0 || d > 3) continue;
       const answer = shoreTintOf(family, x, z, d);

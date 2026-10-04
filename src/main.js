@@ -64,6 +64,8 @@ import { NORTH_CELDER_VIEWS, NORTH_CELDER_ARRIVAL, NORTH_CELDER_LANDMARKS, NORTH
 import { EAST_IZOL_VIEWS, EAST_IZOL_ARRIVAL, EAST_IZOL_LANDMARKS, EAST_IZOL_TRAILS } from './east-izol-world.js';
 import { EAST_WILDLIFE_REVIEW, eastWildlifeReview } from './east-izol-wildlife-review.js';
 import { ALEZHOR_VIEWS, ALEZHOR_ARRIVAL, ALEZHOR_LANDMARKS, ALEZHOR_TRAILS } from './alezhor-world.js';
+import { SOUTH_IBENAL_VIEWS, SOUTH_IBENAL_ARRIVAL, SOUTH_IBENAL_LANDMARKS, SOUTH_IBENAL_TRAILS } from './south-ibenal-world.js';
+import { NORTH_IBENAL_VIEWS, NORTH_IBENAL_ARRIVAL, NORTH_IBENAL_LANDMARKS, NORTH_IBENAL_TRAILS } from './north-ibenal-world.js';
 import { REGION_IDS as CELDER_REGION_IDS } from './region-world.js';
 import { AEVIS_SOLDIERS, createAevisSoldier } from './aevis-soldiers.js';
 import { atlasRevealedCityMarks } from './world-map-detail.js';
@@ -10280,7 +10282,7 @@ async function init() {
             reviewTarget=new THREE.Vector3(at.x,at.y,at.z);yaw=Math.atan2(eye.x-at.x,eye.z-at.z);pitch=Math.atan2(eye.y-at.y,Math.hypot(eye.x-at.x,eye.z-at.z));distance=targetDistance=Math.hypot(eye.x-at.x,eye.y-at.y,eye.z-at.z);westLife.setObserver(eye);settleCamera();return {at,eye};};
           const pending=pendingRegions([63]);return pending.length?waitForRegions(pending,showPlant):showPlant();
         }
-        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')||view.startsWith('babon')||view.startsWith('south-celder')||view.startsWith('north-celder')||view.startsWith('east-izol')||view.startsWith('alezhor')){
+        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')||view.startsWith('babon')||view.startsWith('south-celder')||view.startsWith('north-celder')||view.startsWith('east-izol')||view.startsWith('alezhor')||view.startsWith('south-ibenal')||view.startsWith('north-ibenal')){
           const cfg=view.startsWith('east-pyros')?{id:57,name:'East Pyros',field:'eastPyros',arrival:EAST_PYROS_ARRIVAL,landmarks:EAST_PYROS_LANDMARKS,trails:EAST_PYROS_ROUTES,views:EAST_PYROS_VIEWS}:
             view.startsWith('nether-desert')?{id:58,name:'Nether Desert',field:'netherDesert',arrival:NETHER_DESERT_ARRIVAL,landmarks:NETHER_DESERT_LANDMARKS,trails:NETHER_DESERT_TRAILS,views:NETHER_DESERT_VIEWS}:
             view.startsWith('legemum')?{id:59,name:'Legemum',field:'legemum',arrival:LEGEMUM_ARRIVAL,landmarks:LEGEMUM_LANDMARKS,trails:LEGEMUM_TRAILS,views:LEGEMUM_VIEWS}:
@@ -10288,6 +10290,8 @@ async function init() {
             view.startsWith('north-celder')?{id:CELDER_REGION_IDS['North Celder'],name:'North Celder',field:'northCelder',arrival:NORTH_CELDER_ARRIVAL,landmarks:NORTH_CELDER_LANDMARKS,trails:NORTH_CELDER_TRAILS,views:NORTH_CELDER_VIEWS}:
             view.startsWith('east-izol')?{id:CELDER_REGION_IDS['East Izol'],name:'East Izol',field:'eastIzol',arrival:EAST_IZOL_ARRIVAL,landmarks:EAST_IZOL_LANDMARKS,trails:EAST_IZOL_TRAILS,views:EAST_IZOL_VIEWS}:
             view.startsWith('alezhor')?{id:CELDER_REGION_IDS['Alezhor'],name:'Alezhor',field:'alezhor',arrival:ALEZHOR_ARRIVAL,landmarks:ALEZHOR_LANDMARKS,trails:ALEZHOR_TRAILS,views:ALEZHOR_VIEWS}:
+            view.startsWith('south-ibenal')?{id:CELDER_REGION_IDS['South Ibenal'],name:'South Ibenal',field:'southIbenal',arrival:SOUTH_IBENAL_ARRIVAL,landmarks:SOUTH_IBENAL_LANDMARKS,trails:SOUTH_IBENAL_TRAILS,views:SOUTH_IBENAL_VIEWS}:
+            view.startsWith('north-ibenal')?{id:CELDER_REGION_IDS['North Ibenal'],name:'North Ibenal',field:'northIbenal',arrival:NORTH_IBENAL_ARRIVAL,landmarks:NORTH_IBENAL_LANDMARKS,trails:NORTH_IBENAL_TRAILS,views:NORTH_IBENAL_VIEWS}:
             {id:60,name:'Babon',field:'babon',arrival:BABON_ARRIVAL,landmarks:BABON_LANDMARKS,trails:BABON_TRAILS,views:BABON_VIEWS};
           const showEnvironment=async()=>{
             prepareTesting();stopAutopilot();closeDialogue();questStage=QUEST_DONE;combat.finishPractice();testGoTo(cfg.arrival,cfg.name,'');
@@ -10296,7 +10300,7 @@ async function init() {
             const checks=runWesternEnvironmentChecks(world,westLife,cfg);(window.__westernEnvironmentChecks??={})[cfg.name]=checks;
             let shot=cfg.views[view];
             if(view.endsWith('-wildlife')){
-              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':cfg.id===60?'babon-giant-monitor':cfg.name.endsWith('Celder')?'frostback':cfg.name==='East Izol'?'gull':cfg.name==='Alezhor'?'otter':'red-deer';
+              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':cfg.id===60?'babon-giant-monitor':cfg.name.endsWith('Celder')?'frostback':cfg.name==='East Izol'?'gull':cfg.name==='Alezhor'?'otter':cfg.name==='South Ibenal'?'forest-cat':cfg.name==='North Ibenal'?'grey-seal':'red-deer';
               const animal=westLife.snapshot().creatures.find(a=>a.region===cfg.name&&a.species===species);
               if(!animal)throw new Error(`${cfg.name}: no ${species} to review`);
               const ground=world.heightAt(animal.x,animal.z),close=species==='spine-lizard';
