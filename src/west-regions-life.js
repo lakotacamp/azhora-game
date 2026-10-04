@@ -1,6 +1,7 @@
 import { EAST_PYROS_WILDLIFE_ZONES } from './east-pyros-wildlife.js';
 import { NETHER_DESERT_WILDLIFE_ZONES } from './nether-desert-wildlife.js';
 import { LEGEMUM_WILDLIFE_ZONES } from './legemum-wildlife.js';
+import { BABON_WILDLIFE_ZONES } from './babon-wildlife.js';
 import * as THREE from 'three';
 import {WEST_OREMINDI_WILDLIFE_ZONES} from './west-oremindi-wildlife.js';
 import {BALDRO_WILDLIFE_ZONES} from './baldro-wildlife.js';
@@ -108,6 +109,47 @@ function wader(t) {
 function modelFactories() {
   const dark = 0x241f1a;
   return {
+    // A heavy island apex reptile, modelled at its own eight-metre scale. It is
+    // not a scaled desert lizard: broad jaws, thick thighs and a muscular tail
+    // carry its weight while the small amber eyes follow a nearby traveler.
+    'babon-giant-monitor': () => ({
+      body: geometry([
+        S(0x52634b,[0,1.27,0],[.91,.60,1.62]), S(0x7c8660,[0,.90,.18],[.71,.27,1.42]),
+        S(0x5d7051,[0,1.36,1.22],[.64,.49,.70]),
+        ...Array.from({length:7},(_,i)=>R(i%2?0x394a38:0x697754,[0,1.79,-1.30+i*.41],[.28,.20,.24])),
+        ...both(side=>Array.from({length:6},(_,i)=>R(i%2?0x87936d:0x354632,[side*.77,1.39,-1.14+i*.45],[.14,.20,.18]))).flat(),
+      ]),
+      head: geometry([
+        R(0x718061,[0,.05,.26],[.59,.38,.76]), R(0x82916b,[0,-.04,.98],[.49,.23,.56]),
+        B(0x293c2b,[0,-.19,1.03],[.91,.045,.89]), R(0x9a9e76,[0,-.27,.92],[.43,.13,.55]),
+        ...both(side=>S(0xb9a956,[side*.49,.18,.57],[.086,.073,.11])),
+        ...both(side=>B(0x1a2117,[side*.534,.18,.608],[.032,.104,.069])),
+        ...both(side=>S(0x283324,[side*.29,.11,1.35],[.057,.035,.061])),
+        ...both(side=>B(0xc6bb8d,[side*.36,-.20,1.27],[.055,.075,.10])),
+      ]),
+      leg: geometry([
+        S(0x516147,[0,-.26,.02],[.29,.39,.37]), Y(0x74805a,[0,-.68,.10],[.16,.47,.17]),
+        R(0x73805a,[0,-.99,.25],[.36,.13,.45]),
+        ...[-1,0,1].map(side=>C(0x31382a,[side*.22,-.985,.63],[.065,.33,.065],[Math.PI/2,0,0])),
+      ]),
+      tail: geometry([
+        S(0x4f6347,[0,-.04,-.64],[.60,.34,.94]), S(0x657751,[0,-.13,-1.80],[.33,.22,.98]),
+        C(0x465a3e,[0,-.17,-2.96],[.20,1.17,.16],[-Math.PI/2,0,0]),
+        ...Array.from({length:5},(_,i)=>R(0x334b36,[0,.20-i*.042,-.38-i*.50],[.16-i*.018,.12,.21])),
+      ]),
+    }),
+    'babon-canopy-hornbill': () => ({
+      body: geometry([
+        S(0x253d32,[0,0,0],[.17,.18,.38]), S(0xd8cc9c,[0,-.01,-.49],[.15,.048,.39]),
+        S(0x283d30,[0,.21,.24],[.12,.21,.14]), S(0x25382c,[0,.37,.31],[.15,.14,.17]),
+        C(0xc9b668,[0,.34,.64],[.115,.55,.11],[Math.PI/2,0,0]),
+        R(0xeee0aa,[0,.49,.49],[.125,.12,.25]),
+        ...both(side=>S(0xdec577,[side*.13,.40,.38],[.025,.026,.03])),
+        ...both(side=>S(0x101d16,[side*.148,.40,.394],[.013,.017,.016])),
+      ]),
+      wing: geometry([R(0x243b32,[.37,0,-.04],[.39,.055,.30]), R(0xcac596,[.78,-.018,-.10],[.34,.039,.25]),
+        R(0x1e352d,[1.01,-.015,-.17],[.21,.028,.21])]),
+    }),
     'road-fox': () => ({
       body: geometry([
         S(0x95775a,[0,.29,-.02],[.13,.15,.30]),S(0xd0b999,[0,.23,.06],[.105,.08,.23]),
@@ -1314,6 +1356,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   // The kingdom's cattle on the Galmeth (src/telemonia-ways.js): Telemonia, stage 2.
   ...TELEMONIA_HERD_ZONES,
   ...EAST_PYROS_WILDLIFE_ZONES, ...NETHER_DESERT_WILDLIFE_ZONES, ...LEGEMUM_WILDLIFE_ZONES,
+  ...BABON_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -1369,6 +1412,7 @@ const CIRCLE_RADIUS = 46, CIRCLE_PERIOD = 27;
  * whole of how it is told from anything else in the sky, so it is the loudest of the three.
  */
 const SOAR = Object.freeze({
+  'babon-canopy-hornbill': { slow: .9, rock: .08, dihedral: .12 },
   'plateau-hawk': { slow: .4, rock: .12, dihedral: .16 },
   'oremindi-mountain-eagle': { slow: .3, rock: .09, dihedral: .10 },
   'turkey-vulture': { slow: .26, rock: .16, dihedral: .26 },
@@ -1502,7 +1546,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     const water = westWaterSurface(x, z) ?? world.waterAt?.(x, z) ?? null;
     return water === null ? ground : Math.max(ground, water - .04);
   };
-  const renderedFootingRegions = new Set(['East Pyros', 'Nether Desert', 'Legemum']);
+  const renderedFootingRegions = new Set(['East Pyros', 'Nether Desert', 'Legemum', 'Babon']);
   function visualFootingY(animal) {
     const y = animal.y + animal.lift, zone = animal.zone;
     if (!world.renderedGroundHeight || !renderedFootingRegions.has(zone.region)
@@ -1592,6 +1636,7 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
       animals.length * (BIRD_RIG[zone.species] ? 2 : 4));
     if (shape.ear) meshes.ears = instances(group, `${zone.species} ears`, shape.ear, animals.length * 2);
     if (shape.wing) meshes.wings = instances(group, `${zone.species} wings`, shape.wing, animals.length * 2);
+    if (shape.tail) meshes.tail = instances(group, `${zone.species} tails`, shape.tail, animals.length);
     flock.meshes = meshes;
   }
 
@@ -1726,6 +1771,7 @@ const FLEE_AT = {
     ghubr: 10
 };
 const WALK = {
+    'babon-giant-monitor': .72,
     'road-fox':1.1,'spine-lizard':.5,
     'oremindi-snowgoat': .65,
     longhorn: .42,
@@ -1810,6 +1856,7 @@ const RUN = {
   const SHUT = Object.freeze({ notice: 7, hold: 2.6 });
   /** Going home is a purposeful walk, not a graze: a band chased a hundred metres is back in a minute or two. */
 const RETURN = {
+    'babon-giant-monitor': .92,
     'road-fox':2.2,'spine-lizard':1.4,
     'oremindi-snowgoat': 1.8,
     longhorn: 1.3,
@@ -1971,11 +2018,44 @@ const RETURN = {
     return best.yaw;
   }
 
+  function tickIslandMonitor(animal, dt, player, near) {
+    const homeDistance = Math.hypot(animal.x - animal.home.x, animal.z - animal.home.z);
+    const toward = Math.atan2(player.x - animal.x, player.z - animal.z);
+    let heading = animal.yaw, pace = 0;
+    if (near < 19) {
+      animal.watching = Math.min(1, animal.watching + dt);
+      animal.action = near < 5.5 ? 'display' : near > 9 && homeDistance < 24 ? 'stalk' : 'watch';
+      heading = toward;
+      if (animal.action === 'stalk') pace = .78;
+    } else {
+      animal.watching = Math.max(0, animal.watching - dt * .6);
+      if (homeDistance > 18) {
+        animal.action = 'return'; pace = .92;
+        heading = Math.atan2(animal.home.x - animal.x, animal.home.z - animal.z);
+      } else if (Math.floor(animal.clock / 9 + animal.index) % 3 === 0) animal.action = 'bask';
+      else {
+        animal.action = 'walk'; pace = .72;
+        heading = animal.yaw + Math.sin(animal.clock * .19 + animal.index) * .25;
+      }
+    }
+    animal.yaw += angleDelta(heading, animal.yaw) * Math.min(1, dt * .85);
+    if (pace && Math.abs(angleDelta(heading, animal.yaw)) < .8) {
+      const yaw = animal.yaw, sx = Math.sin(yaw), sz = Math.cos(yaw);
+      // A long reptile must fit its shoulders and tail through the same gap.
+      const support = (x, z, zone) => valid(x,z,zone) && valid(x+sx*1.8,z+sz*1.8,zone)
+        && valid(x-sx*2.5,z-sz*2.5,zone);
+      animal.speed = move(animal, pace * dt, { offsets:[0], footing:support }) / dt;
+      if (!animal.speed) animal.yaw = yaw + dt * .65;
+    }
+    animal.y = footingY(animal.x, animal.z, animal.zone);
+  }
+
   function tickGround(animal, dt, player, flock, motion) {
     animal.clock += dt; animal.timer -= dt; animal.lastSpeed = animal.speed; animal.speed = 0;
     animal.calmFor = Math.max(0, (animal.calmFor || 0) - dt);
     if (animal.calmFor > 0) { animal.action = 'graze'; return; }
     const species = animal.species, near = Math.hypot(animal.x - player.x, animal.z - player.z);
+    if (species === 'babon-giant-monitor') { tickIslandMonitor(animal, dt, player, near); return; }
     let wheeling = false;
     animal.cornered = Math.max(0, animal.cornered - dt);
     // In the air or under the water there is nowhere the traveler can follow.
@@ -2278,13 +2358,33 @@ const RETURN = {
     if (!flock.meshes) return;
     const species = flock.zone.species;
     flock.animals.forEach((animal, i) => {
-      // Only a plunging bird ever pitches; for everything else this is the yaw it has always been.
+      // Plunging birds pitch into dives; the large monitor follows the actual
+      // rendered slope so its long body does not cut through an uphill bank.
       rotation.setFromEuler(new THREE.Euler(animal.pitch || 0, animal.yaw, 0, 'YXZ'));
+      if (species === 'babon-giant-monitor') {
+        // A long, low animal visibly spans more of a hillside than a deer.
+        // Align its drawing with that slope so its tail and uphill feet do not
+        // disappear beneath the mesh; the movement body remains unchanged.
+        const h = world.renderedGroundHeight ?? world.heightAt, sx = Math.sin(animal.yaw), sz = Math.cos(animal.yaw);
+        const forward = h(animal.x+sx*2.5,animal.z+sz*2.5)-h(animal.x-sx*2.5,animal.z-sz*2.5);
+        const right = h(animal.x+sz*1.1,animal.z-sx*1.1)-h(animal.x-sz*1.1,animal.z+sx*1.1);
+        rotation.setFromEuler(new THREE.Euler(-Math.atan2(forward,5),animal.yaw,Math.atan2(right,2.2),'YXZ'));
+      }
       unit.setScalar(animal.hidden ? 1e-4 : animal.scale);   // an otter under the water is not drawn
       rootMatrix.compose(new THREE.Vector3(animal.x, visualFootingY(animal), animal.z), rotation, unit);
       const walking = animal.speed > .05, phase = animal.clock * (animal.action === 'flee' ? 13 : 7);
       const breath = Math.sin(animal.clock * 2.1) * .012;
       place(flock.meshes.body, i, 0, 0, 0, 0, 0, 0, 1, 1 + breath, 1);
+      if (species === 'babon-giant-monitor') {
+        const displaying = animal.action === 'display', stride = animal.clock * 2.2;
+        place(flock.meshes.body,i,0,0,0,0,0,0,1,1+breath+(displaying?.045:0),1);
+        place(flock.meshes.head,i,0,displaying?1.66:1.40,1.42,displaying?-.10:.045,
+          Math.sin(animal.clock*.63)*.055);
+        for(let leg=0;leg<4;leg++)place(flock.meshes.legs,i*4+leg,leg%2?.99:-.99,1.13,leg<2?1.05:-1.04,
+          walking?Math.sin(stride+(leg===0||leg===3?0:Math.PI))*.25:0,0,leg%2?-.09:.09);
+        place(flock.meshes.tail,i,0,1.22,-1.40,0,Math.sin(animal.clock*.58)*.105+(walking?Math.sin(stride)*.065:0));
+        return;
+      }
       // Everything that soars: a body, two wings and no limb that touches the ground,
       // because neither of these birds is ever seen anywhere but in the air. The
       // vulture is on the hawk's rig with a wider wing and a slower tilt to it — that
@@ -2298,7 +2398,8 @@ const RETURN = {
         // A plunger folding for the dive sweeps its wings straight back along its body; climbing off
         // the water it beats. Both are nothing on every other bird that soars, whose wings are placed
         // exactly as they always were.
-        const fold = animal.fold || 0, beat = animal.action === 'climb' ? Math.sin(animal.clock * 9) * .5 : 0;
+        const fold = animal.fold || 0, beat = animal.action === 'climb' ? Math.sin(animal.clock * 9) * .5
+          : species === 'babon-canopy-hornbill' && Math.sin(animal.clock*.7) > -.15 ? Math.sin(animal.clock*8)*.36 : 0;
         for (let side = 0; side < 2; side++) place(flock.meshes.wings, i * 2 + side,
           side ? -.06 : .06, .01, -.01, 0, side ? Math.PI - fold * 1.3 : fold * 1.3,
           (side ? -1 : 1) * ((dihedral + tilt) * (1 - fold) + beat + fold * .2));

@@ -227,13 +227,14 @@ test('points resolve to regions and cells, and the world bounds enclose all play
    */
   assert.deepEqual(worldBoundsFor(survey, HEX_WORLD_TRANSFORM, PLAYABLE_REGIONS.filter(name => name !== 'Telemonia')), bounds,
     'the Telemon highland moves the world box');
-  // Baldro extends the north-east corner: 68.2 hexes wide and 71.6367 tall.
+  // Baldro sets the north/east edges. Babon extends the south by two atlas rows
+  // (173.205 m), to z3437.632: 68.2 hexes wide and 73.3688 tall.
   assert.ok(bounds.maxX - bounds.minX < 68.3 * METRES_PER_HEX, 'the playable regions fit a walkable world east to west');
-  assert.ok(bounds.maxZ - bounds.minZ < 71.7 * METRES_PER_HEX, 'and north to south');
+  assert.ok(bounds.maxZ - bounds.minZ < 73.4 * METRES_PER_HEX, 'and north to south');
   // And it is a budget rather than a shrug: a country that widened the world without
   // anybody noticing would sail through a guard with room in it.
   assert.ok(bounds.maxX - bounds.minX > 68.1 * METRES_PER_HEX, 'the world is narrower than the budget says: raise nothing, lower this');
-  assert.ok(bounds.maxZ - bounds.minZ > 71.5 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
+  assert.ok(bounds.maxZ - bounds.minZ > 73.3 * METRES_PER_HEX, 'the world is shorter than the budget says: raise nothing, lower this');
 });
 
 /**

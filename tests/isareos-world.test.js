@@ -116,7 +116,8 @@ test('Isareos is the country that spent most of the hex budget', () => {
   // and the first time somebody else's country moved it. Isareos's rim at -2850 is seventeen hundred
   // metres inside it now, and the point of the line is unchanged: nothing here moved when the edge did.
   // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
-  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 73.369 hexes, the window's maxQ 60 and minR 59.
+  // Babon now sets the southern edge at z3437.632, two atlas rows beyond Trogo.
   // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
   assert.ok(wide > 68.1 && wide < 68.3, `the world is ${wide.toFixed(2)} hexes wide`);
   // North to south was 30.93 hexes, set by West Izol and Amod, and nothing here touched it; the
@@ -127,7 +128,7 @@ test('Isareos is the country that spent most of the hex budget', () => {
   // ...and 53.450 since the four Meroshe deserts carried the world south to z = 3177.824
   // (docs/southwest-2-report.md), which this country is nowhere near either.
   // ...and 54.316 since Trogo carried it south again to z = 3264.426 (docs/southwest-4-report.md).
-  assert.ok(Math.abs(tall - 71.637) < .01, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
+  assert.ok(Math.abs(tall - 73.369) < .01, `north to south is ${tall.toFixed(2)} hexes: nothing here touched it`);
 });
 
 test('low hills, not quite highlands, blurring into the two countries either side of them', () => {

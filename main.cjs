@@ -535,7 +535,7 @@ if (ownsInstance) app.whenReady().then(async () => {
           fs.writeFileSync(path.join(artifactDir,`${shotName(view)}.${reviewJpeg?'jpg':'png'}`),reviewJpeg?picture.toJPEG(82):picture.toPNG());
           console.log(view,JSON.stringify(await win.webContents.executeJavaScript('window.__AZHORA__.camera?.()')));
         }
-        if(reviewViews.some(view=>view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum'))){
+        if(reviewViews.some(view=>view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')||view.startsWith('babon'))){
           const checks=await win.webContents.executeJavaScript('window.__westernEnvironmentChecks');
           fs.writeFileSync(path.join(artifactDir,'western-environments-checks.json'),JSON.stringify({regions:checks,errors},null,2));
           console.log(JSON.stringify({westernEnvironments:checks,errors},null,2));

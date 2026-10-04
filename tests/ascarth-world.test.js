@@ -150,12 +150,13 @@ test('the survey window reaches exactly as far south as the coast lattice does, 
   // Trogo then carried it south again, from 3177.824 to **3264.4264805429416** and the height from 53.450 hexes to **54.316** (docs/southwest-4-report.md): its three southernmost hexes
   // are on row 142, their lower vertices a circumradius past centres at z = 3146.69. The peninsula has not
   // set the southern edge since job 2 and sets it less now; what it still sets is nothing at all here.
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `the southern edge is ${WORLD_BOUNDS.maxZ}`);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3437.6315612998296) < 1e-6, `the southern edge is ${WORLD_BOUNDS.maxZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
-  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 73.369 hexes, the window's maxQ 60 and minR 59.
+  // Babon now sets the southern edge at z3437.632, two atlas rows beyond Trogo.
   // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
-  assert.ok(Math.abs(tall - 71.637) < .002, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 73.369) < .002, `north to south is ${tall.toFixed(3)} hexes`);
   assert.ok(WORLD_BOUNDS.maxZ > hexCentre(-6, 132).z + 57.7 + 59);
   assert.ok(WORLD_BOUNDS.maxZ - (hexCentre(-6, 132).z + 57.7) > 700, 'the peninsula no longer sets the edge');
   // And the window still stops where the lattice does at both ends: 79 in the north now, 145 here.

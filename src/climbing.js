@@ -1,4 +1,4 @@
-/** Free climbing in Suval, both Lotharn ranges, Feradom's hills, South/West Oremindi, Baldro and the Telemon highland.
+/** Free climbing in Suval, both Lotharn ranges, Feradom's hills, South/West Oremindi, Baldro, the Telemon highland and Babon's jungle cliffs.
  * This controller owns no input, rendering or saved state.
  * Feet follow the actual heightfield; only the exposed bedrock skins cease to be obstacles.
  * Walls, frontier rocks, water, trees and people remain solid at every substep, and a face the world marks
@@ -9,7 +9,7 @@ export const CLIMBING = Object.freeze({ grabSlope: .9, restSlope: .6, maxSlope: 
 // Telemonia is here by name only (docs/telemonia-stage1-brief.md): its number is written in `REGION_IDS` and nowhere
 // else, because it is renumbered the day it lands, and every caller in the game asks `world.regionAt`, which answers
 // the region itself - so `r.name` finds it. Its rim's cliff bands are what stop a walker there (src/telemonia-world.js).
-const CLIMB_REGIONS = new Set([56, 'West Oremindi Mountains', 4, 5, 18, 20, 21, 27, 37, 52, 53, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains', 'West Baldro Mountains', 'East Baldro Mountains', 'Telemonia']);
+const CLIMB_REGIONS = new Set([56, 'West Oremindi Mountains', 4, 5, 18, 20, 21, 27, 37, 52, 53, 'East Suval', 'West Suval', 'South Suval', 'East Lotharn Mountains', 'Feradom', 'West Lotharn Mountains', 'South Oremindi Mountains', 'West Baldro Mountains', 'East Baldro Mountains', 'Telemonia', 60, 'Babon']);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const copy = p => p ? { x: p.x, y: p.y, z: p.z } : null;
 const finite = p => p && Number.isFinite(p.x) && Number.isFinite(p.z);

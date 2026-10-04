@@ -151,7 +151,7 @@ test('botanical specimens and every shared forest trunk have explicit timber ide
     assert.equal(tree.log, WOOD_SPECIES[tree.species].log);
   }
   for (const tree of [...world.broadleafTrees, ...world.regionalBroadleafTrees]) {
-    assert.match(tree.id, /^(oak-|country-oak-|avrel-edge-)/);
+    assert.match(tree.id, /^(oak-|country-oak-|avrel-edge-|drent-peninsula-)/);
     assert.equal(tree.species, 'white-oak', 'existing acorn-bearing oak trees keep their identity');
     assert.equal(world.timberTrees.find(t => t.id === tree.id).woodKind, 'oak');
   }

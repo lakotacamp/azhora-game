@@ -37,6 +37,10 @@ export const SWING = 1.3, CHOP_REACH = 2.7;
  */
 const kind = (id, name, short, level, xp, chance, logs, regrow, price, trunk) => freeze({ ...timberForKind(id), id, name, short, level, xp, chance, logs: freeze(logs), regrow, price, trunk });
 export const TREE_KINDS = freeze({
+  kapok: kind('kapok', 'Kapok', 'kapok', 15, 38, .34, [2, 4], 40, 2, .6),
+  'strangler-fig': kind('strangler-fig', 'Strangler fig', 'strangler fig', 15, 38, .34, [2, 4], 40, 2, .55),
+  'coconut-palm': kind('coconut-palm', 'Coconut palm', 'coconut palm', 1, 25, .52, [1, 2], 25, 1, .3),
+  mahogany: kind('mahogany', 'Mahogany', 'mahogany', 45, 100, .2, [3, 6], 75, 5, .5),
   pine: kind('pine', 'Loblolly pine', 'pine', 1, 25, .52, [1, 1], 25, 1, .32),
   oak: kind('oak', 'White oak', 'oak', 15, 38, .34, [2, 4], 40, 2, .45),
   willow: kind('willow', 'Black willow', 'willow', 30, 68, .28, [3, 6], 55, 3, .4),

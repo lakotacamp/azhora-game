@@ -615,11 +615,11 @@ test('both tint tables reach the screen on the island: its own colours inland, a
   assert.ok(GROUND_TINT_FAMILIES.includes('selemis'), 'the island has a row in the ground table');
   // **The shore table's guard**: exactly these rows, and every one of them puts stone on its own
   // country's shore and nothing on the other's. A row that quietly stops painting says so with its id.
-  assert.deepEqual([...SHORE_TINT_FAMILIES], ['ascarth', 'selemis', 'legemum'], 'a row was added to the shore table without a line here');
-  const probes = { ascarth: ASCARTH_TIP, selemis: SELEMI, legemum: 'Legemum' };
+  assert.deepEqual([...SHORE_TINT_FAMILIES], ['ascarth', 'selemis', 'legemum', 'babon'], 'a row was added to the shore table without a line here');
+  const probes = { ascarth: ASCARTH_TIP, selemis: SELEMI, legemum: 'Legemum', babon: 'Babon' };
   for (const family of SHORE_TINT_FAMILIES) {
     let stone = 0, strays = 0;
-    for (const [x, z] of lattice(2, family === 'legemum' ? { minX: -2480, maxX: -1790, minZ: 1460, maxZ: 2000 } : { minX: -1010, maxX: -590, minZ: 2180, maxZ: 2606 })) {
+    for (const [x, z] of lattice(2, family === 'babon' ? { minX: -2120, maxX: -1030, minZ: 2650, maxZ: 3390 } : family === 'legemum' ? { minX: -2480, maxX: -1790, minZ: 1460, maxZ: 2000 } : { minX: -1010, maxX: -590, minZ: 2180, maxZ: 2606 })) {
       const d = landDistance(x, z);
       if (d < 0 || d > 3) continue;
       const answer = shoreTintOf(family, x, z, d);

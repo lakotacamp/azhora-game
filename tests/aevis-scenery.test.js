@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { sourceModule } from './module-loader.js';
-import { AEVIS, AEVIS_BUILDINGS, AEVIS_GATES, AEVIS_PATHS, AEVIS_QUAYS, AEVIS_BOATS, aevisGround, aevisDeckHeight } from '../src/aevis-city.js';
+import { AEVIS, AEVIS_BUILDINGS, AEVIS_GATES, AEVIS_PATHS, AEVIS_QUAYS, AEVIS_BOATS, AEVIS_OUTLINE, AEVIS_WALL_EDGES, aevisDeckHeight } from '../src/aevis-city.js';
 import { groundWithRiver } from '../src/world-terrain.js';
 
 const THREE=await sourceModule('../vendor/three.module.js');
 const {createAevisScenery}=await sourceModule('../src/aevis-scenery.js');
+const {checkAevisDefenses}=await sourceModule('../src/aevis-smoke.js');
 const {AEVIS_SOLDIERS,createAevisSoldier}=await sourceModule('../src/aevis-soldiers.js');
-const terrain=(x,z)=>aevisGround(x,z,groundWithRiver(x,z));
-const heightAt=(x,z)=>Math.max(terrain(x,z),aevisDeckHeight(x,z)??-Infinity);
+const terrain=groundWithRiver;
+const heightAt=(x,z)=>aevisDeckHeight(x,z)??terrain(x,z);
 const colliders=[],city=createAevisScenery({parent:new THREE.Group(),colliders,heightAt:terrain});
 const blocked=(x,z)=>{const feet=heightAt(x,z);return colliders.find(c=>c.minY<=feet+1.8&&c.maxY>=feet&&(c.r!==undefined
   ?Math.hypot(x-c.x,z-c.z)<c.r+.55:Math.abs(x-c.x)<c.hx+.55&&Math.abs(z-c.z)<c.hz+.55));};
@@ -40,7 +41,16 @@ test('Land gates, civic approaches, harbor access and soldiers are reachable on 
 });
 
 test('Eastern harbor is open to sea and piers have supported walk surfaces',()=>{
-  assert.ok(!city.root.children.some(m=>/Cyclopean curtain [23]$/.test(m.name)));
+  for(let edge=0;edge<AEVIS_OUTLINE.length;edge++){
+    if(AEVIS_WALL_EDGES.includes(edge))continue;
+    assert.ok(!city.root.children.some(m=>m.name===`Aevis - Cyclopean curtain ${edge}`));
+    const a=AEVIS_OUTLINE[edge],b=AEVIS_OUTLINE[(edge+1)%AEVIS_OUTLINE.length];
+    for(const t of [.3,.5,.7]){
+      const x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;
+      assert.equal(colliders.find(c=>['aevis-wall','city-tower','gate-arch'].includes(c.kind)
+        &&(c.r!==undefined?Math.hypot(x-c.x,z-c.z)<c.r:Math.abs(x-c.x)<c.hx&&Math.abs(z-c.z)<c.hz)),undefined,'Seaward curtain blocks the harbor');
+    }
+  }
   assert.equal(city.walkSurfaces.length,AEVIS_QUAYS.length);
   for(const q of AEVIS_QUAYS){
     const deck=city.walkSurfaces.find(s=>s.id===`${q.id}-deck`);
@@ -49,7 +59,18 @@ test('Eastern harbor is open to sea and piers have supported walk surfaces',()=>
     const hull=colliders.find(c=>c.id===q.id);
     assert.ok(hull.maxY<q.elevation,'solid pier stops below its walk surface');
   }
-  for(let z=1765;z<=1795;z+=5)assert.equal(colliders.find(c=>['aevis-wall','city-tower','gate-arch'].includes(c.kind)&&Math.abs(c.x+1064)<4&&Math.abs(c.z-z)<4),undefined,'seaward curtain blocks the harbor');
+});
+
+test('The full land circuit blocks walking bypasses and terminates in the real sea',()=>{
+  const world={heightAt,colliders,bounds:{minX:-10000,maxX:10000,minZ:-10000,maxZ:10000}};
+  const defense=checkAevisDefenses(world);
+  assert.deepEqual(defense.failures,[]);assert.equal(defense.ok,true);
+  assert.equal(defense.coastalEnds,2);assert.ok(defense.wallSamples>250);
+  assert.ok(defense.exteriorVisited>100,'The bypass search must test usable land outside the gates.');
+  for(const c of colliders.filter(c=>['aevis-wall','city-tower'].includes(c.kind))){
+    assert.ok(c.minY<terrain(c.x,c.z)-.5,'A wall foundation must reach below its ground or seabed.');
+    assert.ok(c.maxY>18,'A coastal wall must stay high above the sea.');
+  }
 });
 
 test('Avite soldiers use jointed bronze armor, distinct shields and no headwear',()=>{

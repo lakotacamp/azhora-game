@@ -158,6 +158,9 @@ import { createNetherDesertScenerySteps } from './nether-desert-scenery.js';
 import { NETHER_DESERT_LANDMARKS } from './nether-desert-world.js';
 import { createLegemumScenerySteps } from './legemum-scenery.js';
 import { LEGEMUM_LANDMARKS } from './legemum-world.js';
+import { BABON_LANDMARKS, BABON_RIVERS, babonWaterAt, babonOwns } from './babon-world.js';
+import { createBabonScenerySteps } from './babon-scenery.js';
+import { refineBabonGroundSteps } from './babon-ground.js';
 import { TELEMONIA_LANDMARKS, telemoniaTerrainSink } from './telemonia-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
@@ -398,8 +401,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   }
   let roadHeightAt = () => null;
   let portGroundAt = (x,z) => groundHeight(x,z);
-  let southOremindiSurface=null,baldroSurface=null,westOremindiSurface=null;
+  let southOremindiSurface=null,baldroSurface=null,westOremindiSurface=null,babonSurface=null;
   function heightAt(x, z) {
+    if(babonSurface&&babonOwns(x,z))return babonSurface(x,z);
     if(westOremindiSurface&&westOremindiOwns(x,z))return westOremindiSurface(x,z);
     if(baldroSurface&&baldroOwns(x,z))return baldroSurface(x,z);
     if(southOremindiSurface&&southOremindiOwns(x,z))return southOremindiSurface(x,z);
@@ -1652,6 +1656,10 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const eastPyros=yield* regionBuild('eastPyros',[57],stage=>createEastPyrosScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:treeGroundAt,colliders}),{metrics:{},update:()=>{}});
   const netherDesert=yield* regionBuild('netherDesert',[58],stage=>createNetherDesertScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:treeGroundAt,colliders}),{metrics:{}});
   const legemum=yield* regionBuild('legemum',[59],stage=>createLegemumScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:treeGroundAt,colliders}),{metrics:{}});
+  const babonGround=yield* regionBuild('babonGround',[60],stage=>refineBabonGroundSteps({THREE,terrainRoot,heightAt:groundHeight,coarseHeightAt:treeGroundAt}),{heightAt:groundHeight},built=>{babonSurface=built.heightAt;});
+  babonSurface=(x,z)=>babonGround.heightAt(x,z);
+  const babon=yield* regionBuild('babon',[60],stage=>createBabonScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:babonSurface,colliders}),{metrics:{}});
+  babon.ground=babonGround;
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   yield 'Roads and landmarks';
   const stakedProps = [];
@@ -2148,6 +2156,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const mapPoint = (x, z) => Object.freeze({ x, z });
   const seaEdge = shorePoints.map(spot => mapPoint(spot.x, spot.z));
   const mapWaters = Object.freeze([
+    ...BABON_RIVERS.map(river=>Object.freeze({id:river.id,kind:'polygon',points:Object.freeze([
+      ...river.samples.map(p=>mapPoint(p.x-p.nx*p.halfWidth,p.z-p.nz*p.halfWidth)),
+      ...[...river.samples].reverse().map(p=>mapPoint(p.x+p.nx*p.halfWidth,p.z+p.nz*p.halfWidth))])})),
     ...ibenwoodRivers.mapWaters,
     ...SOUTH_OREMINDI_LAKES.map(l=>Object.freeze({id:l.id,kind:'polygon',points:l.shore})),
     Object.freeze({ id: 'coast-water', kind: 'polygon', points: Object.freeze([...seaEdge,
@@ -2215,9 +2226,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const api = {
     loadingMode, loading, onRegionReady(listener){readyListeners.add(listener);return ()=>readyListeners.delete(listener);},
     menora, nylon, aevis, caricasSettlement, inquestHome, peninsulaTutorial,
-    heightAt, groundHeight, eastPyros, netherDesert, legemum, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater,
+    heightAt, groundHeight, eastPyros, netherDesert, legemum, babon, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater,
     // Displayed terrain triangles, for visual grounding only; collision still uses heightAt.
-    renderedGroundHeight: treeGroundAt,
+    renderedGroundHeight: (x,z)=>babonSurface&&babonOwns(x,z)?babonSurface(x,z):treeGroundAt(x,z),
     supportAt: forestWalks.supportAt, walkSurfaces: outdoorWalkSurfaces,
     roadSurfaceMetrics,
     mapWaters,
@@ -2248,7 +2259,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
      * the point is under both and the deeper of the two is what you are in.
      */
     waterAt(x, z) {
-      let surface = Math.max(WATERLINE,eastPyrosWaterAt(x,z)??WATERLINE,baldroWaterAt(x,z)??WATERLINE,ibenwoodRivers.waterAt(x,z)??WATERLINE,southOremindiWaterAt(x,z)??WATERLINE);
+      let surface = Math.max(WATERLINE,babonWaterAt(x,z)??WATERLINE,eastPyrosWaterAt(x,z)??WATERLINE,baldroWaterAt(x,z)??WATERLINE,ibenwoodRivers.waterAt(x,z)??WATERLINE,southOremindiWaterAt(x,z)??WATERLINE);
       for (const c of colliderGrid().near(x, z, 0)) {
         if (c.surface === undefined || c.r === undefined) continue;
         const dx = x - c.x, dz = z - c.z;
@@ -2484,7 +2495,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...SELEMIS_LANDMARKS,
       ...TELEMONIA_LANDMARKS,
       ...TELEMONIA_TOWN_LANDMARKS,
-      ...EAST_PYROS_LANDMARKS, ...NETHER_DESERT_LANDMARKS, ...LEGEMUM_LANDMARKS,
+      ...EAST_PYROS_LANDMARKS, ...NETHER_DESERT_LANDMARKS, ...LEGEMUM_LANDMARKS, ...BABON_LANDMARKS,
     ],
     paths,
     update(time, dt) {

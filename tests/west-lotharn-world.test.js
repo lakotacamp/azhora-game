@@ -121,14 +121,15 @@ test('this country does not grow the world box, and the four north of it do', ()
   // two hundred and fifty metres past Cape Heth's. Nothing of this range moved for that either.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
-  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 73.369 hexes, the window's maxQ 60 and minR 59.
+  // Babon now sets the southern edge at z3437.632, two atlas rows beyond Trogo.
   // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 2209.9980720608737) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -3899.2468035704924) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   // ...and the four Meroshe deserts took the south, 2398.401 -> 3177.824, which this range is two
   // and a half kilometres north of (docs/southwest-2-report.md).
   // ...and Trogo took it further south again, 3177.824 -> 3264.426 (docs/southwest-4-report.md).
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3437.6315612998296) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   // This range's own hexes are a long way inside the northern edge the Mithala set, and that edge
   // is the Mithala's: 866 m of new world north of where this country's own build left it.
   assert.ok(WORLD_BOUNDS.minZ < -2100 && Math.min(...cells.map(cell => cell.z)) - WORLD_BOUNDS.minZ > 1100);

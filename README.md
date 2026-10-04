@@ -367,6 +367,7 @@ New to the code? [docs/codebase-map.md](docs/codebase-map.md) is a guided map of
 
 | Module | Responsibility |
 | --- | --- |
+| `src/babon-world.js`, `src/babon-ground.js`, `src/babon-scenery.js`, `src/babon-wildlife.js` | Babon's jungle ridges, ancient tropical trees, natural routes and island fauna ([design and validation](docs/babon-environment.md)) |
 | `src/world.js`, `src/regions.js` | Terrain, regional layouts, paths, props, collision, fishing banks, landmarks, and completed-site visuals |
 | `src/startup.js`, `scripts/terrain-cache.cjs`, `scripts/profile-startup.cjs` | Staged initialization, validated desktop terrain cache and isolated native cold/warm timing |
 | `src/lazy-character.js`, `src/road-distance-index.js`, `src/terrain-point-cache.js`, `src/hex-boundary-distance.js` | Deferred human rigs and exact indexed/cached terrain queries |

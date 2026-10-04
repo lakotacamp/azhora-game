@@ -221,7 +221,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // -4610.002 and the world 52.20 hexes wide. The block's own reach west is still Cape Heth's -4300.
   assert.ok(Math.abs(WORLD_BOUNDS.minX - -4610.001927939127) < 1e-6, `minX is ${WORLD_BOUNDS.minX}`);
   // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
-  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 73.369 hexes, the window's maxQ 60 and minR 59.
+  // Babon now sets the southern edge at z3437.632, two atlas rows beyond Trogo.
   // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 2209.9980720608737) < 1e-6, `maxX is ${WORLD_BOUNDS.maxX}`);
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -3899.2468035704924) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
@@ -231,12 +232,12 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // **3264.4264805429416** - job 2's own arithmetic said "about 3264.4" - and the world from 53.450
   // hexes tall to **54.316**. Nothing else moves: Trogo reaches x = -2050 and Marosh -2750, where Cape
   // Heth's edge stands at -4360.002.
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3437.6315612998296) < 1e-6, `maxZ is ${WORLD_BOUNDS.maxZ}`);
   const wide = (WORLD_BOUNDS.maxX - WORLD_BOUNDS.minX) / METRES_PER_HEX;
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
   // 49.70 was this block's own doing; the other two and a half hexes are West Ibenwood's (see minX above).
   assert.ok(Math.abs(wide - 68.20) < .01, `east to west is ${wide.toFixed(2)} hexes`);
-  assert.ok(Math.abs(tall - 71.637) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 73.369) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // **Cape Heth alone spends the west now**, and the Ganesh Desert alone spent it before: no other
   // country in eleven reaches past -3900, which is the Dinelv Highlands' own western row.
   const westmost = Object.fromEntries(BLOCK.map(name => [name, Math.min(...cellsOf(name).map(cell => cell.x))]));
@@ -279,10 +280,10 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // neither's: it is West Ibenwood's western edge taken down to Trogo's southern rows, a corner of the
   // box that no country stands in. The two columns it adds hold no claimed hex, and the generated
   // survey is byte-identical either way.
-  assert.equal(WINDOW.minQ, -52);
+  assert.equal(WINDOW.minQ, -53);
   assert.equal(WINDOW.maxQ, 60);
   assert.equal(WINDOW.minR, 59);
-  assert.equal(WINDOW.maxR, 145);
+  assert.equal(WINDOW.maxR, 147);
   const CELL = 4, MARGIN = 96, PHASE = { x: -1556.0019279391274, z: -704.3502691896258 };
   const snap = (value, phase) => phase + Math.floor((value - phase) / CELL + 1e-9) * CELL;
   const firstX = snap(WORLD_BOUNDS.minX - MARGIN, PHASE.x), firstZ = snap(WORLD_BOUNDS.minZ - MARGIN, PHASE.z);
@@ -314,7 +315,8 @@ test('the world box grew west, then south, then west again, and job 4 grew it so
   // window has ever had: job 1's bought 71 hexes, job 2's 143, job 3's none and job 4's one.
   // 2,079 until the Baldro Mountains carried the window to maxQ 60 and minR 59: 903 more claimed hexes are inside it.
   // And two more since the game's own atlas adjustment gave Drent its forested peninsula east of Tidehaven.
-  assert.equal(LAND_HEXES.length, 2984, 'job 4 turns one hex of sea into land, and it is the Azhor Stones');
+  // Babon's wider southern horizon includes one more authored offshore hex.
+  assert.equal(LAND_HEXES.length, 2985, 'the survey includes the complete Babon horizon');
   assert.ok(land.has('1,145'), 'the Azhor Stones hex row 145 is the one the widening bought');
   assert.equal(hexCentre(1, 145).x > 600 && hexCentre(1, 145).z > 3400, true, 'and it is out past the eastern edge');
   for (const name of EDGE) for (const cell of cellsOf(name))
@@ -1956,11 +1958,11 @@ test('every ground tint in the game reaches the screen, which is the guard two j
   // Selemis is the fifth family and the first to arrive as a row (2026-10-01, docs/selemis-report.md):
   // its line here is its line there, which is the arrangement this guard was written to force.
   // Telemonia is the sixth (2026-10-02, docs/telemonia-stage1-report.md), the same way.
-  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis', 'telemonia', 'east-pyros', 'nether-desert', 'legemum'],
+  assert.deepEqual([...GROUND_TINT_FAMILIES], ['gala', 'oves', 'mithala', 'southwest', 'selemis', 'telemonia', 'east-pyros', 'nether-desert', 'legemum', 'babon'],
     'a family was added to groundTint without a line here');
   const probes = { gala: ['Gala'], oves: ['Ovesos', 'Oves Desert'],
     mithala: ['South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'],
-    southwest: [...BLOCK], selemis: ['Selemi'], telemonia: ['Telemonia'], 'east-pyros': ['East Pyros'], 'nether-desert': ['Nether Desert'], legemum: ['Legemum'] };
+    southwest: [...BLOCK], selemis: ['Selemi'], telemonia: ['Telemonia'], 'east-pyros': ['East Pyros'], 'nether-desert': ['Nether Desert'], legemum: ['Legemum'], babon: ['Babon'] };
   const painted = new THREE.Color(), swatch = new THREE.Color();
   for (const family of GROUND_TINT_FAMILIES) {
     let worst = 0, at = null;

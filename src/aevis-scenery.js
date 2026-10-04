@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { finishBuild } from './build-steps.js';
 import { createSceneryBuilder } from './scenery-builder.js';
 import { SEA_LEVEL } from './region-world.js';
-import { AEVIS, AEVIS_OUTLINE, AEVIS_WALL_EDGES, AEVIS_GATES, AEVIS_BUILDINGS, AEVIS_PATHS, AEVIS_QUAYS, AEVIS_BOATS } from './aevis-city.js';
+import { AEVIS, AEVIS_OUTLINE, AEVIS_WALL_EDGES, AEVIS_GATES, AEVIS_BUILDINGS, AEVIS_PATHS, AEVIS_QUAYS, AEVIS_BOATS, AEVIS_DRILL_RACKS } from './aevis-city.js';
 
 const STONE='#8c8971', LIGHT='#b2a78a', DARKSTONE='#6f7161', MORTAR='#656653';
 const BRONZE='#ba8248', GOLD='#d6a762', DARKBRONZE='#875e37', PATINA='#527765', DEEPGREEN='#385f52';
@@ -62,7 +62,9 @@ export function* createAevisScenerySteps({parent,heightAt,colliders}){
     for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
       const w=width/cols,h=height/rows,shade=[STONE,LIGHT,DARKSTONE,STONE][(row*3+col)%4];
       b.box(shade,-width/2+w*(col+.5),h*(row+.5),0,w-.13,h-.12,depth+.09);
-      for(const side of [-1,1])b.rock(shade,-width/2+w*(col+.5)+((row+col)%2?-.2:.2),h*(row+.5),side*(depth/2+.06),w*.46,h*.48,.14);
+      // Leave some dressed faces flat between the weathered facets. This keeps
+      // the longer coastal circuit within the same geometry budget.
+      if((row+col)%4!==0)for(const side of [-1,1])b.rock(shade,-width/2+w*(col+.5)+((row+col)%2?-.2:.2),h*(row+.5),side*(depth/2+.06),w*.46,h*.48,.14);
     }
   }
   const streets=createSceneryBuilder('Aevis - ochre streets and drill courts');
@@ -71,7 +73,8 @@ export function* createAevisScenerySteps({parent,heightAt,colliders}){
     const a=path.points[i-1],b=path.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
     yield* streets.patchSteps('#aaa181',heightAt,(a.x+b.x)/2,(a.z+b.z)/2,path.width,len,Math.atan2(dx,dz),.06,Math.max(2,Math.ceil(len/5)));
   }
-  yield* streets.patchSteps('#ad9b72',heightAt,AEVIS.plaza.x+10,AEVIS.plaza.z,18,15,0,.065,5);
+  const court=AEVIS.drillCourt;
+  yield* streets.patchSteps('#ad9b72',heightAt,court.x,court.z,court.width,court.depth,0,.065,5);
   yield* finish(streets);
 
   for(const edge of AEVIS_WALL_EDGES){
@@ -81,21 +84,27 @@ export function* createAevisScenerySteps({parent,heightAt,colliders}){
     const gates=AEVIS_GATES.filter(g=>g.edge===edge),b=createSceneryBuilder(`Aevis - Cyclopean curtain ${edge}`);
     for(let i=0;i<n;i++){
       if(++work%6===0)yield;
-      const t=(i+.5)/n,x=a.x+dx*t,z=a.z+dz*t,y=heightAt(x,z);
+      const t=(i+.5)/n,x=a.x+dx*t,z=a.z+dz*t,y=Math.max(SEA_LEVEL,heightAt(x,z));
       if(gates.some(g=>Math.hypot(x-g.x,z-g.z)<g.width/2+1.8))continue;
+      const nx=-dz/len,nz=dx/len;
+      const foot=Math.min(heightAt(x,z),...[-1,1].flatMap(side=>[-1,1].map(end=>
+        heightAt(x+nx*side*AEVIS.wallThickness/2+dx/len*end*step/2,z+nz*side*AEVIS.wallThickness/2+dz/len*end*step/2))))-.55;
       b.frame(x,y,z,yaw,()=>{
+        b.block(DARKSTONE,0,foot-y,0,AEVIS.wallThickness+.12,y-foot+.1,step+.13);
         cyclopean(b,AEVIS.wallThickness,AEVIS.wallHeight,step+.1);
         b.box(PATINA,0,AEVIS.wallHeight-.8,0,AEVIS.wallThickness+.35,.5,step+.14);
         for(const side of [-1,1])b.block(STONE,side*(AEVIS.wallThickness/2-.3),AEVIS.wallHeight,0,.9,1.7,step*.57);
         if(i%4===0)for(const side of [-1,1])b.block(DARKSTONE,side*(AEVIS.wallThickness/2+.35),-.3,0,1.5,AEVIS.wallHeight*.57,1.7);
       });
-      push({x,z,r:AEVIS.wallThickness/2+.12,minY:y-.5,maxY:y+AEVIS.wallHeight+1.7,kind:'aevis-wall',id:`aevis-wall-${edge}-${i}`});metrics.wallSegments++;
+      push({x,z,r:AEVIS.wallThickness/2+.12,minY:foot,maxY:y+AEVIS.wallHeight+1.7,kind:'aevis-wall',id:`aevis-wall-${edge}-${i}`});metrics.wallSegments++;
     }
     yield* finish(b);
   }
   function* watch(x,z,r=4.8,name='Aevis watch'){
-    const y=heightAt(x,z),b=createSceneryBuilder(name),h=AEVIS.towerHeight;
+    const y=Math.max(SEA_LEVEL,heightAt(x,z)),b=createSceneryBuilder(name),h=AEVIS.towerHeight;
+    const foot=Math.min(heightAt(x,z),...[-r,r].flatMap(dx=>[-r,r].map(dz=>heightAt(x+dx,z+dz))))-.55;
     b.frame(x,y,z,0,()=>{
+      b.block(DARKSTONE,0,foot-y,0,r*2+.12,y-foot+.1,r*2+.12);
       cyclopean(b,r*2,h,r*2);
       b.box(BRONZE,0,h-4,0,r*2+.3,.7,r*2+.3);
       for(const side of [-1,1])for(const edge of [-1,1])b.block(PATINA,side*r*.78,h,edge*r*.78,1.5,2.3,1.5);
@@ -105,7 +114,7 @@ export function* createAevisScenerySteps({parent,heightAt,colliders}){
         b.box(GOLD,0,h-4.25,side*(r+.15),1.35,.22,.15);
       }
     });
-    push({x,z,hx:r+.15,hz:r+.15,width:r*2+.3,depth:r*2+.3,minY:y-.5,maxY:y+h+5.1,kind:'city-tower',id:name});
+    push({x,z,hx:r+.15,hz:r+.15,width:r*2+.3,depth:r*2+.3,minY:foot,maxY:y+h+5.1,kind:'city-tower',id:name});
     yield* finish(b);metrics.towers++;
   }
   const corners=new Set(AEVIS_WALL_EDGES.flatMap(i=>[i,(i+1)%AEVIS_OUTLINE.length]));
@@ -207,14 +216,14 @@ export function* createAevisScenerySteps({parent,heightAt,colliders}){
 
   const apparatus=createSceneryBuilder('Aevis - bronze drill and smithing apparatus');
   // Keep equipment to the edges of the open drill court and roads.
-  for(const side of [-1,1]){
-    const x=AEVIS.plaza.x+10+side*8,z=AEVIS.plaza.z+6,y=heightAt(x,z);
+  for(const rack of AEVIS_DRILL_RACKS){
+    const {x,z}=rack,y=heightAt(x,z);
     apparatus.block(TIMBER,x,y,z,.35,3,.35);apparatus.beam(TIMBER,[x-2,y+2.4,z],[x+2,y+2.4,z],.22);
     for(let i=-2;i<=2;i++){
       apparatus.beam(TIMBER,[x+i*.65,y+.2,z],[x+i*.65,y+3.4,z],.055);
       apparatus.rock(BRONZE,x+i*.65,y+3.55,z,.10,.22,.045);
     }
-    push({x,z,hx:2.2,hz:.35,width:4.4,depth:.7,minY:y,maxY:y+3.8,kind:'rack',id:`aevis-drill-rack-${side}`});
+    push({x,z,hx:2.2,hz:.35,width:4.4,depth:.7,minY:y,maxY:y+3.8,kind:'rack',id:rack.id});
   }
   yield* finish(apparatus);
 

@@ -62,7 +62,7 @@ test('West Izol is a playable region true to the atlas: twenty-one hexes of rock
   assert.ok(WORLD_BOUNDS.maxZ > 2200, `world maxZ ${WORLD_BOUNDS.maxZ}`);
   // ...and Trogo further again, from 3177.824 to 3264.426 (docs/southwest-4-report.md). West Izol is
   // further from the southern edge with every job in that quarter, and the edge is never its own.
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6, 'and the edge is Trogo\u2019s, not the island\u2019s');
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3437.6315612998296) < 1e-6, 'and the edge is Babon\u2019s, not the island\u2019s');
   assert.ok(WORLD_BOUNDS.maxX > 600 && WORLD_BOUNDS.maxX < 620);
   assert.equal(REGION_BIOMES['West Izol'].id, 'izoli-rock');
   assert.equal(REGION_BIOMES['West Izol'].ownScatter, true, 'West Izol scatters its own ground');

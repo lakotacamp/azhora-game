@@ -54,10 +54,11 @@ import { createFireMaking, LEE_ANNE, FIRE_LESSON_FIRE, fireMakingStands, fireMak
 import { createWorldMap } from './world-map.js';
 import { MENORA } from './menora-city.js';
 import { NYLON, NYLON_BUILDINGS } from './nylon-city.js';
-import { AEVIS, AEVIS_BUILDINGS } from './aevis-city.js';
+import { AEVIS, AEVIS_BUILDINGS, AEVIS_GATES } from './aevis-city.js';
 import { EAST_PYROS_VIEWS, EAST_PYROS_ARRIVAL, EAST_PYROS_LANDMARKS, EAST_PYROS_ROUTES } from './east-pyros-world.js';
 import { NETHER_DESERT_VIEWS, NETHER_DESERT_ARRIVAL, NETHER_DESERT_LANDMARKS, NETHER_DESERT_TRAILS } from './nether-desert-world.js';
 import { LEGEMUM_VIEWS, LEGEMUM_ARRIVAL, LEGEMUM_LANDMARKS, LEGEMUM_TRAILS } from './legemum-world.js';
+import { BABON_VIEWS, BABON_ARRIVAL, BABON_LANDMARKS, BABON_TRAILS } from './babon-world.js';
 import { AEVIS_SOLDIERS, createAevisSoldier } from './aevis-soldiers.js';
 import { atlasRevealedCityMarks } from './world-map-detail.js';
 import { createMapTutorial } from './map-tutorial.js';
@@ -8020,6 +8021,7 @@ async function init() {
       const fightAt=combat.state.phase==='active'?combat.state.center:null;
       const fightingPeople=combatPresence(combat.state);
       for(const npc of npcData) {
+        if(npc.role==='aevis-soldier'&&world.loading&&!world.loading.isReady(AEVIS.region)){npc.actor.group.visible=false;npc.marker.visible=false;onStage(npc,false);continue;}
         if(crime.isDown(npc.id)||corpseHost.ownsNpc(npc.id)){npc.actor.group.visible=false;npc.marker.visible=false;onStage(npc,false);continue;}
         const fighter=fightingPeople.get(npc.id);
         if(fighter&&(npc.id===KAYLA.id||npc.centaur)){onStage(npc,true);npc.marker.visible=false;continue;}
@@ -10153,10 +10155,11 @@ async function init() {
           skillAnnouncements.clear();$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();
           if(view==='inquest-placeholder')conversation(npc);return;
         }
-        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')){
+        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')||view.startsWith('babon')){
           const cfg=view.startsWith('east-pyros')?{id:57,name:'East Pyros',field:'eastPyros',arrival:EAST_PYROS_ARRIVAL,landmarks:EAST_PYROS_LANDMARKS,trails:EAST_PYROS_ROUTES,views:EAST_PYROS_VIEWS}:
             view.startsWith('nether-desert')?{id:58,name:'Nether Desert',field:'netherDesert',arrival:NETHER_DESERT_ARRIVAL,landmarks:NETHER_DESERT_LANDMARKS,trails:NETHER_DESERT_TRAILS,views:NETHER_DESERT_VIEWS}:
-            {id:59,name:'Legemum',field:'legemum',arrival:LEGEMUM_ARRIVAL,landmarks:LEGEMUM_LANDMARKS,trails:LEGEMUM_TRAILS,views:LEGEMUM_VIEWS};
+            view.startsWith('legemum')?{id:59,name:'Legemum',field:'legemum',arrival:LEGEMUM_ARRIVAL,landmarks:LEGEMUM_LANDMARKS,trails:LEGEMUM_TRAILS,views:LEGEMUM_VIEWS}:
+            {id:60,name:'Babon',field:'babon',arrival:BABON_ARRIVAL,landmarks:BABON_LANDMARKS,trails:BABON_TRAILS,views:BABON_VIEWS};
           const showEnvironment=async()=>{
             prepareTesting();stopAutopilot();closeDialogue();questStage=QUEST_DONE;combat.finishPractice();testGoTo(cfg.arrival,cfg.name,'');
             reviewFrozen=true;reviewVista=true;player.group.visible=false;
@@ -10164,11 +10167,11 @@ async function init() {
             const checks=runWesternEnvironmentChecks(world,westLife,cfg);(window.__westernEnvironmentChecks??={})[cfg.name]=checks;
             let shot=cfg.views[view];
             if(view.endsWith('-wildlife')){
-              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':'red-deer';
+              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':cfg.id===60?'babon-giant-monitor':'red-deer';
               const animal=westLife.snapshot().creatures.find(a=>a.region===cfg.name&&a.species===species);
               if(!animal)throw new Error(`${cfg.name}: no ${species} to review`);
               const ground=world.heightAt(animal.x,animal.z),close=species==='spine-lizard';
-              shot={target:{x:animal.x,z:animal.z,y:ground+(close?.2:.65)},eye:{x:animal.x+(close?2.4:4),z:animal.z+(close?2.2:4),y:ground+(close?1.1:2)}};
+              shot=cfg.id===60?{target:{x:animal.x,z:animal.z,y:ground+1.4},eye:{x:animal.x+10,z:animal.z+8,y:ground+5}}:{target:{x:animal.x,z:animal.z,y:ground+(close?.2:.65)},eye:{x:animal.x+(close?2.4:4),z:animal.z+(close?2.2:4),y:ground+(close?1.1:2)}};
             }
             if(!shot)throw new Error(`Unknown environment review: ${view}`);
             const t=shot.target,e=shot.eye,ty=t.y??world.heightAt(t.x,t.z)+1,ey=e.y??world.heightAt(e.x,e.z)+2;
@@ -10182,12 +10185,14 @@ async function init() {
           const showCity=async()=>{
             prepareTesting();stopAutopilot();closeDialogue();reviewFrozen=true;reviewVista=true;questStage=QUEST_DONE;
             const {runAevisChecks}=await import('./aevis-smoke.js');window.__aevisChecks=runAevisChecks(world,npcById);
+            const palace=AEVIS_BUILDINGS.find(b=>b.kind==='palace'),gate=AEVIS_GATES[0],drill=AEVIS_SOLDIERS.find(s=>s.id==='aevis-drill-2');
             const shots={
-              'aevis-overview':[AEVIS.x,AEVIS.z,12,160,.60,-1.0],
-              'aevis-harbor':[-1053,1777,9,100,.34,1.3],
-              'aevis-gate':[-1174,1778,12,68,.20,-Math.PI/2],
-              'aevis-palace':[-1149,1753,16,60,.23,0],
-              'aevis-soldiers':[-1106,1764,1.1,7,.14,1.6],
+              'aevis-overview':[AEVIS.x,AEVIS.z,9,195,.75,1.0],
+              'aevis-coastline':[AEVIS.x,AEVIS.z,9,280,.88,1.1],
+              'aevis-harbor':[AEVIS.harbor.x,AEVIS.harbor.z,7,95,.34,1.3],
+              'aevis-gate':[gate.x,gate.z,12,78,.25,-Math.PI/2],
+              'aevis-palace':[palace.x,palace.z,16,60,.30,.7],
+              'aevis-soldiers':[drill.x,drill.z,1.1,8,.15,1.6],
             };
             const p=shots[view];if(!p)throw new Error(`Unknown Aevis review: ${view}`);
             player.group.position.set(AEVIS.plaza.x,world.heightAt(AEVIS.plaza.x,AEVIS.plaza.z),AEVIS.plaza.z);player.group.visible=false;

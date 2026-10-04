@@ -4,6 +4,10 @@
 const freeze = Object.freeze;
 const timber = (species, name, woodKind = species, log = null, plank = null, carriageUse = null) => freeze({ species, woodName: name, woodKind, log, plank, carriageUse });
 export const WOOD_SPECIES = freeze({
+  kapok: timber('kapok', 'Kapok', 'kapok', 'kapok-logs'),
+  'strangler-fig': timber('strangler-fig', 'Strangler fig', 'strangler-fig', 'strangler-fig-logs'),
+  'coconut-palm': timber('coconut-palm', 'Coconut palm', 'coconut-palm', 'coconut-palm-logs'),
+  mahogany: timber('mahogany', 'Mahogany', 'mahogany', 'mahogany-logs'),
   // Protected Ibenwood species have identity but no harvest products or recipes.
   'grey-vault': timber('grey-vault', 'Grey Vault'),
   'pale-witness': timber('pale-witness', 'Pale Witness'),

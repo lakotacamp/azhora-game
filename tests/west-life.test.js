@@ -164,12 +164,20 @@ test('no band is given a range it can run out of the reach of', () => {
  * over it, it never once opened while they were inside arm's length, and it is exactly where it started.
  * An animal that does anything else is held to the old half, to the centimetre, as it always was.
  */
-test('nothing in the west can be walked down: what flees keeps its distance, and what shuts cannot be caught', () => {
+test('wildlife reacts to approach: fleeing animals keep distance, tortoises shut and territorial predators display', () => {
   const shutters = new Set();
   for (const zone of ground) {
     const arm = zone.species === 'river-fox' ? 2 : CATTLE.has(zone.species) ? 5 : 3;
     const walked = chase(zone, WALK, 30, { arm });
-    if (walked.actions.has('shut')) {
+    if (zone.territorial) {
+      // A giant apex reptile warns and holds its territory instead of behaving
+      // like prey. Its deliberate stalking and visible display have their own
+      // geometry and encounter checks in babon-wildlife.test.js.
+      assert.ok(walked.actions.has('watch') || walked.actions.has('stalk') || walked.actions.has('display'), `${zone.id}: no territorial response`);
+      assert.ok(walked.actions.has('display'), `${zone.id}: approaching never produced its warning display`);
+      assert.ok(!walked.actions.has('flee') && !walked.actions.has('shut'), `${zone.id}: a territorial predator behaved like frightened prey`);
+      assert.ok(walked.band().every(animal => !animal.hidden), `${zone.id}: its response must remain visible`);
+    } else if (walked.actions.has('shut')) {
       shutters.add(zone.species);
       // It can be approached — that is the half of the law a tortoise would have failed —
       assert.ok(walked.reachedAt !== null, `${zone.id}: it shuts and still could not be walked up to (closest ${walked.closest.toFixed(2)} m)`);

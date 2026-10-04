@@ -188,6 +188,10 @@ const LOCALS = [
   // Telemonia's number is read, not written, for the same reason: it is renumbered the day it lands.
   [REGION_IDS.Telemonia, 'Telemonia', 'telemonia', 'Telemonia', telemoniaAnchor],
   [56, 'West Oremindi', 'west-oremindi', 'West Oremindi Mountains', point(831.384,2320,-18,96)],
+  [57, 'East Pyros', 'east-pyros', 'East Pyros', point(1090.499,2860.961,-20,118)],
+  [58, 'Nether Desert', 'nether-desert', 'Nether Desert', point(1082.463,2744.290,-18,114)],
+  [59, 'Legemum', 'legemum', 'Legemum', point(1324.673,2977.355,-14,123)],
+  [60, 'Babon', 'babon', 'Babon', point(1504.806,3327.368,-15,138)],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

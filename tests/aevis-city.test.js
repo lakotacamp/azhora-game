@@ -2,19 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AEVIS, AEVIS_AREA, AEVIS_OUTLINE, AEVIS_WALL_EDGES, AEVIS_GATES,
   AEVIS_BUILDINGS, AEVIS_PATHS, AEVIS_QUAYS, AEVIS_BOATS, AEVIS_SOLDIERS,
-  AEVIS_LANDMARKS, inAevis, aevisGround, aevisReserved, aevisDeckHeight,
+  AEVIS_LANDMARKS, AEVIS_COASTAL_DEFENSE_ENDS, inAevis, aevisGround, aevisReserved, aevisDeckHeight,
   aevisSegmentDistance } from '../src/aevis-city.js';
 import { NYLON_AREA } from '../src/nylon-city.js';
-import { hexCentre, hexOwnerAt, landDistance, SOLIS } from '../src/region-world.js';
+import { hexCentre, hexAt, hexOwnerAt, landDistance, SOLIS } from '../src/region-world.js';
 import { groundWithRiver } from '../src/world-terrain.js';
 
 const samples = b => [-1,0,1].flatMap(a => [-1,0,1].map(c => ({x:b.x+a*b.width/2,z:b.z+c*b.depth/2})));
 const inside = (p,b,margin=0) => Math.abs(p.x-b.x)<b.width/2+margin && Math.abs(p.z-b.z)<b.depth/2+margin;
 const height = (x,z) => aevisDeckHeight(x,z) ?? groundWithRiver(x,z);
 
-test('Aevis occupies the chosen Southern Ascarth coastal hex and is between Solis and Nylon in size', () => {
+test('Aevis follows the Southern Ascarth east coast and keeps its overall size between Solis and Nylon', () => {
   const hex = hexCentre(AEVIS.hex.q,AEVIS.hex.r);
-  assert.ok(Math.hypot(AEVIS.x-hex.x,AEVIS.z-hex.z)<30);
+  assert.ok(Math.hypot(AEVIS.x-hex.x,AEVIS.z-hex.z)<58);
+  assert.deepEqual(hexAt(AEVIS.x,AEVIS.z),AEVIS.hex);
   assert.equal(hexOwnerAt(AEVIS.x,AEVIS.z),'Southern Ascarth');
   assert.ok(AEVIS_AREA > SOLIS.halfX*SOLIS.halfZ*4);
   assert.ok(AEVIS_AREA < NYLON_AREA);
@@ -22,21 +23,38 @@ test('Aevis occupies the chosen Southern Ascarth coastal hex and is between Soli
 });
 
 test('Aevis protects the land approaches and leaves its eastern waterfront open to the sea', () => {
-  assert.deepEqual([...AEVIS_WALL_EDGES],[0,1,4,5]);
+  assert.equal(AEVIS_COASTAL_DEFENSE_ENDS.length,2);
+  for(const p of AEVIS_COASTAL_DEFENSE_ENDS) assert.ok(landDistance(p.x,p.z)<-7,'Both defensive returns terminate in real water');
   for(const gate of AEVIS_GATES) {
     assert.ok(AEVIS_WALL_EDGES.includes(gate.edge));
     assert.ok(aevisSegmentDistance(gate.x,gate.z,AEVIS_OUTLINE[gate.edge],AEVIS_OUTLINE[(gate.edge+1)%AEVIS_OUTLINE.length])<.001);
     assert.ok(gate.width>=10);
   }
-  for(const edge of AEVIS_WALL_EDGES) {
+  for(let edge=0;edge<AEVIS_OUTLINE.length;edge++) {
     const a=AEVIS_OUTLINE[edge],b=AEVIS_OUTLINE[(edge+1)%AEVIS_OUTLINE.length];
     for(let i=0;i<=20;i++) {
       const x=a.x+(b.x-a.x)*i/20,z=a.z+(b.z-a.z)*i/20;
-      assert.ok(landDistance(x,z)>AEVIS.wallThickness/2+5,`Wall ${edge} stays on land`);
+      if(!AEVIS_WALL_EDGES.includes(edge))assert.ok(landDistance(x,z)<0,`Open edge ${edge} must face water, not leave an exposed land entry`);
     }
   }
   assert.ok(AEVIS_QUAYS.every(q=>q.x>AEVIS.x));
   assert.ok(AEVIS_BOATS.every(b=>landDistance(b.x,b.z)<0));
+});
+
+test('Aevis occupies a narrow coastal strip instead of filling the peninsula width',()=>{
+  for(const z of [1840,1860,1880,1900,1920,1940]){
+    const cross=[];
+    for(let i=0;i<AEVIS_OUTLINE.length;i++){
+      const a=AEVIS_OUTLINE[i],b=AEVIS_OUTLINE[(i+1)%AEVIS_OUTLINE.length];
+      if((a.z>z)!==(b.z>z))cross.push(a.x+(b.x-a.x)*(z-a.z)/(b.z-a.z));
+    }
+    assert.equal(cross.length,2);
+    const width=Math.max(...cross)-Math.min(...cross);
+    assert.ok(width>=70&&width<=80,`City depth is ${width}m at ${z}`);
+    const inland=Math.min(...cross)-100;
+    assert.ok(landDistance(inland,z)>0,'A broad open landward belt must remain outside the city');
+    assert.equal(inAevis(inland,z),false);
+  }
 });
 
 test('Aevis buildings fit dry land without overlapping walls, each other or the public streets', () => {
@@ -77,9 +95,9 @@ test('Arrival, city landmarks and distinctive bronze soldiers occupy accessible 
 });
 
 test('Aevis grading preserves sea and other regions while piers offer a separate walking surface', () => {
-  for(const p of [{x:-1030,z:1778},{x:-1100,z:1690},{x:0,z:0}]) assert.equal(aevisGround(p.x,p.z,-3),-3);
-  assert.equal(aevisDeckHeight(-1030,1778),3.2);
-  assert.ok(landDistance(-1030,1778)<0,'Deck is over existing water');
-  assert.equal(aevisDeckHeight(-1100,1778),null);
-  assert.equal(aevisDeckHeight(-1020,1778),null);
+  for(const p of [{x:-880,z:1864},{x:-1100,z:1690},{x:0,z:0}]) assert.equal(aevisGround(p.x,p.z,-3),-3);
+  assert.equal(aevisDeckHeight(-880,1864),3.2);
+  assert.ok(landDistance(-880,1864)<0,'Deck is over existing water');
+  assert.equal(aevisDeckHeight(-930,1864),null);
+  assert.equal(aevisDeckHeight(-870,1864),null);
 });

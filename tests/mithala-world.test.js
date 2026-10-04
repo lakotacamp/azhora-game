@@ -163,7 +163,8 @@ test('the world grows north, and it is the biggest structural change any region 
   // Measured, not estimated. North Mithala's northernmost hex is the atlas's row 82, centred at
   // z = -2049.5, and its top corner stands at -2107.2; the world's margin is 60 m.
   // Since the Baldro Mountains landed as regions 52 and 53 the eastern and northern edges are theirs:
-  // maxX 2209.998, minZ -3899.247, the world 68.20 by 71.637 hexes, the window's maxQ 60 and minR 59.
+  // maxX 2209.998, minZ -3899.247, the world 68.20 by 73.369 hexes, the window's maxQ 60 and minR 59.
+  // Babon now sets the southern edge at z3437.632, two atlas rows beyond Trogo.
   // Every assertion below that holds one of those numbers holds the Baldros' and nothing of this country's.
   assert.ok(Math.abs(WORLD_BOUNDS.minZ - -3899.2468035704924) < 1e-6, `minZ is ${WORLD_BOUNDS.minZ}`);
   const tall = (WORLD_BOUNDS.maxZ - WORLD_BOUNDS.minZ) / METRES_PER_HEX;
@@ -172,7 +173,7 @@ test('the world grows north, and it is the biggest structural change any region 
   // southern one from 2398.401 to 3177.824. What the plain set is the *northern* edge, and that is
   // the number to hold here rather than the height it happened to make at the time.
   // ...and 54.316 since Trogo carried the southern edge to 3264.426 (docs/southwest-4-report.md).
-  assert.ok(Math.abs(tall - 71.637) < .01, `north to south is ${tall.toFixed(3)} hexes`);
+  assert.ok(Math.abs(tall - 73.369) < .01, `north to south is ${tall.toFixed(3)} hexes`);
   // East to west the plain took nothing, and the number below has moved twice for other people since
   // this test was written: to 45.70 for the Ganesh Desert and to **49.700** for Cape Heth, whose one
   // `coast` hex reaches four hundred metres further west again. What this plain is held to is unchanged:
@@ -191,7 +192,7 @@ test('the world grows north, and it is the biggest structural change any region 
   assert.ok(Math.abs(WORLD_BOUNDS.maxX - 2209.9980720608737) < 1e-6);
   // ...and the South Meroshe Desert took the southern edge from 2398.401 to 3177.824
   // (docs/southwest-2-report.md), which the plain also spent nothing of.
-  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3264.4264805429416) < 1e-6);
+  assert.ok(Math.abs(WORLD_BOUNDS.maxZ - 3437.6315612998296) < 1e-6);
   // North Mithala alone spends it: row 82 against the East Lotharn's 92.
   assert.equal(Math.min(...CELLS['North Mithala'].map(cell => cell.r)), 82);
   assert.ok(Math.min(...CELLS['North Mithala'].map(cell => cell.z)) < Math.min(...CELLS['East Mithala'].map(cell => cell.z)));
@@ -203,7 +204,7 @@ test('the world grows north, and it is the biggest structural change any region 
   assert.equal(WINDOW.minR, 59);
   // 135 when the Ascarth tip set it; 144 since the South Meroshe Desert carried the world south.
   // 145 since Trogo's row 142: one row deeper, measured off the lattice (docs/southwest-4-report.md).
-  assert.equal(WINDOW.maxR, 145);
+  assert.equal(WINDOW.maxR, 147);
   assert.equal(WINDOW.maxQ, 60);
   const COAST_CELL = 4, COAST_MARGIN = 96, PHASE = -704.3502691896258;
   const latticeMinZ = PHASE + Math.floor((WORLD_BOUNDS.minZ - COAST_MARGIN - PHASE) / COAST_CELL + 1e-9) * COAST_CELL;
