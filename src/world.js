@@ -1524,7 +1524,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   yield 'East Lotharn';
   const eastLotharn=yield* regionBuild('eastLotharn',[20],stage=>createEastLotharnScenerySteps({
     root:stage, material, mesh, box, post, pebble, wornPatch,
-    groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: lotharnCaves,
+    groundHeight, renderedGroundHeight: treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: lotharnCaves,
     unbuiltGround: groundBeforeVarn,
   }),{});
   // The West Lotharn (src/west-lotharn-scenery.js): the massifs' own close-drawn ground, the courses

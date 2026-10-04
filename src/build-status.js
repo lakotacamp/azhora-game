@@ -7,7 +7,7 @@
  * left to do. Pure: no DOM, no three.
  */
 import { PLAYABLE_REGIONS } from './region-layout.js';
-import { REGION_DESIGN } from './campaign-world.js';
+import { REGION_LEVELS } from './region-levels.js';
 
 /** The states a region can be in, worst first, each with the colour the developer chart tints it. */
 export const BUILD_STATES = Object.freeze({
@@ -187,7 +187,9 @@ const known = new Set(Object.keys(BUILD_STATUS));
 
 /** Every region the atlas knows, with how far it is built. Playable regions first, then the rest. */
 export function buildStatusList() {
-  const rest = REGION_DESIGN.map(entry => entry.id).filter(id => !known.has(id)).sort();
+  // The lightweight level table covers the whole atlas; the campaign registry
+  // only names regions that already have campaign design.
+  const rest = Object.keys(REGION_LEVELS).filter(id => !known.has(id)).sort();
   return [...PLAYABLE_REGIONS.filter(id => known.has(id)), ...[...known].filter(id => !PLAYABLE_REGIONS.includes(id)), ...rest]
     .map(id => regionBuildStatus(id));
 }

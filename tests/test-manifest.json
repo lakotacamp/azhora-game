@@ -411,5 +411,10 @@
   "tests/varn-world.test.js",
   "tests/lotharn-forts.test.js",
   "tests/bear-circus.test.js",
-  "tests/smedley.test.js"
+  "tests/smedley.test.js",
+  "tests/build-status.test.js",
+  "tests/lotharn-habitat-review.test.js",
+  "tests/lotharn-scenery-ground.test.js",
+  "tests/lotharn-landscape-review.test.js",
+  "tests/r1-cave-access.test.js"
 ]

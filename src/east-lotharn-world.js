@@ -764,6 +764,44 @@ export function peakGround(x, z, u = peakUplift(x, z)) {
   return best ? lerp(rampLevel(best.ramp, best.along), height, smooth(RAMP.half, reach, best.distance)) : height;
 }
 
+/**
+ * Weathered spurs on the northern faces. The original contour field continues
+ * to locate caves, ledges and ramps; rounding parts of its exposed risers breaks
+ * the repeated vertical courses without moving those authored approaches.
+ *
+ * The fortified southern/eastern faces are deliberately left for their own
+ * route review: changing a lip there can open a survivable fall past Varn.
+ * Export the exact added height so legacy scenery can keep its seeded choices
+ * while newly placed vegetation samples the actual ground.
+ */
+export function lotharnLandscapeDelta(x, z) {
+  if (!inLotharnBox(x, z) || x >= -1140 || z >= -975) return 0;
+  // The central chimney is the only cave in this northern shaping area. Its
+  // complete roof and both mouth searches must stay fixed, not just the ledge
+  // height at the nominal endpoints. Keep its surveyed corridor plus 12 m clear.
+  const caveDistance = Math.max(-1250 - x, x + 1170, -1120 - z, z + 1057, 0);
+  const guard = smooth(0, 30, -975 - z) * smooth(0, 30, -1140 - x) * smooth(0, 12, caveDistance);
+  if (!guard) return 0;
+  const u = peakUplift(x, z);
+  if (u <= 35 || onBald(x, z, 10)) return 0;
+  const phase = u / BANDS.period - Math.floor(u / BANDS.period);
+  // Mouths sit below the riser, around phase .64. Their shelves stay unchanged.
+  if (phase <= .69) return 0;
+  let pathDistance = Infinity;
+  for (const ramp of RAMPS) {
+    if (outside(ramp.line, x, z) > 18) continue;
+    pathDistance = Math.min(pathDistance, lineDistance(ramp.line, x, z, 18));
+  }
+  const path = Number.isFinite(pathDistance) ? smooth(7, 18, pathDistance) : 1;
+  if (!path) return 0;
+  // Broad unequal outcrops, not high-frequency noise or another contour stripe.
+  const rock = .52 + .24 * Math.sin(x * .041 + z * .023)
+    + .2 * Math.sin(z * .062 - x * .017 + 1.8);
+  const face = smooth(.69, .78, phase) * (1 - smooth(.94, 1, phase));
+  const rounding = Math.max(0, u - terrace(u));
+  return rounding * rock * face * guard * path * smooth(12, 35, edgeDistance(x, z));
+}
+
 /** The seamless correction (see South Suval): the hex blend's steps taken out of the range's own ground. */
 function seamlessLift(x, z, share) {
   if (!share) return 0;
@@ -1035,7 +1073,7 @@ export function eastLotharnGround(x, z, ground) {
     const road = passRoadAt(x, z);
     if (road.distance < PASS_ROAD_HALF + 6) height = lerp(road.grade, height, smooth(PASS_ROAD_HALF + .6, PASS_ROAD_HALF + 6, road.distance));
   }
-  return height;
+  return height + lotharnLandscapeDelta(x, z);
 }
 
 // ---------------------------------------------------------------------------
