@@ -1,18 +1,18 @@
 # Regional terrain and wildlife completion ledger
 
-Inventory prepared 3 October 2026 against main `a2e49c3` and the existing Celder worktree. This is the companion to the [joint implementation and review plan](regional-completion-joint-plan.md). **Implementation authorized 4 October 2026.** The user confirmed Claude is actively building both Celders; ChatGPT has begun R1 in a separate review worktree. Queued rows remain unstarted.
+Inventory prepared 3 October 2026 against main `a2e49c3` and the existing Celder worktree. This is the companion to the [joint implementation and review plan](regional-completion-joint-plan.md). **Implementation authorized 4 October 2026.** Claude delivered both Celders, East Izol and Alezhor; ChatGPT is reviewing the existing R1-R11 backlog in a separate worktree and mirroring verified corrections into the desktop checkout. South/North Ibenal are now observed building in a separate draft checkout; other queued rows remain unstarted.
 
 ## Inventory totals
 
 | Category | Regions |
 | --- | ---: |
 | Authored atlas | 131 |
-| Registered in main with existing environment content | 60 |
-| Outside main, delivered by Claude and awaiting review | 2 |
-| Other new or partial environment builds | 69 |
-| Total remaining outside main | 71 |
+| Registered in main | 64 |
+| Outside main, delivered by Claude and awaiting review | 0 |
+| Other new or partial environment builds | 67 |
+| Total remaining outside main | 67 |
 
-The 69 includes Cape Thalmagar's partial prototype. Existing environments require the review below; none receives a new acceptance certificate merely from registration. Numeric IDs in the existing inventory are current runtime IDs. Unbuilt regions receive IDs at integration, not from their queue number. Preserve exact atlas spellings.
+The 67 includes Cape Thalmagar's partial prototype. The two Celders, East Izol and Alezhor are accepted for their environment scope: four newly accepted regions. Existing environments require the review below; none receives a new acceptance certificate merely from registration. Numeric IDs in the existing inventory are current runtime IDs. Unbuilt regions receive IDs at integration, not from their queue number. Preserve exact atlas spellings.
 
 ## Claude build order
 
@@ -26,19 +26,19 @@ Terrain descriptions below are **atlas constraints and proposed natural emphasis
 
 | Queue | Exact atlas region | Environment direction | State |
 | ---: | --- | --- | --- |
-| 1 | South Celder | Continental open plain, low swells, mountain-facing margins and stream terraces; join West Lotharn, Yunethre, Oremindi and Mithala. | Ready for review |
-| 2 | North Celder | Continental plains and eastern grassland; cold running border streams and gentle west-to-east relief continuous with South Celder. | Ready for review |
+| 1 | South Celder | Continental open plain, low swells, mountain-facing margins and stream terraces; join West Lotharn, Yunethre, Oremindi and Mithala. | Environment accepted; available in main |
+| 2 | North Celder | Continental plains and eastern grassland; cold running border streams and gentle west-to-east relief continuous with South Celder. | Environment accepted; available in main |
 
-Both are in `../azhora-game-celder`, branch `celder`, based on `a2e49c3`. Claude delivered a clean two-region handoff at `136b582` on 4 October, including build `e7012d9`. Provisional IDs are 61 and 62. Preserve this delivery while the existing review backlog is corrected; intake does not grant acceptance or merge it into the desktop build.
+Historical delivery: both were frozen in `../azhora-game-celder`, branch `celder`, based on `a2e49c3`. Claude delivered the clean pair at `136b582` on 4 October, including build `e7012d9`. The initial intake did not grant acceptance. Subsequent reviewed integration and Full/Fast/Continue evidence accepted both environments in main; their stable runtime IDs are 61 and 62.
 
 ### Nearby coastal and forest margins
 
 | Queue | Exact atlas region | Environment direction | State |
 | ---: | --- | --- | --- |
-| 3 | East Izol | Mediterranean grass/plain mosaic, wooded pockets and one mountain cell; extend West Izol's coast and inland ground. | Queued |
-| 4 | Alezhor | Cool summer-dry grassland and plain at Ibenwood's southern margin; localized woodland rather than regionwide deep forest. | Queued |
-| 5 | South Ibenal | Summer-dry coastal plain; exposed shore and sheltered natural drainage beside the forest country. | Queued |
-| 6 | North Ibenal | Colder summer-dry coastal plain with one hill cell; transition from forest margin toward Oremindi. | Queued |
+| 3 | East Izol | Mediterranean grass/plain mosaic, wooded pockets and one mountain cell; extend West Izol's coast and inland ground. | Environment accepted; corrected main build verified in Full and Fast |
+| 4 | Alezhor | Cool summer-dry grassland and plain at Ibenwood's southern margin; localized woodland rather than regionwide deep forest. | Environment accepted; final bank 3/3, native 49267 Fast 101 +25 Continue, exit 0/errors [], repaired water/stream views accepted |
+| 5 | South Ibenal | Summer-dry coastal plain; exposed shore and sheltered natural drainage beside the forest country. | Observed building with North in `azhora-game-ibenal`; raw base `116799e`, no frozen handoff |
+| 6 | North Ibenal | Colder summer-dry coastal plain with one hill cell; transition from forest margin toward Oremindi. | Observed building with South in `azhora-game-ibenal`; not integrated or accepted |
 
 ### Northern Oremindi and the cape
 
@@ -251,22 +251,33 @@ Updated 4 October 2026. Claude independently completed and froze the Celder pair
 | --- | --- |
 | Main revision audited | `a2e49c3` |
 | Unrelated local work | Developer-dragon fire/destruction and its tests; preserve separately. |
-| Known regional delivery | Celder pair in `../azhora-game-celder`, clean `136b582`; intake recorded, acceptance pending. |
+| Known regional delivery | Four new environments accepted: the Celder pair, corrected East Izol and corrected Alezhor. No frozen delivery is currently awaiting acceptance. |
 | Claude connection | Independent Claude session; Celder delivery received through its clean checkout and handoff report. |
-| Next Claude action | East Izol brief is ready; pin its assignment base/worktree before starting. No next worker has been launched from this session. |
-| ChatGPT active assignment | R1 East Lotharn/Varn. First functional corrections frozen at `bd01a17` on `codex/region-review-2026-10-04`, copied into main working files; broader R1 remains open. Celder's West Lotharn seam remains in its frozen delivery. |
-| New accepted regions under this plan | None |
-| New deliveries awaiting review under this plan | South Celder and North Celder, one frozen pair. |
-| Native Electron test slot | Free. Baseline and final review captures completed; no test Electron process remains. Do not run concurrent native captures. |
+| Current Claude build | East Izol is frozen at `fdc1707`. Alezhor is frozen clean at `116799e`, following build `c042e86` and handoff `67719d9`; its corrected environment is now accepted in main. Read-only recheck finds South/North Ibenal building together in `../azhora-game-ibenal`, branch `ibenal` at raw `116799e`, with dirty source and provisional IDs 65/66. No Ibenal handoff/frozen commit exists yet; this was observed, not assigned by this coordinator. |
+| ChatGPT active assignment | Both Celders, East Izol and Alezhor accepted. East Fast 93 +20 and Full 90 +19, Continue and fresh views pass. Alezhor earlier Fast 101 +25 and Full 102 +24, including Continue, pass. Final bank 3/3 and native 49267 Fast 101 +25 Continue pass, exit 0/errors []; repaired river-edge/upstream-stream views are visually accepted. R4 ghubr shelters and Navarth 25/25 runtime response pass; the Navarth approach screenshot is modal-obscured. R7 ordinary-input out/back travel passes. R1 native 6254 passes 40 +9 with exit 0; final overlook 73887 exits 0/errors [] and visually accepts the bounded shoulder/route-join correction. Wider R1 aesthetics and the Upper Olveth connection remain open. The two R8 blade-seating views are visually accepted for that scoped correction. |
+| New accepted regions under this plan | South Celder, North Celder, East Izol and Alezhor (4), accepted 4 October after their scoped corrections, final Full/Fast/Continue evidence and visual inspection. |
+| New deliveries awaiting review under this plan | None (0). The two Ibenals are active drafts, not completed deliveries; do not merge or count them as accepted. Their frozen delta must use the corrected shared base supplied by root. |
+| Native Electron test slot | Owned by ChatGPT: Alezhor Full 20056 completed 102 +24 and Fast 51619 completed 101 +25, both exit 0. Alezhor bank correction and both repaired views are accepted; final native 49267 passes Fast 101 +25 Continue, exit 0/errors []. Combined R1/Mithala session 6254 completed 40 +9, explicit exit 0 and errors []; both R8 seating views were inspected. R1 clear elevated inspection 73887 exits 0/errors []; its overlook visually accepts the bounded shoulder/route-join correction. Earlier north/side frames were insufficient. R4 habitats session 77116 verified all ghubr shelters but failed the Navarth body-camera view. East Full 41822 completed 90 +19 checks, exit 0; its post-report GPU teardown diagnostic is recorded separately from runtime errors []. |
 
 | Assignment | Regions | Base / delivery | State | Next action |
 | --- | --- | --- | --- | --- |
-| Celder | South Celder; North Celder | `a2e49c3` -> `136b582`; clean `celder` worktree | Ready for review; intake only | Preserve frozen pair, reconcile its West Lotharn interface during R2; acceptance follows backlog. |
-| R1 first corrections | East Lotharn Mountains; Varn in Amod | `a2e49c3` -> `bd01a17`; mirrored into main working copy | Functional batch verified; whole R1 still open | Continue broader skyline/tree-belt design, ramp and cave trim, pass-fort checks and Full/Fast journeys before group acceptance. |
+| Celder | South Celder; North Celder | Frozen `136b582` + `29ca691`, reviewed corrections mirrored to main | Environment accepted | Combined scene/controller6/6, seven native views, Full198 +30 and final Fast216 +32 pass. Real swimming, normal stamina, production harvest and exact Continue restore verified. |
+| R1 first corrections | East Lotharn Mountains; Varn in Amod | `a2e49c3` -> `bd01a17`; mirrored into main working copy | Functional batch verified; whole R1 still open | Final central-north shoulder/join candidate passes 10/10, preserves existing tree identities and Varn barriers, and is mirrored to main with four registered tests. Native 6254 passes 40 +9, exit 0/errors []; the clear elevated overlook from 73887 (exit 0/errors []) visually accepts the bounded pilot and route join. Neighboring cliff repetition and the Upper Olveth connection remain open. |
 | Inventory coverage | All 131 atlas names | `bd01a17`, mirrored into main | Implemented; focused and combined checks passed | Inventory repaired; no new regions marked built. |
-| East Izol brief | East Izol | Next bounded Claude assignment | Brief preparation only | Ready after Celder handoff; implementation has not started. |
+| East Izol | East Izol | Clean `fdc1707`, corrected packet mirrored through 39 narrow shared edits | Environment accepted | Fast 93 +20 and Full 90 +19, explicit exit 0; three real W out/back legs, production partial harvest and exact Continue restore; 182-tree/41-ambient catalog retained. Root inspected all eight landscape/wildlife/contact views. Coarse cliff style and the post-report Full GPU teardown diagnostic remain documented. |
+| Alezhor | Alezhor | Frozen raw `116799e`; corrected lattice, river, bank and scenery packets mirrored to main | Environment accepted | Final bank 3/3; native 49267 Fast 101 +25 Continue, exit 0/errors []; prior Full 102 +24. Corrected otter/stream views accepted. Plain teal water and angular cliff style remain limitations. |
+| R2 corrections | West Lotharn Mountains; Feradom | Review worktree after `13448f7`; mirrored into main | Functional correction verified; native stream verified | River-only fine mesh passes 5/5 and native valley now shows continuous water. Preserve 3,178 seeded trees and the existing ascent/descent checks. Repetitive cliff tiers remain a visual limitation. |
+| R3 corrections | Telemonia | Review worktree after `13448f7`; mirrored into main | Functional/native correction verified; landscape tiers remain a limitation | Grounding/cooperative scenery 3/3, loader 8/8, regional 19/19, ordinary-input native 25/25 and five views assessed. Town construction now yields: native maximum step 10.1 ms versus 1,142.4 ms earlier; geometry unchanged. |
+| R4 corrections | Navarth; West Pyros; Ganesh Desert; Ganesh Plain | Review worktree after `13448f7`; mirrored into main | Functional batch verified; native views assessed | Native 77116 verifies all ghubr shelters; Navarth 48567 passes 25/25 ordinary movement/response checks. The response PNG is clear, but the approach PNG is covered by the Carpentry modal and is not visually accepted. Preserve verified 170 trees and bounded seams. |
+| R5 corrections | Four Meroshe deserts | Review worktree after `13448f7`; mirrored into main | Functional correction verified; native assessed | All 1,973 fan cobbles/shore shingle contact actual ground; seeded non-Y geometry retained. Updated fan and reg frames are readable. |
+| R6 corrections | Cape Heth; Dinelv Highlands; Hama | Review worktree after `13448f7`; mirrored into main | Functional corrections verified; final native views assessed | Six seams and actual controller 4/4; 49 rooted trees. Lower-face contact repair covers 6,657 stones, combined 15/15. White terrain facets traced to shared Telemonia cistern material and corrected separately. |
+| R7 corrections | Marosh; Trogo | Review worktree after `13448f7`; mirrored into main | Functional corrections and representative native route verified | 4,503 trees registered/rooted; animal footing and two accidental dry seams corrected. Node recommended inner-bank route passes 434.6 m. Native session 2863 separately walked 217.5 m outward and 217.2 m back with no falls, water or damage. Whole-region, Marosh habitat and remaining visual gates stay open. |
+| R8 corrections | Four Mithala regions | Review worktree after `13448f7`; mirrored into main | Functional corrections verified; final native views assessed | 267 trees/48 residents, regional 14/14. Follow-up 4/4 seats 3,187 forb clumps and 43 stones on actual drawn ground. West Lotharn shared-ground extraction closes Fast border dependency. Latest blade seating passes 5/5 with all 31,007 tufts grounded; its three-file packet is mirrored. Both corrected dry-summer views from native 6254 are visually accepted for the scoped Y-contact repair, without a new water/density claim. |
+| R9 corrections | Selemi; Gala; Northern/Southern Ascarth; Ovesos; Oves Desert | Review worktree after `13448f7`; mirrored into main | Functional/native corrections verified | Final scoped 7/7 preserves 1,197 trees and 98 residents. Shared Telemonia ground readiness/reuse passes. Selemis wrack now forms thin broken ribbons; native recapture assessed. Both earlier bone-bird stand-ins resolved. |
+| R10 review | Remaining western neighbors and Suval interfaces | Review worktree after `13448f7`; verified packets mirrored into main | Functional corrections verified; combined native check passed | West Izol seams and five walking paths pass. Shared West Lotharn ground loads before its neighbors. Three bounded dry-seam corrections pass 6/6 pure, 6/6 real-controller crossings, 8/8 scene/identity checks. Original trees and wildlife homes remain exact. |
+| R11 review | Drent; Luscia; Moros Plain; West Suval | Review worktree after `13448f7`; verified packets mirrored into main | Functional corrections verified; native wildlife views assessed | All 3,597 original trees and 141 original animal home/species/scale records preserved. Eleven new residents cover six sparse Luscia/Moros bands. Woodland 5/5 and final wildlife 5/5 pass; visible footing, actual retreat/return and hawk flight verified. |
 
-The R1 corrections are not acceptance of the complete R1 group. Wider skyline changes, pass-fort regression, Full/Fast travel and the subsequent R2–R11 review remain outstanding. Keep individual-region acceptance visible when a pair shares a report. Update this ledger after each accepted batch and at shutdown.
+The R1 corrections are not acceptance of the complete R1 group. Pass-fort regression and Full/Fast travel now pass; broader repetitive cliffs remain a documented aesthetic limitation. Later queue items remain open rather than being silently certified by shared tests. Keep individual-region acceptance visible when a pair shares a report. Update this ledger after each accepted batch and at shutdown.
 
 The [R1 report](region-reviews/r1-lotharn-review.md) records final code, native captures,
 movement and actual rendered-ground evidence. Main's 25 unrelated dragon files were checked
@@ -274,13 +285,35 @@ byte-for-byte before and after integration; its existing test entries were prese
 combined checkout passed 38 focused checks across five files. No push was performed and main
 HEAD remains `a2e49c3`, with the integrated working changes ready for the next desktop launch.
 
+## Delivery recheck, 4 October 2026
+
+Read-only inspection confirms clean, unchanged deliveries at Celder `136b582`,
+East Izol `fdc1707`, and Alezhor `116799e`. The fourth relevant checkout,
+`../azhora-game-ibenal`, is building the connected South/North pair on raw
+Alezhor `116799e`: 16 modified tracked files and ten new brief/source/test files
+were observed, with no frozen Ibenal handoff. Its draft brief describes its own
+coordinating session and provisional IDs 65/66; this report does not issue that
+assignment or substitute a South-only build. Main remains at 64 integrated
+regions; the 67 outside main include these two active drafts.
+
+Review that evolving delta read-only now; defer intake/integration until a frozen
+handoff is available. The raw base lacks the corrected stable terrain lattice,
+combined forest/Alezhor ground job, exact ribbon-water query, and current bank
+contact repair. South Ibenal's draft reads Alezhor's live incoming ground along
+their three edges. Preserve the final evaluated west-stream stations, levels,
+Float32 ribbon and retained terrain, not merely unchanged stream controls.
+Compose the eventual narrow delta onto the coordinator's corrected base, then
+prove existing neighbor identities and both load orders. The
+[prepared interface brief](region-briefs/south-ibenal-environment.md) now records
+these integration requirements without replacing the observed pair assignment.
+
 ## Inventory caveats to carry into implementation
 
 - `buildStatusList()` exposed 73 entries at the planning baseline. The review branch now uses the complete 131-entry atlas level table; existing access restrictions and runtime IDs are unchanged.
 - Some existing build-status prose still says neighboring regions are absent even though they are integrated. Refresh descriptions when those regions are reviewed, using current source and observed behavior.
 - Access restrictions are not absence of terrain: East Suval and Feradom already have substantive environments.
 - Generic outland visible beyond a border is not a completed regional environment.
-- Earlier documents saying 27 built and 104 remaining are historical. This ledger's snapshot is 60 integrated plus 2 delivered but not accepted plus 69 other builds.
+- Earlier documents saying 27 built and 104 remaining are historical. This ledger's current snapshot is 64 integrated, with four newly accepted environments, none delivered outside main, and 67 other builds (including two active Ibenal drafts). The original inventory table records IDs 1-60 at the planning baseline; Celders61/62, East Izol63 and Alezhor64 are recorded in the delivery queue.
 - At the next session, recompute the set difference before starting. Another Claude session may have finished Celder or other work overnight; keep its work and remove duplication from the queue.
 
 The original planning pass changed no game code. The 4 October execution updates record the first verified functional batch in the review branch and main working copy. They do not certify unreviewed environments or alter the Claude checkout or user saves.

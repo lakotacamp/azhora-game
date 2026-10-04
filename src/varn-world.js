@@ -1,3 +1,4 @@
+import { lotharnRouteJoinDelta, nearLotharnRouteJoin } from './east-lotharn-world.js';
 /**
  * Varn: the Empire's fortress-city in the notch of Amod, on the pass that comes south out of the East
  * Lotharn - as pure numbers. `src/varn-scenery.js` draws what is described here.
@@ -44,7 +45,8 @@ import { fortCircuit, FORT_STANDARD } from './fortification.js';
 import { KELMOD_ROAD_END, AMOD_ROAD } from './amod-world.js';
 import { amodRoadBench, amodTerracedGround } from './amod-terraces.js';
 import { firstCliff, onPeakWay, RAMPS_KEEP_THEIR_HOLD } from './lotharn-first-course.js';
-import { peakUplift as eastUplift, BANDS as EAST_BANDS, LOTHARN as EAST_LOTHARN, RAMPS as EAST_RAMPS, nearestOn, pointOn as pointOnLine } from './east-lotharn-world.js';
+import { peakUplift as eastUplift, BANDS as EAST_BANDS, LOTHARN as EAST_LOTHARN, RAMPS as EAST_RAMPS, nearestOn, pointOn as pointOnLine,
+  lotharnLandscapeDelta, LOTHARN_WESTERN_SHOULDER } from './east-lotharn-world.js';
 import { RAMPS as WEST_RAMPS } from './west-lotharn-world.js';
 import { CAVE_LINES as EAST_CAVE_LINES } from './east-lotharn-caves.js';
 import { WEST_CAVE_LINES } from './west-lotharn-caves.js';
@@ -902,6 +904,20 @@ export function varnGround(x, z, ground, lips = true, legacyCaves = false) {
 /** The ground with everything of Varn on it but the lips: what the lip rule reads. */
 export const varnBeforeLips = (x, z) => varnGround(x, z, groundBeforeVarn(x, z), false);
 const varnLegacyBeforeLips = (x, z) => varnGround(x, z, groundBeforeVarn(x, z), false, true);
+/**
+ * Scenery-only inverse of the western shoulder's change to the old brink rims.
+ * The visible/physical rims still follow their actual ground. Seeded legacy
+ * scatter must read its original terrain, including the old derived rim, or
+ * one changed rejection would advance the rest of the regional random stream.
+ */
+export function varnLandscapeSceneryDelta(x, z) {
+  const s = LOTHARN_WESTERN_SHOULDER, reach = RIB.reach + 1;
+  if (x < s.minX - reach || x > s.maxX + reach || z < s.minZ - reach || z > s.maxZ + reach) return 0;
+  const here = varnLegacyBeforeLips(x, z);
+  const original = (a, b) => varnLegacyBeforeLips(a, b) - lotharnLandscapeDelta(a, b);
+  return lipRib(x, z, varnLegacyBeforeLips, here, true)
+    - lipRib(x, z, original, here - lotharnLandscapeDelta(x, z), true);
+}
 /** Subtract only for legacy seeded scenery acceptance; rendered and traversed ground keeps the shelf.
  * Existing harvestable tree identities must not change when a new shelf raises a height threshold. */
 export function varnCaveAccessDelta(x, z) {
@@ -1069,3 +1085,13 @@ export const VARN_LANDMARKS = freeze([
   freeze({ id: 'varn-amod-gate', name: 'The Amod Gate', x: AXIS, z: FRONT - 5,
     description: 'Varn’s south gate, in the face of its salient, on the road down through the hills to Ostel: the town’s own door, shut and barred like the other, with a wicket in its right-hand leaf that is opened from inside and from nowhere else. From here the terraces begin.' }),
 ]);
+
+/** Scenery-only inverse for the old derived rim near repaired trail joins.
+ * Physical rims retain the actual field. Never use this to move a traveler. */
+export function varnRouteJoinSceneryDelta(x, z) {
+  if (!nearLotharnRouteJoin(x, z, RIB.reach + 2) || !inVarnRock(x, z)) return 0;
+  const here = varnLegacyBeforeLips(x, z);
+  const original = (a, b) => varnLegacyBeforeLips(a, b) - lotharnRouteJoinDelta(a, b);
+  return lipRib(x, z, varnLegacyBeforeLips, here, true)
+    - lipRib(x, z, original, here - lotharnRouteJoinDelta(x, z), true);
+}

@@ -169,9 +169,9 @@ export function createIbenwoodRiverSystem({ groundHeight }) {
  * solid colliders; normal heightAt/waterAt movement supplies swimming behavior.
  */
 export function createIbenwoodRiverScenery(...args) { return finishBuild(createIbenwoodRiverScenerySteps(...args)); }
-export function* createIbenwoodRiverScenerySteps({ THREE, parent, rivers, terrainRoot, heightAt }) {
+export function* createIbenwoodRiverScenerySteps({ THREE, parent, rivers, terrainRoot, heightAt, refinedGround = null }) {
   let buildWork = 0;
-  const terrain = terrainRoot ? (yield* refineIbenwoodRiverGroundSteps({ THREE, terrainRoot, rivers, heightAt })) : null;
+  const terrain = refinedGround ?? (terrainRoot ? (yield* refineIbenwoodRiverGroundSteps({ THREE, terrainRoot, rivers, heightAt })) : null);
   const material = new THREE.MeshStandardMaterial({ color: '#527e78', roughness: .3, metalness: .06 });
   const meshes = rivers.ribbons.map((ribbon, i) => {
     const geometry = new THREE.BufferGeometry();

@@ -2,6 +2,10 @@ import { EAST_PYROS_WILDLIFE_ZONES } from './east-pyros-wildlife.js';
 import { NETHER_DESERT_WILDLIFE_ZONES } from './nether-desert-wildlife.js';
 import { LEGEMUM_WILDLIFE_ZONES } from './legemum-wildlife.js';
 import { BABON_WILDLIFE_ZONES } from './babon-wildlife.js';
+import { SOUTH_CELDER_WILDLIFE_ZONES } from './south-celder-wildlife.js';
+import { NORTH_CELDER_WILDLIFE_ZONES } from './north-celder-wildlife.js';
+import { EAST_IZOL_WILDLIFE_ZONES } from './east-izol-wildlife.js';
+import { ALEZHOR_WILDLIFE_ZONES } from './alezhor-wildlife.js';
 import * as THREE from 'three';
 import {WEST_OREMINDI_WILDLIFE_ZONES} from './west-oremindi-wildlife.js';
 import {BALDRO_WILDLIFE_ZONES} from './baldro-wildlife.js';
@@ -14,6 +18,7 @@ import { aevisReserved } from './aevis-city.js';
 import { westWaterSurface } from './west-ground.js';
 import { REGIONAL_WILDLIFE_ZONES, WEST_SUVAL_WILDLIFE_ZONES } from './regional-wildlife.js';
 import { DRENT_WILDLIFE_ZONES } from './drent-wildlife.js';
+import { STARTING_COUNTRY_WILDLIFE_ZONES } from './starting-country-wildlife.js';
 import { SOUTH_SUVAL_WILDLIFE_ZONES } from './south-suval-wildlife.js';
 import { EAST_LOTHARN_WILDLIFE_ZONES } from './east-lotharn-wildlife.js';
 import { FERADOM_WILDLIFE_ZONES } from './feradom-wildlife.js';
@@ -1336,6 +1341,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...REGIONAL_WILDLIFE_ZONES,
   ...DRENT_WILDLIFE_ZONES,
   ...WEST_SUVAL_WILDLIFE_ZONES,
+  ...STARTING_COUNTRY_WILDLIFE_ZONES,
   ...SOUTH_SUVAL_WILDLIFE_ZONES,
   ...EAST_LOTHARN_WILDLIFE_ZONES,
   ...FERADOM_WILDLIFE_ZONES,
@@ -1357,6 +1363,7 @@ export const WEST_LIFE_ZONES = Object.freeze([
   ...TELEMONIA_HERD_ZONES,
   ...EAST_PYROS_WILDLIFE_ZONES, ...NETHER_DESERT_WILDLIFE_ZONES, ...LEGEMUM_WILDLIFE_ZONES,
   ...BABON_WILDLIFE_ZONES,
+  ...SOUTH_CELDER_WILDLIFE_ZONES, ...NORTH_CELDER_WILDLIFE_ZONES, ...EAST_IZOL_WILDLIFE_ZONES, ...ALEZHOR_WILDLIFE_ZONES,
 ]);
 
 /**
@@ -1546,7 +1553,13 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     const water = westWaterSurface(x, z) ?? world.waterAt?.(x, z) ?? null;
     return water === null ? ground : Math.max(ground, water - .04);
   };
-  const renderedFootingRegions = new Set(['East Pyros', 'Nether Desert', 'Legemum', 'Babon']);
+  const renderedFootingRegions = new Set(['Alezhor', 'East Izol', 'East Pyros', 'Nether Desert', 'Legemum', 'Babon', 'South Celder', 'North Celder',
+    'Drent', 'Luscia', 'Moros Plain', 'West Suval',
+    'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain',
+    'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert',
+    'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo',
+    'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala',
+    'Gala', 'Northern Ascarth', 'Southern Ascarth', 'Ovesos', 'Oves Desert', 'Selemi']);
   function visualFootingY(animal) {
     const y = animal.y + animal.lift, zone = animal.zone;
     if (!world.renderedGroundHeight || !renderedFootingRegions.has(zone.region)

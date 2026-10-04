@@ -1,6 +1,9 @@
 import { stageBuildSteps } from './build-steps.js';
 import { createRegionLoading } from './region-loading.js';
 import { createStreamedTerrain } from './streamed-terrain.js';
+import { IBENWOOD_ALEZHOR_GROUND_REGIONS, createIbenwoodAlezhorGroundSteps } from './ibenwood-alezhor-ground.js';
+import { alezhorSwimmingSurface } from './alezhor-water.js';
+import { appendWesternTerrainSamples, preservedTerrainTileRanges, extensionTerrainSeed } from './terrain-extension.js';
 import { deferredScenery } from './deferred-scenery.js';
 import { batchStaticScenery } from './static-scenery-batches.js';
 import { REGION_IDS, REGION_CELLS, SURVEY } from './region-world.js';
@@ -15,6 +18,7 @@ import { groveGround } from './ibenwood-pilot.js';
 import { createIbenwoodRegionalScenerySteps } from './ibenwood-regional-scenery.js';
 import { createWalkSurfaces } from './walk-surfaces.js';
 import { createIbenwoodRiverSystem, createIbenwoodRiverScenerySteps } from './ibenwood-rivers.js';
+import { createAlezhorBankGround } from './alezhor-bank-ground.js';
 import { createRegionalFarmlandScenerySteps } from './regional-farmland-scenery.js';
 import { FARMSTEADS } from './regional-farmland.js';
 // `WATERLINE` is the line the predicates judge wet by; `waterAt` below answers it for the sea
@@ -42,7 +46,7 @@ import {
   CALOSS, CALOSS_BANK, WOOD_EDGE, FERNWAY_REST, FRONTIER, STORY_SITES, AVREL_CLEARING,
   calossDistance, landDistance, SOLIS, solisPoint,
 } from './region-world.js';
-import { villageWeight, villageBase, bedrockHeight, groundWithRiver, groundBeforeVarn, groundTint, calossSurface, puethRiverSurface, smooth, lerp } from './world-terrain.js';
+import { villageWeight, villageBase, bedrockHeight, legacyIzolGroundHeight, legacyWesternGroundHeight, legacyCelderGroundHeight, legacyEastIzolGroundHeight, groundWithRiver, groundBeforeVarn, groundTint, calossSurface, puethRiverSurface, smooth, lerp } from './world-terrain.js';
 import { toWorld, WORLD_SCALE } from './world-scale.js';
 import { createSigns, SIGN_COLOURS } from './signs.js';
 import { buildMorosWorks } from './moros-works.js';
@@ -111,7 +115,10 @@ import { PASS_ROAD_LINE as LOTHARN_ROAD_LINE, WORKINGS_TRACK, EAST_LOTHARN_LANDM
 import { createCaves } from './east-lotharn-caves.js';
 import { WEST_LOTHARN_LANDMARKS, westLotharnTerrainSink } from './west-lotharn-world.js';
 import { createWestLotharnCaves } from './west-lotharn-caves.js';
+import { createWestLotharnGroundSteps, WEST_LOTHARN_GROUND_REGIONS } from './west-lotharn-ground.js';
+import { createLegacyWesternGrid, createLegacyWesternGround } from './western-legacy-ground.js';
 import { createSuvalHighlandScenerySteps } from './suval-highlands-scenery.js';
+import { createSuvalGroundSurface, createSuvalHighlandGroundSteps, SUVAL_GROUND_REGIONS } from './suval-highland-ground.js';
 import { BAT_CAVE, IMLAMDRIS_REBUILD, suvalHighlandTerrainSink } from './suval-highlands.js';
 import { createIscareScenerySteps } from './iscare-scenery.js';
 import { ISCARE_RUIN_SITES } from './iscare-world.js';
@@ -137,20 +144,22 @@ import { AEVIS_PATHS, AEVIS_LANDMARKS, aevisReserved, aevisDeckHeight } from './
 import { clearScatter } from './scenery-clearing.js';
 import { MENORA, MENORA_PATHS, MENORA_BUILDINGS, menoraDeckHeight } from './menora-city.js';
 import { CARICAS_TOWN, CARICAS_ROADS } from './caricas-settlement.js';
-import { createCaricasSettlement } from './caricas-settlement-scenery.js';
+import { createCaricasSettlementSteps } from './caricas-settlement-scenery.js';
 import { createWestScenerySteps } from './west-regions-scenery.js';
 import { createGalaScenerySteps } from './gala-scenery.js';
 import { GALA_LANDMARKS } from './gala-world.js';
 import { createOvesScenerySteps } from './oves-scenery.js';
 import { createMithalaScenerySteps } from './mithala-scenery.js';
+import { createMithalaWaterSteps, MITHALA_WATER_REGIONS, celderBorderWaterSurface } from './mithala-water.js';
 import { createSouthwestScenerySteps } from './southwest-scenery.js';
 import { OVES_LANDMARKS } from './oves-world.js';
 import { MITHALA_LANDMARKS } from './mithala-world.js';
 import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
 import { createSelemisScenery } from './selemis-scenery.js';
 import { SELEMIS_LANDMARKS } from './selemis-world.js';
-import { createTelemoniaScenery } from './telemonia-scenery.js';
-import { createTelemoniaTownScenery } from './telemonia-town-scenery.js';
+import { createTelemoniaScenerySteps } from './telemonia-scenery.js';
+import { createTelemoniaGroundSteps } from './telemonia-ground.js';
+import { createTelemoniaTownScenerySteps } from './telemonia-town-scenery.js';
 import { TELEMONIA_TOWN_LANDMARKS } from './telemonia-ways.js';
 import { createEastPyrosScenerySteps } from './east-pyros-scenery.js';
 import { EAST_PYROS_LANDMARKS, EAST_PYROS_POOLS, eastPyrosWaterAt } from './east-pyros-world.js';
@@ -161,6 +170,14 @@ import { LEGEMUM_LANDMARKS } from './legemum-world.js';
 import { BABON_LANDMARKS, BABON_RIVERS, babonWaterAt, babonOwns } from './babon-world.js';
 import { createBabonScenerySteps } from './babon-scenery.js';
 import { refineBabonGroundSteps } from './babon-ground.js';
+import { createSouthCelderScenerySteps } from './south-celder-scenery.js';
+import { SOUTH_CELDER_LANDMARKS } from './south-celder-world.js';
+import { createNorthCelderScenerySteps } from './north-celder-scenery.js';
+import { NORTH_CELDER_LANDMARKS } from './north-celder-world.js';
+import { createEastIzolScenerySteps } from './east-izol-scenery.js';
+import { EAST_IZOL_LANDMARKS } from './east-izol-world.js';
+import { createAlezhorScenerySteps } from './alezhor-scenery.js';
+import { ALEZHOR_LANDMARKS, alezhorMapWaters, alezhorRiverIndex } from './alezhor-world.js';
 import { TELEMONIA_LANDMARKS, telemoniaTerrainSink } from './telemonia-world.js';
 import { DRENT_SITES, DRENT_NPC_POSITIONS, DRENT_LOCAL_PATHS, drentFeatureClear } from './drent-sites.js';
 import { createDrentCivilWarScenery } from './drent-scenery.js';
@@ -382,7 +399,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   }
   function uncarvedForestGround(x,z) { return groveGround(x,z,(a,b)=>brandyHomeGround(a,b,rawGroundHeight)); }
   const ibenwoodRivers=createIbenwoodRiverSystem({groundHeight:uncarvedForestGround});
-  function groundHeight(x, z) { return ibenwoodRivers.ground(x,z,uncarvedForestGround(x,z)); }
+  function legacyAlezhorBankHeight(x,z) { return ibenwoodRivers.ground(x,z,uncarvedForestGround(x,z)); }
+  const alezhorBanks=createAlezhorBankGround(ibenwoodRivers);
+  function groundHeight(x, z) { return alezhorBanks.ground(x,z,legacyAlezhorBankHeight(x,z)); }
   pond.surfaceY = villageBase(pond.x, pond.z) - .55;
   pond.castPoint.y = pond.surfaceY + .035;
   const pondWorld = villageToWorld(pond.x, pond.z);
@@ -421,7 +440,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     if (elodQuay !== null) return elodQuay;
     // Izolveth's quay and the two moles that close its harbour, in West Izol.
     const izolDeck = izolDeckHeight(x, z);
-    if (izolDeck !== null) return izolDeck;
+    if (izolDeck !== null) return Math.max(izolDeck, groundHeight(x, z));
     // Solis's ramp, stone quay, timber piers and breakwater share their drawn deck heights.
     const nylonDeck=nylonHarborDeckHeight(x,z);if(nylonDeck!==null)return nylonDeck;
     const aevisDeck=aevisDeckHeight(x,z);if(aevisDeck!==null)return aevisDeck;
@@ -580,10 +599,12 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // Keep the established mesh samples east of the old edge byte-for-byte stable.
   // Starting the sampler at the new edge would rephase every road and tree base.
   const establishedWestEdge = -3010.001927939127 - 80;
-  const terrainXs = axisSamples(establishedWestEdge, WORLD_BOUNDS.maxX + 80, Math.min(-252, AVREL_CLEARING.x - 60), 62);
-  const extension = [], extensionCount = Math.ceil((establishedWestEdge - (WORLD_BOUNDS.minX - 80)) / 7.1);
-  for (let i = extensionCount; i > 0; i--) extension.push(establishedWestEdge - i * (establishedWestEdge - (WORLD_BOUNDS.minX - 80)) / extensionCount);
-  terrainXs.unshift(...extension);
+  const legacyTerrainXs = axisSamples(establishedWestEdge, WORLD_BOUNDS.maxX + 80, Math.min(-252, AVREL_CLEARING.x - 60), 62);
+  const legacyWestEdge = -4610.001927939127 - 80;
+  const extension = [], extensionCount = Math.ceil((establishedWestEdge - legacyWestEdge) / 7.1);
+  for (let i = extensionCount; i > 0; i--) extension.push(establishedWestEdge - i * (establishedWestEdge - legacyWestEdge) / extensionCount);
+  legacyTerrainXs.unshift(...extension);
+  const {samples:terrainXs,addedColumns}=appendWesternTerrainSamples(legacyTerrainXs,WORLD_BOUNDS.minX-80);
   // The fine band reaches north over the Tessen bridge and its road post, so the river's cut and the embankment read true.
   const establishedNorthEdge=-2167.195996001615-80;
   const terrainZs = axisSamples(establishedNorthEdge, WORLD_BOUNDS.maxZ + 80, Math.min(-110, TESSEN_BRIDGE.crossing.z - 45), Math.max(172, AVREL_CLEARING.z + 60));
@@ -601,11 +622,13 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   if(cacheHit)sampled.fill(1);
   if(terrainSeeds){
     for(let j=0;j<rows;j++){
-      for(let i=0;i<columns;i++){const index=j*columns+i;terrainSeeds[index]=terrainSeed;trandom();const local=worldToVillage(terrainXs[i],terrainZs[j]);if(villageWeight(local.x,local.z)>0)trandom();}
+      for(let i=0;i<columns;i++){const index=j*columns+i;if(i<addedColumns){terrainSeeds[index]=extensionTerrainSeed(terrainXs[i],terrainZs[j]);continue;}terrainSeeds[index]=terrainSeed;trandom();const local=worldToVillage(terrainXs[i],terrainZs[j]);if(villageWeight(local.x,local.z)>0)trandom();}
       if(j%16===0)yield;
     }
   }
   function sampleTerrain(i,j){
+    const previousTerrainSeed=terrainSeed;
+    if(i<addedColumns&&!terrainSeeds)terrainSeed=extensionTerrainSeed(terrainXs[i],terrainZs[j]);
     if(terrainSeeds)terrainSeed=terrainSeeds[j*columns+i];
     const x = terrainXs[i], z = terrainZs[j], index = j * columns + i;
     // Amod's terraces and Imlamdris's are drawn by their own fine patches (src/amod-scenery.js,
@@ -624,12 +647,13 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     } else color.multiplyScalar(trange(.955, 1.045));
     terrainColors[index*3]=color.r;terrainColors[index*3+1]=color.g;terrainColors[index*3+2]=color.b;
     sampled[index]=1;
+    if(i<addedColumns&&!terrainSeeds)terrainSeed=previousTerrainSeed;
   }
   if(!fast&&!cacheHit)for(let j=0;j<rows;j++){for(let i=0;i<columns;i++)sampleTerrain(i,j);if(j%16===0)yield `Shaping terrain (${Math.round(j/rows*100)}%)`;}
   const terrainMaterial = material('#ffffff', { vertexColors: true, flatShading: true });
   const terrainRoot = new THREE.Group();terrainRoot.name='The ground of Azhora';world.add(terrainRoot);
   if(fast){
-    streamTerrain=createStreamedTerrain({THREE,xs:terrainXs,zs:terrainZs,positions:terrainPositions,colors:terrainColors,sample:sampleTerrain,sampled,root:terrainRoot,material:terrainMaterial,cells:REGION_CELLS,ids:REGION_IDS});
+    streamTerrain=createStreamedTerrain({THREE,xs:terrainXs,zs:terrainZs,positions:terrainPositions,colors:terrainColors,sample:sampleTerrain,sampled,root:terrainRoot,material:terrainMaterial,cells:REGION_CELLS,ids:REGION_IDS,originColumn:addedColumns});
     yield* streamTerrain.buildRegion(initialRegion);
     for(const id of Object.values(REGION_IDS))if(id!==initialRegion)loading.register({id:`terrain-${id}`,regions:[id],steps:()=>streamTerrain.buildRegion(id)});
     if(onTerrain)onTerrain({hit:cacheHit,partial:true});
@@ -673,12 +697,12 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     // so a camera facing Drent can discard the Moros without changing the ground.
     // More ground, same tile footprint: a camera in Drent still discards the Moros.
     const tilesX = Math.round(7 * WORLD_SCALE), tilesZ = Math.round(7 * WORLD_SCALE);
-    const spanX = Math.ceil((columns - 1) / tilesX), spanZ = Math.ceil((rows - 1) / tilesZ);
+    const spanX = Math.ceil((legacyTerrainXs.length - 1) / tilesX), spanZ = Math.ceil((rows - 1) / tilesZ);
     const bounds = new THREE.Box3(), vertex = new THREE.Vector3();
     const positionAttribute = terrainGeometry.attributes.position;
-    for (let tz = 0; tz < tilesZ; tz++) for (let tx = 0; tx < tilesX; tx++) {
-      const firstX = tx * spanX, firstZ = tz * spanZ;
-      const lastX = Math.min(firstX + spanX, columns - 1), lastZ = Math.min(firstZ + spanZ, rows - 1);
+    for (let tz = 0; tz < tilesZ; tz++) for (const range of preservedTerrainTileRanges(legacyTerrainXs.length,addedColumns,spanX)) {
+      const tx=range.key,firstX = range.first, firstZ = tz * spanZ;
+      const lastX = range.last, lastZ = Math.min(firstZ + spanZ, rows - 1);
       if (firstX >= lastX || firstZ >= lastZ) continue;
       const indices = [];
       bounds.makeEmpty();
@@ -1439,11 +1463,21 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   measurePath(SYLVIA_PATH.points, SYLVIA_PATH.width);
   measurePath(MARK_HOME_PATH, 1.1);
   createVisualArtsScenery({root:world,cottage,groundHeight,colliders});
+  const legacyWesternWorldGround=createLegacyWesternGround({groundHeight,baseHeight:groundWithRiver,legacyBaseHeight:legacyWesternGroundHeight});
+  const legacyWesternTreeGroundAt=createLegacyWesternGrid({xs:terrainXs,zs:terrainZs,positions:terrainPositions,currentHeight:treeGroundAt,
+    legacyVertexHeight:(x,z)=>legacyWesternWorldGround(x,z)-amodTerrainSink(x,z)-imlamdrisTerrainSink(x,z)-suvalHighlandTerrainSink(x,z)-lotharnTerrainSink(x,z)-westLotharnTerrainSink(x,z)-feradomTerrainSink(x,z)-varnTerrainSink(x,z)-telemoniaTerrainSink(x,z)-trelossTerrainSink(x,z)});
+  const westLotharnCaves = createWestLotharnCaves(groundHeight);
+  const westLotharnGround=yield* regionBuild('westLotharnGround',WEST_LOTHARN_GROUND_REGIONS,stage=>createWestLotharnGroundSteps({root:stage,terrainRoot,material,groundHeight,renderedGroundHeight:treeGroundAt,legacyGroundHeight:legacyWesternWorldGround,legacyRenderedGroundHeight:legacyWesternTreeGroundAt,caves:westLotharnCaves}),{renderedGroundHeight:treeGroundAt});
+  const sharedWestGroundAt=(x,z)=>westLotharnGround.renderedGroundHeight(x,z);
+  const suvalSurface=createSuvalGroundSurface(groundHeight);
+  const suvalGround=yield* regionBuild('suvalGround',SUVAL_GROUND_REGIONS,stage=>createSuvalHighlandGroundSteps({root:stage,material,groundHeight,surface:suvalSurface}),{});
+  const startingCountryGroundAt=(x,z)=>Math.max(sharedWestGroundAt(x,z),suvalSurface.fineGroundHeight(x,z)??-Infinity);
   yield 'Drent and the main road';
   const regionScenery = yield* createRegionScenerySteps({
     fastInitialRegion:fast?initialRegion:null,
+    regionIds:fast&&WEST_LOTHARN_GROUND_REGIONS.includes(initialRegion)?[]:undefined,
     root: world, material, mesh, box, post, pebble, rope, cottage, fence, leanTo, barrel, crate,
-    groundHeight, colliders, wornPatch, dummy:new THREE.Object3D(), color:new THREE.Color(),
+    groundHeight, renderedGroundHeight:startingCountryGroundAt, legacyGroundHeight:legacyWesternWorldGround, colliders, wornPatch, dummy:new THREE.Object3D(), color:new THREE.Color(),
     wood, woodLight, darkWood, cream, rockMat, roofGeometry, cylinder, round,
     movingGroups, roadDistance,
     riverDistance: (x, z) => Math.min(calossDistance(x, z), puethRiverDistance(x, z, 14), tarvelDistance(x, z), westRiverDistance(x, z, 14)),
@@ -1503,36 +1537,38 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry,
   }),{});
   yield 'Suval highlands';
-  const suvalHighlands=yield* regionBuild('suvalHighlands',[5, 18],stage=>createSuvalHighlandScenerySteps({ root:stage, material, mesh, box, post, round, groundHeight, colliders, roofGeometry, wornPatch }),{paths:[]},built=>{if(fast)paths.push(...built.paths);});
+  const suvalHighlands=yield* regionBuild('suvalHighlands',[5, 18],stage=>createSuvalHighlandScenerySteps({ root:stage, material, mesh, box, post, round, groundHeight, colliders, roofGeometry, wornPatch , fineGround:suvalGround }),{paths:[]},built=>{if(fast)paths.push(...built.paths);});
   yield 'Iscare';
   const iscare=yield* regionBuild('iscare',[19],stage=>createIscareScenerySteps({ root:stage, material, mesh, box, post, pebble, groundHeight, colliders, round, wornPatch }),{});
   const lotharnCaves = createCaves(groundHeight);
   // The West Lotharn's are kept in their own array so `world.lotharnCaves` stays the East's alone
   // (tests/east-lotharn-peaks.test.js counts it); main.js walks both through one cave controller.
-  const westLotharnCaves = createWestLotharnCaves(groundHeight);
+
+  yield 'Ibenwood and Alezhor river ground';
+  const ibenwoodAlezhorGround=yield* regionBuild('ibenwoodAlezhorGround',IBENWOOD_ALEZHOR_GROUND_REGIONS,stage=>createIbenwoodAlezhorGroundSteps({THREE,terrainRoot,forest:ibenwoodRivers,coast:alezhorRiverIndex(),heightAt:groundHeight,streamTerrain}),{fineGroundHeight:()=>null});
+  const forestRenderedGround=(x,z)=>ibenwoodAlezhorGround.fineGroundHeight(x,z)??treeGroundAt(x,z);
   yield 'Ibenwood groves';
   const ibenwood=yield* regionBuild('ibenwood',[32, 33, 34, 35, 36],stage=>createIbenwoodScenerySteps({parent:stage,heightAt:groundHeight,colliders,terrain:{xs:terrainXs,zs:terrainZs,positions:terrainPositions},terrainRoot}),{});
   yield 'Ibenwood rivers';
-  const ibenwoodWater=yield* regionBuild('ibenwoodWater',[32, 33, 34, 35, 36],stage=>createIbenwoodRiverScenerySteps({THREE,parent:stage,rivers:ibenwoodRivers,terrainRoot,heightAt:groundHeight}),{});
-  const forestRenderedGround=(x,z)=>ibenwoodRivers.nearest(x,z,40)?groundHeight(x,z):treeGroundAt(x,z);
+  const ibenwoodWater=yield* regionBuild('ibenwoodWater',[32, 33, 34, 35, 36],stage=>createIbenwoodRiverScenerySteps({THREE,parent:stage,rivers:ibenwoodRivers,refinedGround:ibenwoodAlezhorGround,heightAt:groundHeight}),{});
   yield 'Ibenwood forest';
   const ibenwoodForest=yield* regionBuild('ibenwoodForest',[32, 33, 34, 35, 36],stage=>createIbenwoodRegionalScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:forestRenderedGround,colliders,
     waterClear:(x,z,padding=0)=>{const hit=ibenwoodRivers.nearest(x,z,20);return !hit||hit.distance>hit.half+padding+2;}}),{walkSurfaces:[]},built=>{if(fast)outdoorWalkSurfaces.push(...built.walkSurfaces);});
   // Elevated outdoor surfaces are composed after the lake-town promenade is built.
   yield 'Feradom';
-  const feradom=yield* regionBuild('feradom',[21],stage=>createFeradomScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  const feradom=yield* regionBuild('feradom',[21],stage=>createFeradomScenerySteps({ root:stage, material, groundHeight, renderedGroundHeight:treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   yield 'East Lotharn';
   const eastLotharn=yield* regionBuild('eastLotharn',[20],stage=>createEastLotharnScenerySteps({
     root:stage, material, mesh, box, post, pebble, wornPatch,
-    groundHeight, renderedGroundHeight: treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: lotharnCaves,
+    groundHeight, renderedGroundHeight: sharedWestGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: lotharnCaves,
     unbuiltGround: groundBeforeVarn,
   }),{});
   // The West Lotharn (src/west-lotharn-scenery.js): the massifs' own close-drawn ground, the courses
   // of cliff and the balds, the caves' rock, the four becks and the old forest to the tree line.
   yield 'West Lotharn';
   const westLotharn=yield* regionBuild('westLotharn',[27],stage=>createWestLotharnScenerySteps({
-    root:stage, material, mesh, box, post, pebble, wornPatch,
-    groundHeight, renderedGroundHeight: treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: westLotharnCaves,
+    root:stage, terrainRoot, material, mesh, box, post, pebble, wornPatch,
+    groundHeight, renderedGroundHeight: treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), cylinder, round, roofGeometry, caves: westLotharnCaves, fineGround:westLotharnGround, legacyGroundHeight:legacyWesternWorldGround,
   }),{});
   // Varn (src/varn-scenery.js): the Empire's fortress-city in Amod's notch, on the pass out of the East
   // Lotharn. Built after both the countries it stands between, so that their scatter is already down
@@ -1565,10 +1601,10 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   fishingSpots.push(peninsulaTutorial.fishingSpot);
   const outdoorWalkSurfaces=[...ibenwoodForest.walkSurfaces,...yunethre.walkSurfaces,...peninsulaTutorial.walkSurfaces];
   const forestWalks=createWalkSurfaces(outdoorWalkSurfaces,heightAt);
-  const ascarth=yield* regionBuild('ascarth',[23, 24],stage=>createAscarthScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  const ascarth=yield* regionBuild('ascarth',[23, 24],stage=>createAscarthScenerySteps({ root:stage, material, groundHeight, renderedGroundHeight:treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   // West Suval and Solis (src/west-suval-world.js): the city, its walls, the Coalition's camp and the road's country.
   yield 'West Suval';
-  const westSuval=yield* regionBuild('westSuval',[5],stage=>createWestSuvalScenerySteps({ root:stage, material, mesh, box, post, pebble, rope, groundHeight, colliders, wornPatch, roofGeometry, cylinder, round,
+  const westSuval=yield* regionBuild('westSuval',[5],stage=>createWestSuvalScenerySteps({ root:stage, material, mesh, box, post, pebble, rope, groundHeight, renderedGroundHeight:startingCountryGroundAt, legacyGroundHeight:legacyWesternWorldGround, colliders, wornPatch, roofGeometry, cylinder, round,
     wood, woodLight, darkWood, cream, movingGroups, roadDistance, sign: roadsideSign, signs, barrel }),{});
   // Paradise Springs (src/winery-world.js): Lakota's old winery southeast of Port Calos.
   const winery=yield* regionBuild('winery',[2],stage=>immediate(()=>createWineryScenery({ root:stage, material, mesh, box, post, barrel, groundHeight, colliders, cylinder, round, wornPatch, signs, movingGroups })),{});
@@ -1576,7 +1612,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // Ardveth, Kelvath Cove, the Sea Gate, the Sightstone and the island's own scatter.
   yield 'Izol';
   const izol=yield* regionBuild('izol',[8],stage=>createIzolScenerySteps({ root:stage, material, mesh, box, post, pebble, rope, cottage, barrel, crate, wornPatch, sign: roadsideSign,
-    groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), wood, woodLight, darkWood, cream, roofGeometry, cylinder, round, movingGroups }),{});
+    groundHeight, legacyGroundHeight:legacyIzolGroundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), wood, woodLight, darkWood, cream, roofGeometry, cylinder, round, movingGroups }),{});
   // Elagos and Ambron (src/elagos-scenery.js): the lakes, the walled city on the narrows, and the lake country.
   yield 'Ambron and Elagos';
   const elagos=yield* regionBuild('elagos',[9],stage=>createElagosScenerySteps({ parent:stage, heightAt: groundHeight, colliders, signs, roadDistance }),{bridge:{...LINK_BRIDGE,deckY:LINK_BRIDGE.deckY},waterMaterial:{uniforms:{time:{value:0}}}});
@@ -1590,7 +1626,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   yield 'Minora';
   const menora=yield* regionBuild('menora',[16],stage=>createMenoraScenerySteps({parent:stage,heightAt:groundHeight,colliders}),{});
   yield 'Caricas';
-  const caricasSettlement=yield* regionBuild('caricasSettlement',[13],stage=>immediate(()=>createCaricasSettlement({parent:stage,heightAt:groundHeight,colliders})),{});
+  const caricasSettlement=yield* regionBuild('caricasSettlement',[13],stage=>createCaricasSettlementSteps({parent:stage,heightAt:groundHeight,colliders}),{});
   yield 'Western country';
   const westScenery=yield* regionBuild('westScenery',[11, 12, 13, 14, 15, 16, 17],stage=>createWestScenerySteps({ root:stage, material, mesh, pebble, groundHeight, colliders, wornPatch, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   yield 'Aevis';
@@ -1612,46 +1648,51 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   // before it can be lifted.
   yield 'The pass forts';
   const lotharnForts=yield* regionBuild('lotharnForts',[20, 27, 11],stage=>createLotharnFortsScenerySteps({ root:stage, scene:world, groundHeight, colliders, treeRegistry }),{metrics:{}});
+  // Telemonia draws a fine collar into Gala, Oves, East Pyros and Legemum.
+  // Build that shared ground before their scenery, without loading its walls or town.
+  const telemoniaGround=yield* regionBuild('telemoniaGround',[22,25,26,55,57,59],stage=>createTelemoniaGroundSteps({root:stage,material,groundHeight,renderedGroundHeight:treeGroundAt}),{});
+  const westFineGroundAt=(x,z)=>Math.max(sharedWestGroundAt(x,z),telemoniaGround.fineGroundHeight?.(x,z)??-Infinity);
   // Gala (src/gala-scenery.js): its water, its dry wash, and what grows on the steppe, the maquis and
   // the coast. Its own seeded stream, after the west's, so nothing already built moves for it.
   yield 'Gala';
-  const galaScenery=yield* regionBuild('galaScenery',[22],stage=>createGalaScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round, terrainGrid:{xs:terrainXs,zs:terrainZs} }),{});
+  const galaScenery=yield* regionBuild('galaScenery',[22],stage=>createGalaScenerySteps({ root:stage, material, groundHeight, renderedGroundHeight:westFineGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round, terrainGrid:{xs:terrainXs,zs:terrainZs} }),{});
   // Ovesos and the Oves Desert (src/oves-scenery.js): the Oveth's gallery and its reed, four dry
   // channels of gravel, the steppe's grass and scrub, and the desert's stone. Its own seeded stream,
   // after Gala's, so nothing already built moves for it. Nobody's.
   yield 'Oves';
-  const ovesScenery=yield* regionBuild('ovesScenery',[25, 26],stage=>createOvesScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  const ovesScenery=yield* regionBuild('ovesScenery',[25, 26],stage=>createOvesScenerySteps({ root:stage, material, groundHeight, renderedGroundHeight:westFineGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   // The Mithala plain (src/mithala-scenery.js): eight channels with their reed and their gallery of
   // willow, poplar and alder, two braided reaches with silt bars between the threads, the tall
   // warm-season prairie grass and the forbs in it, the sedge of the fen margin going north, and the
   // Acorwood thickening over the north-eastern horizon. Its own seeded stream, after the Oves's, so
   // nothing already built moves for it. Nobody's.
   yield 'Mithala';
-  const mithalaScenery=yield* regionBuild('mithalaScenery',[28, 29, 30, 31],stage=>createMithalaScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  const mithalaWater=yield* regionBuild('mithalaWater',MITHALA_WATER_REGIONS,stage=>createMithalaWaterSteps({root:stage,colliders}),{metrics:{},update:()=>{}});
+  const mithalaScenery=yield* regionBuild('mithalaScenery',[28, 29, 30, 31],stage=>createMithalaScenerySteps({ root:stage, water:mithalaWater, material, groundHeight, renderedGroundHeight:sharedWestGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   // The southwestern block (src/southwest-scenery.js): the Vaellir's gallery and its reed, two dry
   // washes and three shallow channels with nothing in any of them, the desert pavement the wind
   // has swept, the grass that has contracted into the Ganesh Plain's depressions, and one hex of
   // oak and pine at Navarth's tip. Its own seeded stream, after the Mithala's, so nothing already
   // built moves for it. Nobody's.
   yield 'Southwestern country';
-  const southwestScenery=yield* regionBuild('southwestScenery',[39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51],stage=>createSouthwestScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  const southwestScenery=yield* regionBuild('southwestScenery',[39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51],stage=>createSouthwestScenerySteps({ root:stage, material, groundHeight, renderedGroundHeight:treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   // Selemis (src/selemis-scenery.js): the island's straw grass and aromatic scrub, the pale stone on
   // its tops, the pines leaning in the lee of its hills, the tamarisk and the wrack on its strand, the
   // stones in its two winter beds and the rock fallen at the foot of its cliffs. Its own seeded
   // stream, after the southwest's, so nothing already built moves for it. Nobody's.
   yield 'Selemis';
-  const selemisScenery=yield* regionBuild('selemisScenery',[54],stage=>immediate(()=>createSelemisScenery({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round })),{});
+  const selemisScenery=yield* regionBuild('selemisScenery',[54],stage=>immediate(()=>createSelemisScenery({ root:stage, material, groundHeight, renderedGroundHeight:treeGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round })),{});
   // Telemonia (src/telemonia-scenery.js): the highland's own finer ground, the terraces' walls and the
   // gullies' check-walls, the wall of Kethorn, bunch grass and wormwood and thorn, scrub oak and juniper
   // in the folds, the Belketh's wood and the stone. Its own seeded stream, after Selemis's, so nothing
   // already built moves for it. Stage 1: nothing planted and nobody's.
   yield 'Telemonia';
-  const telemoniaScenery=yield* regionBuild('telemoniaScenery',[55],stage=>immediate(()=>createTelemoniaScenery({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round })),{});
+  const telemoniaScenery=yield* regionBuild('telemoniaScenery',[55],stage=>createTelemoniaScenerySteps({ root:stage, material, groundHeight, renderedGroundHeight:treeGroundAt, fineGround:telemoniaGround, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
   // Telemonia, stage 2 (src/telemonia-town-scenery.js): Kethorn on its rock - the halls of the bands, the hall at the
   // end of the street, the granaries and the cisterns - the barley and the pulses on the Galmeth, the vine on the
   // terraces, and the field people's huts. Its own seeded stream, after stage 1's, so nothing already built moves.
   yield 'Kethorn';
-  const telemoniaTown=yield* regionBuild('telemoniaTown',[REGION_IDS.Telemonia],stage=>immediate(()=>createTelemoniaTownScenery({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round })),{metrics:{}});
+  const telemoniaTown=yield* regionBuild('telemoniaTown',[REGION_IDS.Telemonia],stage=>createTelemoniaTownScenerySteps({ root:stage, material, groundHeight, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{metrics:{}});
 
   const eastPyros=yield* regionBuild('eastPyros',[57],stage=>createEastPyrosScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:treeGroundAt,colliders}),{metrics:{},update:()=>{}});
   const netherDesert=yield* regionBuild('netherDesert',[58],stage=>createNetherDesertScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:treeGroundAt,colliders}),{metrics:{}});
@@ -1660,6 +1701,20 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   babonSurface=(x,z)=>babonGround.heightAt(x,z);
   const babon=yield* regionBuild('babon',[60],stage=>createBabonScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:babonSurface,colliders}),{metrics:{}});
   babon.ground=babonGround;
+  // The two Celders: grass, scrub, stone and the water's margins.
+  yield 'The Celder plains';
+  const legacyCelderWorldGround=(x,z)=>{
+    const actual=groundHeight(x,z),base=groundWithRiver(x,z),old=legacyCelderGroundHeight(x,z);
+    return actual===base?old:actual+(old-base);
+  };
+  const southCelder=yield* regionBuild('southCelder',[REGION_IDS['South Celder']],stage=>createSouthCelderScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:sharedWestGroundAt,candidateHeightAt:legacyCelderWorldGround,colliders}),{metrics:{}});
+  const northCelder=yield* regionBuild('northCelder',[REGION_IDS['North Celder']],stage=>createNorthCelderScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:sharedWestGroundAt,candidateHeightAt:legacyCelderWorldGround,colliders}),{metrics:{}});
+  // East Izol (src/east-izol-scenery.js): pasture, maquis, rock and the headland coast.
+  yield 'East Izol';
+  const eastIzol=yield* regionBuild('eastIzol',[REGION_IDS['East Izol']],stage=>createEastIzolScenerySteps({parent:stage,heightAt:groundHeight,candidateHeightAt:(x,z)=>{const legacy=legacyEastIzolGroundHeight(x,z),current=groundWithRiver(x,z);return legacy===current?groundHeight(x,z):legacy+(groundHeight(x,z)-current);},renderedGroundHeight:treeGroundAt,colliders}),{metrics:{}});
+  // Alezhor (src/alezhor-scenery.js).
+  yield 'Alezhor';
+  const alezhor=yield* regionBuild('alezhor',[REGION_IDS['Alezhor']],stage=>createAlezhorScenerySteps({parent:stage,heightAt:groundHeight,legacyHeightAt:legacyAlezhorBankHeight,renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
   // The built places: the Moros Plain's outpost, stockade, gate and wayside (see moros-works.js).
   yield 'Roads and landmarks';
   const stakedProps = [];
@@ -2160,6 +2215,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...river.samples.map(p=>mapPoint(p.x-p.nx*p.halfWidth,p.z-p.nz*p.halfWidth)),
       ...[...river.samples].reverse().map(p=>mapPoint(p.x+p.nx*p.halfWidth,p.z+p.nz*p.halfWidth))])})),
     ...ibenwoodRivers.mapWaters,
+    ...alezhorMapWaters(),
     ...SOUTH_OREMINDI_LAKES.map(l=>Object.freeze({id:l.id,kind:'polygon',points:l.shore})),
     Object.freeze({ id: 'coast-water', kind: 'polygon', points: Object.freeze([...seaEdge,
       mapPoint(WORLD_BOUNDS.maxX + 120, seaEdge.at(-1).z), mapPoint(WORLD_BOUNDS.maxX + 120, seaEdge[0].z)]) }),
@@ -2226,9 +2282,9 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const api = {
     loadingMode, loading, onRegionReady(listener){readyListeners.add(listener);return ()=>readyListeners.delete(listener);},
     menora, nylon, aevis, caricasSettlement, inquestHome, peninsulaTutorial,
-    heightAt, groundHeight, eastPyros, netherDesert, legemum, babon, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater,
+    heightAt, groundHeight, westLotharnGround, mithalaWater, eastPyros, netherDesert, legemum, babon, southCelder, northCelder, eastIzol, alezhor, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater, ibenwoodAlezhorGround,
     // Displayed terrain triangles, for visual grounding only; collision still uses heightAt.
-    renderedGroundHeight: (x,z)=>babonSurface&&babonOwns(x,z)?babonSurface(x,z):treeGroundAt(x,z),
+    renderedGroundHeight: (x,z)=>babonSurface&&babonOwns(x,z)?babonSurface(x,z):(ibenwoodAlezhorGround.fineGroundHeight(x,z)??Math.max(westFineGroundAt(x,z),galaScenery.fineGroundHeight?.(x,z)??-Infinity,suvalSurface.fineGroundHeight(x,z)??-Infinity)),
     supportAt: forestWalks.supportAt, walkSurfaces: outdoorWalkSurfaces,
     roadSurfaceMetrics,
     mapWaters,
@@ -2259,7 +2315,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
      * the point is under both and the deeper of the two is what you are in.
      */
     waterAt(x, z) {
-      let surface = Math.max(WATERLINE,babonWaterAt(x,z)??WATERLINE,eastPyrosWaterAt(x,z)??WATERLINE,baldroWaterAt(x,z)??WATERLINE,ibenwoodRivers.waterAt(x,z)??WATERLINE,southOremindiWaterAt(x,z)??WATERLINE);
+      let surface = Math.max(WATERLINE,alezhorSwimmingSurface(x,z,groundHeight)??WATERLINE,celderBorderWaterSurface(x,z)??WATERLINE,babonWaterAt(x,z)??WATERLINE,eastPyrosWaterAt(x,z)??WATERLINE,baldroWaterAt(x,z)??WATERLINE,ibenwoodRivers.waterAt(x,z)??WATERLINE,southOremindiWaterAt(x,z)??WATERLINE);
       for (const c of colliderGrid().near(x, z, 0)) {
         if (c.surface === undefined || c.r === undefined) continue;
         const dx = x - c.x, dz = z - c.z;
@@ -2496,6 +2552,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...TELEMONIA_LANDMARKS,
       ...TELEMONIA_TOWN_LANDMARKS,
       ...EAST_PYROS_LANDMARKS, ...NETHER_DESERT_LANDMARKS, ...LEGEMUM_LANDMARKS, ...BABON_LANDMARKS,
+      ...SOUTH_CELDER_LANDMARKS, ...NORTH_CELDER_LANDMARKS, ...EAST_IZOL_LANDMARKS, ...ALEZHOR_LANDMARKS,
     ],
     paths,
     update(time, dt) {
@@ -2515,6 +2572,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       southOremindi.update(time);
       galaScenery.update(time);
       ovesScenery.update(time);
+      mithalaWater.update(time);
       mithalaScenery.update(time);
       southwestScenery.update(time);
       eastPyros.update?.(time);

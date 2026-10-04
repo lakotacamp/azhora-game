@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { lotharnWoodlandHabitat, lotharnTreeFoot, lotharnCrestRows } from '../src/east-lotharn-habitat.js';
+import { lotharnWoodlandHabitat, lotharnCanopyHabitat, lotharnTreeFoot, lotharnCrestRows } from '../src/east-lotharn-habitat.js';
 import { EAST_LOTHARN_WILDLIFE_ZONES } from '../src/east-lotharn-wildlife.js';
 import { groundWithRiver } from '../src/world-terrain.js';
 import { hexOwnerAt } from '../src/region-world.js';
@@ -29,6 +29,36 @@ test('soil pockets vary coherently without consuming random numbers or introduci
   assert.ok(Math.abs(sample(-1240, 260) - sample(-1240.01, 260)) < .001);
   assert.ok(Math.abs(sample(-1240, 279.99) - sample(-1240, 280.01)) < .001);
   assert.deepEqual(lotharnWoodlandHabitat(-1240, -940, () => 260), lotharnWoodlandHabitat(-1240, -940, () => 260));
+});
+
+test('the extended canopy follows relative soil and shelter at every height instead of a climatic tree line', () => {
+  const low = lotharnCanopyHabitat(-1240, -940, (x, z) => 40 + (x + 1240) * .3);
+  const high = lotharnCanopyHabitat(-1240, -940, (x, z) => 380 + (x + 1240) * .3);
+  for (const field of ['slope', 'soil', 'shelter', 'grove', 'density', 'stature']) {
+    assert.ok(Math.abs(low[field] - high[field]) < 1e-10, field);
+  }
+  assert.ok(high.density > 0);
+});
+
+test('the extended canopy leaves sheer rock and narrow unstable ledges bare while favouring hollows', () => {
+  assert.equal(lotharnCanopyHabitat(0, 0, x => 200 + x * 2).density, 0);
+  assert.equal(lotharnCanopyHabitat(0, 0, (x, z) => x === 0 && z === 0 ? 200 : 205).density, 0);
+  const hollow = lotharnCanopyHabitat(0, 0, (x, z) => 350 + .025 * (x * x + z * z));
+  const exposed = lotharnCanopyHabitat(0, 0, (x, z) => 350 - .025 * (x * x + z * z));
+  assert.ok(hollow.density > exposed.density * 3);
+  assert.ok(hollow.stature > exposed.stature);
+  assert.equal(lotharnCanopyHabitat(0, 0, () => NaN).density, 0);
+});
+
+test('the extended canopy forms coherent groves with short edges rather than uniform contour planting', () => {
+  const flat = () => 350;
+  const interior = lotharnCanopyHabitat(-1300, -1000, flat);
+  const close = lotharnCanopyHabitat(-1300.01, -1000.01, flat);
+  assert.ok(Math.abs(interior.grove - close.grove) < .001);
+  const groves = [];
+  for (let x = -1400; x <= -1200; x += 10) for (let z = -1100; z <= -900; z += 10) groves.push(lotharnCanopyHabitat(x, z, flat).grove);
+  assert.ok(Math.min(...groves) < .05, 'coherent exposed gaps remain');
+  assert.ok(Math.max(...groves) > .95, 'deeper soil carries full groves');
 });
 
 test('the whole six-sided trunk footprint stays buried on a sloping rendered triangle', () => {

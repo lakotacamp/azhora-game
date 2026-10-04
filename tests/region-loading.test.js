@@ -70,3 +70,18 @@ test('stopping cancels scheduled work and restarting preserves the active iterat
   assert.equal(f.frames.size, 0); assert.equal(f.visits.length, 2);
   f.loader.start(); f.drain(); assert.equal(f.visits.length, 5); assert.equal(f.loader.isReady(2), true);
 });
+
+test('construction timings identify each job without counting time waiting between frames', () => {
+  const f = fixture(); f.add('short', [2], 1); f.add('long', [3], 5);
+  f.loader.start(); f.frame(); f.loader.stop();
+  const before = f.loader.state().jobs.map(job => ({ ...job }));
+  assert.equal(before[0].buildMs, 2);
+  assert.equal(before[0].stepsRun, 2, 'the final commit step is measured too');
+  f.loader.start(); f.drain();
+  const jobs = f.loader.state().jobs;
+  assert.equal(jobs[0].buildMs, 2, 'completed jobs are never charged again');
+  assert.equal(jobs[1].buildMs, 10);
+  assert.equal(jobs[1].longestSliceMs, 2);
+  assert.equal(jobs[1].stepsRun, 6);
+  assert.equal(f.visits.length, 6, 'instrumentation does not change deterministic work');
+});

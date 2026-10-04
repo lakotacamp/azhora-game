@@ -192,6 +192,10 @@ const LOCALS = [
   [58, 'Nether Desert', 'nether-desert', 'Nether Desert', point(1082.463,2744.290,-18,114)],
   [59, 'Legemum', 'legemum', 'Legemum', point(1324.673,2977.355,-14,123)],
   [60, 'Babon', 'babon', 'Babon', point(1504.806,3327.368,-15,138)],
+  [61, 'South Celder', 'south-celder', 'South Celder', point(1191.651,2344.000,-6,97)],
+  [62, 'North Celder', 'north-celder', 'North Celder', point(1177.795,2224.000,-4,92)],
+  [63, 'East Izol', 'east-izol', 'East Izol', point(2050.748,3016.000,11,125)],
+  [64, 'Alezhor', 'alezhor', 'Alezhor', point(734.390,2800.000,-32,116)],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

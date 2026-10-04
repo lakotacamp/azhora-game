@@ -74,6 +74,9 @@ export const TREE_KINDS = freeze({
   'fig': kind('fig', 'Common fig', 'common fig', 1, 25, .52, [1, 1], 25, 1, .3),
   'apple': kind('apple', 'Domestic apple', 'domestic apple', 1, 25, .52, [1, 1], 25, 1, .3),
   'hawthorn': kind('hawthorn', 'Common hawthorn', 'common hawthorn', 1, 25, .52, [1, 1], 25, 1, .3),
+  'desert-thorn': kind('desert-thorn', 'Desert thorn', 'desert thorn', 1, 25, .52, [1, 1], 25, 1, .3),
+  'red-mangrove': kind('red-mangrove', 'Red mangrove', 'red mangrove', 15, 38, .34, [2, 4], 40, 2, .38),
+  'black-poplar': kind('black-poplar', 'Black poplar', 'black poplar', 1, 25, .52, [1, 1], 25, 1, .3),
 });
 export const TREE_KIND_IDS = freeze(Object.keys(TREE_KINDS));
 export const LOG_ITEMS = freeze(TREE_KIND_IDS.map(id => TREE_KINDS[id].log));

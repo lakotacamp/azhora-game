@@ -1,6 +1,6 @@
 # Joint terrain and wildlife completion plan
 
-Prepared 3 October 2026. **Implementation began with user authorization on 4 October 2026.** Claude is actively building the Celder pair; ChatGPT is correcting R1 from the pinned base in a separate worktree. The [live ledger](regional-completion-ledger.md#live-handoff-record) records what has actually started and passed. This document does not schedule unattended work.
+Prepared 3 October 2026. **Implementation began with user authorization on 4 October 2026.** Claude has delivered the Celder pair, East Izol and Alezhor. ChatGPT is integrating corrected deliveries and completing the existing-region review in a separate worktree. The [live ledger](regional-completion-ledger.md#live-handoff-record) records what has actually started and passed. This document does not schedule unattended work.
 
 Claude will build the remaining regional environments. ChatGPT will first review and correct the existing Claude region backlog while Claude works on the next build, then review and correct every new delivery. The aim is a continuous, distinctive world that works from the player's height, with reliable traversal, believable habitats, and manageable loading costs.
 
@@ -93,6 +93,8 @@ ChatGPT owns a clean integration worktree and the queue. Claude works in a separ
 Give each assignment a region list, base revision, output branch or patch location, file ownership, shared-border constraints and report path. Maintain only one writer per worktree. Each assistant may make narrow shared-file changes in its own branch; ChatGPT alone resolves their integration into the main build. Review `main.js`, `world.js`, `world-terrain.js`, wildlife registries, region/map tables and the test manifest particularly carefully.
 
 Append runtime region IDs centrally. Preserve existing IDs, seeded scenery order, tree IDs, wildlife state keys, reserved areas and `world.paths[0]` as the main story road. Use isolated deterministic streams for new scenery. Do not transplant generated files or whole shared registries from a stale branch; regenerate from the combined source after integration. Preserve file line endings and unrelated edits.
+
+Intake distinction (4 October): preserve the identities and seeded layout of regions already in the main build. For a newly delivered, not-yet-integrated region, an independently reproduced placement change caused by an approved neighboring-ground correction can be accepted and documented before freezing its first combined baseline. Record the exact source comparison and affected IDs/batches; do not silently repin an existing region. Avoid retaining historical broken terrain through extra runtime compatibility switches solely to recover incidental placement in an unshipped candidate. Subsequent cosmetic grounding must preserve that frozen combined layout.
 
 The handoff report lives at `docs/region-reviews/<assignment>-handoff.md` and includes:
 

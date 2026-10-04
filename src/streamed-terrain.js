@@ -1,6 +1,6 @@
 // Fast loading samples the same grid and colour stream as Full mode, but only
 // allocates visible meshes around the regions currently being constructed.
-export function createStreamedTerrain({ THREE, xs, zs, positions, colors, sample, sampled, root, material, cells, ids, tileSize = 24 }) {
+export function createStreamedTerrain({ THREE, xs, zs, positions, colors, sample, sampled, root, material, cells, ids, tileSize = 24, originColumn = 0 }) {
   const columns = xs.length, tiles = new Set();
   function indexAt(axis, value) {
     let low = 0, high = axis.length - 1;
@@ -30,8 +30,8 @@ export function createStreamedTerrain({ THREE, xs, zs, positions, colors, sample
   function* buildTile(tx, tz) {
     const key = `${tx}:${tz}`;
     if (tiles.has(key)) return;
-    const x0 = tx * tileSize, z0 = tz * tileSize;
-    const x1 = Math.min(columns - 1, x0 + tileSize), z1 = Math.min(zs.length - 1, z0 + tileSize);
+    const x0 = Math.max(0,originColumn+tx*tileSize), z0 = tz * tileSize;
+    const x1 = Math.min(columns - 1, originColumn+(tx+1)*tileSize), z1 = Math.min(zs.length - 1, z0 + tileSize);
     if (x0 >= x1 || z0 >= z1) return;
     const width = x1 - x0 + 1, height = z1 - z0 + 1;
     const p = new Float32Array(width * height * 3), c = new Float32Array(p.length), indices = [];
@@ -54,11 +54,18 @@ export function createStreamedTerrain({ THREE, xs, zs, positions, colors, sample
     const name = Object.keys(ids).find(name => ids[name] === id), wanted = new Set();
     for (const cell of cells[name] ?? []) {
       // One hex plus a shore/seam apron. Adjacent regions share these tiles.
-      const minX = Math.floor(indexAt(xs, cell.x - 110) / tileSize), maxX = Math.floor(indexAt(xs, cell.x + 110) / tileSize);
+      const minX = Math.floor((indexAt(xs, cell.x - 110)-originColumn) / tileSize), maxX = Math.floor((indexAt(xs, cell.x + 110)-originColumn) / tileSize);
       const minZ = Math.floor(indexAt(zs, cell.z - 110) / tileSize), maxZ = Math.floor(indexAt(zs, cell.z + 110) / tileSize);
       for (let z = minZ; z <= maxZ; z++) for (let x = minX; x <= maxX; x++) wanted.add(`${x}:${z}`);
     }
     for (const key of wanted) { const [x, z] = key.split(':').map(Number); yield* buildTile(x, z); }
   }
-  return { ensureAt, ensureRibbon, buildRegion, tileCount: () => tiles.size };
+  function* buildBounds(bounds, padding = 0) {
+    const minX = Math.floor((indexAt(xs, bounds.minX - padding) - originColumn) / tileSize);
+    const maxX = Math.floor((indexAt(xs, bounds.maxX + padding) - originColumn) / tileSize);
+    const minZ = Math.floor(indexAt(zs, bounds.minZ - padding) / tileSize);
+    const maxZ = Math.floor(indexAt(zs, bounds.maxZ + padding) / tileSize);
+    for (let z = minZ; z <= maxZ; z++) for (let x = minX; x <= maxX; x++) yield* buildTile(x, z);
+  }
+  return { ensureAt, ensureRibbon, buildRegion, buildBounds, tileCount: () => tiles.size };
 }

@@ -121,10 +121,10 @@ test('every region selection supports a survey, while built destinations remain 
   assert.equal(developerRegionSelection(atlas, 'Luscia').destinations.length, 1);
   assert.equal(developerRegionSelection(atlas, 'East Suval').destinations.length, 1);
   assert.equal(developerRegionSelection(atlas, 'Cape Thalmagar').destinations[0].scene, 'cape-thalmagar');
-  // East Izol is the unbuilt half of the island; West Izol is a playable region now.
-  const other = developerRegionSelection(atlas, 'East Izol');
+  // Maanub is still unbuilt, and is the last of the queue (docs/regional-completion-ledger.md).
+  const other = developerRegionSelection(atlas, 'Maanub');
   assert.equal(other.destinations[0].scene, 'terrain-survey');
-  assert.equal(other.destinations[0].travelTarget, 'East Izol');
+  assert.equal(other.destinations[0].travelTarget, 'Maanub');
   assert.equal(developerRegionSelection(atlas, 'invented-country'), null);
   assert.equal(hitAtlasRegion(atlas, 0, 0), null);
   assert.equal(hitAtlasRegion(atlas, NaN, 0), null);

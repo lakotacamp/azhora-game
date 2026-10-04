@@ -5,8 +5,9 @@ import * as THREE from '../vendor/three.module.js';
 import { sourceModule } from './module-loader.js';
 import { groundWithRiver, groundBeforeVarn } from '../src/world-terrain.js';
 import { createCaves } from '../src/east-lotharn-caves.js';
-import { CAVE_BENCH, CAVE_BENCHES, caveBenchRib } from '../src/varn-world.js';
-import { lotharnCrestRows } from '../src/east-lotharn-habitat.js';
+import { CAVE_BENCH, CAVE_BENCHES, caveBenchRib, varnLandscapeSceneryDelta } from '../src/varn-world.js';
+import { lotharnCrestRows, LOTHARN_SHELTER_TREES } from '../src/east-lotharn-habitat.js';
+import { lotharnLandscapeDelta } from '../src/east-lotharn-world.js';
 
 const { createEastLotharnScenery } = await sourceModule('../src/east-lotharn-scenery.js');
 const { getTreeRegistry } = await sourceModule('../src/tree-registry.js');
@@ -142,4 +143,71 @@ test('regional geometry changes preserve every original saved tree identity and 
   assert.equal(legacy.length, 5567);
   assert.equal(createHash('sha256').update(JSON.stringify(legacy)).digest('hex'),
     'faaa49dbb472781d30cd27da1cd55ccb1d35d2c085483774d0829ea08a33cea8');
+});
+
+test('the first thirty-one shelter trees retain their saved identities and species after terrain is reshaped', () => {
+  const trees = getTreeRegistry(fixture.colliders).trees.filter(tree => tree.id.startsWith('lotharn-shelter-') && !tree.id.startsWith('lotharn-shelter-canopy-'));
+  assert.equal(trees.length, 31);
+  const species = { oak: 'white-oak', chestnut: 'sweet-chestnut', maple: 'red-maple', walnut: 'black-walnut' };
+  for (const [x, z, kind, height] of LOTHARN_SHELTER_TREES) {
+    const tree = trees.find(tree => tree.id === `lotharn-shelter-${x.toFixed(3)}-${z.toFixed(3)}`);
+    assert.ok(tree, `missing established shelter tree at ${x}, ${z}`);
+    assert.equal(tree.species, species[kind] ?? kind);
+    assert.equal(tree.height, height);
+  }
+  const facts = trees.map(tree => [tree.id, tree.species, tree.height]).sort((a, b) => a[0].localeCompare(b[0]));
+  assert.equal(createHash('sha256').update(JSON.stringify(facts)).digest('hex'),
+    '8824d1a8f80c236df6ea3739469c4d7490c277073f1073c9a0a9c5ac1a02249d');
+});
+
+test('the added canopy spans sheltered high soil with varied crown heights and native species', t => {
+  const trees = getTreeRegistry(fixture.colliders).trees.filter(tree => tree.id.startsWith('lotharn-shelter-canopy-'));
+  const bands = { below155: 0, from155to280: 0, from280to350: 0, above350: 0 }, tiles = new Set();
+  let northern = 0;
+  for (const tree of trees) {
+    const y = groundWithRiver(tree.x, tree.z);
+    bands[y < 155 ? 'below155' : y < 280 ? 'from155to280' : y < 350 ? 'from280to350' : 'above350']++;
+    tiles.add(`${Math.floor(tree.x / 80)},${Math.floor(tree.z / 80)}`);
+    if (tree.x < -1140 && tree.z < -975) northern++;
+  }
+  assert.ok(bands.from280to350 + bands.above350 > 0, 'suitable soil above the former cutoff carries woodland');
+  assert.ok(new Set(trees.map(tree => tree.species)).size >= 3);
+  const min = Math.min(...trees.map(tree => tree.height)), max = Math.max(...trees.map(tree => tree.height));
+  assert.ok(max - min > 4, 'the canopy has an edge layer and larger crowns');
+  t.diagnostic(JSON.stringify({ added: trees.length, northern, occupied80mTiles: tiles.size, bands, crownHeightRange: [min, max] }));
+});
+
+test('added canopy and retained trees on reshaped shoulders have their whole root footprint embedded in the drawn mountain', t => {
+  const surfaces = [...fixture.surfaces], trunks = [];
+  fixture.root.traverse(object => {
+    if (object.name === 'East Lotharn peaks ground') surfaces.push(object);
+    if (object.isInstancedMesh && object.geometry.parameters?.radiusTop === .2 && object.geometry.parameters?.radiusBottom === .36) trunks.push(object);
+  });
+  const matrix = new THREE.Matrix4(), vertex = new THREE.Vector3();
+  let trees = 0, roots = 0, added = 0, retained = 0, established = 0, highest = -Infinity;
+  for (const mesh of trunks) {
+    const positions = mesh.geometry.attributes.position;
+    const bottom = [];
+    for (let i = 0; i < positions.count; i++) if (Math.abs(positions.getY(i) + .5) < 1e-6) bottom.push(i);
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, matrix); matrix.premultiply(mesh.matrixWorld);
+      const canopy = mesh.name === 'East Lotharn canopy trunks', shelter = mesh.name === 'East Lotharn established shelter trunks';
+      if (!canopy && !shelter && lotharnLandscapeDelta(matrix.elements[12], matrix.elements[14]) <= .01
+        && Math.abs(varnLandscapeSceneryDelta(matrix.elements[12], matrix.elements[14])) <= .01) continue;
+      if (canopy) added++; else if (shelter) established++; else retained++;
+      let contact = -Infinity;
+      for (const at of bottom) {
+        vertex.fromBufferAttribute(positions, at).applyMatrix4(matrix);
+        fixture.ray.ray.origin.set(vertex.x, 1000, vertex.z);
+        const hit = fixture.ray.intersectObjects(surfaces, false)[0];
+        assert.ok(hit, `tree ${trees}: missing rendered soil below ${vertex.x}, ${vertex.z}`);
+        contact = Math.max(contact, vertex.y - hit.point.y); roots++;
+      }
+      assert.ok(contact < -.02 && contact > -.04, `tree ${trees}: root contact ${contact} m`);
+      highest = Math.max(highest, contact); trees++;
+    }
+  }
+  assert.equal(added, getTreeRegistry(fixture.colliders).trees.filter(tree => tree.id.startsWith('lotharn-shelter-canopy-')).length);
+  assert.ok(added > 0); assert.ok(retained > 0); assert.equal(established, 31);
+  t.diagnostic(`${added} added, ${established} established shelter, ${retained} retained trees; ${roots} root vertices; highest gap ${highest.toFixed(6)} m`);
 });

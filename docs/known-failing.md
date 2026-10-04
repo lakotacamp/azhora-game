@@ -167,9 +167,14 @@ commit before the merge or was known before it. **Compare names and messages, no
 - every quarter-metre of the authored line is ground a body can stand on, and none of it is wet
   - `AssertionError [ERR_ASSERTION]: 183 samples of the authored line are not standable`
 
-## `woodcutting-forest` (1 failing)
-- every ordinary timber species can be harvested without substituting a different species of log
-  - `AssertionError [ERR_ASSERTION]: wild-grey-vault`
+## `woodcutting-forest` (resolved test contract, 4 October 2026)
+The original `wild-grey-vault` failure is reproduced on `a2e49c3`: the test treated
+six explicitly protected living Ibenwood species as ordinary harvestable timber.
+The test now exhaustively checks ordinary species products and separately requires
+all six protected species to have no recipe, no log/plank, no successful ordinary
+swing, no stock/reward change and no experience gain even if a caller requests
+`harvestable:true`. Focused suite: **7/7 pass**. No production recipe, species,
+protection rule or save behavior changed.
 
 ## `woodland-progress` (4 failing)
 - first-shore save needs neither letter nor token and restores gathered sites and optional stories

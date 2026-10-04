@@ -2,6 +2,8 @@
 
 Design draft for review — 29 September 2026. **This document does not authorize or implement the expansion.** West Lotharn integration is separate work. Proposed priorities and new gameplay ideas below need review together.
 
+**Current execution reference:** The [joint terrain and wildlife completion plan](regional-completion-joint-plan.md) and [live ledger](regional-completion-ledger.md) supersede this draft's dated counts and production sequence. Implementation was authorized 4 October 2026; current acceptance and pending review gates belong in that ledger.
+
 ## Current planning sequence
 
 **1 October update:** Ibenwood, South Oremindi and the western frontier have received subsequent implementation work; the inventory and proposed ordering below remain the dated 29 September audit, not a current build count. The user's next linked design sequence is **[Baldro Dwarfland](dwarfland-design-draft.md) first, then [West Oremindi and Sevron](sevron-west-oremindi-design.md)**. Baldro has now received its first playable regional and dwarf-city implementation; see [the build record](dwarfland-implementation.md). West Oremindi and Sevron remain design work for a later implementation.

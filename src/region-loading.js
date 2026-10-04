@@ -88,7 +88,12 @@ export function createRegionLoading({ initialRegions = [], regionAt = () => null
           settle();
         }
       } catch (error) { fail(job, error); }
-      finally { longestSliceMs = Math.max(longestSliceMs, now() - stepStart); }
+      finally {
+        const elapsed = Math.max(0, now() - stepStart);
+        longestSliceMs = Math.max(longestSliceMs, elapsed);
+        job.longestSliceMs = Math.max(job.longestSliceMs, elapsed);
+        job.buildMs += elapsed; job.stepsRun++;
+      }
     } while (now() - started < Math.max(.1, budgetMs));
     schedule();
   }
@@ -96,7 +101,8 @@ export function createRegionLoading({ initialRegions = [], regionAt = () => null
     if (typeof id !== 'string' || !id || jobs.has(id) || typeof steps !== 'function' || !regions.length)
       throw new Error('Region jobs need a unique ID, regions, and a generator factory');
     jobs.set(id, { id, regions: [...new Set(regions.map(identity))], steps, onComplete: complete, center,
-      dependencies: [...dependencies], order: jobs.size, status: 'pending', iterator: null, error: null });
+      dependencies: [...dependencies], order: jobs.size, status: 'pending', iterator: null, error: null,
+      longestSliceMs: 0, buildMs: 0, stepsRun: 0 });
     schedule(); return api;
   }
   function ensureRegion(value) {
@@ -126,7 +132,8 @@ export function createRegionLoading({ initialRegions = [], regionAt = () => null
       completed: [...jobs.values()].filter(job => job.status === 'ready').length,
       total: jobs.size, pending: [...jobs.values()].filter(job => job.status === 'pending').length,
       ready: [...new Set([...initial, ...[...jobs.values()].flatMap(job => job.regions)])].filter(isReady),
-      jobs: [...jobs.values()].map(job => ({ id: job.id, regions: [...job.regions], status: job.status, error: job.error?.message ?? null })), longestSliceMs };
+      jobs: [...jobs.values()].map(job => ({ id: job.id, regions: [...job.regions], status: job.status, error: job.error?.message ?? null,
+        longestSliceMs: job.longestSliceMs, buildMs: job.buildMs, stepsRun: job.stepsRun })), longestSliceMs };
   }
   const api = { register, isReady, hasRegion: value => initial.has(identity(value)) || regionJobs(identity(value)).length > 0,
     ensureRegion, requireRegion: ensureRegion, update, setPosition: update, state,

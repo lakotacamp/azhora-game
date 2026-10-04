@@ -16,6 +16,10 @@ import { EAST_PYROS_LANDMARKS } from './east-pyros-world.js';
 import { NETHER_DESERT_LANDMARKS } from './nether-desert-world.js';
 import { LEGEMUM_LANDMARKS } from './legemum-world.js';
 import { BABON_LANDMARKS } from './babon-world.js';
+import { SOUTH_CELDER_LANDMARKS } from './south-celder-world.js';
+import { NORTH_CELDER_LANDMARKS } from './north-celder-world.js';
+import { EAST_IZOL_LANDMARKS } from './east-izol-world.js';
+import { ALEZHOR_LANDMARKS } from './alezhor-world.js';
 import { ISCARE_RUIN_SITES, ISCARE_REGION } from './iscare-world.js';
 import { IBENWOOD_GROVES, IBENWOOD_ARRIVALS, IBENWOOD_PILOT } from './ibenwood-environment.js';
 
@@ -50,6 +54,10 @@ export const SUBREGIONS = Object.freeze([
     ['Nether Desert', NETHER_DESERT_LANDMARKS, 'Exposed stony plateau, dry rain pans and shallow scrub-lined washes above the upper Neth.'],
     ['Babon', BABON_LANDMARKS, 'Ancient tropical canopy, fern-filled ravines, steep jungle ridges and sheltered coves on the great island.'],
     ['Legemum', LEGEMUM_LANDMARKS, 'Tin-bearing hills, slate headlands and sheltered woodland around the damp heath and peat hollows.'],
+    ['South Celder', SOUTH_CELDER_LANDMARKS, 'Open grass plain falling east from the Oremindi in low swells, its water gathered on the eastern margin.'],
+    ['North Celder', NORTH_CELDER_LANDMARKS, 'Grassland and plain between the East Oremindi and the streams of the Mithala margin.'],
+    ['East Izol', EAST_IZOL_LANDMARKS, 'Rock and pasture rising from a headland coast to the Three Presences.'],
+    ['Alezhor', ALEZHOR_LANDMARKS, 'A cool coastal strip between the open ocean and the Ibenwood\'s tree line, cut by the gold rivers.'],
   ].flatMap(([region, landmarks, note]) => landmarks.map(p => area(p.id, p.name, region, p.x, p.z, Math.max(28, p.radius ?? 40), p.description ?? note))),
   ...ISCARE_RUIN_SITES.map(site => area(site.id, site.name, ISCARE_REGION, site.x, site.z, 45, 'Burned, roofless stone and charred beams remain from the Blood Prince\'s passage. The islands have wildlife, but these settlements are abandoned.')),
   area('imlamdris-rebuilding', 'Imlamdris rebuilding', 'South Suval', -126, 1154, 40, 'Four small timber homes and a new building frame stand beside the razed city.'),

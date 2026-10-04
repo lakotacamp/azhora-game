@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLAYABLE = ['Drent', 'Luscia', 'Moros Plain', 'East Suval', 'West Suval', 'Pueth', 'Peblos', 'West Izol', 'Elagos', 'Amod', 'Vastos', 'Meneth', 'Caricas', 'Nesdor',
   'Isareos', 'Nethereum', 'Ovesos', 'Oves Desert', 'Gala', 'Eer', 'South Suval', 'Iscare Archipeligo', 'East Lotharn Mountains', 'Feradom', 'Northern Ascarth', 'Southern Ascarth',
-  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'West Baldro Mountains', 'East Baldro Mountains', 'Selemi', 'Telemonia', 'West Oremindi Mountains', 'East Pyros', 'Nether Desert', 'Legemum', 'Babon'];
+  'West Lotharn Mountains', 'South Mithala', 'West Mithala', 'East Mithala', 'North Mithala', 'East Ibenwood', 'North Ibenwood', 'South Ibenwood', 'West Ibenwood', 'Central Ibenwood', 'South Oremindi Mountains', 'Yunethre', 'Navarth', 'West Pyros', 'Ganesh Desert', 'Ganesh Plain', 'North Meroshe Desert', 'West Meroshe Desert', 'Central Meroshe Desert', 'South Meroshe Desert', 'Cape Heth', 'Dinelv Highlands', 'Hama', 'Marosh', 'Trogo', 'West Baldro Mountains', 'East Baldro Mountains', 'Selemi', 'Telemonia', 'West Oremindi Mountains', 'East Pyros', 'Nether Desert', 'Legemum', 'Babon', 'South Celder', 'North Celder', 'East Izol', 'Alezhor'];
 /**
  * **Hexes the atlas leaves unclaimed inside one region, which belong to the region all round them.**
  * The World Builder map paints these with a terrain and forgets to say whose they are; the dev atlas
@@ -246,7 +246,9 @@ export const ENCLOSED_HEXES = Object.freeze({
 // surrounding window includes every hex touched by the fixed-phase coast grid;
 // its bounds are checked from the actual lattice in tests/baldro-world.test.js.
 // Babon extends the terrain lattice south by two rows; its southwestern corner also reaches q=-53.
-export const WINDOW = { minQ: -53, maxQ: 60, minR: 59, maxR: 147 };
+// Alezhor's west lobe (registered 4 October 2026) moves the western edge fifty metres to -4660.002, and the lattice's
+// south-western corner with it to q=-54: open ocean, no claimed hex, and the generated survey byte-identical.
+export const WINDOW = { minQ: -54, maxQ: 60, minR: 59, maxR: 147 };
 
 export function buildSource(survey) {
   const name = region => region.name ?? region.id;

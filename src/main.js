@@ -59,6 +59,12 @@ import { EAST_PYROS_VIEWS, EAST_PYROS_ARRIVAL, EAST_PYROS_LANDMARKS, EAST_PYROS_
 import { NETHER_DESERT_VIEWS, NETHER_DESERT_ARRIVAL, NETHER_DESERT_LANDMARKS, NETHER_DESERT_TRAILS } from './nether-desert-world.js';
 import { LEGEMUM_VIEWS, LEGEMUM_ARRIVAL, LEGEMUM_LANDMARKS, LEGEMUM_TRAILS } from './legemum-world.js';
 import { BABON_VIEWS, BABON_ARRIVAL, BABON_LANDMARKS, BABON_TRAILS } from './babon-world.js';
+import { SOUTH_CELDER_VIEWS, SOUTH_CELDER_ARRIVAL, SOUTH_CELDER_LANDMARKS, SOUTH_CELDER_TRAILS } from './south-celder-world.js';
+import { NORTH_CELDER_VIEWS, NORTH_CELDER_ARRIVAL, NORTH_CELDER_LANDMARKS, NORTH_CELDER_TRAILS } from './north-celder-world.js';
+import { EAST_IZOL_VIEWS, EAST_IZOL_ARRIVAL, EAST_IZOL_LANDMARKS, EAST_IZOL_TRAILS } from './east-izol-world.js';
+import { EAST_WILDLIFE_REVIEW, eastWildlifeReview } from './east-izol-wildlife-review.js';
+import { ALEZHOR_VIEWS, ALEZHOR_ARRIVAL, ALEZHOR_LANDMARKS, ALEZHOR_TRAILS } from './alezhor-world.js';
+import { REGION_IDS as CELDER_REGION_IDS } from './region-world.js';
 import { AEVIS_SOLDIERS, createAevisSoldier } from './aevis-soldiers.js';
 import { atlasRevealedCityMarks } from './world-map-detail.js';
 import { createMapTutorial } from './map-tutorial.js';
@@ -2133,6 +2139,11 @@ async function init() {
     if(view==='lotharn-inn')return shot({x:-1068,z:-881},{x:-1086,z:-897},.12,4.5);
     if(view==='lotharn-workings')return shot({x:-1286,z:-852},{x:-1292,z:-890},.1,2.5);
     if(view==='lotharn-north')return shot({x:-1235,z:-1175},{x:-1262,z:-990},.08,24);
+    if(view==='lotharn-north-overlook')return {
+      x:-1270,z:-1090,look:{x:-1230,z:-1005,y:285-world.heightAt(-1230,-1005)},
+      yaw:-2.701750070774057,pitch:.8858457014452472,d:148.492424049175,
+    };
+    if(view==='lotharn-western-shoulder')return shot({x:-1300,z:-1010},{x:-1392,z:-951},.14,14);
     // Varn (src/varn-world.js), worked out from the city's own plan: from the pass, from Amod, a wall end
     // where it meets the rock, up the street from the lower court to the keep, the citadel's yard, and the
     // whole of it from over the Amod road.
@@ -2220,8 +2231,16 @@ async function init() {
       if(view==='mithala-summer-channel'){const c=MITHALA_SUMMER[0],a=c.points[1],b=c.points[3];
         return shot({x:a.x,z:a.z},{x:b.x,z:b.z},.06,1.4);}
       // The fen margin going north into the Acor Wetlands, with no line anywhere to mark it.
-      if(view==='mithala-fen'){const m=mark('north-mithala-fen');
-        return shot({x:m.x+30,z:m.z+190},{x:m.x,z:m.z-90},.03,5);}
+      if(view==='mithala-fen'||view==='mithala-wet-tip'){
+        const [eye,target]=view==='mithala-fen'
+          ?[{x:-1830,z:-1966},{x:-1850,z:-1990}]
+          :[{x:-1494,z:-2034},{x:-1522,z:-2070}];
+        const ground=(x,z)=>world.renderedGroundHeight?.(x,z)??world.heightAt(x,z);
+        const ty=ground(target.x,target.z)+.65,ey=ground(eye.x,eye.z)+2.1;
+        const horizontal=Math.hypot(eye.x-target.x,eye.z-target.z),dy=ey-ty;
+        return {...shot(eye,target,Math.atan2(dy,horizontal),ty-world.heightAt(target.x,target.z)),
+          d:Math.hypot(horizontal,dy)};
+      }
       // The north braid coming down off the shelf, from its own bank.
       if(view==='mithala-braid'){const a=along(MITHALA_BRAID,.58),b=along(MITHALA_BRAID,.80);
         return shot(beside(a,26),{x:b.x,z:b.z},.05,3);}
@@ -2248,8 +2267,8 @@ async function init() {
       // river, and at -62 it stood in East Pyros, which is not built and takes the default sky. The
       // West Pyros bank is the **positive** side of this course's normal, measured; the camera
       // stands sixty metres back on it and looks across.
-      if(view==='southwest-vaellir'){const a=along(SOUTHWEST_VAELLIR,.55);
-        return shot(beside(a,62),beside(a,-26),.06,4);}
+      if(view==='southwest-vaellir'){
+        return shot({x:-2735.464,z:1380.806},{x:-2718.752,z:1288.345},.12,16);}
       // The gallery from out on the plain: the dark line with nothing behind it that finds the river.
       if(view==='southwest-gallery'){const a=along(SOUTHWEST_VAELLIR,.62);
         return shot(beside(a,175),{x:a.x,z:a.z},.05,10);}
@@ -2288,8 +2307,8 @@ async function init() {
         // crust washed out and the first photograph was of the sea beyond it.
         return shot({x:SOUTHWEST_SALT.x+SOUTHWEST_SALT.radiusX+22,z:SOUTHWEST_SALT.z+12},{x:SOUTHWEST_SALT.x-SOUTHWEST_SALT.radiusX*.6,z:SOUTHWEST_SALT.z},.03,2.1);}
       // The fan heads, looking down the skirt: cobbles under the camera, dust four hundred paces off.
-      if(view==='southwest-fans'){const f=SOUTHWEST_FANS[1];
-        return shot({x:f.x-f.bearingX*24,z:f.z-f.bearingZ*24},{x:f.x+f.bearingX*300,z:f.z+f.bearingZ*300},.04,3);}
+      if(view==='southwest-fans'){
+        return shot({x:-3560,z:2430},{x:-3690,z:2390},.14,3);}
       // The western shore: a desert running out at an open ocean, with the weather of half a world on it.
       if(view==='southwest-dry-shore'){const m=mark('meroshe-dry-shore');
         // Straight out to sea, low, and close enough that the fan skirt's own swell is behind the
@@ -2298,8 +2317,8 @@ async function init() {
         return shot({x:m.x-32,z:m.z+8},{x:m.x-170,z:m.z+8},.02,2.2);}
       // The reg under the fog: dark pavement, lichen in the lee of every pebble, and the only thorn
       // in the Meroshe standing close enough together to walk round.
-      if(view==='southwest-reg'){const m=mark('meroshe-fog-margin');
-        return shot({x:m.x-96,z:m.z+52},{x:m.x+150,z:m.z-40},.04,1.9);}
+      if(view==='southwest-reg'){
+        return shot({x:-2715,z:2810},{x:-2910,z:2845},.12,2.5);}
       // ----- Cape Heth, the Dinelv Highlands and Hama. Every one is worked out from its own
       // landform's numbers - the spine's own axis, a hollow's own centre, a table's own reach, a gap's
       // own point, the ascent's own line, a bed's own points - so none can drift off its subject.
@@ -8458,6 +8477,53 @@ async function init() {
     }
     window.__AZHORA__={state,
       loading:{state:()=>world.loading?.state()??null,ensure:region=>world.loading?.ensureRegion(region)??Promise.resolve(),stop:()=>world.loading?.stop(),start:()=>world.loading?.start(),waiting:()=>regionLoadingPromise},
+      reviewR1JourneyView:view=>{lotharnCave.leave();caveDark=0;return window.__AZHORA__.review(view);},
+      async runR4R7JourneyChecks(options={}){
+        const {runR4R7JourneyChecks}=await import('./r4-r7-journey-checks.js');
+        return runR4R7JourneyChecks({world,scene,camera,player,wind:()=>combat.state.player.stamina,wildlife:()=>westLife.snapshot(),
+          read:()=>({mode,waitingForRegion:regionLoadDepth>0,terrainFall:terrainFall.view(),inWater,hp:combat.state.player.hp,playSeconds,loadingMode:world.loadingMode??'full',frameErrors:frameErrors.view()}),ready:()=>regionLoadingPromise,
+          evidence:()=>({viewport:{width:innerWidth,height:innerHeight,pixelRatio:renderer.getPixelRatio()},frameMs:frameDeltas.map(dt=>dt*1000),render:{...renderer.info.render},memory:{...renderer.info.memory},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null,wildlife:westLife.visualStats(),figures:{total:npcData.length,built:npcData.filter(n=>n.actor.materialized!==false).length}}),
+          face:value=>{yaw=value;settleCamera();},
+          press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true})),release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true})),
+          play:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();reviewFrozen=false;reviewTarget=null;mode='playing';skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();pitch=.12;distance=targetDistance=2.5;settleCamera();},
+          frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);}},options);
+      },
+      async runR1JourneyChecks(expected=null){
+        const {runR1JourneyChecks}=await import('./r1-journey-checks.js');
+        return runR1JourneyChecks({world,player,wood,read:state,ready:()=>regionLoadingPromise,snapshot:roadSnapshot,persist:saved=>checkpoint.save(saved),resume:()=>continueRoad(),
+          evidence:()=>({viewport:{width:innerWidth,height:innerHeight,pixelRatio:renderer.getPixelRatio()},frameMs:frameDeltas.map(dt=>dt*1000),render:{...renderer.info.render},memory:{...renderer.info.memory},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null,wildlife:westLife.visualStats(),figures:{total:npcData.length,built:npcData.filter(n=>n.actor.materialized!==false).length}}),
+          travel:point=>testGoTo(point,'REGIONAL JOURNEY REVIEW','Checking destination readiness.'),face:value=>{yaw=value;settleCamera();},
+          press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true})),release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true})),
+          play:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();reviewFrozen=false;reviewTarget=null;mode='playing';skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();},
+          frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);}},expected);
+      },
+      async runAlezhorChecks(expected=null){
+        const {runAlezhorChecks}=await import('./alezhor-checks.js');
+        return runAlezhorChecks({world,scene,player,wood,inventory,skills,wind:()=>combat.state.player.stamina,wildlife:()=>westLife.snapshot(),read:state,ready:()=>regionLoadingPromise,snapshot:roadSnapshot,persist:saved=>checkpoint.save(saved),resume:()=>continueRoad(),
+          evidence:()=>({viewport:{width:innerWidth,height:innerHeight,pixelRatio:renderer.getPixelRatio()},frameMs:frameDeltas.map(dt=>dt*1000),render:{...renderer.info.render},memory:{...renderer.info.memory},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null,wildlife:westLife.visualStats(),figures:{total:npcData.length,built:npcData.filter(n=>n.actor.materialized!==false).length}}),
+          travel:point=>testGoTo(point,'ALEZHOR REVIEW','Checking destination readiness.'),face:value=>{yaw=value;settleCamera();},
+          press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true})),release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true})),
+          play:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();reviewFrozen=false;reviewTarget=null;mode='playing';skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();},
+          frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);}},expected);
+      },
+      async runEastIzolChecks(expected=null){
+        const {runEastIzolChecks}=await import('./east-izol-checks.js');
+        return runEastIzolChecks({world,scene,player,wood,inventory,skills,wind:()=>combat.state.player.stamina,wildlife:()=>westLife.snapshot(),read:state,ready:()=>regionLoadingPromise,snapshot:roadSnapshot,persist:saved=>checkpoint.save(saved),resume:()=>continueRoad(),
+          evidence:()=>({viewport:{width:innerWidth,height:innerHeight,pixelRatio:renderer.getPixelRatio()},frameMs:frameDeltas.map(dt=>dt*1000),render:{...renderer.info.render},memory:{...renderer.info.memory},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null,wildlife:westLife.visualStats(),figures:{total:npcData.length,built:npcData.filter(n=>n.actor.materialized!==false).length}}),
+          travel:point=>testGoTo(point,'EAST IZOL REVIEW','Checking destination readiness.'),face:value=>{yaw=value;settleCamera();},
+          press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true})),release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true})),
+          play:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();reviewFrozen=false;reviewTarget=null;mode='playing';skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();},
+          frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);}},expected);
+      },
+      async runRegionalGroundChecks(expected=null){
+        const {runRegionalGroundChecks}=await import('./regional-ground-checks.js');
+        return runRegionalGroundChecks({world,scene,player,wood,inventory,skills,wind:()=>combat.state.player.stamina,wildlife:()=>westLife.snapshot(),read:state,ready:()=>regionLoadingPromise,snapshot:roadSnapshot,persist:saved=>checkpoint.save(saved),resume:()=>continueRoad(),
+          evidence:()=>({viewport:{width:innerWidth,height:innerHeight,pixelRatio:renderer.getPixelRatio()},frameMs:frameDeltas.map(dt=>dt*1000),render:{...renderer.info.render},memory:{...renderer.info.memory},heap:performance.memory?{used:performance.memory.usedJSHeapSize,total:performance.memory.totalJSHeapSize}:null,wildlife:westLife.visualStats(),figures:{total:npcData.length,built:npcData.filter(n=>n.actor.materialized!==false).length}}),
+          travel:point=>testGoTo(point,'REGIONAL JOURNEY REVIEW','Checking destination readiness.'),face:value=>{yaw=value;settleCamera();},
+          press:code=>document.dispatchEvent(new KeyboardEvent('keydown',{code,bubbles:true})),release:code=>document.dispatchEvent(new KeyboardEvent('keyup',{code,bubbles:true})),
+          play:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();reviewFrozen=false;reviewTarget=null;mode='playing';skillAnnouncements.clear();mapTutorial.restore(2);renderMapTutorial();},
+          frames:async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);}},expected);
+      },
       async runFastLoadingChecks(){
         const {runFastLoadingChecks}=await import('./fast-loading-checks.js');
         return runFastLoadingChecks({world,player,read:state,ready:()=>regionLoadingPromise,dwarfAutoplay:()=>window.__AZHORA__.runDwarfAutoplayChecks(),travel:point=>testGoTo(point,'FAST LOADING TEST','Testing the destination loading gate.'),
@@ -8891,10 +8957,13 @@ async function init() {
         window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();closeDialogue();skillAnnouncements.clear();reviewFrozen=false;reviewTarget=null;mode='playing';
         const frames=async(n=1)=>{for(let i=0;i<n;i++)await new Promise(requestAnimationFrame);};
         const live=()=>{reviewFrozen=false;reviewTarget=null;mode='playing';};
+        const held=new Set(),hold=(code,on)=>{if(held.has(code)===on)return;if(on)held.add(code);else held.delete(code);document.dispatchEvent(new KeyboardEvent(on?'keydown':'keyup',{code,bubbles:true}));};
         return runTelemoniaChecks({host:telemonia,player,combat,npcById,state,frames,reset:()=>telemonia.restore(),
           travel:async at=>{const r=testGoTo(at,'TELEMONIA','Telemonia test');if(r?.then)await r;live();await frames(2);live();},
           sneak:on=>{if(on&&!skills.taught('stealth'))skills.learn('stealth');if(drent.sneaking!==on)drent.toggleSneak();},
           camera:(y,p,d)=>{yaw=y;pitch=p;distance=targetDistance=d;},capture:name=>console.log('TELEMONIA_CAPTURE '+name),progress:line=>console.log('TELEMONIA_PROGRESS '+line),
+          drive:(to,speed)=>{const p=player.group.position;yaw=Math.atan2(p.x-to.x,p.z-to.z);hold('KeyW',true);hold('ShiftLeft',speed>5);},
+          stopDriving:()=>{for(const code of [...held])hold(code,false);},
           keepAlive:()=>{const hero=combat.state.player;if(hero.hp>0)hero.hp=hero.maxHp;},
           saveAndReload:async()=>{if(!writeRoadCheckpoint(sessionCheckpoint))return false;continueRoad(true);await frames(3);live();await frames(2);live();return true;}});
       },
@@ -9999,6 +10068,22 @@ async function init() {
         reviewFrozen=false;reviewTarget=null;reviewCat=null;player.group.visible=true;
         clearTimeout(toastTimer);$('toast').classList.remove('visible');
         leaveOpening();document.body.classList.add('playing');show('opening',false);show('loading',false);show('modal-backdrop',false);show('dialogue',false);mode='playing';
+        if(view==='mithala-fen'||view==='mithala-wet-tip'||view==='lotharn-north-overlook'){
+          const showFen=()=>{
+            prepareTesting();stopAutopilot();closeDialogue();stopInput();
+            questStage=QUEST_DONE;combat.finishPractice();lotharnCave.leave();caveDark=0;
+            const spot=westReviewSpot(view);
+            player.group.position.set(spot.x,world.renderedGroundHeight(spot.x,spot.z),spot.z);
+            grounded=true;verticalSpeed=0;reviewFrozen=true;reviewVista=true;player.group.visible=false;
+            reviewTarget=new THREE.Vector3(spot.look.x,world.heightAt(spot.look.x,spot.look.z)+spot.look.y,spot.look.z);
+            yaw=spot.yaw;pitch=spot.pitch;distance=targetDistance=spot.d;
+            westLife.update(.03,player.group.position,true);westLife.setObserver(player.group.position);
+            skillAnnouncements.clear();clearTimeout(toastTimer);$('toast').classList.remove('visible');show('map-tutorial',false);
+            settleCamera();return {view,region:world.regionAt(spot.x,spot.z)?.name,eye:camera.position.toArray(),target:reviewTarget.toArray()};
+          };
+          const spot=westReviewSpot(view),pending=pendingRegions([spot,spot.look]);
+          return pending.length?waitForRegions(pending,showFen):showFen();
+        }
         if(view==='strategy'){prepareTesting();openStrategicPrototype();return;}
         if(view==='tutorial-shore'||view==='tutorial-gate'){
           prepareTesting();peninsulaHost.restore(createPeninsulaTutorial().snapshot());peninsulaHost.choose('tutorial');rebuildCompany();
@@ -10012,6 +10097,21 @@ async function init() {
           if(view==='west-oremindi'){player.group.visible=false;reviewTarget=new THREE.Vector3(-3550,world.heightAt(-3550,-1140)+150,-1140);yaw=.8;pitch=.7;distance=targetDistance=760;}
           else {sevronHost.enter();const at=sevronHost.walk.toWorld(view==='sevron-court'?{x:0,z:-58}:{x:0,z:29});player.group.position.set(at.x,at.y,at.z);sevronHost.frame(0);yaw=0;pitch=.2;distance=targetDistance=8;}
           settleCamera();return;
+        }
+        if(view==='starting-luscia-deer'||view==='starting-moros-hares'){
+          const deer=view==='starting-luscia-deer',id=deer?2:3,prefix=deer?'luscia-west-copse-deer':'moros-west-grass-hares';
+          const showWildlife=()=>{
+            prepareTesting();stopAutopilot();combat.finishPractice();questStage=QUEST_DONE;
+            const animal=westLife.snapshot().creatures.find(a=>a.id.startsWith(prefix)&&!a.hidden);
+            if(!animal)throw new Error('Missing starting-country resident '+prefix);
+            testGoTo(animal,deer?'LUSCIA':'MOROS PLAIN','Wildlife review');player.group.visible=false;
+            reviewFrozen=true;reviewVista=true;
+            westLife.update(.001,{x:animal.x+60,z:animal.z+60},true);westLife.setObserver(animal);
+            reviewTarget=new THREE.Vector3(animal.x,world.renderedGroundHeight(animal.x,animal.z)+(deer?.65:.23),animal.z);
+            yaw=deer?1.1:.8;pitch=.14;distance=targetDistance=deer?6:3.4;
+            skillAnnouncements.clear();show('map-tutorial',false);clearTimeout(toastTimer);$('toast').classList.remove('visible');settleCamera();return;
+          };
+          const pending=pendingRegions([id]);return pending.length?waitForRegions(pending,showWildlife):showWildlife();
         }
         if(view==='drent-peninsula'||view==='drent-peninsula-ground'){
           const aerial=view==='drent-peninsula',at=aerial?{x:150,z:-57}:{x:202,z:24};
@@ -10155,10 +10255,39 @@ async function init() {
           skillAnnouncements.clear();$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();
           if(view==='inquest-placeholder')conversation(npc);return;
         }
-        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')||view.startsWith('babon')){
+        if (EAST_WILDLIFE_REVIEW[view]) {
+          const showWildlife = async () => {
+            prepareTesting(); stopAutopilot(); closeDialogue(); stopInput();
+            questStage=QUEST_DONE; combat.finishPractice();
+            await testGoTo(EAST_IZOL_ARRIVAL,'EAST IZOL WILDLIFE','');
+            reviewFrozen=true; reviewVista=true; player.group.visible=false;
+            const shot=eastWildlifeReview(view,{world,westLife,seaLevel:SEA_LEVEL});
+            const t=shot.target,e=shot.eye;
+            reviewTarget=new THREE.Vector3(t.x,t.y,t.z);
+            yaw=shot.bearing; pitch=shot.pitch; distance=targetDistance=shot.distance;
+            skillAnnouncements.clear(); clearTimeout(toastTimer);
+            $('toast').classList.remove('visible'); show('map-tutorial',false);
+            settleCamera();
+            (window.__eastIzolWildlifeReview??={})[view]=shot;
+            return shot;
+          };
+          const pending=pendingRegions([63]);
+          return pending.length?waitForRegions(pending,showWildlife):showWildlife();
+        }
+        if(view==='east-izol-plant-contact'){
+          const showPlant=async()=>{prepareTesting();stopAutopilot();closeDialogue();stopInput();await testGoTo(EAST_IZOL_ARRIVAL,'EAST IZOL PLANT CONTACT','');reviewFrozen=true;reviewVista=true;player.group.visible=false;
+            const at={x:744.144,z:1946.661},eye={x:747.2,z:1949.2};at.y=world.renderedGroundHeight(at.x,at.z)+.15;eye.y=world.renderedGroundHeight(eye.x,eye.z)+1.8;
+            reviewTarget=new THREE.Vector3(at.x,at.y,at.z);yaw=Math.atan2(eye.x-at.x,eye.z-at.z);pitch=Math.atan2(eye.y-at.y,Math.hypot(eye.x-at.x,eye.z-at.z));distance=targetDistance=Math.hypot(eye.x-at.x,eye.y-at.y,eye.z-at.z);westLife.setObserver(eye);settleCamera();return {at,eye};};
+          const pending=pendingRegions([63]);return pending.length?waitForRegions(pending,showPlant):showPlant();
+        }
+        if(view.startsWith('east-pyros')||view.startsWith('nether-desert')||view.startsWith('legemum')||view.startsWith('babon')||view.startsWith('south-celder')||view.startsWith('north-celder')||view.startsWith('east-izol')||view.startsWith('alezhor')){
           const cfg=view.startsWith('east-pyros')?{id:57,name:'East Pyros',field:'eastPyros',arrival:EAST_PYROS_ARRIVAL,landmarks:EAST_PYROS_LANDMARKS,trails:EAST_PYROS_ROUTES,views:EAST_PYROS_VIEWS}:
             view.startsWith('nether-desert')?{id:58,name:'Nether Desert',field:'netherDesert',arrival:NETHER_DESERT_ARRIVAL,landmarks:NETHER_DESERT_LANDMARKS,trails:NETHER_DESERT_TRAILS,views:NETHER_DESERT_VIEWS}:
             view.startsWith('legemum')?{id:59,name:'Legemum',field:'legemum',arrival:LEGEMUM_ARRIVAL,landmarks:LEGEMUM_LANDMARKS,trails:LEGEMUM_TRAILS,views:LEGEMUM_VIEWS}:
+            view.startsWith('south-celder')?{id:CELDER_REGION_IDS['South Celder'],name:'South Celder',field:'southCelder',arrival:SOUTH_CELDER_ARRIVAL,landmarks:SOUTH_CELDER_LANDMARKS,trails:SOUTH_CELDER_TRAILS,views:SOUTH_CELDER_VIEWS}:
+            view.startsWith('north-celder')?{id:CELDER_REGION_IDS['North Celder'],name:'North Celder',field:'northCelder',arrival:NORTH_CELDER_ARRIVAL,landmarks:NORTH_CELDER_LANDMARKS,trails:NORTH_CELDER_TRAILS,views:NORTH_CELDER_VIEWS}:
+            view.startsWith('east-izol')?{id:CELDER_REGION_IDS['East Izol'],name:'East Izol',field:'eastIzol',arrival:EAST_IZOL_ARRIVAL,landmarks:EAST_IZOL_LANDMARKS,trails:EAST_IZOL_TRAILS,views:EAST_IZOL_VIEWS}:
+            view.startsWith('alezhor')?{id:CELDER_REGION_IDS['Alezhor'],name:'Alezhor',field:'alezhor',arrival:ALEZHOR_ARRIVAL,landmarks:ALEZHOR_LANDMARKS,trails:ALEZHOR_TRAILS,views:ALEZHOR_VIEWS}:
             {id:60,name:'Babon',field:'babon',arrival:BABON_ARRIVAL,landmarks:BABON_LANDMARKS,trails:BABON_TRAILS,views:BABON_VIEWS};
           const showEnvironment=async()=>{
             prepareTesting();stopAutopilot();closeDialogue();questStage=QUEST_DONE;combat.finishPractice();testGoTo(cfg.arrival,cfg.name,'');
@@ -10167,11 +10296,11 @@ async function init() {
             const checks=runWesternEnvironmentChecks(world,westLife,cfg);(window.__westernEnvironmentChecks??={})[cfg.name]=checks;
             let shot=cfg.views[view];
             if(view.endsWith('-wildlife')){
-              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':cfg.id===60?'babon-giant-monitor':'red-deer';
+              const species=cfg.id===57?'road-fox':cfg.id===58?'spine-lizard':cfg.id===60?'babon-giant-monitor':cfg.name.endsWith('Celder')?'frostback':cfg.name==='East Izol'?'gull':cfg.name==='Alezhor'?'otter':'red-deer';
               const animal=westLife.snapshot().creatures.find(a=>a.region===cfg.name&&a.species===species);
               if(!animal)throw new Error(`${cfg.name}: no ${species} to review`);
               const ground=world.heightAt(animal.x,animal.z),close=species==='spine-lizard';
-              shot=cfg.id===60?{target:{x:animal.x,z:animal.z,y:ground+1.4},eye:{x:animal.x+10,z:animal.z+8,y:ground+5}}:{target:{x:animal.x,z:animal.z,y:ground+(close?.2:.65)},eye:{x:animal.x+(close?2.4:4),z:animal.z+(close?2.2:4),y:ground+(close?1.1:2)}};
+              shot=cfg.id===60||species==='frostback'?{target:{x:animal.x,z:animal.z,y:ground+1.4},eye:{x:animal.x+10,z:animal.z+8,y:ground+5}}:{target:{x:animal.x,z:animal.z,y:ground+(close?.2:.65)},eye:{x:animal.x+(close?2.4:4),z:animal.z+(close?2.2:4),y:ground+(close?1.1:2)}};
             }
             if(!shot)throw new Error(`Unknown environment review: ${view}`);
             const t=shot.target,e=shot.eye,ty=t.y??world.heightAt(t.x,t.z)+1,ey=e.y??world.heightAt(e.x,e.z)+2;

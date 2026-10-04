@@ -54,11 +54,11 @@ import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
  *     are drawn on a border and four of those borders unbuilt;
  *  4. **nothing of either Lotharn's ground moved**, which is the one built neighbour this block has.
  */
-const { createWorld } = await sourceModule('../src/world.js');
+const { scopedWorld } = await import('./scoped-world.js');
 const { WEST_LIFE_ZONES, LIFE_REACH } = await sourceModule('../src/west-regions-life.js');
 const scene = new THREE.Scene();
-const world = createWorld(scene);
 const NAMES = ['South Mithala', 'West Mithala', 'East Mithala', 'North Mithala'];
+const world = await scopedWorld(scene, [...NAMES, 'West Lotharn Mountains', 'East Lotharn Mountains'].map(name => REGION_IDS[name]));
 const CELLS = Object.fromEntries(NAMES.map(name => [name, REGION_CELLS[name]]));
 const ALL = NAMES.flatMap(name => CELLS[name]);
 const g = (x, z) => groundWithRiver(x, z);
@@ -117,12 +117,17 @@ test('the atlas: four countries, 116 authored hexes and one the atlas forgot, an
   // Forty-nine internal edges, counted once each: the reason this is one job and one module.
   const internal = NAMES.reduce((sum, name) => sum + NAMES.reduce((part, other) => part + (edges(name)[other] ?? 0), 0), 0);
   assert.equal(internal / 2, 49, 'forty-nine hex edges among the four');
-  // Twenty-five against built country, and the Lotharn is the whole of it.
+  // Twenty-five against built country when the plain was built, and the Lotharn was the whole of it. The two
+  // Celders were built against the plain's western margin on 3 October 2026: North Celder along twelve of West
+  // Mithala's edges and six of South Mithala's, South Celder along one. Nothing else built touches the four.
   assert.equal(south['East Lotharn Mountains'] + south['West Lotharn Mountains'], 25);
+  const later = { 'West Mithala': { 'North Celder': 12 }, 'South Mithala': { 'North Celder': 6, 'South Celder': 1 } };
+  for (const [name, counts] of Object.entries(later)) for (const [built, n] of Object.entries(counts))
+    assert.equal(edges(name)[built], n, `${name} meets ${built} on ${n} edges`);
   for (const name of ['West Mithala', 'East Mithala', 'North Mithala'])
     for (const built of PLAYABLE_REGIONS) {
-      if (NAMES.includes(built)) continue;
-      assert.equal(edges(name)[built], undefined, `${name} touches no built country`);
+      if (NAMES.includes(built) || later[name]?.[built]) continue;
+      assert.equal(edges(name)[built], undefined, `${name} touches no other built country`);
     }
 
   // **The water.** Sixty-one new river edges came in with these four names, in thirteen chains.
