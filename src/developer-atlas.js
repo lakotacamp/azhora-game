@@ -198,6 +198,7 @@ const LOCALS = [
   [64, 'Alezhor', 'alezhor', 'Alezhor', point(734.390,2800.000,-32,116)],
   [65, 'South Ibenal', 'south-ibenal', 'South Ibenal', point(623.538,2656.000,-33,110)],
   [66, 'North Ibenal', 'north-ibenal', 'North Ibenal', point(748.246,2488.000,-25,103)],
+  [67, 'Henborth', 'henborth', 'Henborth', point(1205.507,2080.000,0,86)],
 ];
 export const DEV_WORLD_DESTINATIONS = Object.freeze([
   ...LOCALS.map(([region, name, target, regionId, atlas], index) => local(region, name, target, 88 - index * 72 / Math.max(1, LOCALS.length - 1), regionId, atlas)),

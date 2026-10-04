@@ -571,6 +571,14 @@ export const PLAYABLE_SURVEY = Object.freeze({
         r:104,terrain:'plains'},{q:-24,r:104,terrain:'plains'},{q:-29,r:105,terrain:'plains'},{q:-28,r:105,terrain:'plains'},{q:-27,r:105,terrain:'plains'},
         {q:-26,r:105,terrain:'plains'},{q:-25,r:105,terrain:'plains'},{q:-28,r:106,terrain:'plains'},{q:-27,r:106,terrain:'plains'},{q:-26,r:106,
         terrain:'plains'},{q:-27,r:107,terrain:'plains'}]) }),
+    Object.freeze({ id: "Henborth", name: "Henborth",
+      bounds: Object.freeze({"x":1094.657,"y":1992,"width":221.702,"height":176}), centerX: 1203.455, centerY: 2085.333,
+      cells: Object.freeze([{q:4,r:83,terrain:'plains'},{q:5,r:83,terrain:'plains'},{q:1,r:84,terrain:'plains'},{q:2,r:84,terrain:'plains'},{q:3,r:84,terrain:'plains'},{q:4,r:84,
+        terrain:'plains'},{q:0,r:85,terrain:'plains'},{q:1,r:85,terrain:'plains'},{q:2,r:85,terrain:'plains'},{q:3,r:85,terrain:'plains'},{q:-2,r:86,
+        terrain:'plains'},{q:-1,r:86,terrain:'plains'},{q:0,r:86,terrain:'plains'},{q:1,r:86,terrain:'plains'},{q:2,r:86,terrain:'plains'},{q:-3,r:87,
+        terrain:'plains'},{q:-2,r:87,terrain:'plains'},{q:-1,r:87,terrain:'plains'},{q:0,r:87,terrain:'plains'},{q:-4,r:88,terrain:'plains'},{q:-3,r:88,
+        terrain:'plains'},{q:-2,r:88,terrain:'plains'},{q:-1,r:88,terrain:'plains'},{q:-5,r:89,terrain:'plains'},{q:-4,r:89,terrain:'plains'},{q:-3,r:89,
+        terrain:'plains'},{q:-2,r:89,terrain:'plains'}]) }),
   ]),
 });
 

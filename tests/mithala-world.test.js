@@ -119,9 +119,11 @@ test('the atlas: four countries, 116 authored hexes and one the atlas forgot, an
   assert.equal(internal / 2, 49, 'forty-nine hex edges among the four');
   // Twenty-five against built country when the plain was built, and the Lotharn was the whole of it. The two
   // Celders were built against the plain's western margin on 3 October 2026: North Celder along twelve of West
-  // Mithala's edges and six of South Mithala's, South Celder along one. Nothing else built touches the four.
+  // Mithala's edges and six of South Mithala's, South Celder along one. Henborth was registered on 4 October 2026
+  // north of the plain: eight of West Mithala's edges and six of North Mithala's. Nothing else built touches the four.
   assert.equal(south['East Lotharn Mountains'] + south['West Lotharn Mountains'], 25);
-  const later = { 'West Mithala': { 'North Celder': 12 }, 'South Mithala': { 'North Celder': 6, 'South Celder': 1 } };
+  const later = { 'West Mithala': { 'North Celder': 12, Henborth: 8 }, 'South Mithala': { 'North Celder': 6, 'South Celder': 1 },
+    'North Mithala': { Henborth: 6 } };
   for (const [name, counts] of Object.entries(later)) for (const [built, n] of Object.entries(counts))
     assert.equal(edges(name)[built], n, `${name} meets ${built} on ${n} edges`);
   for (const name of ['West Mithala', 'East Mithala', 'North Mithala'])

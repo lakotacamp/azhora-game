@@ -22,6 +22,7 @@ import { EAST_IZOL_LANDMARKS } from './east-izol-world.js';
 import { ALEZHOR_LANDMARKS } from './alezhor-world.js';
 import { SOUTH_IBENAL_LANDMARKS } from './south-ibenal-world.js';
 import { NORTH_IBENAL_LANDMARKS } from './north-ibenal-world.js';
+import { HENBORTH_LANDMARKS } from './henborth-world.js';
 import { ISCARE_RUIN_SITES, ISCARE_REGION } from './iscare-world.js';
 import { IBENWOOD_GROVES, IBENWOOD_ARRIVALS, IBENWOOD_PILOT } from './ibenwood-environment.js';
 
@@ -62,6 +63,7 @@ export const SUBREGIONS = Object.freeze([
     ['Alezhor', ALEZHOR_LANDMARKS, 'A cool coastal strip between the open ocean and the Ibenwood\'s tree line, cut by the gold rivers.'],
     ['South Ibenal', SOUTH_IBENAL_LANDMARKS, 'A coastal plain between the open ocean and the Ibenwood, crossed at intervals by small rivers out of the forest.'],
     ['North Ibenal', NORTH_IBENAL_LANDMARKS, 'A cold, narrowing coastal plain between the open ocean and the Ibenwood, ending at the Narrows below the Oremindi.'],
+    ['Henborth', HENBORTH_LANDMARKS, 'Open continental plains between the Celder and Mithala country and the northern mountain approaches.'],
   ].flatMap(([region, landmarks, note]) => landmarks.map(p => area(p.id, p.name, region, p.x, p.z, Math.max(28, p.radius ?? 40), p.description ?? note))),
   ...ISCARE_RUIN_SITES.map(site => area(site.id, site.name, ISCARE_REGION, site.x, site.z, 45, 'Burned, roofless stone and charred beams remain from the Blood Prince\'s passage. The islands have wildlife, but these settlements are abandoned.')),
   area('imlamdris-rebuilding', 'Imlamdris rebuilding', 'South Suval', -126, 1154, 40, 'Four small timber homes and a new building frame stand beside the razed city.'),

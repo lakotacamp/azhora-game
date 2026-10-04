@@ -41,6 +41,7 @@ import { eastIzolGround, eastIzolTint, eastIzolShoreTint } from './east-izol-wor
 import { alezhorGround, alezhorTint, alezhorShoreTint } from './alezhor-world.js';
 import { southIbenalGround, southIbenalTint, southIbenalShoreTint } from './south-ibenal-world.js';
 import { northIbenalGround, northIbenalTint, northIbenalShoreTint } from './north-ibenal-world.js';
+import { henborthGround, henborthTint } from './henborth-world.js';
 import { caricasSettlementGround } from './caricas-settlement.js';
 import { westOremindiGround, westOremindiTint } from './west-oremindi-world.js';
 import { southOremindiGround, southOremindiTint } from './south-oremindi-world.js';
@@ -290,7 +291,7 @@ export function legacyWesternGroundHeight(x,z) {
 
 /** Ground with the river channels cut, before any deck or pier override. */
 export function groundWithRiver(x, z) {
-  return northIbenalLayer(x,z,southIbenalLayer(x,z,alezhorLayer(x,z,eastIzolLayer(x,z,celderLayer(x,z,babonGround(x,z,legemumGround(x,z,netherDesertGround(x,z,groundBeforeNether(x,z),groundBeforeNether))))))));
+  return henborthLayer(x,z,northIbenalLayer(x,z,southIbenalLayer(x,z,alezhorLayer(x,z,eastIzolLayer(x,z,celderLayer(x,z,babonGround(x,z,legemumGround(x,z,netherDesertGround(x,z,groundBeforeNether(x,z),groundBeforeNether)))))))));
 }
 // The two Celders lay their ground last of all (src/south-celder-world.js, src/north-celder-world.js). Each writes only on
 // its own hexes; `groundBeforeCelder` answers the ground without either, for measuring their border seams.
@@ -341,6 +342,15 @@ const northIbenalLayer = (x, z, ground) => (northIbenalLeftOut ? ground : northI
 export function groundBeforeNorthIbenal(x, z) {
   northIbenalLeftOut = true;
   try { return groundWithRiver(x, z); } finally { northIbenalLeftOut = false; }
+}
+// Henborth lays its ground outermost (src/henborth-world.js), on its own hexes only; `groundBeforeHenborth`
+// answers the ground without it, for measuring its border seams. North Celder's seam reads Henborth's side live
+// (`groundBeforeCelder` keeps this layer), so Henborth holds that line exactly as handed and North Celder meets it.
+let henborthLeftOut = false;
+const henborthLayer = (x, z, ground) => (henborthLeftOut ? ground : henborthGround(x, z, ground, groundBeforeHenborth));
+export function groundBeforeHenborth(x, z) {
+  henborthLeftOut = true;
+  try { return groundWithRiver(x, z); } finally { henborthLeftOut = false; }
 }
 /** Everything `groundWithRiver` lays but the Nether Desert and Legemum: the ground the Nether Desert's border seam is measured against. */
 function groundBeforeNether(x,z){
@@ -454,6 +464,7 @@ const GROUND_TINTS = Object.freeze([
   Object.freeze({id:'alezhor',tint:alezhorTint}),
   Object.freeze({id:'south-ibenal',tint:southIbenalTint}),
   Object.freeze({id:'north-ibenal',tint:northIbenalTint}),
+  Object.freeze({id:'henborth',tint:henborthTint}),
 ]);
 /**
  * The families, in the order they are walked, for the guard. `tests/southwest-world.test.js` asserts this
