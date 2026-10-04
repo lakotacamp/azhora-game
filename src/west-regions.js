@@ -193,13 +193,19 @@ function chainBreak(key, region) {
  * of waterfall in the middle of it. `west-ground.js` builds the profiles down
  * `WEST_RIVERS` in order, so a course with `headOf` must come after the one it
  * names.
+ *
+ * `blend` has `west-ground.js` cut the course's channel to its level between its
+ * two nearest samples rather than to the nearer one's (`courseBetween`). A course
+ * that falls a centimetre or two a sample cannot tell the difference; one that
+ * falls half a metre a sample steps its banks by about that much wherever one
+ * sample hands over to the next. Only the Treloss's mouth sets it.
  */
-function river(id, name, course, { halfWidth, cut, bed = .55, halfWidthEnd, cutEnd, fordUntil = 1, taper = 0, head = null, headOf = null }) {
+function river(id, name, course, { halfWidth, cut, bed = .55, halfWidthEnd, cutEnd, fordUntil = 1, taper = 0, head = null, headOf = null, blend = false }) {
   const points = Object.freeze(soften(course).map(p => point(p.x, p.z)));
   const samples = Object.freeze(resample(points, 5).map(sample => Object.freeze(sample)));
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const p of points) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); }
-  return Object.freeze({ id, name, points, samples, halfWidth, cut, bed, taper, fordUntil, head, headOf,
+  return Object.freeze({ id, name, points, samples, halfWidth, cut, bed, taper, fordUntil, head, headOf, blend,
     halfWidthEnd: halfWidthEnd ?? halfWidth, cutEnd: cutEnd ?? cut,
     maxHalf: Math.max(halfWidth, halfWidthEnd ?? halfWidth),
     bounds: Object.freeze({ minX, maxX, minZ, maxZ }) });
@@ -915,9 +921,79 @@ function seaward(points, reach = 42, out = -2.5) {
  * end, the bed under the water the whole way, no bank over a metre beside it, no cliff off either bank, both
  * banks walked to the beach. Shallow, `bed` the stream's own, and waded. What it would have drowned of Gala's
  * scatter and Legemum's cover is moved off it in their own files (`offTheMouth`, `offTreloss`).
+ *
+ * **Its banks fall with the water** (`blend`, 2026-10-03). The water falls about half a metre a sample here, and
+ * a channel cut to its nearest sample's level stepped the walked ground of both banks by that much at every
+ * handover from one sample to the next - up to 0.55 m in half a metre, six to twelve metres out, seen from above
+ * as darker diamonds on the gully's fine ground. Cut to the level between its two nearest samples, which is the
+ * line the water was always drawn on, no half metre of either bank there falls more than 0.18 m past the water
+ * beside it, and the most of that is Legemum's hillside coming down into the gully twelve metres out.
  */
 export const GALA_TELEMONIA_MOUTH = river('gala-telemonia-mouth', 'The Treloss', seaward(atlasCourse('Gala,Legemum,Telemonia')),
-  { halfWidth: 2.2, halfWidthEnd: 2.8, cut: 3.2, cutEnd: 10.05, bed: .35, headOf: 'gala-telemonia-stream' });
+  { halfWidth: 2.2, halfWidthEnd: 2.8, cut: 3.2, cutEnd: 10.05, bed: .35, headOf: 'gala-telemonia-stream', blend: true });
+
+/**
+ * **The Treloss's lower gully is drawn finer** (2026-10-03). The ground walked here was right, but the ground
+ * drawn was the world's 7.1 m grid (src/world.js), and a water four and a half metres wide in a gully cannot be
+ * drawn on it: seen from above, pale triangles of that grid stood up through the water and cut the stream into
+ * pieces - over the mouth and the stream's last twenty metres, at two points in five, by up to half a metre.
+ * Further up, Telemonia draws its own finer ground along its border, and the stream is fine.
+ *
+ * So the gully is drawn the way Telemonia, Amod, the Suval highlands, the Lotharns and Feradom are: its own
+ * ground a metre and a half apart (src/gala-scenery.js), over the world's grid sunk out of sight beneath it
+ * (`trelossTerrainSink`, subtracted in src/world.js). `TRELOSS_GULLY` is the line it is drawn along: the mouth,
+ * and the stream from `head` metres above the mouth's head, which is well inside the ground Telemonia draws.
+ *
+ * - **The sink** takes the grid down `depth` metres at every corner within `full` of the line, and lets go by
+ *   `none`. A triangle of that grid over any of the water has all three corners within the water's half-width
+ *   (2.8 m at most) and a cell's diagonal (7.2 x sqrt 2) of it, under thirteen metres: every such triangle goes
+ *   right down.
+ * - **The patch** is drawn over every cell of the grid the sink tilts. A corner sunk anywhere short of `none`
+ *   tilts its cells out to a diagonal further, so the patch reaches `TRELOSS_PATCH_REACH` past the line (and the
+ *   half-diagonal of one of its own cells more, since a cell is drawn by its centre); out there the grid is as it
+ *   always was and the two meet at the same height. Drawn only as far as the sink, the tilted cells would
+ *   be a trench round it: Telemonia's stage 1 review render found exactly that along its own border.
+ */
+export const TRELOSS_SINK = Object.freeze({ head: 34, depth: 12, full: 13, none: 16 });
+export const TRELOSS_PATCH_REACH = TRELOSS_SINK.none + 7.2 * Math.SQRT2 + 1.1;
+export const TRELOSS_GULLY = (() => {
+  const stream = GALA_TELEMONIA_STREAM.points, mouth = GALA_TELEMONIA_MOUTH.points;
+  let first = stream.length - 1, run = 0;
+  while (first > 0 && run < TRELOSS_SINK.head) { run += Math.hypot(stream[first].x - stream[first - 1].x, stream[first].z - stream[first - 1].z); first--; }
+  const points = Object.freeze([...stream.slice(first), ...mouth.slice(1)].map(p => point(p.x, p.z)));
+  const bounds = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
+  for (const p of points) {
+    bounds.minX = Math.min(bounds.minX, p.x); bounds.maxX = Math.max(bounds.maxX, p.x);
+    bounds.minZ = Math.min(bounds.minZ, p.z); bounds.maxZ = Math.max(bounds.maxZ, p.z);
+  }
+  return Object.freeze({ points, bounds: Object.freeze(bounds) });
+})();
+/** Distance from a point to the gully's line; cheap to reject far away, and never less than the truth. */
+export function trelossGullyDistance(x, z, limit = Infinity) {
+  const b = TRELOSS_GULLY.bounds, outside = Math.max(b.minX - x, x - b.maxX, b.minZ - z, z - b.maxZ, 0);
+  if (outside > limit) return outside;
+  let best = Infinity;
+  const points = TRELOSS_GULLY.points;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], c = points[i], dx = c.x - a.x, dz = c.z - a.z;
+    const t = clamp(((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+    best = Math.min(best, Math.hypot(x - a.x - dx * t, z - a.z - dz * t));
+  }
+  return best;
+}
+/** How far the world's own ground grid is sunk under the Treloss's lower gully, which draws its own (above). */
+export function trelossTerrainSink(x, z) {
+  const { depth, full, none } = TRELOSS_SINK, d = trelossGullyDistance(x, z, none);
+  if (d >= none) return 0;
+  const t = clamp((d - full) / (none - full), 0, 1);
+  return depth * (1 - t * t * (3 - 2 * t));
+}
+/**
+ * Whether the ground drawn at a point is the gully's own finer ground (or Telemonia's, where the two meet), over
+ * the world's grid sunk under it. A neighbour's scenery stands there on `heightAt`, which this ground is drawn
+ * from, and not on the grid's triangles, which lie up to `TRELOSS_SINK.depth` metres under it.
+ */
+export const trelossDrawsGround = (x, z) => trelossGullyDistance(x, z, TRELOSS_PATCH_REACH) < TRELOSS_PATCH_REACH;
 
 /**
  * **The distributary.** The lore of Gala says the south is "well-watered by the Lizeem's

@@ -6,7 +6,7 @@ import { landDistance,SEA_LEVEL } from './region-world.js';
 import { LEGEMUM_CELLS,legemumOwns,legemumHabitat,legemumSlope,legemumClear } from './legemum-world.js';
 import { legemumWildlifeClear } from './legemum-wildlife.js';
 import { telemoniaDrawsGround } from './telemonia-world.js';
-import { GALA_TELEMONIA_STREAM,GALA_TELEMONIA_MOUTH,courseDistance } from './west-regions.js';
+import { GALA_TELEMONIA_STREAM,GALA_TELEMONIA_MOUTH,courseDistance,trelossDrawsGround } from './west-regions.js';
 import { courseSample } from './west-ground.js';
 
 const TAU=Math.PI*2;
@@ -31,8 +31,9 @@ export function createLegemumScenery(...args){return finishBuild(createLegemumSc
 /** Low, ocean-pruned cover outside two sheltered pockets. Trees use harvestable
  * instance handles, not untyped scenery; small flora is batched by atlas cell. */
 export function* createLegemumScenerySteps({parent,heightAt,renderedGroundHeight:gridGround=heightAt,colliders}){
-  // Along Telemonia's border its own ground is drawn over the world's sunk grid (src/telemonia-world.js).
-  const renderedGroundHeight=(x,z)=>telemoniaDrawsGround(x,z)?heightAt(x,z):gridGround(x,z);
+  // Along Telemonia's border its own ground is drawn over the world's sunk grid (src/telemonia-world.js), and so is the
+  // Treloss's lower gully's, down this country's border with Gala to the sea (`TRELOSS_GULLY`, src/west-regions.js).
+  const renderedGroundHeight=(x,z)=>telemoniaDrawsGround(x,z)||trelossDrawsGround(x,z)?heightAt(x,z):gridGround(x,z);
   const root=new THREE.Group();root.name='Legemum - wet headlands and tin country';parent.add(root);
   const metrics={offTreloss:0,cells:0,trees:0,rocks:0,tors:0,quartzVeins:0,grass:0,heath:0,bogPlants:0,ferns:0,batches:0,vertices:0};
   let seed=590431,work=0;

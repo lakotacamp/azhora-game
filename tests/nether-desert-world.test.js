@@ -9,7 +9,7 @@ import { NETHER_DESERT_WILDLIFE_ZONES } from '../src/nether-desert-wildlife.js';
 import { NETH_HEAD, NETH } from '../src/west-regions.js';
 import { courseSurface } from '../src/west-ground.js';
 import { groundWithRiver } from '../src/world-terrain.js';
-import { regionAt } from '../src/region-world.js';
+import { regionAt, hexOwnerAt } from '../src/region-world.js';
 
 test('The Nether Desert owns all 26 atlas cells without changing neighbouring ground',()=>{
   assert.equal(NETHER_DESERT_CELLS.length,26);
@@ -29,6 +29,58 @@ test('The stony plateau contribution fades continuously at every authored bounda
     }
   }
   assert.ok(checked>100);
+});
+
+test('The ground joins every built neighbour along the whole border, corners included',async t=>{
+  const THREE=await sourceModule('../vendor/three.module.js');
+  const {scopedWorld}=await import('./scoped-world.js');
+  const world=await scopedWorld(new THREE.Scene(),[58,57,26,25,17]);
+  const loop=NETHER_DESERT_OUTLINES[0],R=100/Math.sqrt(3),lines=[];
+  assert.equal(NETHER_DESERT_OUTLINES.length,1);
+  for(let i=0;i<loop.length;i++){
+    const a=loop[i],b=loop[(i+1)%loop.length],length=Math.hypot(b.x-a.x,b.z-a.z),mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+    let nx=(b.z-a.z)/length,nz=-(b.x-a.x)/length;
+    if(netherDesertOwns(mx+nx,mz+nz)){nx=-nx;nz=-nz;}
+    lines.push({a,b,length,nx,nz,across:hexOwnerAt(mx+nx,mz+nz)});
+  }
+  const built=['East Pyros','Oves Desert','Ovesos','Nethereum','West Pyros','East Ibenwood'];
+  assert.deepEqual(new Set(lines.map(l=>l.across)),new Set([...built,'Open country']));
+  // Where two of a neighbour's own hexes meet this line, the hex edge between them is theirs, and so is any step
+  // along it: this side meets each of them at the line and cannot meet both halves of a step at the corner.
+  const theirs=loop.filter((v,i)=>{
+    const p=loop[(i+loop.length-1)%loop.length],q=loop[(i+1)%loop.length];
+    const tx=2*v.x-p.x-q.x,tz=2*v.z-p.z-q.z,l=Math.hypot(tx,tz);
+    return !netherDesertOwns(v.x+tx/l*3,v.z+tz/l*3);
+  });
+  let worst=0,count=0,skipped=0,atTheirs=0;
+  for(const l of lines){
+    if(!built.includes(l.across))continue;
+    for(let s=0;s<=l.length+1e-9;s+=.5){
+      const x=l.a.x+(l.b.x-l.a.x)*s/l.length,z=l.a.z+(l.b.z-l.a.z)*s/l.length;
+      // A tenth of a metre either side: a step reads the same at any width, the steep ground of the ribs does not.
+      const step=Math.abs(world.heightAt(x+l.nx*.1,z+l.nz*.1)-world.heightAt(x-l.nx*.1,z-l.nz*.1));
+      if(theirs.some(v=>Math.hypot(x-v.x,z-v.z)<1.5)){skipped++;atTheirs=Math.max(atTheirs,step);continue;}
+      assert.ok(step<.5,`${l.across} border steps ${step.toFixed(2)} m at ${x.toFixed(1)},${z.toFixed(1)}`);
+      worst=Math.max(worst,step);count++;
+    }
+  }
+  assert.ok(count>4000);assert.ok(skipped<theirs.length*8);
+  // And this side's own hex edges, where they run in from the border: no step of its own anywhere.
+  const cells=new Set(NETHER_DESERT_CELLS.map(c=>`${c.q},${c.r}`));let inner=0,innerWorst=0;
+  for(const c of NETHER_DESERT_CELLS)for(let k=0;k<6;k++){
+    const t0=Math.PI/180*(60*k+30),t1=t0+Math.PI/3,a={x:c.x+R*Math.cos(t0),z:c.z+R*Math.sin(t0)},b={x:c.x+R*Math.cos(t1),z:c.z+R*Math.sin(t1)};
+    const length=Math.hypot(b.x-a.x,b.z-a.z),nx=(b.z-a.z)/length,nz=-(b.x-a.x)/length;
+    if(!netherDesertOwns((a.x+b.x)/2+nx,(a.z+b.z)/2+nz)||!netherDesertOwns((a.x+b.x)/2-nx,(a.z+b.z)/2-nz))continue;
+    for(let s=0;s<=length+1e-9;s+=.5){
+      const x=a.x+(b.x-a.x)*s/length,z=a.z+(b.z-a.z)*s/length;
+      const step=Math.abs(world.heightAt(x+nx*.1,z+nz*.1)-world.heightAt(x-nx*.1,z-nz*.1));
+      assert.ok(step<.5,`own hex edge steps ${step.toFixed(2)} m at ${x.toFixed(1)},${z.toFixed(1)}`);
+      innerWorst=Math.max(innerWorst,step);inner++;
+    }
+  }
+  assert.ok(cells.size===26&&inner>5000);
+  t.diagnostic(`worst step across the border ${worst.toFixed(2)} m in ${count} half-metre samples; `+
+    `${skipped} samples by ${theirs.length} neighbours' own corners (worst ${atTheirs.toFixed(2)} m, theirs); own hex edges ${innerWorst.toFixed(2)} m in ${inner}`);
 });
 
 test('The upper and lower Neth retain their real water level and unobstructed channel',()=>{

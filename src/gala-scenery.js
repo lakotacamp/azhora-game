@@ -4,9 +4,12 @@ import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { hexOwnerAt, REGION_CELLS, landDistance, relief } from './region-world.js';
 import { WORLD_SCALE } from './world-scale.js';
-import { LIZEEM, LIZEEM_REACH, WEST_BRAIDS, WEST_RIVERS, GALA_RIVERS, GALA_CHANNEL, GALA_TELEMONIA_STREAM, GALA_TELEMONIA_MOUTH, GALA_DESERT_STREAM, OVETH_REACH, westBareGround, courseDistance } from './west-regions.js';
+import { LIZEEM, LIZEEM_REACH, WEST_BRAIDS, WEST_RIVERS, GALA_RIVERS, GALA_CHANNEL, GALA_TELEMONIA_STREAM, GALA_TELEMONIA_MOUTH, GALA_DESERT_STREAM, OVETH_REACH, westBareGround, courseDistance,
+  TRELOSS_GULLY, TRELOSS_SINK, TRELOSS_PATCH_REACH, trelossGullyDistance } from './west-regions.js';
 import { WEST_PROFILES, westWaterSurface, braidThreadOffset, courseSample } from './west-ground.js';
 import { galaClimate, galaSouthness, galaClear, onWashFloor, washPlace, GALA_WASH, GALA_SEAM } from './gala-world.js';
+import { groundTint } from './world-terrain.js';
+import { TELEMONIA_BOX, TELEMONIA_PATCH_REACH, inTelemoniaBox, borderDepth, telemoniaTerrainSink } from './telemonia-world.js';
 
 /**
  * What Gala looks like where the ground alone is not enough: its water, the gravel of its dry wash
@@ -534,6 +537,102 @@ export function* createGalaScenerySteps(kit) {
   metrics.shrubs = steppeShrubs.length; metrics.maquis = maquis.length; metrics.stones += stones.length; metrics.thrift = thrift.length;
   metrics.standing = standing.length;
   metrics.movedOffMouth = movedOffMouth; metrics.keptOnMouth = keptOnMouth;
+
+  // -------------------------------------------------------------------------
+  // The Treloss's lower gully, drawn finer
+  // -------------------------------------------------------------------------
+  /**
+   * The ground over the Treloss's mouth and the last of the stream above it, a metre and a half apart, because
+   * the world's grid is seven metres apart here and a gully four and a half metres wide is not drawn on it at all
+   * (`TRELOSS_GULLY`, src/west-regions.js, has the whole story; `trelossTerrainSink` sinks the grid under this).
+   * Drawn from `groundHeight`, which is what is walked, and coloured by `groundTint`, which is what colours the
+   * grid, with the same small wobble from vertex to vertex.
+   *
+   * Every cell within `TRELOSS_PATCH_REACH` of the line is drawn, which is every cell of the world's grid the sink
+   * tilts, except the cells Telemonia draws itself: this lattice is Telemonia's own (src/telemonia-scenery.js, the
+   * same origin and step), and a cell here is left to Telemonia exactly when Telemonia draws it, by the same test
+   * on the same centre, so the two meet along shared vertices, where both stand on `groundHeight`, with no gap and
+   * no cell drawn twice.
+   *
+   * **The outer ring is the world's grid, drawn finer.** Past the sink (`TRELOSS_SINK.none`) the grid is not sunk,
+   * and it is drawn under this ground: wherever its seven-metre triangles stood the least bit over the walked ground
+   * - a hollow, a fold, a cell only half tilted toward the sink - they came up through this one. Measured on the
+   * first build, the grid was the higher surface at a quarter to a half of the points between sixteen metres out and
+   * the edge. So out there this ground is never under the grid's own surface (`terrainGrid`, the world's grid lines;
+   * `gridGround` is that surface as the grid would draw it without this sink), and over its last seven metres it
+   * becomes that surface, height and colour, so at its edge it is the grid it hands over to. What is left is the
+   * grid's own folds, a few centimetres, where a cell here straddles one (tests/legemum-world.test.js). Built after everything else here, from no draw of the scatter's
+   * stream, so nothing already laid moves.
+   */
+  {
+    const STEP = 1.5, T = TELEMONIA_BOX, G = TRELOSS_GULLY.bounds, R = TRELOSS_PATCH_REACH, { full, none } = TRELOSS_SINK;
+    const i0 = Math.floor((G.minX - R - STEP - T.minX) / STEP), i1 = Math.ceil((G.maxX + R + STEP - T.minX) / STEP);
+    const j0 = Math.floor((G.minZ - R - STEP - T.minZ) / STEP), j1 = Math.ceil((G.maxZ + R + STEP - T.minZ) / STEP);
+    const cols = i1 - i0 + 1, rows = j1 - j0 + 1;
+    // The same arithmetic Telemonia's lattice is placed by, so a shared vertex is the same number in both.
+    const xOf = i => T.minX + (i0 + i) * STEP, zOf = j => T.minZ + (j0 + j) * STEP;
+    const xMid = i => T.minX + (i0 + i + .5) * STEP, zMid = j => T.minZ + (j0 + j + .5) * STEP;
+    const telemoniaDraws = (x, z) => inTelemoniaBox(x, z) && borderDepth(x, z) > -TELEMONIA_PATCH_REACH;
+    const drawn = [], used = new Int32Array(cols * rows).fill(-1), seam = new Uint8Array(cols * rows);
+    for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) { if (++buildWork % 32 === 0) yield;
+      const x = xMid(i), z = zMid(j), corners = [j * cols + i, j * cols + i + 1, (j + 1) * cols + i, (j + 1) * cols + i + 1];
+      if (trelossGullyDistance(x, z, R) >= R) continue;
+      if (telemoniaDraws(x, z)) { for (const k of corners) seam[k] = 1; continue; }
+      drawn.push(j * cols + i);
+      for (const k of corners) used[k] = 0;
+    }
+    /**
+     * The world's grid as it would be drawn here without this sink, height and colour: its own cells, split as it
+     * splits them, with Telemonia's sink, which is the only other one out here (src/world.js sums them).
+     */
+    const grid = kit.terrainGrid ?? null, corner = new Map(), tint = new THREE.Color();
+    const below = (axis, v) => { let low = 0, high = axis.length - 1; while (high - low > 1) { const mid = (low + high) >> 1; if (axis[mid] <= v) low = mid; else high = mid; } return low; };
+    const cornerAt = (i, j) => {
+      const key = i * 65536 + j;
+      let c = corner.get(key);
+      if (!c) { const x = grid.xs[i], z = grid.zs[j]; groundTint(tint, x, z, THREE); c = [gy(x, z) - telemoniaTerrainSink(x, z), tint.r, tint.g, tint.b]; corner.set(key, c); }
+      return c;
+    };
+    const gridGround = (x, z, out) => {
+      const { xs, zs } = grid, i = below(xs, x), j = below(zs, z), u = (x - xs[i]) / (xs[i + 1] - xs[i]), v = (z - zs[j]) / (zs[j + 1] - zs[j]);
+      const [a, b, c, wb, wc] = u + v <= 1 ? [cornerAt(i, j), cornerAt(i + 1, j), cornerAt(i, j + 1), u, v]
+        : [cornerAt(i + 1, j + 1), cornerAt(i, j + 1), cornerAt(i + 1, j), 1 - u, 1 - v];
+      for (let n = 0; n < 4; n++) out[n] = a[n] + (b[n] - a[n]) * wb + (c[n] - a[n]) * wc;
+      return out;
+    };
+    const positions = [], colours = [], shade = new THREE.Color(), unsunk = [0, 0, 0, 0];
+    let jitter = 4731907;
+    const wobble = () => { jitter = (Math.imul(jitter, 1664525) + 1013904223) >>> 0; return .955 + jitter / 4294967296 * .09; };
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { if (++buildWork % 32 === 0) yield;
+      const k = j * cols + i;
+      if (used[k] < 0) continue;
+      const x = xOf(i), z = zOf(j);
+      let y = gy(x, z);
+      groundTint(shade, x, z, THREE); shade.multiplyScalar(wobble());
+      // Where a vertex is Telemonia's too, it is that country's: on the walked ground.
+      if (grid && !seam[k]) {
+        const d = trelossGullyDistance(x, z, R + 2), ring = smooth(full, none, d), edge = smooth(R - 8, R - 1.1, d);
+        gridGround(x, z, unsunk);
+        y += ring * Math.max(0, unsunk[0] - y);
+        // A grid cell tilted down under Telemonia's own ground is no surface to meet; Telemonia draws over it.
+        if (unsunk[0] > y - 1) y += edge * (unsunk[0] - y);
+        shade.r += (unsunk[1] - shade.r) * edge; shade.g += (unsunk[2] - shade.g) * edge; shade.b += (unsunk[3] - shade.b) * edge;
+      }
+      used[k] = positions.length / 3;
+      positions.push(x, y, z);
+      colours.push(shade.r, shade.g, shade.b);
+    }
+    // Each cell split as Telemonia's and the world's grid split theirs.
+    const indices = [];
+    for (const k of drawn) indices.push(used[k], used[k + cols], used[k + 1], used[k + 1], used[k + cols], used[k + cols + 1]);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
+    geometry.setIndex(indices); geometry.computeVertexNormals(); geometry.computeBoundingSphere();
+    const ground = new THREE.Mesh(geometry, material('#ffffff', { vertexColors: true, flatShading: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    ground.name = 'Treloss ground'; ground.receiveShadow = true; group.add(ground);
+    metrics.trelossGround = positions.length / 3;
+  }
 
   return {
     group, metrics,

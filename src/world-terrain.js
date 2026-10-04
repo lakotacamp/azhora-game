@@ -268,9 +268,13 @@ export function groundBeforeVarn(x, z) {
 
 /** Ground with the river channels cut, before any deck or pier override. */
 export function groundWithRiver(x, z) {
+  return babonGround(x,z,legemumGround(x,z,netherDesertGround(x,z,groundBeforeNether(x,z),groundBeforeNether)));
+}
+/** Everything `groundWithRiver` lays but the Nether Desert and Legemum: the ground the Nether Desert's border seam is measured against. */
+function groundBeforeNether(x,z){
   // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
   const base=groundBeforeFrontier(x,z);
-  return babonGround(x,z,legemumGround(x,z,netherDesertGround(x,z,eastPyrosGround(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier)))),groundBeforeFrontier))));
+  return eastPyrosGround(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier)))),groundBeforeFrontier);
 }
 function groundBeforeFrontier(x,z){
   return feradomGround(x, z, groundBeforeFeradom(x, z), groundBeforeFeradom);

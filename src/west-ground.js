@@ -353,6 +353,24 @@ export function courseSample(course, x, z) {
   return best;
 }
 export const courseSurface = (course, x, z) => courseSample(course, x, z).surface;
+/**
+ * A course's profile between its two nearest samples: the nearest, and whichever neighbour the point lies
+ * toward, lerped by how far it lies along the chord between them. On the bisector of two samples both sides
+ * answer the same midway values, so nothing steps where one sample hands over to the next. The channel of a
+ * course that sets `blend` is cut to this (src/west-regions.js `river`); everything else asks `courseSample`.
+ */
+export function courseBetween(course, x, z) {
+  const profile = WEST_PROFILES.get(course.id), near = courseSample(course, x, z);
+  let toward = null, t = 0;
+  for (const other of [profile[near.index - 1], profile[near.index + 1]]) {
+    if (!other) continue;
+    const dx = other.x - near.x, dz = other.z - near.z, along = ((x - near.x) * dx + (z - near.z) * dz) / (dx * dx + dz * dz || 1);
+    if (along > t) { t = along; toward = other; }
+  }
+  if (!toward) return near;
+  t = Math.min(t, 1);
+  return { surface: lerp(near.surface, toward.surface, t), half: lerp(near.half, toward.half, t), strength: lerp(near.strength, toward.strength, t) };
+}
 
 /**
  * How far a point is from the nearest braid thread, and which braid it belongs
@@ -387,7 +405,7 @@ function channel(x, z, ground) {
     const reach = course.maxHalf + Math.max(course.cut, course.cutEnd) * 3 + 20;
     const distance = courseDistance(course, x, z, reach);
     if (distance >= reach) continue;
-    const sample = courseSample(course, x, z);
+    const sample = course.blend ? courseBetween(course, x, z) : courseSample(course, x, z);
     if (sample.strength <= 0) continue;
     const depth = clamp(ground - sample.surface, 0, 14) * sample.strength;
     const valley = sample.half + 4 + depth * 2.2;

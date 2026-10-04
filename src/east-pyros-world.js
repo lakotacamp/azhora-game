@@ -2,7 +2,7 @@
  * grass and ash, a greener southern end, and small thermal basins. */
 import { PLAYABLE_SURVEY } from './region-survey.js';
 import { regionCells, regionOutline } from './region-layout.js';
-import { hexOwnerAt, landDistance } from './region-world.js';
+import { hexOwnerAt, landDistance, terrainMix, seamlessTerrainMix, relief } from './region-world.js';
 import { VAELLIR, courseDistance, coursePosition, courseHalfAt } from './west-regions.js';
 
 const freeze=Object.freeze;
@@ -55,6 +55,28 @@ function eastPyrosFeatherDistance(x,z){
 // carried straight in it stood up new ribs of its own. The move lets go over `reach` metres in. `baseAt` is the
 // ground handed to this country, asked on both sides of the line (src/world-terrain.js); without it nothing moves.
 export const EAST_PYROS_SEAM=freeze({reach:40,probe:.05,step:.5,widen:1,neighbours:freeze(['Oves Desert','Telemonia'])});
+// Toward the Nether Desert (2026-10-03). The hex blend this country is handed steps by up to 8 m along this
+// country's own hex edge that runs in from the corner at (-2600, 952.8), over its first twenty metres, where the
+// blend takes in a hex two steps away all at once; the Nether Desert meets this side at the line and cannot meet
+// both halves of that step. Within `inside` metres of the Nether Desert the handed ground is laid on the blend that
+// has no seams (src/region-world.js `seamlessTerrainMix`), letting go by `outside`; the Oves Desert's border is
+// measured against the same ground (`seamLines`, below), so its join is unchanged by it.
+export const EAST_PYROS_NETHER_SIDE=freeze({inside:30,outside:60});
+const NETHER_EDGES=EAST_PYROS_EDGES.filter(([a,b])=>{const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2,dx=b.x-a.x,dz=b.z-a.z,l=Math.hypot(dx,dz)||1;
+  return [1,-1].some(k=>hexOwnerAt(mx+k*dz/l,mz-k*dx/l)==='Nether Desert');});
+/** How much of the seamless blend's correction this point takes: 1 by the Nether Desert, 0 past `outside`. */
+function netherSide(x,z){
+  const S=EAST_PYROS_NETHER_SIDE;
+  let near=Infinity;for(const [a,b] of NETHER_EDGES)near=Math.min(near,eastPyrosSegment(x,z,a,b).distance);
+  return 1-smooth((near-S.inside)/(S.outside-S.inside));
+}
+/** The ground handed to this country, its hex blend made seamless toward the Nether Desert. */
+export function eastPyrosHanded(x,z,handed){
+  const side=netherSide(x,z);
+  if(side<=0)return handed;
+  const seamless=seamlessTerrainMix(x,z),mixed=terrainMix(x,z),shore=smooth((landDistance(x,z)-2)/38);
+  return handed+side*shore*(seamless.base+relief(x,z,seamless.amp,seamless.wave)-mixed.base-relief(x,z,mixed.amp,mixed.wave));
+}
 let SEAM_LINES=null;
 function seamLines(baseAt){
   if(SEAM_LINES)return SEAM_LINES;
@@ -68,7 +90,8 @@ function seamLines(baseAt){
     for(let i=0;i<=count;i++){
       // A hand's breadth in from either end, so neither probe lands in the third hex at a corner.
       const s=Math.max(.1,Math.min(length-.1,length*i/count)),x=a.x+dx*s/length,z=a.z+dz*s/length;
-      steps[i]=baseAt(x+nx*S.probe,z+nz*S.probe)-baseAt(x-nx*S.probe,z-nz*S.probe);
+      const ix=x-nx*S.probe,iz=z-nz*S.probe;
+      steps[i]=baseAt(x+nx*S.probe,z+nz*S.probe)-eastPyrosHanded(ix,iz,baseAt(ix,iz));
     }
     // The step's running integral at each sample, the step being straight between samples: any stretch's mean in two reads.
     const h=length/count,sums=new Float64Array(count+1);
@@ -196,7 +219,8 @@ export function eastPyrosGround(x,z,handed,baseAt=null){
   const shore=landDistance(x,z),edge=eastPyrosBoundaryDistance(x,z),river=eastPyrosRiverClearance(x,z);
   if(shore<=8||river<=25)return handed;
   // The handed ground, met to the Oves Desert's across the border (`eastPyrosSeamMove`); the country feathers to that.
-  const incoming=handed+eastPyrosSeamMove(x,z,baseAt);
+  // Toward the Nether Desert it is first laid seamless (`eastPyrosHanded`), only where the world asks with `baseAt`.
+  const incoming=(baseAt?eastPyrosHanded(x,z,handed):handed)+eastPyrosSeamMove(x,z,baseAt);
   if(edge<.001)return incoming;
   const weight=smooth(eastPyrosFeatherDistance(x,z)/72)*smooth((shore-8)/48)*smooth((river-25)/36);
   let target=eastPyrosNaturalHeight(x,z);
