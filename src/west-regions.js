@@ -193,13 +193,19 @@ function chainBreak(key, region) {
  * of waterfall in the middle of it. `west-ground.js` builds the profiles down
  * `WEST_RIVERS` in order, so a course with `headOf` must come after the one it
  * names.
+ *
+ * `blend` has `west-ground.js` cut the course's channel to its level between its
+ * two nearest samples rather than to the nearer one's (`courseBetween`). A course
+ * that falls a centimetre or two a sample cannot tell the difference; one that
+ * falls half a metre a sample steps its banks by about that much wherever one
+ * sample hands over to the next. Only the Treloss's mouth sets it.
  */
-function river(id, name, course, { halfWidth, cut, bed = .55, halfWidthEnd, cutEnd, fordUntil = 1, taper = 0, head = null, headOf = null }) {
+function river(id, name, course, { halfWidth, cut, bed = .55, halfWidthEnd, cutEnd, fordUntil = 1, taper = 0, head = null, headOf = null, blend = false }) {
   const points = Object.freeze(soften(course).map(p => point(p.x, p.z)));
   const samples = Object.freeze(resample(points, 5).map(sample => Object.freeze(sample)));
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const p of points) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); }
-  return Object.freeze({ id, name, points, samples, halfWidth, cut, bed, taper, fordUntil, head, headOf,
+  return Object.freeze({ id, name, points, samples, halfWidth, cut, bed, taper, fordUntil, head, headOf, blend,
     halfWidthEnd: halfWidthEnd ?? halfWidth, cutEnd: cutEnd ?? cut,
     maxHalf: Math.max(halfWidth, halfWidthEnd ?? halfWidth),
     bounds: Object.freeze({ minX, maxX, minZ, maxZ }) });
@@ -915,9 +921,16 @@ function seaward(points, reach = 42, out = -2.5) {
  * end, the bed under the water the whole way, no bank over a metre beside it, no cliff off either bank, both
  * banks walked to the beach. Shallow, `bed` the stream's own, and waded. What it would have drowned of Gala's
  * scatter and Legemum's cover is moved off it in their own files (`offTheMouth`, `offTreloss`).
+ *
+ * **Its banks fall with the water** (`blend`, 2026-10-03). The water falls about half a metre a sample here, and
+ * a channel cut to its nearest sample's level stepped the walked ground of both banks by that much at every
+ * handover from one sample to the next - up to 0.55 m in half a metre, six to twelve metres out, seen from above
+ * as darker diamonds on the gully's fine ground. Cut to the level between its two nearest samples, which is the
+ * line the water was always drawn on, no half metre of either bank there falls more than 0.18 m past the water
+ * beside it, and the most of that is Legemum's hillside coming down into the gully twelve metres out.
  */
 export const GALA_TELEMONIA_MOUTH = river('gala-telemonia-mouth', 'The Treloss', seaward(atlasCourse('Gala,Legemum,Telemonia')),
-  { halfWidth: 2.2, halfWidthEnd: 2.8, cut: 3.2, cutEnd: 10.05, bed: .35, headOf: 'gala-telemonia-stream' });
+  { halfWidth: 2.2, halfWidthEnd: 2.8, cut: 3.2, cutEnd: 10.05, bed: .35, headOf: 'gala-telemonia-stream', blend: true });
 
 /**
  * **The Treloss's lower gully is drawn finer** (2026-10-03). The ground walked here was right, but the ground

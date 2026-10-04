@@ -126,6 +126,24 @@ test('The Treloss runs on to the sea down the Legemum border: one falling water,
       assert.ok(Math.abs(H(qx,qz)-H(px,pz))/.5<1,`a cliff ${r.toFixed(1)} m off the Treloss at ${px.toFixed(1)}, ${pz.toFixed(1)}`);
     }
   }
+  // The banks fall with the water (`blend`, src/west-regions.js): on lines six to twelve metres out from the mouth's, both
+  // sides, every half metre down it, the walked ground rises or falls no more than 0.2 m past the water's own fall beside
+  // it. Cut to its nearest sample's level, the channel stepped them by up to 0.55 m wherever one sample handed over.
+  const runAt=[0];for(let i=1;i<mouth.length;i++)runAt.push(runAt[i-1]+Math.hypot(mouth[i].x-mouth[i-1].x,mouth[i].z-mouth[i-1].z));
+  const onMouth=s=>{let i=1;while(i<mouth.length-1&&runAt[i]<s)i++;const a=mouth[i-1],b=mouth[i],t=(s-runAt[i-1])/(runAt[i]-runAt[i-1]);
+    return{...along(a,b,t),nx:b.nx,nz:b.nz,w:a.surface+(b.surface-a.surface)*t};};
+  let stepped=0,bankSteps=0;
+  for(const side of[-1,1])for(const off of[6,8,10,12]){
+    let prev=null;
+    for(let s=0;s<=runAt.at(-1);s+=.5){
+      const p=onMouth(s),x=p.x+p.nx*side*off,z=p.z+p.nz*side*off,h=H(x,z);
+      if(prev){const by=Math.abs(h-prev.h-(p.w-prev.w));stepped=Math.max(stepped,by);bankSteps++;
+        assert.ok(by<.2,`the ${side<0?'Gala':'Legemum'} bank steps ${(h-prev.h).toFixed(2)} m in half a metre beside ${(p.w-prev.w).toFixed(2)} of water, ${off} m out at ${x.toFixed(1)}, ${z.toFixed(1)}`);}
+      prev={h,w:p.w};
+    }
+  }
+  assert.ok(bankSteps>600,`${bankSteps} half-metres of bank checked`);
+  console.log(`# the Treloss's banks: ${bankSteps} half-metres, none more than ${stepped.toFixed(3)} m past the water's fall`);
   // Both banks walked down to the beach, three metres off the water, and the water itself waded wherever it is
   // above the sea's reach: no wall of deep water, nothing growing or lying in it.
   for(const side of[-1,1]){
