@@ -1,4 +1,4 @@
-# Ibenal integration requirements: South interface and paired draft (base pending)
+# Ibenal integration requirements: South interface and paired draft (base pinned)
 
 Prepared 4 October 2026 from the read-only planning artifact, then updated after an active paired draft was discovered. **South and North Ibenal are observed building in `../azhora-game-ibenal`; they are not frozen, integrated or accepted.** This coordinator did not issue that assignment. These interface requirements must accompany later intake of the pair and do not authorize edits to the draft, main, or frozen delivery checkouts.
 
@@ -10,7 +10,7 @@ The Celder pair, East Izol and corrected Alezhor are accepted: four new environm
 
 An initial South-first suggestion is superseded by the observed connected-pair draft. The active brief in `../azhora-game-ibenal/docs/ibenal-brief.md` describes both countries split between ground and life work, with provisional runtime IDs 65/66. Read-only recheck found 16 modified tracked files and ten new brief/source/test leaves, with no frozen Ibenal handoff. Retain that actual pair scope; do not create a competing South-only assignment or treat active draft files as a completed delivery.
 
-**Corrected integration base: `<ROOT-SUPPLIED-CORRECTED-INTEGRATION-COMMIT>`**, still to be supplied. The existing draft is on branch `ibenal` at raw Alezhor `116799e`; that is an observed source base, not the corrected integration target. Root owns the final combined base, runtime ID validation and main integration. Do not create another worktree, rewrite the active draft, or transplant its old shared files wholesale. Inspect its delta read-only and wait for a frozen handoff before integration.
+**Corrected integration base: `c5d28faae22c67b5690d391dbdcc76657b05f753`**, on `codex/region-review-2026-10-04`. The existing draft is on branch `ibenal` at raw Alezhor `116799e`; that is an observed source base, not the corrected integration target. Root owns the final combined base, runtime ID validation and main integration. Do not create another worktree, rewrite the active draft, or transplant its old shared files wholesale. Inspect its delta read-only and wait for a frozen handoff before integration.
 
 Claude's Alezhor tree was read-only and clean at `116799eb0b6985c8538192289e07929a6cb4fea7`, following build `c042e8680f2ba99e3fdf008116d09423c665feab` and handoff `67719d9`. Its handoff's four-pending-region statement is historical. The corrected review integration has now been mirrored into main and is the required physical baseline; its final bank views and native completion are approved. The shareable corrected base commit is still to be supplied by root.
 

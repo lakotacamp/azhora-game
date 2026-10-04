@@ -317,3 +317,17 @@ these integration requirements without replacing the observed pair assignment.
 - At the next session, recompute the set difference before starting. Another Claude session may have finished Celder or other work overnight; keep its work and remove duplication from the queue.
 
 The original planning pass changed no game code. The 4 October execution updates record the first verified functional batch in the review branch and main working copy. They do not certify unreviewed environments or alter the Claude checkout or user saves.
+
+
+## Corrected integration base, 4 October 2026
+
+The reviewed environment batch is committed at `c5d28faae22c67b5690d391dbdcc76657b05f753` on
+`codex/region-review-2026-10-04`. Its verified game changes are mirrored in the
+desktop MAIN working copy, preserving the separate developer-dragon work. The
+follow-up documentation commit only pins this exact code base. No remote push
+is claimed. All review native sessions have ended.
+
+The next delivery is the observed South/North Ibenal draft; wait for a frozen
+handoff, then integrate its narrow delta onto this base using the prepared
+interface requirements. The wider R1 cliff-art pass and Upper Olveth approach
+remain open independently of the accepted bounded shoulder and route repair.
