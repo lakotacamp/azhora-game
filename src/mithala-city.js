@@ -1,0 +1,313 @@
+/** Mithala: the river-city at the meeting of the arms, one district on each of the four
+ * Mithala countries' hexes (docs/mithala-city-brief.md). Pure layout, the single source of truth:
+ * no three, no meshes.
+ *
+ * Laid out here: the four district platforms, kept clear of the north braid (with its braid
+ * threads), the west arm and the main channel as they actually run; the earth flood banks round the
+ * Braid Bank, the Quays and the Ford and the Cref curtain round the Fork, with their gates found
+ * where the streets cross them; the three bridges from the Fork and the paved ford; the streets,
+ * including the dry street between the Braid Bank and the Quays; the stone quay and its moored
+ * barges; building footprints with heights; the sky tower with a stair recorded flight by flight;
+ * the flood gauge at the meeting. Not yet: scenery, people, the terrain-chain hooks, the map badge
+ * and the travel arrival, and any walk check against the built world. Nothing here straightens,
+ * moves or fills a channel. */
+import { MITHALA_MAIN, MITHALA_WEST_ARM, MITHALA_NORTH_BRAID, MITHALA_RIVERS, WEST_BRAIDS,
+  courseDistance, coursePosition, courseHalfAt } from './west-regions.js';
+import { MITHALA_FLOOD } from './mithala-world.js';
+
+const freeze = Object.freeze;
+const point = (x, z) => freeze({ x, z });
+const smooth = value => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
+
+/**
+ * Heights. The plain under the city stands at 11.9-12.5 m (the brief's measure at the four hex
+ * centres) and the main channel's levee at most `MITHALA_FLOOD.crest` above it, so the highest
+ * water the plain is shaped for stands at the highest centre plus a full crest. Every platform
+ * stands clear of that line; the banks stand a metre and a half above the platforms.
+ */
+const PLAIN_HIGH = 12.48;
+export const MITHALA_CITY = freeze({
+  id: 'mithala', name: 'Mithala', meeting: point(-1700, -1414.4),
+  floodLine: PLAIN_HIGH + MITHALA_FLOOD.crest, platform: 14.5,
+  bank: freeze({ inset: 4, crest: 1.5, top: 2.5, side: 2.5 }),
+  curtain: freeze({ inset: 2.5, thickness: 2.4, height: 9 }),
+  skirt: 6, waterKeep: 2, platformClearance: 6,
+  bounds: freeze({ minX: -1800, maxX: -1600, minZ: -1590, maxZ: -1300 }),
+});
+
+// ---------------------------------------------------------------------------
+// The water: the three channels as they run, braid threads included
+// ---------------------------------------------------------------------------
+const CHANNELS = freeze([MITHALA_NORTH_BRAID, MITHALA_WEST_ARM, MITHALA_MAIN]);
+const braidOf = course => WEST_BRAIDS.find(b => b.course === course) ?? null;
+/** How far out from a course's centre line its water reaches here: the channel's own half-width, or
+ * across its outer braid thread where the course braids (the bar between counts as water). */
+export function mithalaChannelReach(course, x, z) {
+  const along = coursePosition(course, x, z), half = courseHalfAt(course, along), braid = braidOf(course);
+  if (!braid || along < braid.from || along > braid.to) return half;
+  const offset = braid.offset * Math.sin((along - braid.from) / (braid.to - braid.from) * Math.PI);
+  return Math.max(half, offset + braid.half);
+}
+/** Signed distance from the nearest water of the plain's channels: negative in it. */
+export function mithalaCityWaterClearance(x, z) {
+  let best = Infinity;
+  for (const course of MITHALA_RIVERS) {
+    const d = courseDistance(course, x, z, best + 30);
+    if (d - 30 > best) continue;
+    best = Math.min(best, d - mithalaChannelReach(course, x, z));
+  }
+  return best;
+}
+
+// ---------------------------------------------------------------------------
+// Polygons
+// ---------------------------------------------------------------------------
+export function mithalaSegmentDistance(x, z, a, b) {
+  const dx = b.x - a.x, dz = b.z - a.z, length2 = dx * dx + dz * dz;
+  const t = length2 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / length2)) : 0;
+  return Math.hypot(x - a.x - dx * t, z - a.z - dz * t);
+}
+function inPolygon(polygon, x, z) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i], b = polygon[j];
+    if ((a.z > z) !== (b.z > z) && x < (b.x - a.x) * (z - a.z) / (b.z - a.z) + a.x) inside = !inside;
+  }
+  return inside;
+}
+const edgeDistance = (polygon, x, z) => Math.min(...polygon.map((a, i) => mithalaSegmentDistance(x, z, a, polygon[(i + 1) % polygon.length])));
+/** Positive inside, negative outside: metres to the outline. */
+export const polygonDepth = (polygon, x, z) => (inPolygon(polygon, x, z) ? 1 : -1) * edgeDistance(polygon, x, z);
+/** A convex outline drawn in by `d` metres: each edge moved inward, neighbours intersected. */
+function insetConvex(polygon, d) {
+  const n = polygon.length, area = polygon.reduce((s, a, i) => s + a.x * polygon[(i + 1) % n].z - polygon[(i + 1) % n].x * a.z, 0);
+  const sign = area > 0 ? 1 : -1;
+  const lines = polygon.map((a, i) => {
+    const b = polygon[(i + 1) % n], l = Math.hypot(b.x - a.x, b.z - a.z);
+    const nx = -(b.z - a.z) / l * sign, nz = (b.x - a.x) / l * sign;
+    return { x: a.x + nx * d, z: a.z + nz * d, dx: b.x - a.x, dz: b.z - a.z };
+  });
+  return freeze(lines.map((l1, i) => {
+    const l0 = lines[(i + n - 1) % n], den = l0.dx * l1.dz - l0.dz * l1.dx;
+    const t = ((l1.x - l0.x) * l1.dz - (l1.z - l0.z) * l1.dx) / den;
+    return point(+(l0.x + l0.dx * t).toFixed(3), +(l0.z + l0.dz * t).toFixed(3));
+  }));
+}
+const outline = coordinates => freeze(coordinates.map(([x, z]) => point(x, z)));
+
+// ---------------------------------------------------------------------------
+// The districts: platforms on their own hexes
+// ---------------------------------------------------------------------------
+/** Each outline sits inside its hex and stands back from the water by at least
+ * `platformClearance`; the north braid's threads are what pull the Fork's and the Braid Bank's
+ * northern sides in so far. */
+export const MITHALA_DISTRICTS = freeze([
+  freeze({ id: 'mithala-fork', name: 'The Fork', region: 'West Mithala', hex: freeze({ q: 5, r: 89 }), centre: point(-1750, -1443.2),
+    wall: 'curtain', outline: outline([[-1795,-1447],[-1765,-1459],[-1738,-1468],[-1720,-1457],[-1713,-1449],[-1713,-1431],[-1718,-1420],[-1745,-1404.5],[-1760,-1399],[-1795,-1418]]) }),
+  freeze({ id: 'mithala-braid-bank', name: 'The Braid Bank', region: 'North Mithala', hex: freeze({ q: 6, r: 88 }), centre: point(-1700, -1529.8),
+    wall: 'bank', outline: outline([[-1745,-1555],[-1700,-1580],[-1655,-1555],[-1655,-1505],[-1690,-1485],[-1710,-1500],[-1735,-1515],[-1745,-1520]]) }),
+  freeze({ id: 'mithala-quays', name: 'The Quays', region: 'East Mithala', hex: freeze({ q: 6, r: 89 }), centre: point(-1650, -1443.2),
+    wall: 'bank', outline: outline([[-1688,-1468],[-1650,-1495],[-1605,-1468],[-1605,-1421],[-1622,-1417],[-1650,-1407],[-1675,-1415],[-1688,-1427]]) }),
+  freeze({ id: 'mithala-ford', name: 'The Ford', region: 'South Mithala', hex: freeze({ q: 5, r: 90 }), centre: point(-1700, -1356.6),
+    wall: 'bank', outline: outline([[-1700,-1397],[-1665,-1380],[-1655,-1375],[-1655,-1335],[-1700,-1305],[-1740,-1332],[-1738,-1365],[-1723,-1385],[-1710,-1393]]) }),
+].map(d => freeze({ ...d,
+  // The wall line: the curtain's centre line on the Fork, the bank's crest line elsewhere.
+  line: insetConvex(d.outline, d.wall === 'curtain' ? MITHALA_CITY.curtain.inset : MITHALA_CITY.bank.inset) })));
+export const mithalaDistrict = id => MITHALA_DISTRICTS.find(d => d.id === id);
+export const mithalaDistrictAt = (x, z) => MITHALA_DISTRICTS.find(d => inPolygon(d.outline, x, z)) ?? null;
+export const MITHALA_CURTAIN = mithalaDistrict('mithala-fork').line;
+export const MITHALA_FLOOD_BANKS = freeze(MITHALA_DISTRICTS.filter(d => d.wall === 'bank').map(d => freeze({ district: d.id, line: d.line })));
+
+// ---------------------------------------------------------------------------
+// Bridges, the ford and the quay
+// ---------------------------------------------------------------------------
+const span = (id, name, from, to, a, b, width, over, extra = {}) => freeze({ id, name, from, to, a: point(...a), b: point(...b), width, over, ...extra });
+/** Level decks at platform height: both ends a metre onto platform ground, the water well under. */
+export const MITHALA_BRIDGES = freeze([
+  span('mithala-braid-bridge', 'The Braid Bridge', 'mithala-fork', 'mithala-braid-bank', [-1726.3, -1459.3], [-1704.25, -1496.9], 7, MITHALA_NORTH_BRAID.id),
+  span('mithala-quays-bridge', 'The Quays Bridge', 'mithala-fork', 'mithala-quays', [-1714, -1440], [-1687, -1440], 8, MITHALA_NORTH_BRAID.id),
+  span('mithala-arm-bridge', 'The Arm Bridge', 'mithala-fork', 'mithala-ford', [-1733, -1413.7], [-1717.3, -1386.6], 7, MITHALA_WEST_ARM.id),
+].map(b => freeze({ ...b, deck: MITHALA_CITY.platform })));
+/** The plain's only crossing of the main channel, paved over its gravel; it is waded, so its
+ * paving follows the bed and the approaches come down to it off the two platforms. */
+export const MITHALA_FORD = span('mithala-ford-crossing', 'The Paved Ford', 'mithala-quays', 'mithala-ford', [-1667.16, -1413.91], [-1682.1, -1387.4], 6, MITHALA_MAIN.id);
+/** The stone-faced quay on the main channel's north bank, outside the Quays' bank, at platform
+ * height; its outer face is the water's edge. */
+export const MITHALA_QUAY = freeze({ id: 'mithala-quay', name: 'The Grain Quay', width: 5, deck: MITHALA_CITY.platform,
+  points: outline([[-1663, -1407.4], [-1650, -1403.2], [-1624, -1412.4]]) });
+export const MITHALA_BARGES = freeze([
+  freeze({ id: 'mithala-barge-1', name: 'Grain barge', x: -1645, z: -1394.5, yaw: 0, length: 16, width: 3.6 }),
+  freeze({ id: 'mithala-barge-2', name: 'Grain barge', x: -1626, z: -1399.5, yaw: -0.52, length: 14, width: 3.4 }),
+]);
+function alongSpan(s, x, z, margin = 0) {
+  const dx = s.b.x - s.a.x, dz = s.b.z - s.a.z, len = Math.hypot(dx, dz), px = x - s.a.x, pz = z - s.a.z;
+  const along = (px * dx + pz * dz) / len, across = (-px * dz + pz * dx) / len;
+  if (along < -margin || along > len + margin || Math.abs(across) > s.width / 2 + margin) return null;
+  return along / len;
+}
+export const mithalaBridgeAt = (x, z, margin = 0) => MITHALA_BRIDGES.find(b => alongSpan(b, x, z, margin) !== null) ?? null;
+/** The top of a made surface - a bridge deck or the quay - or null. */
+export function mithalaDeckHeight(x, z) {
+  const bridge = mithalaBridgeAt(x, z);
+  if (bridge) return bridge.deck;
+  const q = MITHALA_QUAY.points;
+  for (let i = 1; i < q.length; i++) if (mithalaSegmentDistance(x, z, q[i - 1], q[i]) <= MITHALA_QUAY.width / 2) return MITHALA_QUAY.deck;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Streets and gates
+// ---------------------------------------------------------------------------
+const street = (id, name, width, coordinates) => freeze({ id, name, width, points: outline(coordinates) });
+export const MITHALA_STREETS = freeze([
+  // The Fork: the land gate west toward the Round Horizon, straight through to the Quays bridge.
+  street('mithala-kings-way', 'The King’s Way', 8, [[-1822, -1440], [-1740, -1440], [-1726.3, -1440], [-1714, -1440]]),
+  street('mithala-braid-gate-street', 'Braid Gate Street', 6, [[-1726.3, -1440], [-1726.3, -1459.3]]),
+  street('mithala-arm-gate-street', 'Arm Gate Street', 6, [[-1740, -1440], [-1733, -1413.7]]),
+  // The Quays.
+  street('mithala-quay-street', 'Quay Street', 8, [[-1687, -1440], [-1665, -1440], [-1660, -1440], [-1640, -1440], [-1616, -1440]]),
+  street('mithala-dry-street', 'The Dry Street', 7, [[-1660, -1440], [-1660, -1470], [-1675, -1496], [-1680, -1530]]),
+  street('mithala-ford-landing', 'Ford Landing', 6, [[-1665, -1440], [-1667.16, -1413.91]]),
+  street('mithala-quay-stairs', 'Quay Stairs', 5, [[-1640, -1440], [-1640, -1405.6]]),
+  // The Braid Bank, and the road north toward the Acorwood.
+  street('mithala-market-street', 'Market Street', 8, [[-1704.25, -1496.9], [-1700, -1515], [-1680, -1530], [-1680, -1600]]),
+  // The Ford, and the south road toward the Lotharn passes.
+  street('mithala-inn-street', 'Inn Street', 8, [[-1717.3, -1386.6], [-1700, -1362], [-1690, -1340], [-1690, -1290]]),
+  street('mithala-ford-street', 'Ford Street', 6, [[-1682.1, -1387.4], [-1700, -1362]]),
+]);
+const GATE_NAMES = freeze({
+  'mithala-fork:mithala-kings-way:0': 'The Horizon Gate', 'mithala-fork:mithala-kings-way:1': 'The Quays Bridge Gate',
+  'mithala-fork:mithala-braid-gate-street:0': 'The Braid Bridge Gate', 'mithala-fork:mithala-arm-gate-street:0': 'The Arm Bridge Gate',
+});
+function crossings(line, path) {
+  const found = [];
+  for (let i = 1; i < path.points.length; i++) {
+    const p = path.points[i - 1], r = path.points[i];
+    for (let k = 0; k < line.length; k++) {
+      const a = line[k], b = line[(k + 1) % line.length];
+      const den = (r.x - p.x) * (b.z - a.z) - (r.z - p.z) * (b.x - a.x);
+      if (Math.abs(den) < 1e-9) continue;
+      const t = ((a.x - p.x) * (b.z - a.z) - (a.z - p.z) * (b.x - a.x)) / den;
+      const u = ((a.x - p.x) * (r.z - p.z) - (a.z - p.z) * (r.x - p.x)) / den;
+      if (t >= 0 && t <= 1 && u >= 0 && u < 1) found.push({ edge: k, x: p.x + (r.x - p.x) * t, z: p.z + (r.z - p.z) * t });
+    }
+  }
+  return found;
+}
+/** A gate wherever a street crosses a district's wall line, and nowhere else. The Fork's four are
+ * the brief's: the land gate west and the three bridge gates. */
+export const MITHALA_GATES = freeze(MITHALA_DISTRICTS.flatMap(d => MITHALA_STREETS.flatMap(s =>
+  crossings(d.line, s).map((c, i) => freeze({ id: `${d.id}:${s.id}:${i}`, district: d.id, street: s.id, edge: c.edge,
+    name: GATE_NAMES[`${d.id}:${s.id}:${i}`] ?? `${d.name} gate (${s.name})`,
+    x: +c.x.toFixed(3), z: +c.z.toFixed(3), width: s.width + 2, kind: d.wall === 'curtain' ? 'stone' : 'earth' })))));
+const gateGap = (x, z) => Math.min(...MITHALA_GATES.map(g => Math.hypot(x - g.x, z - g.z) - g.width / 2));
+
+// ---------------------------------------------------------------------------
+// Buildings, the tower and its stair, the gauge
+// ---------------------------------------------------------------------------
+const building = (id, name, district, x, z, width, depth, height, kind = 'house', extra = {}) => freeze({ id, name, district, x, z, width, depth, height, kind, ...extra });
+const TOWER = freeze({ x: -1727, z: -1431, size: 10, height: 40, wall: 1.1, floor: 38.6 });
+export const MITHALA_BUILDINGS = freeze([
+  // The Fork: the old seat.
+  building('mithala-kings-hall', 'The King’s Hall', 'mithala-fork', -1765, -1427, 40, 14, 11, 'hall', { shut: true }),
+  building('mithala-water-court', 'The Water Court', 'mithala-fork', -1752, -1450, 16, 8, 9, 'court'),
+  building('mithala-sky-tower', 'The Sky Tower', 'mithala-fork', TOWER.x, TOWER.z, TOWER.size, TOWER.size, TOWER.height, 'tower'),
+  building('mithala-fork-house-1', 'House of an old Mithali family', 'mithala-fork', -1784, -1428, 12, 10, 8),
+  building('mithala-fork-house-2', 'House of an old Mithali family', 'mithala-fork', -1752, -1414.5, 12, 8, 8),
+  // The Braid Bank: cattle, threshing, the garrison.
+  building('mithala-garrison-hall', 'The Cref Garrison Hall', 'mithala-braid-bank', -1716, -1548, 24, 12, 9, 'hall'),
+  building('mithala-cattle-pens', 'The cattle market pens', 'mithala-braid-bank', -1712, -1530, 14, 12, 1.4, 'pens'),
+  building('mithala-byre-1', 'River-horn byre', 'mithala-braid-bank', -1669, -1545, 10, 8, 6, 'byre'),
+  building('mithala-byre-2', 'River-horn byre', 'mithala-braid-bank', -1669, -1520, 10, 8, 6, 'byre'),
+  building('mithala-threshing-floor', 'Threshing floor', 'mithala-braid-bank', -1733, -1532, 8, 8, .3, 'floor'),
+  building('mithala-barn-1', 'Barn', 'mithala-braid-bank', -1700, -1563, 12, 9, 8, 'barn'),
+  // The Quays: the grain trade.
+  building('mithala-granary-1', 'Raised granary', 'mithala-quays', -1650, -1422, 14, 7, 10, 'granary', { posts: 2.2 }),
+  building('mithala-granary-2', 'Raised granary', 'mithala-quays', -1628, -1430, 10, 8, 10, 'granary', { posts: 2.2 }),
+  building('mithala-weighing-house', 'The Weighing House', 'mithala-quays', -1674, -1455, 10, 10, 9, 'weighing'),
+  building('mithala-factors-hall-1', 'Grain factors’ hall', 'mithala-quays', -1640, -1460, 18, 12, 11, 'hall'),
+  building('mithala-factors-hall-2', 'Grain factors’ hall', 'mithala-quays', -1620, -1456, 10, 14, 11, 'hall'),
+  building('mithala-quay-crane', 'The warehouse crane', 'mithala-quays', -1632, -1409.6, 3, 3, 12, 'crane', { onQuay: true }),
+  // The Ford: the mountain market, inns, smithies.
+  building('mithala-inn-1', 'Inn with a yard', 'mithala-ford', -1718, -1355, 14, 14, 9, 'inn'),
+  building('mithala-inn-2', 'Inn with a yard', 'mithala-ford', -1672, -1350, 12, 10, 9, 'inn'),
+  building('mithala-smithy-1', 'Smithy', 'mithala-ford', -1715, -1332, 10, 8, 6, 'smithy'),
+  building('mithala-mountain-market', 'The mountain market', 'mithala-ford', -1675, -1364, 14, 10, .3, 'market'),
+  building('mithala-ford-house-1', 'House', 'mithala-ford', -1722, -1342, 9, 7, 7),
+]);
+/**
+ * The tower's inside stair: twelve straight flights up the four inner walls, turning on a square
+ * landing in each corner, from the floor at the door to the open platform under the sighting
+ * stones. Every step is recorded by its flight, so a test reads the grade off the numbers.
+ */
+export const MITHALA_TOWER_STAIR = (() => {
+  const inner = TOWER.size / 2 - TOWER.wall, width = 1.4, tread = .3, flights = 12;
+  const run = inner * 2 - width * 2, steps = Math.round(run / tread), rise = TOWER.floor / flights;
+  const corners = [[-1, 1], [-1, -1], [1, -1], [1, 1]].map(([sx, sz]) => point(TOWER.x + sx * (inner - width / 2), TOWER.z + sz * (inner - width / 2)));
+  const landings = [], flightList = [];
+  for (let i = 0; i <= flights; i++) landings.push(freeze({ ...corners[i % 4], y: +(rise * i).toFixed(3), size: width }));
+  for (let i = 0; i < flights; i++) {
+    const a = landings[i], b = landings[i + 1], len = Math.hypot(b.x - a.x, b.z - a.z) - width;
+    flightList.push(freeze({ from: a, to: b, steps, riser: +(rise / steps).toFixed(4), tread: +(len / steps).toFixed(4), width }));
+  }
+  return freeze({ tower: TOWER, door: point(TOWER.x - TOWER.size / 2, TOWER.z + inner - width / 2), top: TOWER.floor,
+    landings: freeze(landings), flights: freeze(flightList) });
+})();
+/** The gauge, a squared stone post at the water's edge on the Fork's point, cut with the flood
+ * marks and the proverb; it is read from the curtain and the tower. */
+export const MITHALA_GAUGE = freeze({ id: 'mithala-flood-gauge', name: 'The Flood Gauge', x: -1708.6, z: -1421.5, width: 1.6, height: 5.5,
+  inscription: 'Vet mithalan, vel noreth', meaning: 'The flood returns. The grain does not ask.' });
+
+export const MITHALA_CITY_LANDMARKS = freeze([
+  freeze({ id: 'mithala', name: 'Mithala', region: 'West Mithala', x: -1700, z: -1440, radius: 150 }),
+  freeze({ id: 'mithala-sky-tower', name: 'The Sky Tower', region: 'West Mithala', x: TOWER.x, z: TOWER.z, radius: 12 }),
+  freeze({ id: 'mithala-kings-hall', name: 'The King’s Hall', region: 'West Mithala', x: -1765, z: -1427, radius: 22 }),
+  freeze({ id: 'mithala-flood-gauge', name: 'The Flood Gauge', region: 'West Mithala', x: MITHALA_GAUGE.x, z: MITHALA_GAUGE.z, radius: 6 }),
+  freeze({ id: 'mithala-quay', name: 'The Grain Quay', region: 'East Mithala', x: -1650, z: -1404, radius: 20 }),
+  freeze({ id: 'mithala-paved-ford', name: 'The Paved Ford', region: 'South Mithala', x: -1675, z: -1400, radius: 14 }),
+  freeze({ id: 'mithala-cattle-market', name: 'The Cattle Market', region: 'North Mithala', x: -1700, z: -1532, radius: 16 }),
+  freeze({ id: 'mithala-mountain-market', name: 'The Mountain Market', region: 'South Mithala', x: -1675, z: -1364, radius: 14 }),
+]);
+
+// ---------------------------------------------------------------------------
+// Queries
+// ---------------------------------------------------------------------------
+const nearby = (x, z, margin = 0) => { const b = MITHALA_CITY.bounds; return x > b.minX - 30 - margin && x < b.maxX + 20 + margin && z > b.minZ - 20 - margin && z < b.maxZ + 20 + margin; };
+export const inMithalaCity = (x, z) => nearby(x, z) && mithalaDistrictAt(x, z) !== null;
+const segments = path => path.points.slice(1).map((b, i) => [path.points[i], b]);
+export function mithalaCityReserved(x, z, margin = 0) {
+  if (!nearby(x, z, margin)) return false;
+  if (MITHALA_DISTRICTS.some(d => polygonDepth(d.outline, x, z) > -MITHALA_CITY.skirt - margin)) return true;
+  if (mithalaBridgeAt(x, z, 3 + margin) || alongSpan(MITHALA_FORD, x, z, 3 + margin) !== null) return true;
+  if (MITHALA_QUAY.points.some((a, i) => i > 0 && mithalaSegmentDistance(x, z, MITHALA_QUAY.points[i - 1], a) < MITHALA_QUAY.width / 2 + 3 + margin)) return true;
+  return MITHALA_STREETS.some(s => segments(s).some(([a, b]) => mithalaSegmentDistance(x, z, a, b) < s.width / 2 + 3 + margin));
+}
+/** The bank's own rise over the platform at a depth inside the outline: a flat-topped earth ridge. */
+function bankRise(depth) {
+  const B = MITHALA_CITY.bank, off = Math.abs(depth - B.inset) - B.top / 2;
+  return B.crest * (1 - smooth(off / B.side));
+}
+/**
+ * The made ground over a base ground: the platforms at `MITHALA_CITY.platform`, their skirts down
+ * to the plain, the flood banks on the three outer districts (cut at the gates), and the ford's
+ * approaches graded down to the water. It never writes within `waterKeep` of a channel, so the
+ * river's own cut is untouched.
+ */
+export function mithalaCityGround(x, z, base) {
+  if (!nearby(x, z)) return base;
+  const water = mithalaCityWaterClearance(x, z);
+  if (water <= MITHALA_CITY.waterKeep) return base;
+  const keep = smooth((water - MITHALA_CITY.waterKeep) / 3);
+  let weight = 0, rise = 0;
+  for (const d of MITHALA_DISTRICTS) {
+    const depth = polygonDepth(d.outline, x, z);
+    if (depth < -MITHALA_CITY.skirt) continue;
+    weight = Math.max(weight, depth >= 0 ? 1 : 1 - smooth(-depth / MITHALA_CITY.skirt));
+    if (d.wall === 'bank' && depth > 0) rise = Math.max(rise, bankRise(depth) * smooth(gateGap(x, z) / 3));
+  }
+  // The ford's approaches: from the platform edge straight down to the base at the water.
+  const t = alongSpan(MITHALA_FORD, x, z, 1);
+  let height = base + (MITHALA_CITY.platform - base) * weight * keep;
+  if (t !== null && weight < 1) height = Math.min(height, base + (MITHALA_CITY.platform - base) * weight);
+  return height + rise * keep;
+}
