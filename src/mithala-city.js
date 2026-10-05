@@ -164,6 +164,9 @@ export const MITHALA_STREETS = freeze([
   street('mithala-kings-way', 'The King’s Way', 8, [[-1822, -1440], [-1740, -1440], [-1726.3, -1440], [-1714, -1440]]),
   street('mithala-braid-gate-street', 'Braid Gate Street', 6, [[-1726.3, -1440], [-1726.3, -1459.3]]),
   street('mithala-arm-gate-street', 'Arm Gate Street', 6, [[-1740, -1440], [-1733, -1413.7]]),
+  // The gauge lane: down the tower's east side and out through the water gate to the gauge at the
+  // meeting, where the flood is read (the user's choice of gate, 4 October 2026).
+  street('mithala-gauge-lane', 'Gauge Lane', 4, [[-1719, -1440], [-1719, -1427], [-1711, -1422.6]]),
   // The Quays.
   street('mithala-quay-street', 'Quay Street', 8, [[-1687, -1440], [-1665, -1440], [-1660, -1440], [-1640, -1440], [-1616, -1440]]),
   street('mithala-dry-street', 'The Dry Street', 7, [[-1660, -1440], [-1660, -1470], [-1675, -1496], [-1680, -1530]]),
@@ -178,6 +181,7 @@ export const MITHALA_STREETS = freeze([
 const GATE_NAMES = freeze({
   'mithala-fork:mithala-kings-way:0': 'The Horizon Gate', 'mithala-fork:mithala-kings-way:1': 'The Quays Bridge Gate',
   'mithala-fork:mithala-braid-gate-street:0': 'The Braid Bridge Gate', 'mithala-fork:mithala-arm-gate-street:0': 'The Arm Bridge Gate',
+  'mithala-fork:mithala-gauge-lane:0': 'The Water Gate',
 });
 function crossings(line, path) {
   const found = [];
@@ -194,8 +198,8 @@ function crossings(line, path) {
   }
   return found;
 }
-/** A gate wherever a street crosses a district's wall line, and nowhere else. The Fork's four are
- * the brief's: the land gate west and the three bridge gates. */
+/** A gate wherever a street crosses a district's wall line, and nowhere else. The Fork's five are
+ * the brief's land gate west and three bridge gates, and the water gate down to the gauge. */
 export const MITHALA_GATES = freeze(MITHALA_DISTRICTS.flatMap(d => MITHALA_STREETS.flatMap(s =>
   crossings(d.line, s).map((c, i) => freeze({ id: `${d.id}:${s.id}:${i}`, district: d.id, street: s.id, edge: c.edge,
     name: GATE_NAMES[`${d.id}:${s.id}:${i}`] ?? `${d.name} gate (${s.name})`,
@@ -254,7 +258,7 @@ export const MITHALA_TOWER_STAIR = (() => {
     landings: freeze(landings), flights: freeze(flightList) });
 })();
 /** The gauge, a squared stone post at the water's edge on the Fork's point, cut with the flood
- * marks and the proverb; it is read from the curtain and the tower. */
+ * marks and the proverb; reached by Gauge Lane through the water gate, and read from the tower too. */
 export const MITHALA_GAUGE = freeze({ id: 'mithala-flood-gauge', name: 'The Flood Gauge', x: -1708.6, z: -1421.5, width: 1.6, height: 5.5,
   inscription: 'Vet mithalan, vel noreth', meaning: 'The flood returns. The grain does not ask.' });
 

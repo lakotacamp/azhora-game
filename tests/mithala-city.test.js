@@ -42,10 +42,10 @@ test('the made ground: platform level inside, the river left alone, banks up and
   assert.ok(mithalaCityReserved(-1700, -1440), 'the bridge is reserved');
 });
 
-test('the curtain closes the Fork except at its four gates; every bank has gates', () => {
+test('the curtain closes the Fork except at its five gates; every bank has gates', () => {
   const fork = MITHALA_GATES.filter(g => g.district === 'mithala-fork');
-  assert.equal(fork.length, 4);
-  assert.deepEqual(fork.map(g => g.name).sort(), ['The Arm Bridge Gate', 'The Braid Bridge Gate', 'The Horizon Gate', 'The Quays Bridge Gate']);
+  assert.equal(fork.length, 5);
+  assert.deepEqual(fork.map(g => g.name).sort(), ['The Arm Bridge Gate', 'The Braid Bridge Gate', 'The Horizon Gate', 'The Quays Bridge Gate', 'The Water Gate']);
   const west = fork.find(g => g.name === 'The Horizon Gate');
   assert.ok(west.x < -1780, 'the land gate faces west');
   // No street crosses the curtain except through a gate.
