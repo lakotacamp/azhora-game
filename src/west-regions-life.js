@@ -18,6 +18,7 @@ import { canStand, canSwim } from './game-state.js';
 import { SEA_LEVEL, REGION_IDS } from './region-world.js';
 import { nylonReserved } from './nylon-city.js';
 import { aevisReserved } from './aevis-city.js';
+import { MITHALA_DISTRICTS, mithalaCityReserved } from './mithala-city.js';
 import { westWaterSurface } from './west-ground.js';
 import { REGIONAL_WILDLIFE_ZONES, WEST_SUVAL_WILDLIFE_ZONES } from './regional-wildlife.js';
 import { DRENT_WILDLIFE_ZONES } from './drent-wildlife.js';
@@ -1611,10 +1612,14 @@ export function createWestLife(scene, world, { zones = WEST_LIFE_ZONES } = {}) {
     }
     return true;
   }
+  // The cities keep their own ground: nothing on legs and nothing afloat is put on, or walks onto, Nylon's, Aevis's or
+  // Mithala's streets, platforms and quays. Mithala stands on all four Mithala countries, so all four keep off it.
+  const MITHALA_CITY_REGIONS = new Set(MITHALA_DISTRICTS.map(district => district.region));
   const valid = (x, z, zone) => inRange(x, z, zone) && footing(x, z, zone) && habitatFits(x, z, zone)
     && (!zone.keepRegion || !world.regionAt || world.regionAt(x, z)?.name === zone.region)
     && (zone.air || zone.sea || zone.region !== 'Eer' || !nylonReserved(x,z,3))
     && (zone.air || zone.sea || zone.region !== 'Southern Ascarth' || !aevisReserved(x,z,3))
+    && (zone.air || zone.sea || !MITHALA_CITY_REGIONS.has(zone.region) || !mithalaCityReserved(x,z,3))
     && !(zone.exclusions ?? []).some(area => x >= area.minX && x <= area.maxX && z >= area.minZ && z <= area.maxZ);
   /**
    * What an animal's feet are on. For everything on legs that is the ground, and

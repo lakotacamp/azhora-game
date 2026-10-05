@@ -273,6 +273,7 @@ import { LOTHARN_FORTS } from './lotharn-forts.js';
 import { VARN, VARN_CIRCUIT, VARN_KEEP, VARN_SLABS, VARN_WATCHES, LANDING, slabFoot, varnWicket } from './varn-world.js';
 import { PEAKS as WEST_LOTHARN_PEAKS, RAMPS as WEST_LOTHARN_RAMPS, LONG_VALLEY as WEST_LONG_VALLEY, NORTH_VALLEY as WEST_NORTH_VALLEY, NOTCH as WEST_LOTHARN_NOTCH, COL as WEST_LOTHARN_COL, pointOn as westLotharnPointOn } from './west-lotharn-world.js';
 import { MITHALA_SUMMER_CHANNELS as MITHALA_SUMMER, MITHALA_LANDMARKS as MITHALA_MARKS } from './mithala-world.js';
+import { MITHALA_CITY, MITHALA_FORD, MITHALA_APPROACHES, MITHALA_TOWER_STAIR, MITHALA_QUAY } from './mithala-city.js';
 import { MITHALA_MAIN as MITHALA_MAIN_CHANNEL, MITHALA_NORTH_BRAID as MITHALA_BRAID, MITHALA_WEST_ARM as MITHALA_ARM } from './west-regions.js';
 import { SOUTHWEST_LANDMARKS as SOUTHWEST_MARKS, GANESH_WASHES as SOUTHWEST_WASHES, GANESH_DEPRESSIONS as SOUTHWEST_PANS, NAVARTH_CRESTS as SOUTHWEST_CRESTS,
   MEROSHE_BENCHES as SOUTHWEST_BENCHES, MEROSHE_SALT as SOUTHWEST_SALT, MEROSHE_DUNES as SOUTHWEST_DUNES, MEROSHE_FANS as SOUTHWEST_FANS,
@@ -10358,6 +10359,45 @@ async function init() {
             return window.__nylonChecks;
           };
           const pending=pendingRegions([15]);return pending.length?waitForRegions(pending,showCity):showCity();
+        }
+        // Mithala (src/mithala-city.js), the river-city at the meeting of the arms. The plain's own views (mithala-meeting,
+        // mithala-braid and the rest) are westReviewSpot's; these five are the city's, worked out from its own plan. Every
+        // view at walking height stands its eye exactly 1.8 m over what the feet would stand on there - a deck, the tower's
+        // top or the ground - and says so with an explicit y, so a view cannot sink into a quay or float off a stair.
+        if(['mithala-overview','mithala-fork','mithala-tower-top','mithala-ford','mithala-quays'].includes(view)){
+          const showCity=async()=>{
+            prepareTesting();stopAutopilot();closeDialogue();reviewFrozen=true;reviewVista=true;questStage=QUEST_DONE;
+            const P=MITHALA_CITY.platform,tower=MITHALA_TOWER_STAIR.tower;
+            const support=(x,z,below=Infinity)=>{const s=world.supportAt?.(x,z,{maxY:below,groundSlope:false});return s?.height??world.heightAt(x,z);};
+            const standing=(x,z,below)=>({x,z,y:support(x,z,below)+1.8});
+            const along=(points,distance)=>{for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.z-a.z);
+              if(distance<=length)return{x:a.x+(b.x-a.x)*distance/length,z:a.z+(b.z-a.z)*distance/length};distance-=length;}return points.at(-1);};
+            // The tower's top is the stair's last landing over the floor at its door, or the scenery's own deck there if it has one.
+            const top=()=>{const deck=world.supportAt?.(tower.x,tower.z,{maxY:Infinity,groundSlope:false});
+              return deck?.id?deck.height:world.heightAt(MITHALA_TOWER_STAIR.door.x,MITHALA_TOWER_STAIR.door.z)+MITHALA_TOWER_STAIR.top;};
+            const shots={
+              // The whole city from over the main channel's south bank: four quarters, the water between them and the tower over the meeting.
+              'mithala-overview':()=>({target:{x:-1700,z:-1445,y:P+6},eye:{x:-1530,z:-1215,y:P+190}}),
+              // In the Fork, just inside the Horizon Gate, looking down the King's Way to the sky tower.
+              'mithala-fork':()=>({target:{x:tower.x,z:tower.z,y:P+22},eye:standing(-1786,-1438.5)}),
+              // On the tower's open top, by the parapet over the meeting, looking out over the ford to the quay and its barges.
+              'mithala-tower-top':()=>{const y=top()+1.8,toward=Math.atan2(-1640-tower.x,-1400-tower.z);
+                return {target:{x:-1640,z:-1400,y:P},eye:{x:tower.x+Math.sin(toward)*3.2,z:tower.z+Math.cos(toward)*3.2,y}};},
+              // Down in the Ford's hollow way on Ford Street, looking north over the paved ford to the Quays.
+              'mithala-ford':()=>{const way=MITHALA_APPROACHES.find(a=>a.id==='mithala-ford-south-approach'),at=along(way.path,14);
+                return {target:{x:MITHALA_FORD.a.x,z:MITHALA_FORD.a.z,y:P+3},eye:standing(at.x,at.z)};},
+              // On the grain quay at its west end, looking east along it to the crane and the moored barges.
+              'mithala-quays':()=>{const [a,b]=MITHALA_QUAY.points,at={x:a.x+(b.x-a.x)*.35,z:a.z+(b.z-a.z)*.35};
+                return {target:{x:-1632,z:-1409.6,y:P+6},eye:standing(at.x,at.z,MITHALA_QUAY.deck+.05)};},
+            };
+            const shot=shots[view](),t=shot.target,e=shot.eye;
+            const a=MITHALA_CITY.arrival;player.group.position.set(a.x,world.heightAt(a.x,a.z),a.z);player.group.visible=false;
+            reviewTarget=new THREE.Vector3(t.x,t.y,t.z);
+            const dx=e.x-t.x,dz=e.z-t.z,dy=e.y-t.y;distance=targetDistance=Math.hypot(dx,dz,dy);yaw=Math.atan2(dx,dz);pitch=Math.atan2(dy,Math.hypot(dx,dz));
+            skillAnnouncements.clear();clearTimeout(toastTimer);$('toast').classList.remove('visible');show('map-tutorial',false);settleCamera();
+            return shot;
+          };
+          const pending=pendingRegions([28,29,30,31]);return pending.length?waitForRegions(pending,showCity):showCity();
         }
         if(view.startsWith('frontier-')){
           testTravel('village');stopAutopilot();closeDialogue();reviewFrozen=true;questStage=QUEST_DONE;

@@ -154,6 +154,8 @@ import { createMithalaWaterSteps, MITHALA_WATER_REGIONS, celderBorderWaterSurfac
 import { createSouthwestScenerySteps } from './southwest-scenery.js';
 import { OVES_LANDMARKS } from './oves-world.js';
 import { MITHALA_LANDMARKS } from './mithala-world.js';
+import { createMithalaCityScenerySteps } from './mithala-city-scenery.js';
+import { MITHALA_STREETS, MITHALA_CITY_LANDMARKS, mithalaCityReserved } from './mithala-city.js';
 import { SOUTHWEST_LANDMARKS } from './southwest-world.js';
 import { createSelemisScenery } from './selemis-scenery.js';
 import { SELEMIS_LANDMARKS } from './selemis-world.js';
@@ -1675,6 +1677,15 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   yield 'Mithala';
   const mithalaWater=yield* regionBuild('mithalaWater',MITHALA_WATER_REGIONS,stage=>createMithalaWaterSteps({root:stage,colliders}),{metrics:{},update:()=>{}});
   const mithalaScenery=yield* regionBuild('mithalaScenery',[28, 29, 30, 31],stage=>createMithalaScenerySteps({ root:stage, water:mithalaWater, material, groundHeight, renderedGroundHeight:sharedWestGroundAt, colliders, dummy:new THREE.Object3D(), color:new THREE.Color(), round }),{});
+  // Mithala (src/mithala-city.js, src/mithala-city-scenery.js): the river-city at the meeting of the arms, one district on
+  // each of the four countries' hexes. Built after the plain, so the plain's scatter is down and what fell on the city's
+  // ground is lifted off again (`clearMithalaPlainScatter`) without moving the Mithala's seeded stream by a draw.
+  yield 'Mithala city';
+  const mithalaCity=yield* regionBuild('mithalaCity',[28, 29, 30, 31],function* (stage){
+    const cleared=clearMithalaPlainScatter({scene:world,colliders,treeRegistry,inside:(x,z)=>mithalaCityReserved(x,z,2)});
+    const city=yield* createMithalaCityScenerySteps({parent:stage,heightAt,groundHeight,colliders});
+    city.metrics.cleared=cleared;return city;
+  },{metrics:{},walkSurfaces:[],mapFeatures:[]},built=>outdoorWalkSurfaces.push(...built.walkSurfaces));
   // The southwestern block (src/southwest-scenery.js): the Vaellir's gallery and its reed, two dry
   // washes and three shallow channels with nothing in any of them, the desert pavement the wind
   // has swept, the grass that has contracted into the Ganesh Plain's depressions, and one hex of
@@ -1834,7 +1845,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   paths.push(...BALDRO_PATHS.map(p=>Object.assign([...p.points],{width:p.width,kind:p.kind,id:p.id})));
   // Region scenery already draws these roads; append navigation only after the original main road.
   paths.push(...yunethre.paths.map(p=>Object.assign([...p.points],{width:p.width})));
-  paths.push(...[...MENORA_PATHS,...CARICAS_ROADS,...NYLON_PATHS,...AEVIS_PATHS].map(p=>Object.assign([...p.points],{width:p.width})));
+  paths.push(...[...MENORA_PATHS,...CARICAS_ROADS,...NYLON_PATHS,...AEVIS_PATHS,...MITHALA_STREETS].map(p=>Object.assign([...p.points],{width:p.width})));
   // The peninsula tutorial's trails (drawn by its own scenery) go after the main road too: paths[0] is the main road.
   paths.push(...peninsulaTutorial.paths);
 
@@ -2297,7 +2308,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   treeRegistry.configure({reindex:()=>{colliderIndex=null;}});
   const api = {
     loadingMode, loading, onRegionReady(listener){readyListeners.add(listener);return ()=>readyListeners.delete(listener);},
-    menora, nylon, aevis, caricasSettlement, inquestHome, peninsulaTutorial,
+    menora, nylon, aevis, mithalaCity, caricasSettlement, inquestHome, peninsulaTutorial,
     heightAt, groundHeight, westLotharnGround, mithalaWater, eastPyros, netherDesert, legemum, babon, southCelder, northCelder, eastIzol, alezhor, southIbenal, northIbenal, henborth, baldro, westOremindi, lotharnCaves, westLotharnCaves, southOremindi, yunethre, ibenwood, ibenwoodForest, ibenwoodRivers, ibenwoodWater, ibenwoodAlezhorGround,
     // Displayed terrain triangles, for visual grounding only; collision still uses heightAt.
     renderedGroundHeight: (x,z)=>babonSurface&&babonOwns(x,z)?babonSurface(x,z):(ibenwoodAlezhorGround.fineGroundHeight(x,z)??Math.max(westFineGroundAt(x,z),galaScenery.fineGroundHeight?.(x,z)??-Infinity,suvalSurface.fineGroundHeight(x,z)??-Infinity)),
@@ -2385,6 +2396,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
     galaMetrics: galaScenery.metrics,
     ovesMetrics: ovesScenery.metrics,
     mithalaMetrics: mithalaScenery.metrics,
+    mithalaCityMetrics: mithalaCity.metrics,
     southwestMetrics: southwestScenery.metrics,
     selemisMetrics: selemisScenery.metrics,
     varnMetrics: varn.metrics,
@@ -2563,6 +2575,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
       ...GALA_LANDMARKS,
       ...OVES_LANDMARKS,
       ...MITHALA_LANDMARKS,
+      ...MITHALA_CITY_LANDMARKS,
       ...SOUTHWEST_LANDMARKS,
       ...SELEMIS_LANDMARKS,
       ...TELEMONIA_LANDMARKS,
@@ -2642,6 +2655,39 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   api.keepPropsClear([api.training, ...OPENING_FIGHT_GROUND, ...Object.values(api.npcPositions ?? {}), ...Object.values(api.storySites ?? {}), ...Object.values(api.journeySites ?? {}),
     ...(api.forestPlaces ?? []), ...(api.fishingSpots ?? []).map(spot => spot.fishingSpot), ...(api.repairBenches ?? [])]);
   return api;
+}
+
+/**
+ * What the Mithala plain's own scatter (src/mithala-scenery.js) laid on the city's ground, lifted after the fact as Varn's,
+ * Aevis's and Nylon's is (src/scenery-clearing.js), so the plain's seeded stream is the one it always was. `clearScatter`
+ * judges an instance by where it stands, and the plain draws two things in three instances each, laid in step: a tree's
+ * crown is three lobes, the last of them over its trunk, and a forb is three lobes round its middle, the last at it. Judged
+ * lobe by lobe, a tree on the city's edge would keep a crown lobe over a lifted trunk, hanging in the air; so here a
+ * cluster is judged by its last lobe and goes whole, and a trunk goes by its own place, with its collider. Nothing here
+ * draws a random number.
+ */
+function clearMithalaPlainScatter({ scene, colliders, treeRegistry, inside }) {
+  const lifted = clearScatter({ scene, colliders, treeRegistry, inside, kinds: ['mithala-tree'] });
+  const matrix = new THREE.Matrix4(), nothing = new THREE.Matrix4().makeScale(0, 0, 0);
+  const clusterOf = mesh => (mesh.name.endsWith(' crowns') || mesh.name === 'Mithala prairie forbs' ? 3 : 1);
+  const roots = [];
+  scene.traverse(object => { if (object.name === 'Mithala scenery') roots.push(object); });
+  for (const root of roots) root.traverse(mesh => {
+    if (!mesh.isInstancedMesh) return;
+    const size = clusterOf(mesh);
+    let changed = false;
+    for (let first = 0; first + size <= mesh.count; first += size) {
+      mesh.getMatrixAt(first + size - 1, matrix);
+      const e = matrix.elements;
+      // Already nothing (an earlier clearing): leave it.
+      if (e[0] === 0 && e[5] === 0 && e[10] === 0) continue;
+      if (!inside(e[12], e[14])) continue;
+      for (let i = first; i < first + size; i++) mesh.setMatrixAt(i, nothing);
+      lifted.instances += size; changed = true;
+    }
+    if (changed) mesh.instanceMatrix.needsUpdate = true;
+  });
+  return lifted;
 }
 
 /**

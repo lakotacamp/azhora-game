@@ -31,6 +31,7 @@ import { iscareGround } from './iscare-world.js';
 import { menoraGround } from './menora-city.js';
 import { nylonGround } from './nylon-city.js';
 import { aevisGround } from './aevis-city.js';
+import { mithalaCityGround } from './mithala-city.js';
 import { eastPyrosGround, eastPyrosTint } from './east-pyros-world.js';
 import { netherDesertGround, netherDesertTint } from './nether-desert-world.js';
 import { legemumGround, legemumTint, legemumShoreTint } from './legemum-world.js';
@@ -352,11 +353,24 @@ export function groundBeforeHenborth(x, z) {
   henborthLeftOut = true;
   try { return groundWithRiver(x, z); } finally { henborthLeftOut = false; }
 }
+/**
+ * Mithala's own layer of the ground, and the same ground with that layer left out (`groundBeforeMithalaCity`): the plain
+ * as the Mithala's scenery and its channels were laid on, which is what the city's tests hold the river's cut to.
+ */
+let mithalaCityLeftOut = false;
+const mithalaCityLayer = (x, z, ground) => (mithalaCityLeftOut ? ground : mithalaCityGround(x, z, ground, groundBeforeMithalaCity));
+export function groundBeforeMithalaCity(x, z) {
+  mithalaCityLeftOut = true;
+  try { return groundWithRiver(x, z); } finally { mithalaCityLeftOut = false; }
+}
 /** Everything `groundWithRiver` lays but the Nether Desert and Legemum: the ground the Nether Desert's border seam is measured against. */
 function groundBeforeNether(x,z){
   // Feradom owns its inland hills and castle yards; their base includes every other regional layer.
   const base=groundBeforeFrontier(x,z);
-  return eastPyrosGround(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier)))),groundBeforeFrontier);
+  // Mithala (src/mithala-city.js) lays its district platforms, flood banks and ford approaches over the plain, after the
+  // western ground has cut the channels into it. It writes nothing within two metres of the water and nothing outside its
+  // own box, so the river's cut is the one it was and every seam measured from here is unchanged.
+  return eastPyrosGround(x,z,mithalaCityLayer(x,z,aevisGround(x,z,nylonGround(x,z,menoraGround(x,z,caricasSettlementGround(x,z,base,groundBeforeFrontier))))),groundBeforeFrontier);
 }
 function groundBeforeFrontier(x,z){
   return feradomGround(x, z, groundBeforeFeradom(x, z), groundBeforeFeradom);
