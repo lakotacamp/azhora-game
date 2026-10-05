@@ -42,7 +42,7 @@ import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
  *
  * The standing rule is the user's: the atlas wins over the lore. So most of what is asserted below
  * is the atlas's own arithmetic — thirty-three hexes and twenty-eight and twenty-three and
- * thirty-two, forty-nine internal edges, twenty-five against the Lotharn, sixty-one new river edges
+ * thirty-two, forty-seven internal edges, twenty-five against the Lotharn, sixty-one new river edges
  * in thirteen chains with one outlet — and the four things this job had to get right that nothing
  * else could check:
  *
@@ -79,8 +79,10 @@ test('the atlas: four countries, 116 authored hexes and one the atlas forgot, an
   const terrain = name => CELLS[name].reduce((tally, cell) => ({ ...tally, [cell.terrain]: (tally[cell.terrain] ?? 0) + 1 }), {});
   assert.deepEqual(terrain('South Mithala'), { grassland: 10, plains: 19, hills: 5 });
   assert.deepEqual(terrain('West Mithala'), { plains: 4, grassland: 24 });
-  assert.deepEqual(terrain('East Mithala'), { plains: 12, grassland: 11 });
-  assert.deepEqual(terrain('North Mithala'), { plains: 22, grassland: 10 });
+  // Two plains hexes in from North Mithala and two grassland out to it, in the user's trade of
+  // 4 October 2026 that puts all four countries round the city (`mithala-city-quarters-v1`).
+  assert.deepEqual(terrain('East Mithala'), { plains: 14, grassland: 9 });
+  assert.deepEqual(terrain('North Mithala'), { plains: 20, grassland: 12 });
   // **No mountain hex anywhere, and the five `hills` are the only relief the atlas asks for.**
   assert.equal(ALL.filter(cell => cell.terrain === 'mountain').length, 0, 'this is a plain');
   // The enclosed hex, and the reason it is held: ringed by South Mithala on all six sides, `hills`
@@ -111,12 +113,16 @@ test('the atlas: four countries, 116 authored hexes and one the atlas forgot, an
   assert.equal(south['West Lotharn Mountains'], 10);
   assert.equal(south['East Mithala'], 16);
   assert.equal(south['West Mithala'], 8);
-  assert.equal(edges('West Mithala')['North Mithala'], 7);
-  assert.equal(edges('West Mithala')['East Mithala'], 5);
-  assert.equal(edges('East Mithala')['North Mithala'], 13);
-  // Forty-nine internal edges, counted once each: the reason this is one job and one module.
+  // The trade moved four of West Mithala's edges from East to North Mithala: East and West now meet
+  // on one edge only, the braid's last fifty-eight metres into the meeting, inside the city.
+  assert.equal(edges('West Mithala')['North Mithala'], 11);
+  assert.equal(edges('West Mithala')['East Mithala'], 1);
+  assert.equal(edges('East Mithala')['North Mithala'], 11);
+  // Forty-seven internal edges, counted once each: the reason this is one job and one module. It was
+  // forty-nine until the city trade: four East-North edges became North Mithala's own ground and two
+  // new ones opened round the Braid Bank.
   const internal = NAMES.reduce((sum, name) => sum + NAMES.reduce((part, other) => part + (edges(name)[other] ?? 0), 0), 0);
-  assert.equal(internal / 2, 49, 'forty-nine hex edges among the four');
+  assert.equal(internal / 2, 47, 'forty-seven hex edges among the four');
   // Twenty-five against built country when the plain was built, and the Lotharn was the whole of it. The two
   // Celders were built against the plain's western margin on 3 October 2026: North Celder along twelve of West
   // Mithala's edges and six of South Mithala's, South Celder along one. Henborth was registered on 4 October 2026

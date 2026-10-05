@@ -1,11 +1,23 @@
 /** Game geography corrections, applied to read-only World Builder imports.
  * Keep the journal, developer atlas and built river survey on the same source.
  * The upstream map and its provenance hash remain unchanged. */
-export const GAME_ATLAS_ADJUSTMENTS = Object.freeze(['tidehaven-northeast-bank-v1', 'drent-forested-peninsula-v1']);
+export const GAME_ATLAS_ADJUSTMENTS = Object.freeze(['tidehaven-northeast-bank-v1', 'drent-forested-peninsula-v1', 'mithala-city-quarters-v1']);
 
 /** The user-drawn headland east of Tidehaven, bending southeast toward Longstone. */
 export const DRENT_PENINSULA_HEXES = Object.freeze([
   Object.freeze({ q: 16, r: 105 }), Object.freeze({ q: 16, r: 106 }),
+]);
+
+/**
+ * The user's trade of 4 October 2026 (docs/mithala-city-brief.md): two North Mithala hexes go to
+ * East Mithala and two East Mithala hexes go to North Mithala, so that all four Mithalas meet round
+ * the city at the meeting of the arms - North 6,88, West 5,89, East 6,89 and South 5,90.
+ */
+export const MITHALA_CITY_TRADES = Object.freeze([
+  Object.freeze({ q: 9, r: 86, from: 'North Mithala', to: 'East Mithala' }),
+  Object.freeze({ q: 10, r: 86, from: 'North Mithala', to: 'East Mithala' }),
+  Object.freeze({ q: 5, r: 88, from: 'East Mithala', to: 'North Mithala' }),
+  Object.freeze({ q: 6, r: 88, from: 'East Mithala', to: 'North Mithala' }),
 ]);
 
 export function applyGameAtlasAdjustments(source) {
@@ -18,6 +30,15 @@ export function applyGameAtlasAdjustments(source) {
     if (prior?.region && prior.region !== 'Drent')
       throw new Error('The Drent peninsula overlaps another authored region.');
     hexes[key] = { ...prior, q, r, terrain: 'forest', region: 'Drent', climate: prior?.climate ?? 'Cfb' };
+  }
+  // A map without these hexes (a test fixture) is left alone; one that gives them to anybody else
+  // has been redrawn, and the trade has to be looked at again rather than applied over it.
+  for (const { q, r, from, to } of MITHALA_CITY_TRADES) {
+    const key = `${q},${r}`, prior = source.hexes[key];
+    if (!prior) continue;
+    if (![from, to].includes(prior.region))
+      throw new Error('The Mithala city quarters no longer match their game atlas correction.');
+    hexes[key] = { ...prior, region: to };
   }
   const rivers = { ...source.rivers };
   // Remove the obsolete southward reach through Tidehaven. The Tessen follows

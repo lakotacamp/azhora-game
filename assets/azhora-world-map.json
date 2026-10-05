@@ -30,7 +30,8 @@
   "uncharted": [],
   "gameAdjustments": [
     "tidehaven-northeast-bank-v1",
-    "drent-forested-peninsula-v1"
+    "drent-forested-peninsula-v1",
+    "mithala-city-quarters-v1"
   ],
   "terrainCounts": {
     "ocean": 13622,
@@ -370,12 +371,12 @@
     {
       "id": "East Mithala",
       "name": "East Mithala",
-      "x": 1357.928,
+      "x": 1399.497,
       "y": 2064,
-      "width": 249.415,
+      "width": 207.846,
       "height": 104,
-      "centerX": 1497.094,
-      "centerY": 2123.826,
+      "centerX": 1504.324,
+      "centerY": 2119.652,
       "hexCount": 23
     },
     {
@@ -802,9 +803,9 @@
       "x": 1274.789,
       "y": 1968,
       "width": 235.559,
-      "height": 152,
-      "centerX": 1398.631,
-      "centerY": 2051.5,
+      "height": 176,
+      "centerX": 1393.435,
+      "centerY": 2054.5,
       "hexCount": 32
     },
     {
