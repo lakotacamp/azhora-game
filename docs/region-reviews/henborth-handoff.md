@@ -147,7 +147,7 @@ Observed: walked 2,896 m, swam nothing, no steps round anything, no nudge, no fa
 ## Performance
 
 - **Base `ec6ec44`, measured** (`tests/artifacts/startup-base-ec6ec44.json`): Full cold 158.4 s total, ready at 168.4 s; warm 143.6 s; 774 wildlife groups; no errors.
-- **Henborth: not yet measured.** The native slot has been taken since 19:51 by an interactive game session launched from the main checkout. Claude's queued run takes `startup-henborth.json` when that session closes; this report will be updated with it. Henborth's scenery build runs under its own label, `Henborth`, in steps of at most 4 ms when warm (the life builder's measurement in Node).
+- **Henborth, measured** (`tests/artifacts/startup-henborth.json`, taken 20:19 once the interactive session closed): Full cold 146.5 s total, ready at 153.5 s; warm 116.9 s; no errors. **Henborth's own stage, `Henborth`, costs 0.98 s cold and 1.04 s warm.** The totals are not a fair comparison with the base run: that run was slower in nearly every stage the two share (Henborth's own stage exists only here), which is machine load during it rather than code (Kethorn alone read 11.4 s there and 9.4 s here, cold). Compare stage by stage, not totals.
 - **The user's load-time study** (4 October 2026), across all of Claude's regions:
   - Steady-state height queries are unchanged from main.
   - Each region adds about 2.3 s to a Full cold start.
