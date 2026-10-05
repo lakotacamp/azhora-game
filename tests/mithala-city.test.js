@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MITHALA_CITY, MITHALA_DISTRICTS, MITHALA_CURTAIN, MITHALA_FLOOD_BANKS, MITHALA_BRIDGES, MITHALA_FORD,
-  MITHALA_QUAY, MITHALA_STREETS, MITHALA_GATES, MITHALA_BUILDINGS, MITHALA_TOWER_STAIR, MITHALA_GAUGE,
-  MITHALA_CITY_LANDMARKS, mithalaCityWaterClearance, mithalaDistrictAt, mithalaDeckHeight, mithalaCityGround,
+  MITHALA_QUAY, MITHALA_BARGES, MITHALA_STREETS, MITHALA_GATES, MITHALA_BUILDINGS, MITHALA_TOWER_STAIR, MITHALA_GAUGE,
+  MITHALA_CITY_LANDMARKS, MITHALA_APPROACHES, mithalaCityWaterClearance, mithalaDistrictAt, mithalaDeckHeight, mithalaCityGround,
   mithalaCityReserved, inMithalaCity, polygonDepth, mithalaSegmentDistance } from '../src/mithala-city.js';
 import { hexAt, hexOwnerAt } from '../src/region-world.js';
 
@@ -77,6 +77,37 @@ test('the bridges land on platform ground at both ends and stand clear of the wa
   for (const p of MITHALA_QUAY.points) assert.ok(mithalaCityWaterClearance(p.x, p.z) > MITHALA_QUAY.width / 2 - .01, 'the quay stands on the bank');
 });
 
+test('the grain quay’s face stands at the water’s edge, and the barges lie alongside it', () => {
+  const half = MITHALA_QUAY.width / 2, runs = MITHALA_QUAY.points.slice(1).map((b, i) => {
+    const a = MITHALA_QUAY.points[i], l = Math.hypot(b.x - a.x, b.z - a.z);
+    return { a, b, l, ux: (b.x - a.x) / l, uz: (b.z - a.z) / l, yaw: Math.atan2(b.z - a.z, b.x - a.x) };
+  });
+  // The face is never in the water and never much more than a metre short of it, all along every run.
+  for (const r of runs) for (const p of along(r.a, r.b, 40)) {
+    const face = mithalaCityWaterClearance(p.x, p.z) - half;
+    assert.ok(face >= 0 && face <= 1.1, `the quay's face at ${p.x.toFixed(1)},${p.z.toFixed(1)} stands ${face.toFixed(2)} m from the water`);
+  }
+  for (const barge of MITHALA_BARGES) {
+    // Square to the run it lies against, afloat over its whole hull, and a metre or so off the face.
+    const run = runs.reduce((best, r) => mithalaSegmentDistance(barge.x, barge.z, r.a, r.b) < mithalaSegmentDistance(barge.x, barge.z, best.a, best.b) ? r : best);
+    assert.ok(Math.abs(barge.yaw - run.yaw) < .02, `${barge.id} lies at ${barge.yaw} against a run at ${run.yaw.toFixed(3)}`);
+    const ux = Math.cos(barge.yaw), uz = Math.sin(barge.yaw), hull = [];
+    for (const lx of [-.5, -.25, 0, .25, .5]) for (const lz of [-.5, 0, .5])
+      hull.push({ x: barge.x + ux * lx * barge.length - uz * lz * barge.width, z: barge.z + uz * lx * barge.length + ux * lz * barge.width });
+    for (const p of hull) assert.ok(mithalaCityWaterClearance(p.x, p.z) < 0, `${barge.id} is aground at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+    const gap = mithalaSegmentDistance(barge.x, barge.z, run.a, run.b) - half - barge.width / 2;
+    // The mooring posts stand in the water between the face and the hull, so a barge lies against its posts, a
+    // little under a metre and a half off the stone; nearer than that the hull's rubbing strake meets a post.
+    assert.ok(gap > 0 && gap <= 1.45, `${barge.id} lies ${gap.toFixed(2)} m off the quay's face`);
+  }
+  // The Quay Stairs come out onto the deck, and their made ground stops a metre short of its inner edge.
+  const stairs = MITHALA_STREETS.find(s => s.id === 'mithala-quay-stairs').points.at(-1);
+  assert.equal(mithalaDeckHeight(stairs.x, stairs.z), MITHALA_QUAY.deck);
+  const causeway = MITHALA_APPROACHES.find(a => a.id === 'mithala-quay-stairs-causeway').path.at(-1);
+  const toDeck = Math.min(...runs.map(r => mithalaSegmentDistance(causeway.x, causeway.z, r.a, r.b))) - half;
+  assert.ok(toDeck > .9 && toDeck < 1.1, `the causeway stops ${toDeck.toFixed(2)} m short of the quay`);
+});
+
 test('the streets join every gate, bridge and the ford into one network', () => {
   const nodes = [...MITHALA_STREETS.map(s => ({ id: s.id, segs: s.points.slice(1).map((b, i) => [s.points[i], b]) })),
     ...[...MITHALA_BRIDGES, MITHALA_FORD].map(b => ({ id: b.id, segs: [[b.a, b.b]] }))];
@@ -108,6 +139,48 @@ test('buildings stand on platform ground, inside the walls and clear of streets 
   const gauge = mithalaCityWaterClearance(MITHALA_GAUGE.x, MITHALA_GAUGE.z);
   assert.ok(gauge > MITHALA_GAUGE.width / 2 && gauge < 6, `the gauge stands at the water's edge (${gauge.toFixed(2)})`);
   assert.ok(MITHALA_CITY_LANDMARKS.every(l => Number.isFinite(l.x) && Number.isFinite(l.z)));
+});
+
+test('no two buildings share ground, and none stands on a street, a bridge, the ford or the quay', () => {
+  // A metre's gap at least between any two footprints (all are squared to the axes), measured along whichever axis
+  // separates them.
+  for (const [i, a] of MITHALA_BUILDINGS.entries()) for (const b of MITHALA_BUILDINGS.slice(i + 1)) {
+    const gap = Math.max(Math.abs(a.x - b.x) - (a.width + b.width) / 2, Math.abs(a.z - b.z) - (a.depth + b.depth) / 2);
+    assert.ok(gap >= 1, `${a.id} and ${b.id} are ${gap.toFixed(2)} m apart`);
+  }
+  // Every way, as a centre line and a half-width: no footprint reaches into one (touching its edge is allowed: the sky
+  // tower's north face stands on the King's Way's south edge).
+  const ways = [...MITHALA_STREETS.flatMap(s => s.points.slice(1).map((p, i) => ({ name: s.name, a: s.points[i], b: p, half: s.width / 2 }))),
+    ...[...MITHALA_BRIDGES, MITHALA_FORD].map(b => ({ name: b.name, a: b.a, b: b.b, half: b.width / 2 })),
+    ...MITHALA_QUAY.points.slice(1).map((p, i) => ({ name: MITHALA_QUAY.name, a: MITHALA_QUAY.points[i], b: p, half: MITHALA_QUAY.width / 2, quay: true }))];
+  const footprintGap = (b, x, z) => Math.hypot(Math.max(0, Math.abs(x - b.x) - b.width / 2), Math.max(0, Math.abs(z - b.z) - b.depth / 2));
+  for (const b of MITHALA_BUILDINGS) for (const w of ways) {
+    if (w.quay && b.onQuay) continue;
+    const n = Math.ceil(Math.hypot(w.b.x - w.a.x, w.b.z - w.a.z) / .1);
+    let least = Infinity;
+    for (let k = 0; k <= n; k++) least = Math.min(least, footprintGap(b, w.a.x + (w.b.x - w.a.x) * k / n, w.a.z + (w.b.z - w.a.z) * k / n) - w.half);
+    assert.ok(least >= -.01, `${b.id} stands ${(-least).toFixed(2)} m into ${w.name}`);
+  }
+});
+
+test('every ramp runs straight from its foot to its top, on its own street', () => {
+  // A ramp that bends on its slope leaves a step on the inside of the bend (the ground there is read off the nearer of two
+  // legs at different heights); the walker measured 21 degrees at Gauge Lane's. So each embankment and cutting is one leg,
+  // as long as its run, and its street (or, at the ford, the ford's paving) runs along it.
+  for (const a of MITHALA_APPROACHES.filter(a => a.run > 0)) {
+    assert.equal(a.path.length, 2, `${a.id} bends`);
+    const [foot, top] = a.path, length = Math.hypot(top.x - foot.x, top.z - foot.z);
+    assert.ok(length >= a.run - .01, `${a.id} tops out ${(a.run - length).toFixed(2)} m past its end`);
+    const street = MITHALA_STREETS.find(s => s.id === a.street);
+    for (const p of along(foot, top, 20).filter(p => mithalaCityWaterClearance(p.x, p.z) > MITHALA_CITY.waterKeep + 3)) {
+      // The ford's cuttings come up off the ford's own paving and go on up their streets.
+      const off = Math.min(mithalaSegmentDistance(p.x, p.z, MITHALA_FORD.a, MITHALA_FORD.b) + (/ford-(quays|south)/.test(a.id) ? 0 : Infinity),
+        ...street.points.slice(1).map((q, i) => mithalaSegmentDistance(p.x, p.z, street.points[i], q)));
+      // Gauge Lane stops short of the gauge post; its cutting goes on to the gauge's foot.
+      const atGauge = Math.hypot(p.x - MITHALA_GAUGE.x, p.z - MITHALA_GAUGE.z) < 3;
+      assert.ok(off < 1 || atGauge, `${a.id} leaves ${street.name} by ${off.toFixed(2)} m at ${p.x.toFixed(1)},${p.z.toFixed(1)}`);
+    }
+  }
 });
 
 test('the sky tower stair climbs at a walkable grade from the door to the platform', () => {

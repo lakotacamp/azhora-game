@@ -33,6 +33,7 @@ import { regionBuildStatus } from '../src/build-status.js';
 import { regionLevel } from '../src/region-levels.js';
 import { REGION_LANGUAGE, DIALECTS } from '../src/languages.js';
 import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
+import { MITHALA_CITY_LANDMARKS, MITHALA_STREETS, MITHALA_DISTRICTS, mithalaCityReserved, polygonDepth } from '../src/mithala-city.js';
 
 /**
  * The Mithala plain — South, West, East and North Mithala — built as terrain, climate, water,
@@ -53,6 +54,11 @@ import { DEV_WORLD_DESTINATIONS } from '../src/developer-atlas.js';
  *  3. **the water falls**, on a plain whose whole relief is half a metre, six of whose eight channels
  *     are drawn on a border and four of those borders unbuilt;
  *  4. **nothing of either Lotharn's ground moved**, which is the one built neighbour this block has.
+ *
+ * Since 4 October 2026 one thing on it is somebody's: the city of Mithala at the meeting of the arms,
+ * a quarter on each of the four (docs/mithala-city-brief.md). Its own tests are
+ * tests/mithala-city.test.js and tests/mithala-city-world.test.js; here it is set apart from the
+ * plain, which outside it is still nobody's.
  */
 const { scopedWorld } = await import('./scoped-world.js');
 const { WEST_LIFE_ZONES, LIFE_REACH } = await sourceModule('../src/west-regions-life.js');
@@ -516,7 +522,7 @@ test('what lives here: nineteen ranges, one new rig, and none of it is anybody�
     assert.ok(!/hunt-hound|grass-lion|wolf/.test(zone.species), 'no predator stands about in the open');
 });
 
-test('nobody lives here yet: no people, no road, no made place, and the chart says what is built', () => {
+test('nobody lives here yet: no people, one made place - the city at the meeting - and the chart says what is built', () => {
   for (const [index, name] of NAMES.entries()) {
     assert.equal(REGION_IDS[name], 28 + index, `${name} is ${28 + index}`);
     // Appended, never inserted - the rule `world-regions.js`'s one seeded scatter stream depends on.
@@ -539,23 +545,37 @@ test('nobody lives here yet: no people, no road, no made place, and the chart sa
     assert.ok(canStand(region.spawn.x, region.spawn.z, world, .5), `${name}'s spawn is not on ground`);
     // Landmarks, map-fog areas and a developer destination each.
     assert.ok(region.landmarks.length >= 4, `${name} has landmarks`);
+    // The plain's own places, and since 4 October 2026 the city's (src/mithala-city.js) in whichever country each stands.
     for (const id of region.landmarks)
-      assert.ok(MITHALA_LANDMARKS.some(mark => mark.id === id), `${name} names ${id} and nothing defines it`);
+      assert.ok(MITHALA_LANDMARKS.some(mark => mark.id === id) || MITHALA_CITY_LANDMARKS.some(mark => mark.id === id && mark.region === name),
+        `${name} names ${id} and nothing defines it`);
     assert.ok(SUBREGIONS.filter(area => area.region === name).length >= 4, `${name} has chart areas`);
     assert.ok(DEV_WORLD_DESTINATIONS.some(destination => destination.regionId === name));
   }
   assert.deepEqual(NAMES.map(name => regionLevel(name)), [3, 3, 4, 4], 'the levels region-levels.js already carried');
-  // **Nothing anybody made stands on this ground.** The landmarks talk about the villages, the
-  // barges and the grain a good deal — a country whose whole lore is one farming system cannot be
-  // described without them, and several of them say in as many words that none of it is here — so
-  // the test is not the words but the world: inside the plain's box the only things this build puts
-  // in anybody's way are trees and deep water, and there is no sign and no road anywhere on it.
+  // **Nothing anybody made stands on this ground but the city.** The landmarks talk about the
+  // villages, the barges and the grain a good deal — a country whose whole lore is one farming system
+  // cannot be described without them, and several of them say in as many words that none of it is
+  // here — so the test is not the words but the world. Since 4 October 2026 one place on the plain is
+  // somebody's: Mithala, the city at the meeting of the arms, a quarter on each of the four countries
+  // (src/mithala-city.js, docs/mithala-city-brief.md; tests/mithala-city-world.test.js walks it). So the
+  // city's own ground is set apart, and outside it nothing has changed: inside the plain's box the only
+  // things this build puts in anybody's way are trees and deep water, there is no sign, and the only
+  // roads are the city's own streets, which stop at the plain's edge of their approaches.
   const insideBox = item => item.x > MITHALA_BOX.minX && item.x < MITHALA_BOX.maxX
     && item.z > MITHALA_BOX.minZ && item.z < MITHALA_BOX.maxZ && own(item.x, item.z);
-  const kinds = new Set(world.colliders.filter(insideBox).map(collider => collider.kind));
-  assert.deepEqual([...kinds].sort(), ['mithala-tree', 'west-deep-water'], `the plain carries ${[...kinds].join(', ')}`);
-  assert.equal((world.signs ?? []).filter(insideBox).length, 0, 'no sign anywhere on the plain');
-  for (const path of world.paths ?? []) assert.ok(!(path ?? []).some(insideBox), 'no road crosses the plain');
+  const onCity = item => mithalaCityReserved(item.x, item.z);
+  const kinds = new Set(world.colliders.filter(collider => insideBox(collider) && !onCity(collider)).map(collider => collider.kind));
+  assert.deepEqual([...kinds].sort(), ['mithala-tree', 'west-deep-water'], `the plain off the city carries ${[...kinds].join(', ')}`);
+  const city = world.colliders.filter(collider => insideBox(collider) && onCity(collider));
+  assert.ok(city.length > 100, `the city stands at the meeting (${city.length} colliders on its ground)`);
+  assert.equal(city.filter(collider => collider.kind === 'mithala-tree').length, 0, 'and no tree of the plain stands on it');
+  assert.equal((world.signs ?? []).filter(sign => insideBox(sign) && !onCity(sign)).length, 0, 'no sign anywhere on the plain');
+  const key = points => points.map(p => `${p.x},${p.z}`).join(' ');
+  const roads = (world.paths ?? []).filter(path => (path ?? []).some(insideBox));
+  assert.deepEqual(roads.map(key).sort(), MITHALA_STREETS.map(street => key(street.points)).sort(), 'the only roads are the city’s streets');
+  for (const path of roads) for (const p of path)
+    assert.ok(MITHALA_DISTRICTS.some(district => polygonDepth(district.outline, p.x, p.z) > -30), `a street runs out to ${p.x}, ${p.z}`);
   assert.equal(MITHALA_LANDMARKS.length, 18);
   for (const mark of MITHALA_LANDMARKS) {
     assert.ok(mark.description.length > 80, mark.id);
