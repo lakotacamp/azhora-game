@@ -35,7 +35,7 @@
  * moved, built or unbuilt. Where the forest's gold river runs its last metres on Alezhor's side of the line, its
  * samples are left exactly as handed (`IBENWOOD_KEEP`), so the forest's river ends where and how it always did.
  */
-import { regionAt, hexOwnerAt, hexAt, hexCentre, isLandHex, REGION_CELLS, REGION_OUTLINES, REGION_IDS, SHORE_FRINGE,
+import { regionAt, regionAtWithout, hexOwnerAt, hexAt, hexCentre, isLandHex, REGION_CELLS, REGION_OUTLINES, REGION_IDS, SHORE_FRINGE,
   terrainMix, seamlessTerrainMix, relief, landDistance, SEA_LEVEL } from './region-world.js';
 import { ALEZHOR_WATER } from './west-regions.js';
 import { WEST_PROFILES } from './west-ground.js';
@@ -59,6 +59,11 @@ export const ALEZHOR = 'Alezhor';
 export const ALEZHOR_CELLS = freeze(REGION_CELLS[ALEZHOR] ?? []);
 /** Whether a point is on Alezhor's own ground, as the traveler is told it (`regionAt`, with its shore fringe). */
 export function alezhorOwns(x, z) { return regionAt(x, z)?.name === ALEZHOR; }
+/** The Ibenals, registered after Alezhor's composition was reviewed and approved (392 trees, 92 batches, 16,210
+ * instances; docs/region-briefs/south-ibenal-environment.md, item 6). */
+export const ALEZHOR_APPROVED_WITHOUT = Object.freeze(['South Ibenal', 'North Ibenal']);
+/** Where Alezhor's scatter may plant: its ground as it was when that composition was approved (`regionAtWithout`). */
+export function alezhorScatterOwns(x, z) { return regionAtWithout(x, z, ALEZHOR_APPROVED_WITHOUT)?.name === ALEZHOR; }
 
 /**
  * The climate per hex, off the World Builder map (`azhora.wwmap`, `hexes[key].climate`): `Csb` on all twenty-five,

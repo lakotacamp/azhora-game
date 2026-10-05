@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { finishBuild } from './build-steps.js';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
-import { REGION_CELLS, hexAt, regionAt } from './region-world.js';
+import { REGION_CELLS, hexAt, regionAtWithout } from './region-world.js';
 import { WATERLINE } from './game-state.js';
 import { westWaterSurface } from './west-ground.js';
 import { ibenwoodTreeSpecies } from './ibenwood-environment.js';
 import { IBENWOOD_RIVERS } from './ibenwood-rivers.js';
-import { ALEZHOR, ALEZHOR_ARRIVAL, ALEZHOR_LANDMARKS, ALEZHOR_TRAILS, alezhorOwns } from './alezhor-world.js';
+import { ALEZHOR, ALEZHOR_ARRIVAL, ALEZHOR_LANDMARKS, ALEZHOR_TRAILS, ALEZHOR_APPROVED_WITHOUT, alezhorScatterOwns } from './alezhor-world.js';
 // The ground's own design, read where it is offered and never required: its water, the river-mouth flats it keeps,
 // and whatever account of its cover it gives (`alezhorCover`).
 import * as GROUND from './alezhor-world.js';
@@ -312,7 +312,7 @@ export function* readAlezhorGround(heightAt, charge = () => {}) {
     const x = minX + i * STEP, z = minZ + j * STEP, k = j * nx + i, { q, r } = hexAt(x, z);
     if (!near.has(cellKey(q, r))) { cost += .05; continue; }
     cost += 4;
-    const h = heightAt(x, z), owner = regionAt(x, z)?.name, water = alezhorFreshWater(x, z, h);
+    const h = heightAt(x, z), owner = regionAtWithout(x, z, ALEZHOR_APPROVED_WITHOUT)?.name, water = alezhorFreshWater(x, z, h);
     height[k] = h; cellIndex[k] = cellList.indexOf(alezhorCellAt(x, z));
     if (water !== null) { kind[k] = RIVER; level[k] = water; fresh[k] = 0; continue; }
     if (h < WATERLINE) { kind[k] = SEA; level[k] = WATERLINE; sea[k] = 0; continue; }
@@ -624,7 +624,7 @@ export function* createAlezhorScenerySteps({ parent, heightAt, legacyHeightAt = 
     const h = legacyHeightAt(x, z);
     return alezhorWaterAt(x, z, h) === null && h > WATERLINE + lift;
   };
-  const plantable = (x, z) => alezhorOwns(x, z) && dry(x, z);
+  const plantable = (x, z) => alezhorScatterOwns(x, z) && dry(x, z);
   /** For a clump whose lobes stand off its centre: its own ground and dry for `r` metres round. */
   const roomy = (x, z, r) => plantable(x, z) && [[r, 0], [-r, 0], [0, r], [0, -r]].every(([dx, dz]) => plantable(x + dx, z + dz));
   // Spacing by a hash grid rather than a scan of everything already placed.

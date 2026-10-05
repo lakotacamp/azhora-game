@@ -8,6 +8,7 @@ import { MITHALA_REGIONS, mithalaWet, inBackswamp } from '../src/mithala-world.j
 import { timberForSpecies } from '../src/wood-species.js';
 import { MITHALA_WILDLIFE_ZONES } from '../src/mithala-wildlife.js';
 import { sourceModule } from './module-loader.js';
+import { mithalaCityReserved } from '../src/mithala-city.js';
 
 const scene = new THREE.Scene();
 const world = await scopedWorld(scene, MITHALA_REGIONS.map(name => REGION_IDS[name]));
@@ -15,6 +16,12 @@ scene.updateMatrixWorld(true);
 const group = scene.getObjectByName('Mithala scenery');
 const trunks = group.children.filter(mesh => mesh.isInstancedMesh && mesh.name.endsWith(' trunks'));
 const trees = world.treeRegistry.trees.filter(tree => tree.id.startsWith('mithala-'));
+// The city at the meeting of the arms (docs/mithala-city-brief.md) lifts the plain's scatter off its own ground after
+// the plain is laid, and records each lifted instance's original matrix on its mesh (src/world.js,
+// `clearMithalaPlainScatter`). Put back, they make the reviewed plain again; left out, nothing else has moved.
+const lifted = mesh => mesh.userData.liftedByMithalaCity ?? [];
+const isLifted = (mesh, i) => lifted(mesh).some(([index]) => index === i);
+const restoredMatrices = mesh => { const e = mesh.instanceMatrix.array.slice(); for (const [i, m] of lifted(mesh)) e.set(m, i * 16); return e; };
 
 // Read the loaded Float32 triangles independently of the placement callback.
 const tiles = scene.getObjectByName('The ground of Azhora').children
@@ -65,7 +72,7 @@ test('Mithala keeps its established scenery while seating trees on visible groun
   const hash = createHash('sha256');
   for (const mesh of group.children.filter(mesh => mesh.isInstancedMesh)) {
     hash.update(JSON.stringify([mesh.name, mesh.count]));
-    const e = mesh.instanceMatrix.array.slice();
+    const e = restoredMatrices(mesh);
     for (let i = 13; i < e.length; i += 16) e[i] = 0;
     hash.update(Buffer.from(e.buffer));
     if (mesh.instanceColor) hash.update(Buffer.from(mesh.instanceColor.array.buffer));
@@ -74,6 +81,7 @@ test('Mithala keeps its established scenery while seating trees on visible groun
   for (const mesh of trunks) {
     const p = mesh.geometry.attributes.position;
     for (let i = 0; i < mesh.count; i++) {
+      if (isLifted(mesh, i)) continue;
       mesh.getMatrixAt(i, matrix); matrix.premultiply(mesh.matrixWorld);
       let gap = -Infinity;
       for (let v = 0; v < p.count; v++) {
@@ -88,7 +96,10 @@ test('Mithala keeps its established scenery while seating trees on visible groun
     exposed: gaps.filter(p => p.gap > .02).length, buried: gaps.filter(p => p.gap < -.04).length,
     worst: [...gaps].sort((a, b) => b.gap - a.gap).slice(0, 3) }));
   assert.equal(identity, '9ef91a92c30d560aa85c4fc0429cb54043afc6ea27629198af21f3e5a14c3652');
-  assert.equal(gaps.length, 267);
+  const liftedTrunks = trunks.reduce((sum, mesh) => sum + lifted(mesh).length, 0);
+  assert.equal(gaps.length + liftedTrunks, 267);
+  for (const mesh of group.children.filter(mesh => mesh.isInstancedMesh)) for (const [, m] of lifted(mesh))
+    assert.ok(mithalaCityReserved(m[12], m[14], 3), `${mesh.name} lifted from ${m[12].toFixed(1)},${m[14].toFixed(1)}, off the city's ground`);
   assert.equal(trees.length, gaps.length, 'Every visible trunk is an identifiable tree');
   assert.ok(gaps.every(p => p.gap > -.04 && p.gap < -.02), 'Full leaning root footprints meet visible terrain');
 });
@@ -127,6 +138,7 @@ test('Mithala low plants and solid apron stones touch the rendered ground', t =>
     const positions = mesh.geometry.attributes.position;
     let minimum = Infinity, maximum = -Infinity, floating = 0; const worst = [];
     for (let i = 0; i < mesh.count; i += parts) {
+      if (isLifted(mesh, i)) continue;
       let bottom = -Infinity;
       for (let part = 0; part < Math.min(parts,2); part++) {
         mesh.getMatrixAt(i + part, matrix); matrix.premultiply(mesh.matrixWorld);
@@ -191,6 +203,7 @@ test('Mithala blade tufts keep every root at or below the actual visible ground'
     for (const mesh of meshes) {
       const p = mesh.geometry.attributes.position;
       for (let i = 0; i < mesh.count; i++) {
+        if (isLifted(mesh, i)) continue;
         mesh.getMatrixAt(i, matrix); matrix.premultiply(mesh.matrixWorld);
         const [x, z] = [matrix.elements[12], matrix.elements[14]];
         let minRoot = Infinity, maxRoot = -Infinity, maxTip = -Infinity;

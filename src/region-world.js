@@ -1638,6 +1638,30 @@ export function regionAt(x, z) {
   return near ? regionByName.get(near) : OPEN_COUNTRY;
 }
 /**
+ * **`regionAt` as it answered before some regions were registered.** A reviewed country's scatter was
+ * approved with `regionAt` deciding where it may plant, and `regionAt` lends a built country's name across
+ * the shore fringe to unclaimed ground beside it. When a neighbour is later registered on that ground the
+ * loan ends, the scatter loop rejects different candidates and the whole seeded stream moves - every batch
+ * of the reviewed country changes, not just the border. A country whose approved composition must survive
+ * its neighbours' registration (Alezhor beside the Ibenals, North Celder beside Henborth) asks this instead,
+ * naming the neighbours it was approved without: their hexes count as unclaimed, and the fringe reads them
+ * as the reviewed country did. Nothing else changes; the neighbours' own scatter still uses `regionAt`.
+ */
+export function regionAtWithout(x, z, later) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+  const skip = name => later.includes(name);
+  const home = hexAt(x, z), owner = cellRegion.get(key(home.q, home.r));
+  if (owner && !skip(owner)) return regionByName.get(owner);
+  let near = null, nearest = SHORE_FRINGE;
+  for (const [dq, dr] of AXIAL_NEIGHBORS) {
+    const side = key(home.q + dq, home.r + dr), name = cellRegion.get(side);
+    if (!name || skip(name)) continue;
+    const centre = cellCentre.get(side), distance = Math.hypot(centre.x - x, centre.z - z);
+    if (distance < nearest) { nearest = distance; near = name; }
+  }
+  return near ? regionByName.get(near) : OPEN_COUNTRY;
+}
+/**
  * **Which region's hex is this point on?** A different question from `regionAt`'s, which is why
  * it has a different name. It was called `regionNameAt` until the shore fringe landed, and that
  * name then said it was `regionAt(x, z).name` with the object unwrapped. It is not: it carries

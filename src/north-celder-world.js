@@ -13,7 +13,7 @@
  * **Where Canerd's mound would stand** (`CELDER_MOUND_SITE`, (-2620, -1035)): "somewhere on the plain west of
  * central Celder". The ground there is kept open and level; nothing is built or named on it.
  */
-import { regionAt, hexOwnerAt, REGION_CELLS, REGION_IDS } from './region-world.js';
+import { regionAt, regionAtWithout, hexOwnerAt, REGION_CELLS, REGION_IDS } from './region-world.js';
 import { celderLand, celderTint, CELDER_BOX, CELDER_MOUND_SITE } from './south-celder-world.js';
 
 const freeze = Object.freeze, point = (x, z) => freeze({ x, z });
@@ -26,6 +26,9 @@ export const NORTH_CELDER_CLIMATE = freeze(Object.fromEntries(NORTH_CELDER_CELLS
 const inBox = (x, z) => x > CELDER_BOX.minX && x < CELDER_BOX.maxX && z > CELDER_BOX.minZ && z < CELDER_BOX.maxZ;
 /** Whether a point is on North Celder's own ground. */
 export function northCelderOwns(x, z) { return regionAt(x, z)?.name === NORTH_CELDER; }
+/** Where North Celder's scatter may plant: its ground as it was when its delivered composition was reviewed, before
+ * Henborth was registered beside it (`regionAtWithout`; tests/fixtures/celder-delivered-identities.json). */
+export function northCelderScatterOwns(x, z) { return regionAtWithout(x, z, ['Henborth'])?.name === NORTH_CELDER; }
 /** Where the developer's travel tool sets a traveler down. */
 export const NORTH_CELDER_ARRIVAL = point(-2500, -1183.5);
 const place = (id, name, x, z, radius, description) => freeze({ id, name, region: REGION_IDS[NORTH_CELDER], x, z, radius, description });

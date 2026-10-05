@@ -6,7 +6,7 @@ import { westWaterSurface } from './west-ground.js';
 import { SOUTH_CELDER, SOUTH_CELDER_TRAILS, SOUTH_CELDER_LANDMARKS, southCelderOwns } from './south-celder-world.js';
 // The plain's own design, read where it is offered and never required (`habitat`, `onMoundSite`, the head's bed).
 import * as PLAIN from './south-celder-world.js';
-import { NORTH_CELDER, NORTH_CELDER_TRAILS, NORTH_CELDER_LANDMARKS, northCelderOwns } from './north-celder-world.js';
+import { NORTH_CELDER, NORTH_CELDER_TRAILS, NORTH_CELDER_LANDMARKS, northCelderScatterOwns } from './north-celder-world.js';
 import { southCelderWildlifeClear } from './south-celder-wildlife.js';
 import { northCelderWildlifeClear } from './north-celder-wildlife.js';
 
@@ -51,7 +51,7 @@ import { northCelderWildlifeClear } from './north-celder-wildlife.js';
 const TAU = Math.PI * 2;
 const COUNTRIES = Object.freeze({
   [SOUTH_CELDER]: Object.freeze({ name: SOUTH_CELDER, key: 'south-celder', seed: 6107331, owns: southCelderOwns }),
-  [NORTH_CELDER]: Object.freeze({ name: NORTH_CELDER, key: 'north-celder', seed: 6209157, owns: northCelderOwns }),
+  [NORTH_CELDER]: Object.freeze({ name: NORTH_CELDER, key: 'north-celder', seed: 6209157, owns: northCelderScatterOwns }),
 });
 const smooth = (a, b, x) => { const v = Math.max(0, Math.min(1, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
 const segmentDistance = (x, z, a, b) => {

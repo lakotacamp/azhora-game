@@ -564,7 +564,8 @@ test('nobody lives here yet: no people, one made place - the city at the meeting
   // roads are the city's own streets, which stop at the plain's edge of their approaches.
   const insideBox = item => item.x > MITHALA_BOX.minX && item.x < MITHALA_BOX.maxX
     && item.z > MITHALA_BOX.minZ && item.z < MITHALA_BOX.maxZ && own(item.x, item.z);
-  const onCity = item => mithalaCityReserved(item.x, item.z);
+  // The city's barges are moored on the water off its quay, a metre or two outside the reserved ground: they are the city's.
+  const onCity = item => mithalaCityReserved(item.x, item.z) || item.kind === 'mithala-barge';
   const kinds = new Set(world.colliders.filter(collider => insideBox(collider) && !onCity(collider)).map(collider => collider.kind));
   assert.deepEqual([...kinds].sort(), ['mithala-tree', 'west-deep-water'], `the plain off the city carries ${[...kinds].join(', ')}`);
   const city = world.colliders.filter(collider => insideBox(collider) && onCity(collider));

@@ -314,10 +314,17 @@ export function groundBeforeEastIzol(x, z) {
 export function legacyEastIzolGroundHeight(x, z) {
   return eastIzolGround(x, z, groundBeforeEastIzol(x, z), groundBeforeEastIzol, true);
 }
-/** Delivered Celder eligibility, with the current neighboring ground unchanged. */
+/** Delivered Celder eligibility, with the current neighboring ground unchanged. Henborth was registered after the
+ * Celders' composition was reviewed, and North Celder's border seam reads whatever ground is beside it, so the
+ * eligibility is measured with Henborth's layer left out: the composition stays the one delivered, while the trees
+ * still stand on the live ground (`legacyCelderWorldGround` in src/world.js). */
 export function legacyCelderGroundHeight(x, z) {
-  if (!celderOwns(x, z)) return groundWithRiver(x, z);
-  return legacyCelderLand(x, z, groundBeforeCelder(x, z), groundBeforeCelder);
+  const outer = henborthLeftOut;
+  henborthLeftOut = true;
+  try {
+    if (!celderOwns(x, z)) return groundWithRiver(x, z);
+    return legacyCelderLand(x, z, groundBeforeCelder(x, z), groundBeforeCelder);
+  } finally { henborthLeftOut = outer; }
 }
 // Alezhor lays its ground outermost (src/alezhor-world.js), on its own land only - its hexes and its own shore past
 // them, and its two river mouths cut through the shared shore below the waterline; `groundBeforeAlezhor` answers the
@@ -339,6 +346,17 @@ export function groundBeforeSouthIbenal(x, z) {
 // North Ibenal lays its ground outermost (src/north-ibenal-world.js), on its own hexes only; `groundBeforeNorthIbenal`
 // answers the ground without it, for measuring its border seams.
 let northIbenalLeftOut = false;
+/**
+ * Read the ground with both Ibenals' layers left out: the ground Alezhor's composition was reviewed and approved on
+ * (docs/region-briefs/south-ibenal-environment.md, item 6). The Ibenals keep `outland`'s profile, so with their layers
+ * out their hexes are exactly the unbuilt ground Alezhor's border fringe was planted on.
+ */
+export function withoutIbenalLayers(read) {
+  const south = southIbenalLeftOut, north = northIbenalLeftOut;
+  southIbenalLeftOut = northIbenalLeftOut = true;
+  try { return read(); } finally { southIbenalLeftOut = south; northIbenalLeftOut = north; }
+}
+
 const northIbenalLayer = (x, z, ground) => (northIbenalLeftOut ? ground : northIbenalGround(x, z, ground, groundBeforeNorthIbenal));
 export function groundBeforeNorthIbenal(x, z) {
   northIbenalLeftOut = true;

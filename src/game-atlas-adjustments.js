@@ -20,6 +20,18 @@ export const MITHALA_CITY_TRADES = Object.freeze([
   Object.freeze({ q: 6, r: 88, from: 'East Mithala', to: 'North Mithala' }),
 ]);
 
+/**
+ * A region's cells as they were before `mithala-city-quarters-v1`, in the survey's own order (by row, then column):
+ * for anything whose reviewed composition walked the old lists (the Mithala plain's sapling pass, which draws from one
+ * seeded stream across East and then North Mithala). `cellsOf(name)` gives today's list for a region.
+ */
+export function cellsBeforeMithalaTrade(name, cellsOf) {
+  const now = cellsOf(name) ?? [], gone = MITHALA_CITY_TRADES.filter(t => t.to === name), back = MITHALA_CITY_TRADES.filter(t => t.from === name);
+  const kept = now.filter(c => !gone.some(t => t.q === c.q && t.r === c.r));
+  const returned = back.map(t => (cellsOf(t.to) ?? []).find(c => c.q === t.q && c.r === t.r)).filter(Boolean);
+  return [...kept, ...returned].sort((a, b) => a.r - b.r || a.q - b.q);
+}
+
 export function applyGameAtlasAdjustments(source) {
   const bank = source?.hexes?.['15,105'];
   if (!bank || !['Pueth', 'Drent'].includes(bank.region))

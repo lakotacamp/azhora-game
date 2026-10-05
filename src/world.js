@@ -7,7 +7,7 @@ import { appendWesternTerrainSamples, preservedTerrainTileRanges, extensionTerra
 import { deferredScenery } from './deferred-scenery.js';
 import { batchStaticScenery } from './static-scenery-batches.js';
 import { REGION_IDS, REGION_CELLS, SURVEY } from './region-world.js';
-import { PUETH_RIVER_PROFILES, puethRiverHalfWidth, TESSEN_DECK_Y } from './world-terrain.js';
+import { PUETH_RIVER_PROFILES, puethRiverHalfWidth, TESSEN_DECK_Y, withoutIbenalLayers } from './world-terrain.js';
 import { TARVEL_BRIDGE } from './amod-world.js';
 import { TARVEL_DECK_Y } from './amod-terraces.js';
 import { LINK_BRIDGE } from './elagos-world.js';
@@ -1731,7 +1731,7 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
   const eastIzol=yield* regionBuild('eastIzol',[REGION_IDS['East Izol']],stage=>createEastIzolScenerySteps({parent:stage,heightAt:groundHeight,candidateHeightAt:(x,z)=>{const legacy=legacyEastIzolGroundHeight(x,z),current=groundWithRiver(x,z);return legacy===current?groundHeight(x,z):legacy+(groundHeight(x,z)-current);},renderedGroundHeight:treeGroundAt,colliders}),{metrics:{}});
   // Alezhor (src/alezhor-scenery.js).
   yield 'Alezhor';
-  const alezhor=yield* regionBuild('alezhor',[REGION_IDS['Alezhor']],stage=>createAlezhorScenerySteps({parent:stage,heightAt:groundHeight,legacyHeightAt:legacyAlezhorBankHeight,renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
+  const alezhor=yield* regionBuild('alezhor',[REGION_IDS['Alezhor']],stage=>createAlezhorScenerySteps({parent:stage,heightAt:groundHeight,legacyHeightAt:(x,z)=>withoutIbenalLayers(()=>legacyAlezhorBankHeight(x,z)),renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
   // South Ibenal (src/south-ibenal-scenery.js).
   yield 'South Ibenal';
   const southIbenal=yield* regionBuild('southIbenal',[REGION_IDS['South Ibenal']],stage=>createSouthIbenalScenerySteps({parent:stage,heightAt:groundHeight,renderedGroundHeight:forestRenderedGround,colliders}),{metrics:{}});
@@ -2667,6 +2667,10 @@ function* createWorldSteps(scene, { spatialBatches = true, cachedTerrain=null, o
  * draws a random number.
  */
 function clearMithalaPlainScatter({ scene, colliders, treeRegistry, inside }) {
+  // Each instance lifted is recorded on its mesh (`userData.liftedByMithalaCity`, index and original matrix), so the
+  // plain's review can put them back and prove the rest is exactly the composition it approved.
+  const before = [];
+  scene.traverse(object => { if (object.name === 'Mithala scenery') object.traverse(mesh => { if (mesh.isInstancedMesh) before.push([mesh, mesh.instanceMatrix.array.slice()]); }); });
   const lifted = clearScatter({ scene, colliders, treeRegistry, inside, kinds: ['mithala-tree'] });
   const matrix = new THREE.Matrix4(), nothing = new THREE.Matrix4().makeScale(0, 0, 0);
   const clusterOf = mesh => (mesh.name.endsWith(' crowns') || mesh.name === 'Mithala prairie forbs' ? 3 : 1);
@@ -2687,6 +2691,14 @@ function clearMithalaPlainScatter({ scene, colliders, treeRegistry, inside }) {
     }
     if (changed) mesh.instanceMatrix.needsUpdate = true;
   });
+  for (const [mesh, original] of before) {
+    const now = mesh.instanceMatrix.array, record = [];
+    for (let i = 0; i < mesh.count; i++) {
+      const o = i * 16;
+      for (let k = 0; k < 16; k++) if (now[o + k] !== original[o + k]) { record.push([i, Array.from(original.subarray(o, o + 16))]); break; }
+    }
+    if (record.length) mesh.userData.liftedByMithalaCity = [...(mesh.userData.liftedByMithalaCity ?? []), ...record];
+  }
   return lifted;
 }
 

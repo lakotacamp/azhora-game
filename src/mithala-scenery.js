@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { registerWorldTree, worldTreeId } from './tree-registry.js';
 import { treeGroundingOffset } from './tree-grounding.js';
 import { hexOwnerAt, REGION_CELLS, relief } from './region-world.js';
+// The sapling pass walks East and North Mithala as they were reviewed, before the city's hex trade (docs/mithala-city-brief.md).
+import { cellsBeforeMithalaTrade } from './game-atlas-adjustments.js';
 import { WORLD_SCALE } from './world-scale.js';
 import { MITHALA_RIVERS, MITHALA_MAIN, WEST_BRAIDS, westBareGround } from './west-regions.js';
 import { WEST_PROFILES, westWaterSurface, braidThreadOffset } from './west-ground.js';
@@ -309,7 +311,7 @@ export function* createMithalaScenerySteps(kit) {
    */
   const saplings = [];
   const FOREST = { fromX: -1700, toX: -1000, fromZ: -1500, toZ: -1950 };
-  for (const name of ['East Mithala', 'North Mithala']) { if (++buildWork % 32 === 0) yield; for (const cell of REGION_CELLS[name] ?? []) { if (++buildWork % 32 === 0) yield;
+  for (const name of ['East Mithala', 'North Mithala']) { if (++buildWork % 32 === 0) yield; for (const cell of cellsBeforeMithalaTrade(name, n => REGION_CELLS[n])) { if (++buildWork % 32 === 0) yield;
     for (let i = 0; i < 90; i++) { if (++buildWork % 32 === 0) yield;
       const x = cell.x + range(-50, 50), z = cell.z + range(-55, 55);
       if (!plantable(x, z, 2)) continue;
