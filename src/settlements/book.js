@@ -4,7 +4,7 @@ const names = { barley: 'Barley', 'cooked-fish': 'Prepared fish', 'pine-logs': '
 
 /** The same book reads an authoring pack or the persistent in-game archive. Text is never HTML. */
 export function createChronicleBook({ root, communities, archive, worldId, onClose = () => {}, onTrack = () => {}, canView = () => true, authoring = false, refreshPage = async () => {} }) {
-  let selected = null, pageIndex = -1, revision = 0, returnFocus;
+  let selected = null, pageIndex = -1, revision = 0, returnFocus, bodyOverflow = '';
   const shell = element('section', undefined, 'settlement-book'); shell.setAttribute('role', 'dialog'); shell.setAttribute('aria-modal', 'true'); shell.setAttribute('aria-label', 'The Feradom Annals'); shell.hidden = true; root.append(shell);
   async function render() {
     const ticket = ++revision, places = communities().filter(canView);
@@ -91,8 +91,8 @@ export function createChronicleBook({ root, communities, archive, worldId, onClo
     choose.value = String(pageIndex); choose.onchange = () => { pageIndex = Number(choose.value); void render(); };
     foot.append(previous, element('span', `Folio ${pageIndex + 1} of ${rows.length} · ${entry.date}`), choose, next); shell.insertBefore(foot, spread);
   }
-  function hide() { shell.hidden = true; revision++; onClose(); returnFocus?.focus?.(); }
-  function open(id) { returnFocus = document.activeElement; selected = id ?? selected; pageIndex = -1; shell.hidden = false; void render().then(() => shell.querySelector('button')?.focus()); }
+  function hide() { if (!shell.hidden) document.body.style.overflow = bodyOverflow; shell.hidden = true; revision++; onClose(); returnFocus?.focus?.(); }
+  function open(id) { if (shell.hidden) { bodyOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; } returnFocus = document.activeElement; selected = id ?? selected; pageIndex = -1; shell.hidden = false; void render().then(() => shell.querySelector('button')?.focus()); }
   shell.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hide(); } if (e.key === 'Tab') { const buttons = [...shell.querySelectorAll('button:not(:disabled),select,[tabindex="0"]')]; const first = buttons[0], last = buttons.at(-1); if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } } });
-  return { open, close: hide, refresh: render, get isOpen() { return !shell.hidden; }, destroy() { revision++; shell.remove(); } };
+  return { open, close: hide, refresh: render, get isOpen() { return !shell.hidden; }, destroy() { if (!shell.hidden) document.body.style.overflow = bodyOverflow; revision++; shell.remove(); } };
 }
