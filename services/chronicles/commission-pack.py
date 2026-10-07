@@ -36,6 +36,9 @@ def main():
             raise RuntimeError('Admission/poll failed; preserved pack is safe to resume: '+str(data.get('statusCode', response.get('FunctionError'))))
         row['generation'] = json.loads(data['body']); save()
     rows = pack['entries'][:args.limit] if args.limit else pack['entries']
+    # Read-only reconciliation can observe an operator-recovered result without a POST.
+    for row in rows:
+        if row['generation']['status'] in ('unknown', 'failed') and row['generation'].get('jobId'): api('GET', row)
     for row in rows:
         if row['generation']['status'] in ('pending', 'budget'): api('POST', row)
     deadline = time.time()+args.wait_minutes*60

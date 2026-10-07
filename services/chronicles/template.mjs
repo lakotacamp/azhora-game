@@ -34,7 +34,7 @@ export const template={
     allow('sqs:SendMessage',arn('Queue')),allow('s3:GetObject',sub('${Artifacts.Arn}/chronicles/*'))])}]}),
   WorkerRole:resource('AWS::IAM::Role',{AssumeRolePolicyDocument:trust,Policies:[{PolicyName:'GenerateClaimedChronicles',PolicyDocument:policy([
     allow(logActions,arn('WorkerLog')),allow(['dynamodb:GetItem','dynamodb:UpdateItem'],arn('Jobs')),
-    allow(['sqs:ReceiveMessage','sqs:DeleteMessage','sqs:GetQueueAttributes'],arn('Queue')),
+    allow(['sqs:ReceiveMessage','sqs:DeleteMessage','sqs:GetQueueAttributes','sqs:SendMessage'],arn('Queue')),
     allow('s3:PutObject',sub('${Artifacts.Arn}/chronicles/*')),
     allow('bedrock:InvokeModel',[sub('arn:${AWS::Partition}:bedrock:us-east-1:${AWS::AccountId}:inference-profile/us.'+model),...['us-east-1','us-east-2','us-west-2'].map(r=>sub('arn:${AWS::Partition}:bedrock:'+r+'::foundation-model/'+model)),sub('arn:${AWS::Partition}:bedrock:us-west-2::foundation-model/stability.stable-image-core-v1:1')])
   ])}]}),

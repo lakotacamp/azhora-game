@@ -331,7 +331,8 @@
                   "Action": [
                     "sqs:ReceiveMessage",
                     "sqs:DeleteMessage",
-                    "sqs:GetQueueAttributes"
+                    "sqs:GetQueueAttributes",
+                    "sqs:SendMessage"
                   ],
                   "Resource": {
                     "Fn::GetAtt": [

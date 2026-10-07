@@ -15,6 +15,8 @@ test('Reopening a completed illustration refreshes its private URL without a new
  await archive.update(entry.id,{status:'ready',jobId:'old-job',prose:'A preserved account of the common stores.',imageUrl:'https://old.example/image',imageExpiresAt:0});
  const requests=[],client=createGenerationClient({archive,baseUrl:'https://press.example',getToken:()=> 'token',fetcher:async(url,options)=>{requests.push({url,method:options.method});return {ok:true,json:async()=>({status:'ready',jobId:'old-job',prose:'A preserved account of the common stores.',imageUrl:'https://new.example/image',imageExpiresAt:Date.now()+3000000})};}});
  const row=await client.refresh(entry.id);assert.equal(row.generation.imageUrl,'https://new.example/image');assert.equal(requests.length,1);assert.equal(requests[0].method,undefined);assert.match(requests[0].url,/old-job$/);
+ await archive.update(entry.id,{status:'ready',prose:row.generation.prose,imageUrl:'https://public.example/permanent.png'});
+ assert.equal((await client.refresh(entry.id)).generation.imageUrl,'https://public.example/permanent.png');assert.equal(requests.length,1);
 });
 test('Authentication stores only short-lived session tokens and signs out locally',async()=>{
  const data=new Map(),storage={getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};

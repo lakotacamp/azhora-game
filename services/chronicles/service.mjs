@@ -55,7 +55,7 @@ export function createChronicleService({ store, queue, writer, illustrator, obje
           await store.patch(pk, { status: 'queued', updatedAt: now().getTime() }); existing.status = 'queued';
         }
       }
-      if (existing.status === 'queued') await queue.send(pk); // recover admission followed by a failed queue send
+      if (existing.status === 'queued') await queue.send(pk, Math.max(0, Math.min(900, Math.ceil(((existing.notBefore ?? 0) - now().getTime()) / 1000)))); // recover an interrupted queue send
       return response(200, await publicJob(existing));
     }
     if (!enabled()) return response(200, { status: 'budget', jobId: pk });
@@ -81,12 +81,18 @@ export function createChronicleService({ store, queue, writer, illustrator, obje
       if (job.month !== month || new Date(now().getTime() + 240000).toISOString().slice(0, 7) !== month) {
         await store.patch(id, { status: 'budget', stage: 'awaiting-month', updatedAt: now().getTime() }); return;
       }
-      const prompt = writerPrompt(job.entry);
-      stage = 'text-requested'; await store.patch(id, { stage, updatedAt: now().getTime() });
-      const narrative = await writer.generate(prompt);
-      stage = 'text-returned';
-      if (!validateNarrative(narrative, job.entry)) throw new Error('Narrative response did not validate.');
-      await store.patch(id, { prose: narrative.prose, scene: narrative.scene, stage, updatedAt: now().getTime() });
+      let narrative;
+      if (job.resumeImage && job.prose && job.scene) {
+        // Only a confirmed rejected image request may resume here. Never rewrite paid prose.
+        narrative = job.narrative ?? { prose: job.prose, scene: job.scene, eventIds: [], recoveredLegacyNarrative: true };
+      } else {
+        const prompt = writerPrompt(job.entry);
+        stage = 'text-requested'; await store.patch(id, { stage, updatedAt: now().getTime() });
+        narrative = await writer.generate(prompt);
+        stage = 'text-returned';
+        if (!validateNarrative(narrative, job.entry)) throw new Error('Narrative response did not validate.');
+        await store.patch(id, { prose: narrative.prose, scene: narrative.scene, narrative, stage, updatedAt: now().getTime() });
+      }
       stage = 'image-requested'; await store.patch(id, { stage, updatedAt: now().getTime() });
       const png = await illustrator.generate(woodcutPrompt(job.entry, narrative.scene), parseInt(id.slice(0, 8), 16));
       stage = 'image-returned';
@@ -97,10 +103,20 @@ export function createChronicleService({ store, queue, writer, illustrator, obje
       await store.patch(id, { status: 'ready', stage: 'complete', imageKey, updatedAt: now().getTime() });
       log({ event: 'ChronicleReady', id, milliseconds: now().getTime() - job.createdAt });
     } catch (error) {
+      // Bedrock explicitly denies a ThrottlingException (HTTP 429) before inference.
+      // Delay only this confirmed rejection; a timeout/5xx/unknown response never retries.
+      if (['text-requested', 'image-requested'].includes(stage) && error.name === 'ThrottlingException' && error.$metadata?.httpStatusCode === 429) {
+        const throttles = (job.throttles ?? 0) + 1;
+        const delay = Math.min(900, 60 * 2 ** (throttles - 1) + parseInt(id.slice(-2), 16) % 31);
+        await store.patch(id, { status: throttles <= 6 ? 'queued' : 'failed', stage: 'throttled', resumeImage: stage === 'image-requested', throttles, notBefore: now().getTime() + delay * 1000, updatedAt: now().getTime() });
+        log({ event: 'InvocationRejected', id, stage, error: error.name, httpStatus: 429, throttles });
+        if (throttles <= 6) await queue.send(id, delay);
+        return;
+      }
       // A provider timeout can already be billed. Redelivery must not invoke it again.
-      const uncertain = ['text-requested', 'image-requested'].includes(stage);
+      const uncertain = ['text-requested', 'image-requested'].includes(stage) && !error.modelReturned;
       await store.patch(id, { status: uncertain ? 'unknown' : 'failed', stage, updatedAt: now().getTime() });
-      log({ event: uncertain ? 'InvocationUnknown' : 'ChronicleFailed', id, stage, error: error.name });
+      log({ event: uncertain ? 'InvocationUnknown' : 'ChronicleFailed', id, stage, error: error.name, httpStatus: error.$metadata?.httpStatusCode });
     }
   }
   return { api, run };

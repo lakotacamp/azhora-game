@@ -28,7 +28,7 @@ export function createGenerationClient({ archive, baseUrl, getToken = () => '', 
   }
   async function refresh(id) {
     const row = await archive.get(id);
-    if (row?.generation.status !== 'ready' || (row.generation.imageExpiresAt ?? 0) > now() + 30000) return row;
+    if (!row?.generation.jobId || !['ready', 'unknown', 'failed'].includes(row.generation.status) || (row.generation.status === 'ready' && (row.generation.imageExpiresAt ?? 0) > now() + 30000)) return row;
     try { await archive.update(id, await request('/v1/chronicles/' + encodeURIComponent(row.generation.jobId))); return archive.get(id); }
     catch { return row; }
   }

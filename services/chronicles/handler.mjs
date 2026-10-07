@@ -35,7 +35,7 @@ const store = {
     } catch(e) {if(e.name==='TransactionCanceledException'&&e.CancellationReasons?.some(r=>r.Code==='ConditionalCheckFailed'))return false;throw e;}
   },
   async claim(pk, time) {
-    try { return (await db.send(new UpdateCommand({ TableName: table, Key: { pk }, UpdateExpression: 'SET #status = :working, updatedAt = :time', ConditionExpression: '#status = :queued', ExpressionAttributeNames: { '#status': 'status' }, ExpressionAttributeValues: { ':working': 'working', ':queued': 'queued', ':time': time }, ReturnValues: 'ALL_NEW' }))).Attributes; }
+    try { return (await db.send(new UpdateCommand({ TableName: table, Key: { pk }, UpdateExpression: 'SET #status = :working, updatedAt = :time', ConditionExpression: '#status = :queued AND (attribute_not_exists(notBefore) OR notBefore <= :time)', ExpressionAttributeNames: { '#status': 'status' }, ExpressionAttributeValues: { ':working': 'working', ':queued': 'queued', ':time': time }, ReturnValues: 'ALL_NEW' }))).Attributes; }
     catch (e) { if (e.name === 'ConditionalCheckFailedException') return null; throw e; }
   },
   async patch(pk, fields) {
@@ -44,7 +44,7 @@ const store = {
   },
 };
 const service = createChronicleService({ store, enabled: () => process.env.GENERATION_ENABLED === 'true',
-  queue: { send: id => sqs.send(new SendMessageCommand({ QueueUrl: process.env.QUEUE_URL, MessageBody: JSON.stringify({ id }) })) },
+  queue: { send: (id, delay = 0) => sqs.send(new SendMessageCommand({ QueueUrl: process.env.QUEUE_URL, MessageBody: JSON.stringify({ id }), DelaySeconds: delay })) },
   objects: {
     put: (key, body, type = 'image/png') => s3.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: type, ServerSideEncryption: 'AES256' })),
     url: key => getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: 3600 }),
@@ -52,7 +52,8 @@ const service = createChronicleService({ store, enabled: () => process.env.GENER
   writer: { async generate(prompt) {
     const result = await textModel.send(new ConverseCommand({ modelId: process.env.TEXT_MODEL ?? 'us.anthropic.claude-haiku-4-5-20251001-v1:0', messages: [{ role: 'user', content: [{ text: prompt }] }], inferenceConfig: { maxTokens: 1000, temperature: .65 } }));
     const text = result.output?.message?.content?.filter(c => c.text).map(c => c.text).join('') ?? '';
-    return JSON.parse(text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, ''));
+    try { return JSON.parse(text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '')); }
+    catch (error) { error.modelReturned = true; throw error; }
   } },
   illustrator: { async generate(prompt, seed) {
     const result = await imageModel.send(new InvokeModelCommand({ modelId: 'stability.stable-image-core-v1:1', contentType: 'application/json', accept: 'application/json', body: JSON.stringify({ prompt, seed, aspect_ratio: '3:2', output_format: 'png', negative_prompt: 'text, lettering, writing, inscriptions, typography, captions, signatures, watermarks, hats, caps, hoods, headwear, modern clothing, photographs' }) }));
