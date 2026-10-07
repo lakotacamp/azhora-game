@@ -83,13 +83,13 @@ export function createChronicleBook({ root, communities, archive, worldId, onClo
     if (!entry.customs.length) right.append(element('p', 'The old ways of Feradom hold. No new local custom has yet been recorded.'));
     for (const c of entry.customs) { right.append(element('h4', c.name), element('p', c.rule), button(`Trace ${c.causes.length} founding occasions`, () => { void recall(c.causes, c.name + ' · origins'); })); }
     spread.append(left, right); shell.append(spread);
-    const foot = element('footer', undefined, 'annals-pagination');
+    const foot = element('nav', undefined, 'annals-pagination'); foot.setAttribute('aria-label', 'Account pages');
     const previous = button('← Earlier account', () => { pageIndex--; void render(); }); previous.disabled = pageIndex <= 0;
     const next = button('Later account →', () => { pageIndex++; void render(); }); next.disabled = pageIndex >= rows.length - 1;
     const choose = element('select'); choose.setAttribute('aria-label', 'Choose a dated account');
     for (const [i, row] of rows.entries()) { const option = element('option', `${i + 1}. ${new Date(Date.UTC(980, 3, 1) + row.day * 86400000).toISOString().slice(0, 10)}${row.kind === 'opening' ? ' · opening' : ''}`); option.value = String(i); choose.append(option); }
     choose.value = String(pageIndex); choose.onchange = () => { pageIndex = Number(choose.value); void render(); };
-    foot.append(previous, element('span', `Folio ${pageIndex + 1} of ${rows.length} · ${entry.date}`), choose, next); shell.append(foot);
+    foot.append(previous, element('span', `Folio ${pageIndex + 1} of ${rows.length} · ${entry.date}`), choose, next); shell.insertBefore(foot, spread);
   }
   function hide() { shell.hidden = true; revision++; onClose(); returnFocus?.focus?.(); }
   function open(id) { returnFocus = document.activeElement; selected = id ?? selected; pageIndex = -1; shell.hidden = false; void render().then(() => shell.querySelector('button')?.focus()); }

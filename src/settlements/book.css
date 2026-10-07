@@ -3,3 +3,4 @@
 .annals-heading button{color:#38291d}
 
 .annals-pagination select{font:inherit;max-width:220px;background:#ead8ae;color:#3c2b1e;border:1px solid #ad8b52;padding:8px}.annals-pagination select:focus-visible{outline:3px solid #ae692e;outline-offset:3px}
+.annals-pagination{position:sticky;top:0;z-index:3;margin:18px auto 20px;padding:10px 0;background:#291f19}

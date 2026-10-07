@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -23,7 +23,9 @@ export async function generatePack({ region = 'Feradom', seed = 980, days = 30, 
 }
 export async function writePack(pack, destination) {
   await mkdir(destination, { recursive: true });
-  await writeFile(path.join(destination, 'settlement-pack.json'), JSON.stringify(pack, null, 2));
+  const checkpoint = path.join(destination, 'settlement-pack.json');
+  await writeFile(checkpoint + '.tmp', JSON.stringify(pack, null, 2));
+  await rename(checkpoint + '.tmp', checkpoint);
   const css = await readFile(new URL('../src/settlements/book.css', import.meta.url), 'utf8');
   const source = (await readFile(new URL('../src/settlements/book.js', import.meta.url), 'utf8')).replace('export function createChronicleBook', 'function createChronicleBook');
   const json = JSON.stringify(pack).replaceAll('<', '\\u003c');
@@ -47,8 +49,15 @@ async function main() {
   if (args.includes('--generate')) {
     const endpoint = process.env.AZHORA_CHRONICLES_URL, token = process.env.AZHORA_CHRONICLES_TOKEN;
     if (!/^https:\/\//.test(endpoint ?? '') || !token) throw new Error('Set AZHORA_CHRONICLES_URL and a collaborator access token before paid generation.');
+    // Stay below the service's two HTTP requests/second, including large authoring packs.
+    let nextRequest = 0;
+    const pressFetch = async (url, options) => {
+      await new Promise(resolve => setTimeout(resolve, Math.max(0, nextRequest - Date.now())));
+      nextRequest = Date.now() + 650;
+      return fetch(url, options);
+    };
     for (const row of pack.entries) {
-      const response = await fetch(endpoint.replace(/\/$/, '') + '/v1/chronicles', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ entry: row.entry, shareWithCollaborators: true }), signal: AbortSignal.timeout(20000) });
+      const response = await pressFetch(endpoint.replace(/\/$/, '') + '/v1/chronicles', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ entry: row.entry, shareWithCollaborators: true }), signal: AbortSignal.timeout(20000) });
       if (!response.ok) throw new Error(`Generation admission failed (${response.status}); rerun with the same world ID to resume safely.`);
       row.generation = await response.json();
       await writePack(pack, out);
@@ -58,7 +67,7 @@ async function main() {
     while (Date.now() < deadline && pack.entries.some(r => ['queued', 'working'].includes(r.generation.status))) {
       await new Promise(resolve => setTimeout(resolve, 5000));
       for (const row of pack.entries.filter(r => ['queued', 'working'].includes(r.generation.status))) {
-        const response = await fetch(endpoint.replace(/\/$/, '') + '/v1/chronicles/' + row.generation.jobId, {headers:{authorization:`Bearer ${token}`},signal:AbortSignal.timeout(20000)});
+        const response = await pressFetch(endpoint.replace(/\/$/, '') + '/v1/chronicles/' + row.generation.jobId, {headers:{authorization:`Bearer ${token}`},signal:AbortSignal.timeout(20000)});
         if (!response.ok) throw new Error(`Press polling failed (${response.status}); use --resume --generate.`);
         row.generation = await response.json();
       }
