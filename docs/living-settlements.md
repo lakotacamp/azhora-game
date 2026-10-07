@@ -1,5 +1,19 @@
 # Hearthfall × Azhora: living settlements
 
+## Show the demonstration
+
+[Open the Feradom Annals](https://d1ka8cpbx2rxkb.cloudfront.net/azhora-demo/index.html). This public, read-only volume contains a reproducible thirty-day scenario with three communities, thirty-six residents, and ninety-three separately generated diary/woodcut pairs. Browsing makes no model calls and needs no login.
+
+For a short demonstration:
+
+1. Open the illustrated annals and select a community.
+2. Choose an early dated account, then a later one. The stores, people, prose and illustration belong to that date.
+3. Select a household to inspect its residents, relationships, trust and remembered events.
+4. Trace the Common Reserve's founding occasions to see how actual assistance produced a local custom.
+5. Download the settlement pack from the page footer and import it through the game's F8 pilot controls to continue its simulation.
+
+The traveler in this saved scenario is scripted, starts with a finite inventory, and uses the same delivery, repair and message transactions as a player. Community work and consequences come from the deterministic engine. This is a proposed integration for Crombie's review, not a merged or approved expansion of world canon.
+
 ## Run the pilot
 
 ```sh
@@ -70,7 +84,7 @@ The authoring command saves facts before submitting jobs and checkpoints generat
 
 The antique book displays the selected day's resource figures, residents, memories, relationships and customs. Select a measure for its opening/closing comparison, or a household for the people recorded on that date. Browsing history does not advance time. Pending pages display recorded facts and an explicitly unfinished illustration, never pretend generated prose or a reused woodcut.
 
-The optional `settlements` checkpoint section stays compact. Older version-1 road saves still load. Immutable pages live separately in IndexedDB on the web or in the Electron user's `settlement-chronicles` directory, outside the served repository. The restricted IPC accepts only put/get/list/update operations and hashes record IDs into filenames. Image bytes never enter the checkpoint.
+The optional `settlements` checkpoint section stays compact. Older version-1 road saves still load. Immutable pages live separately in IndexedDB on the web or in the Electron user's `settlement-chronicles` directory, outside the served repository. The restricted IPC accepts only put/get/list/update operations and hashes record IDs into filenames. Image bytes never enter the checkpoint. Listing reads compact metadata: IndexedDB migrates existing archives transactionally to an indexed catalog, and the desktop store rehydrates its catalog once with bounded file reads.
 
 Published history cannot be overwritten. Loading an earlier checkpoint creates a new edition if a later daily account already exists. Parent-edition references keep earlier pages and existing generated assets readable; future events continue independently. Original histories remain in the archive.
 
@@ -79,6 +93,16 @@ Published history cannot be overwritten. Loading an earlier checkpoint creates a
 See [the press operations guide](../services/chronicles/README.md). Simulation facts determine all state. Haiku writes a first-person account from bounded facts and canonical lore, and must return cited event IDs and a scene description. The scene is validated before Stable Image Core creates a new woodcut. Images and prose are saved privately, then the page becomes ready. Reopening a page refreshes an expired signed URL without another model call.
 
 Output validation checks structure, lengths and references; it cannot prove every prose sentence is free of model invention. Generated text cannot alter game state. Review authored packs before treating their prose as approved lore.
+
+### AWS activation record
+
+Activated with account-owner approval on 2026-10-06 in `us-east-1`: stack `azhora-chronicles`, initially created from reviewed change set `press-1791340631` (`e889d14d-b301-4662-a160-76708f1b905f`). CloudFormation created the 25 resources and subsequent updates deployed the generation and rate-limit recovery code. The checked-in public configuration points to the active service. Release bundles and original artifacts remain private.
+
+Both model agreements and authorization checks are available. The inspected US Haiku inference profile routes to `us-east-1`, `us-east-2`, and `us-west-2`; the worker role lists those exact model ARNs. This account's Lambda concurrency quota is ten, so the queue limits processing to two concurrent workers without reserving capacity that the account cannot allocate.
+
+Live prose and woodcuts were commissioned from the signed-in AWS operator session through the same Lambda admission, DynamoDB reservation and SQS worker path. The unsigned HTTP API correctly returns 401. Cognito collaborator accounts have not been created; a successful end-to-end collaborator login is still unverified. Crombie can review the public book and import its saved assets without credentials. New in-game generations require an invited account.
+
+The thirty-day volume reserves $7.44 for ninety-three pages, plus an eight-cent initial trial reservation. Reservations are not actual billed totals. Explicit Bedrock image rate rejections exposed by the volume run are recovered with delayed retries and preserved prose. Unknown billing outcomes never retry automatically. The public export contains permanent copies of completed assets and no tokens or signed private URLs.
 
 ## Provenance and lore decisions
 
@@ -101,6 +125,6 @@ npm run test:settlements
 npm run test:settlement-game
 ```
 
-New Node tests are listed in the explicit manifest. The Electron smoke exercises actual Feradom loading, all three sites and resident approaches, Azhora dialogue, chart fog, resource controls, the household map, identities, paused time, unvisited daily advancement and published-history rewinds.
+New Node tests are listed in the explicit manifest. The Electron smoke exercises actual Feradom loading, all three sites and resident approaches, Azhora dialogue, chart fog, resource controls, the household map, identities, paused time, unvisited daily advancement, full road-checkpoint validation/restoration and published-history rewinds. The isolated browser harness at `tests/settlement-web.html` tests schema migration and a real page reload without touching the player's archive.
 
 On 2026-10-06, the affected existing suite passed **133 tests in seven files** both here and in an untouched checkout of the pinned Azhora revision: inventory, road checkpoints, save round trips, living story, living-story host, campaign and Feradom world. A broader baseline was sampled through the beginning of batch 39/470 and reproduced existing terrain/scenery failures; it was stopped to prioritize the directly affected checks. This is not a claim that the full repository suite passes. See [known failures](known-failing.md).

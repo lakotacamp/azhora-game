@@ -6,7 +6,7 @@ This service is independent of Hearthfall's existing deployment. It accepts fict
 
 - HTTP API Gateway validates Cognito JWTs. Self-registration is disabled; the user-pool client has no secret.
 - The API Lambda validates facts, atomically reserves spending in DynamoDB, saves a job, and sends its ID to SQS. It has no Bedrock permission.
-- Two concurrent worker Lambdas claim queued jobs exactly once. Their role can invoke only the chosen Haiku inference profile and Stable Image Core model, update this job table, and write this private bucket.
+- The queue permits at most two concurrent worker invocations, which claim queued jobs exactly once. Their role can invoke only the chosen Haiku inference profile and Stable Image Core model, update this job table, and write this private bucket. No reserved Lambda capacity is required.
 - SQS has a dead-letter queue; database state and S3 artifacts are encrypted and retained on stack deletion.
 - CloudWatch records completion, failure, unknown billing outcomes and queue delay. Logs expire after fourteen days.
 
@@ -17,6 +17,8 @@ On 2026-10-06, AWS's actual agreement offer rate cards reported US standard Haik
 API Gateway, Lambda, Cognito, SQS, DynamoDB/PITR, S3 and CloudWatch are metered separately. The model gate does not cap infrastructure charges or other activity in the AWS account. There is no provisioned model throughput or always-on server.
 
 Jobs waiting across month boundaries pause and require a reservation in the month in which they will actually invoke. No new job starts within four minutes of month end. Model SDK retries are disabled. Duplicate queue deliveries cannot claim an already working job. Provider timeouts and interrupted invocations become `unknown`, preserving their reservations; they are never automatically re-invoked.
+
+An explicit Bedrock `ThrottlingException` with HTTP 429 is a rejected request, according to the [InvokeModel error contract](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_InvokeModel.html). Only this case uses delayed exponential backoff with jitter, bounded to six retries. A rejected image resumes from saved prose; it does not invoke the writer again. The original reservation remains. Conditional claims enforce the saved retry time even when duplicate messages arrive early.
 
 ## Build and prepare deployment
 
@@ -58,9 +60,22 @@ Application state remains authoritative. Prose and scene validation enforces bou
 - A worker timeout leaves a working/unknown job; redelivery does not repeat billed work.
 - If both artifacts reached S3 but the final database update failed, `reconcile.py --table … --bucket … --job …` restores ready status from those saved artifacts without invoking a model.
 - If a result is missing and billing is uncertain, investigate provider usage before authorizing a new invocation. Failed or unknown jobs do not automatically spend again.
+- Legacy jobs classified as unknown before explicit throttle handling can be reviewed with `reconcile-throttles.py --pack …`. Its `--execute` option permits only operator-owned image requests with a matching CloudWatch `ThrottlingException`, saved prose, and a current-month reservation. It records the log-event evidence and never recovers a timeout or unlogged outcome.
 - Monitor the unknown-invocation alarm, queue-age alarm, DLQ, Lambda errors and structured logs. Alarms have no messaging destinations configured.
 - Removing the stack retains completed histories and job/budget records. The release bucket is also retained. Cleanup is an explicit account-owner action.
 
 ## Release status
 
-The branch supplies the service, tests, IAM template, release builder and deployment tooling. See the deployment record alongside the integration documentation for the actual account activation status; the checked-in empty configuration means live generation is not connected.
+The AWS service is deployed and enabled. See the [AWS activation record](../../docs/living-settlements.md#aws-activation-record) for account status and verification limits. The checked-in configuration contains the live public endpoint and client ID; it contains no credentials. Collaborator accounts remain to be provisioned after review.
+
+## Operator authoring and public export
+
+An account owner already signed into CloudShell can commission a pack without creating demo credentials:
+
+```sh
+node scripts/generate-settlement-demo.mjs
+python services/chronicles/commission-pack.py --pack tests/artifacts/demo-pack/settlement-pack.json --wait-minutes 30 --export tests/artifacts/public-demo --asset-base https://d1ka8cpbx2rxkb.cloudfront.net/azhora-demo/
+node scripts/build-settlement-demo.mjs
+```
+
+Run the generator only once for a new edition; resume commissioning against the saved pack. The operator utility uses IAM-authorized Lambda Invoke and a caller-derived identity. It does not bypass HTTP authentication or expose an unsigned API. Export requires all ninety-three pages to be ready and owned by the operator, copies the preserved images, and strips private job references and expiring URLs. Publish only the exported directory to the designated demo prefix. Public readers cannot submit generation work.
