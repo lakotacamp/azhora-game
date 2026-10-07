@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><title>Settlement browser archive acceptance</title>
+<h1>Browser archive acceptance</h1><button id="run">Run archive and reload checks</button><pre id="result">Ready.</pre>
+<script type="module">
+import {createChronicleArchive,flushChronicles} from '../src/settlements/archive.js';
+import {createSettlementWorld} from '../src/settlements/engine.js';
+const database='azhora-settlement-acceptance-only',archive=createChronicleArchive({bridge:null,indexedDB:{open:(_,version)=>indexedDB.open(database,version)}});
+const result=document.querySelector('#result'),key='settlement-acceptance-reload';
+document.querySelector('#run').onclick=async()=>{
+ try {
+  const core=createSettlementWorld({worldId:'browser-acceptance'});
+  await flushChronicles(core,archive);
+  sessionStorage.setItem(key,JSON.stringify(core.snapshot()));
+  location.reload();
+ } catch(e){result.textContent='FAIL: '+e.stack;}
+};
+if(sessionStorage.getItem(key)){
+ try{
+  const core=createSettlementWorld({saved:JSON.parse(sessionStorage.getItem(key))});
+  const rows=await archive.list(core.worldId);
+  if(rows.length!==3)throw Error('Reload lost a community record.');
+  const page=await archive.get(rows[0].id);
+  if(page.entry.residents.length!==12)throw Error('Reload lost residents.');
+  await archive.put(page.entry);
+  if((await archive.list(core.worldId)).length!==3)throw Error('Duplicate facts created another page.');
+  let rejected=false;try{await archive.update(page.id,{status:'ready',prose:'incomplete'});}catch{rejected=true;}
+  if(!rejected)throw Error('An incomplete generated page became ready.');
+  result.textContent='PASS: 4 IndexedDB checks, including a real page reload. Three immutable pages and all residents survived.';
+  sessionStorage.removeItem(key);
+ }catch(e){result.textContent='FAIL: '+e.stack;}
+}
+</script>
