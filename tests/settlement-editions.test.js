@@ -17,6 +17,8 @@ test('A restored past branches future days without replacing published history',
 });
 test('An authoring pack imports into independent saves and preserves its existing illustrations',async()=>{
  const archive=createMemoryArchive(),pack=await generatePack({days:2});
+ const subset=await generatePack({days:2,sites:['feradom-fishers']});
+ assert.notEqual(subset.snapshot.worldId,pack.snapshot.worldId);
  const a=await importPack(pack,archive,'save-a'),b=await importPack(pack,archive,'save-b');
  assert.notEqual(a.worldId,b.worldId);assert.equal(a.parents[0].worldId,pack.snapshot.worldId);
  assert.equal((await inheritedArchive(archive,()=>a).list('save-a','feradom-fishers')).length,3);

@@ -65,12 +65,15 @@ export function createChronicleBook({ root, communities, archive, worldId, onClo
     }
     const houses = [...new Set(entry.residents.map(r => r.household))];
     for (let i = 0; i < houses.length; i++) {
-      const x = 48 + i * 82, y = i % 2 ? 130 : 22;
+      const x = i % 2 ? 274 : 60, y = i < 2 ? 22 : 130;
       const g = svgNode('g', { tabindex: '0', role: 'button', 'aria-label': `Read household ${i + 1}` });
       g.append(svgNode('rect', { x, y, width: 26, height: 21, fill: '#bb965c', stroke: '#61442c' }), svgNode('path', { d: `M${x - 3} ${y}l16 -12l16 12`, fill: 'none', stroke: '#61442c', 'stroke-width': 3 }));
       const selectHouse = () => {
         residentCard.replaceChildren();
-        for (const r of entry.residents.filter(r => r.household === houses[i])) residentCard.append(element('h4', r.name), element('p', `${r.occupation} · ${r.present ? 'at home' : 'away with kin'} · health ${r.health}`), element('p', `“${r.motive}.” Trust in the traveler: ${r.trustPlayer}. ${r.memories.length} remembered events.`), button('Read remembered events', () => { void recall(r.memories, r.name + ' remembers'); }));
+        for (const r of entry.residents.filter(r => r.household === houses[i])) {
+          const ties = Object.entries(r.relationships).map(([id, regard]) => `${entry.residents.find(person => person.id === id)?.name ?? id}: ${regard}/100 regard`).join('; ');
+          residentCard.append(element('h4', r.name), element('p', `${r.occupation} · ${r.present ? 'at home' : 'away with kin'} · health ${r.health}`), element('p', `“${r.motive}.” Trust in the traveler: ${r.trustPlayer}. ${r.memories.length} remembered events.`), element('p', `Relationships on this day: ${ties}.`), button('Read remembered events', () => { void recall(r.memories, r.name + ' remembers'); }));
+        }
       };
       g.onclick = selectHouse; g.onkeydown = e => { if (['Enter', ' '].includes(e.key)) { e.preventDefault(); selectHouse(); } }; svg.append(g);
     }

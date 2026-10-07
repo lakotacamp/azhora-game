@@ -15,4 +15,6 @@ test('Artifacts are private and retained, queue failures are durable, and genera
  assert.equal(template.Parameters.GenerationEnabled.Default,'false');
  assert.ok(template.Resources.Queue.Properties.VisibilityTimeout>6*template.Resources.Worker.Properties.Timeout);
  assert.equal(template.Resources.QueueConsumer.Properties.BatchSize,1);
+ assert.equal(template.Resources.QueueConsumer.Properties.ScalingConfig.MaximumConcurrency,2);
+ assert.equal(template.Resources.Worker.Properties.ReservedConcurrentExecutions,undefined);
 });

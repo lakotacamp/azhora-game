@@ -1,13 +1,17 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 import { createSettlementWorld, DAY_SECONDS, validateSettlementSnapshot } from '../src/settlements/engine.js';
 import { PILOT_SITES, canonFor, CANON_VERSION, LORE_REVISION } from '../src/settlements/canon.js';
 import { createMemoryArchive, flushChronicles } from '../src/settlements/archive.js';
+import { validatePack } from '../src/settlements/editions.js';
 
-export async function generatePack({ region = 'Feradom', seed = 980, days = 30, sites = PILOT_SITES.map(s => s.id), worldId = `author-${seed}-${days}` } = {}) {
+export async function generatePack({ region = 'Feradom', seed = 980, days = 30, sites = PILOT_SITES.map(s => s.id), worldId } = {}) {
   canonFor(region);
   if (!Number.isSafeInteger(days) || days < 0 || days > 3650) throw new Error('Choose 0–3650 history days.');
+  if (!sites.length || new Set(sites).size !== sites.length) throw new Error('Choose distinct community sites.');
+  worldId ??= `author-${seed}-${days}-${createHash('sha256').update(JSON.stringify([CANON_VERSION, region, sites])).digest('hex').slice(0, 12)}`;
   const selected = sites.map(id => { const s = PILOT_SITES.find(p => p.id === id); if (!s) throw new Error(`Unknown site: ${id}`); return s; });
   const engine = createSettlementWorld({ seed, worldId, sites: selected, startTime: -days * DAY_SECONDS }), archive = createMemoryArchive();
   await flushChronicles(engine, archive);
@@ -37,7 +41,8 @@ async function main() {
   if (args.includes('--dry-run')) return;
   const out = path.resolve(value('--out', 'tests/artifacts/settlements'));
   const pack = args.includes('--resume') ? JSON.parse(await readFile(path.join(out, 'settlement-pack.json'), 'utf8'))
-    : await generatePack({ region, seed, days, sites, worldId: value('--world', `author-${seed}-${days}`) });
+    : await generatePack({ region, seed, days, sites, worldId: value('--world', undefined) });
+  if (!validatePack(pack)) throw new Error('The settlement pack is invalid; preserve it for inspection before resuming.');
   await writePack(pack, out);
   if (args.includes('--generate')) {
     const endpoint = process.env.AZHORA_CHRONICLES_URL, token = process.env.AZHORA_CHRONICLES_TOKEN;

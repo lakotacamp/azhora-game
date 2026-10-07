@@ -442,7 +442,6 @@
         },
         "MemorySize": 512,
         "Timeout": 180,
-        "ReservedConcurrentExecutions": 2,
         "Environment": {
           "Variables": {
             "JOBS_TABLE": {

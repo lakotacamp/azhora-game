@@ -36,8 +36,8 @@ def main():
     key = "releases/" + hashlib.sha256(release).hexdigest() + ".zip"
     s3.put_object(Bucket=bucket, Key=key, Body=release, ServerSideEncryption="AES256", ContentType="application/zip")
     try:
-        cfn.describe_stacks(StackName=args.stack)
-        kind = "UPDATE"
+        status = cfn.describe_stacks(StackName=args.stack)["Stacks"][0]["StackStatus"]
+        kind = "CREATE" if status == "REVIEW_IN_PROGRESS" else "UPDATE"
     except cfn.exceptions.ClientError as error:
         if "does not exist" not in str(error):
             raise

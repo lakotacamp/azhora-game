@@ -21,6 +21,7 @@ export function createMemoryArchive() {
   };
 }
 const order = (a, b) => a.day - b.day || (a.kind === b.kind ? a.id.localeCompare(b.id) : a.kind === 'opening' ? -1 : 1);
+const metadata = row => ({ id: row.id, worldId: row.entry.worldId, day: row.entry.day, kind: row.entry.kind, settlementId: row.entry.settlementId, status: row.generation.status });
 export function createChronicleArchive({ bridge = globalThis.azhoraChronicles, indexedDB = globalThis.indexedDB } = {}) {
   if (bridge) return Object.fromEntries(['put', 'get', 'list', 'update'].map(operation => [operation, async (...args) => {
     const result = await bridge.request(operation, args); if (!result?.ok) throw new Error(result?.reason ?? 'Chronicle storage unavailable.'); return result.value;
@@ -28,42 +29,48 @@ export function createChronicleArchive({ bridge = globalThis.azhoraChronicles, i
   let database;
   const open = () => database ??= new Promise((resolve, reject) => {
     if (!indexedDB) return reject(new Error('Persistent chronicle storage is unavailable.'));
-    const request = indexedDB.open('azhora-settlement-chronicles-v1', 1);
-    request.onupgradeneeded = () => request.result.createObjectStore('pages', { keyPath: 'id' });
-    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    const request = indexedDB.open('azhora-settlement-chronicles-v1', 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      const pages = db.objectStoreNames.contains('pages') ? request.transaction.objectStore('pages') : db.createObjectStore('pages', { keyPath: 'id' });
+      const catalog = db.createObjectStore('catalog', { keyPath: 'id' }); catalog.createIndex('worldId', 'worldId');
+      // Upgrade existing archives in the same transaction; a failed migration leaves v1 intact.
+      const cursor = pages.openCursor(); cursor.onsuccess = () => { const c = cursor.result; if (c) { catalog.put(metadata(c.value)); c.continue(); } };
+    };
+    request.onsuccess = () => { request.result.onversionchange = () => request.result.close(); resolve(request.result); }; request.onerror = () => reject(request.error);
     request.onblocked = () => reject(new Error('Close the older Azhora tab to open its chronicle archive.'));
   });
-  async function transaction(mode, action) {
+  async function transaction(mode, action, stores = ['pages', 'catalog']) {
     const db = await open();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction('pages', mode), store = tx.objectStore('pages'); let result, error;
+      const tx = db.transaction(stores, mode), store = tx.objectStore(stores[0]); let result, error;
       const fail = cause => { error = cause; tx.abort(); };
       tx.oncomplete = () => resolve(result); tx.onerror = tx.onabort = () => reject(error ?? tx.error ?? new Error('Chronicle transaction failed.'));
-      action(store, value => { result = value; }, fail);
+      action(store, value => { result = value; }, fail, tx);
     });
   }
   return {
     async put(entry) {
       if (!validateChronicleEntry(entry)) throw new Error('Invalid chronicle entry.');
-      return transaction('readwrite', (store, done, fail) => {
+      return transaction('readwrite', (store, done, fail, tx) => {
         const request = store.get(entry.id); request.onsuccess = () => {
           if (request.result && request.result.entry.factsHash !== entry.factsHash) return fail(new Error('History diverged; use a new world edition.'));
-          if (!request.result) store.add({ id: entry.id, entry, generation: { status: 'pending' } }); done(true);
+          if (!request.result) { const row = { id: entry.id, entry, generation: { status: 'pending' } }; store.add(row); tx.objectStore('catalog').add(metadata(row)); } done(true);
         };
       });
     },
-    get(id) { return transaction('readonly', (store, done) => { const r = store.get(id); r.onsuccess = () => done(r.result ?? null); }); },
+    get(id) { return transaction('readonly', (store, done) => { const r = store.get(id); r.onsuccess = () => done(r.result ?? null); }, ['pages']); },
     list(worldId, settlementId) { return transaction('readonly', (store, done) => {
-      const result = [], r = store.openCursor(); r.onsuccess = () => {
+      const result = [], r = store.index('worldId').openCursor(worldId); r.onsuccess = () => {
         const c = r.result; if (!c) return done(result.sort(order)); const row = c.value;
-        if (row.entry.worldId === worldId && (!settlementId || row.entry.settlementId === settlementId)) result.push({ id: row.id, day: row.entry.day, kind: row.entry.kind, settlementId: row.entry.settlementId, status: row.generation.status });
+        if (!settlementId || row.settlementId === settlementId) { const { worldId: _, ...item } = row; result.push(item); }
         c.continue();
       };
-    }); },
+    }, ['catalog']); },
     update(id, generation) {
       if (!validGeneration(generation)) return Promise.reject(new Error('Invalid generation update.'));
-      return transaction('readwrite', (store, done, fail) => { const r = store.get(id); r.onsuccess = () => {
-        if (!r.result) return fail(new Error('Persist facts before generated content.')); store.put({ ...r.result, generation }); done(true);
+      return transaction('readwrite', (store, done, fail, tx) => { const r = store.get(id); r.onsuccess = () => {
+        if (!r.result) return fail(new Error('Persist facts before generated content.')); const row = { ...r.result, generation }; store.put(row); tx.objectStore('catalog').put(metadata(row)); done(true);
       }; });
     },
   };

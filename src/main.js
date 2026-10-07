@@ -8543,7 +8543,8 @@ async function init() {
         return runSettlementChecks({host:settlementHost,world,player,inventory,living:{clock:()=>living.clock(),advance:seconds=>living.advance(seconds)},chart:mapFog,read:state,
           prepare:()=>{window.__AZHORA__.review('walk');prepareTesting();stopAutopilot();reviewFrozen=true;reviewTarget=null;mode='playing';combat.revive();combat.finishPractice();},
           mode:()=>mode,setMode:value=>{mode=value;},snapshot:roadSnapshot,
-          reload:()=>{const value=roadSnapshot();resetLivingStory(value);return value;},
+          validate:value=>createRoadCheckpoint({storage:{setItem(){}}}).save(value),
+          restoreRoad:async value=>{const result=sessionCheckpoint.save(value);if(!result.ok)return false;recoveryInfo={testing:true,encounterId:null};const ok=continueRoad(true);reviewFrozen=true;return ok;},
           frame:()=>settlementHost.frame(living.clock(),false),frameErrors:()=>frameErrors.view()});
       },
       async runFastLoadingChecks(){

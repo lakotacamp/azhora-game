@@ -24,10 +24,15 @@ export async function runSettlementChecks(h) {
  assert(validateSettlementSnapshot(saved),'Settlement checkpoint invalid');
  assert(h.host.restore(saved),'Checkpoint restore refused');await h.host.ready();await h.host.flush();
  assert(h.host.status().communities[0].residents[0].name===npc.name,'Resident identity changed on reload');
+ const road=h.snapshot();assert(h.validate(road).ok,'The full road checkpoint rejected its settlement section');
+ const legacy=structuredClone(road);delete legacy.settlements;assert(h.validate(legacy).ok,'A pre-settlement road checkpoint no longer loads');
+ const damaged=structuredClone(road);damaged.settlements.settlements[0].stocks.barley=-1;assert(!h.validate(damaged).ok,'Invalid settlement stock passed road validation');
+ assert(await h.restoreRoad(road),'The actual Continue route rejected the settlement checkpoint');await h.host.ready();await h.host.flush();
+ assert(h.host.status().communities[0].residents[0].id===npc.id,'Continue lost the persistent resident');
  const oldTime=h.living.clock();h.setMode('pause');await frames(8);assert(h.living.clock()===oldTime,'Paused game advanced settlement clock');
  h.setMode('playing');h.living.advance(1440);for(let i=0;i<61;i++)h.frame();await h.host.flush();
  assert((await h.host.archive.list(h.host.snapshot().worldId)).filter(p=>p.kind==='daily').length===3,'Unvisited communities missed a day');
  h.host.restore(saved);await h.host.ready();await h.host.flush();assert(h.host.snapshot().worldId!==saved.worldId,'Rewound published history did not branch');
  h.host.book.open(site.id);await frames(8);
- return {ok:true,settlementChecks:13,sites:first.sites.map(({id,x,z})=>({id,x,z})),residents:36,errors:h.frameErrors()};
+ return {ok:true,settlementChecks:18,sites:first.sites.map(({id,x,z})=>({id,x,z})),residents:36,errors:h.frameErrors()};
 }
