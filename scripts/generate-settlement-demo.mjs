@@ -6,7 +6,7 @@ import { writePack } from './generate-settlements.mjs';
 
 // A reproducible demonstration: the traveler brings a finite satchel and helps
 // through the same request/transaction path as the game. No facts are rewritten.
-const days = 30, seed = 980, worldId = 'feradom-demo-20261006-v1';
+const days = 30, seed = 980, worldId = 'feradom-demo-20261006-v2';
 const core = createSettlementWorld({ seed, worldId, startTime: -days * DAY_SECONDS });
 const archive = createMemoryArchive(), inventory = createInventoryState();
 inventory.add('barley', 48); inventory.add('oak-plank', 12);

@@ -55,7 +55,7 @@ const service = createChronicleService({ store, enabled: () => process.env.GENER
     return JSON.parse(text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, ''));
   } },
   illustrator: { async generate(prompt, seed) {
-    const result = await imageModel.send(new InvokeModelCommand({ modelId: 'stability.stable-image-core-v1:1', contentType: 'application/json', accept: 'application/json', body: JSON.stringify({ prompt, seed, aspect_ratio: '3:2', output_format: 'png' }) }));
+    const result = await imageModel.send(new InvokeModelCommand({ modelId: 'stability.stable-image-core-v1:1', contentType: 'application/json', accept: 'application/json', body: JSON.stringify({ prompt, seed, aspect_ratio: '3:2', output_format: 'png', negative_prompt: 'text, lettering, writing, inscriptions, typography, captions, signatures, watermarks, hats, caps, hoods, headwear, modern clothing, photographs' }) }));
     const value = JSON.parse(new TextDecoder().decode(result.body)); if (value.finish_reasons?.some(Boolean)) throw new Error('Image generation was filtered.'); return Buffer.from(value.images?.[0] ?? '', 'base64');
   } },
   log: value => console.log(JSON.stringify({ ...value, service: 'azhora-chronicles' })),
