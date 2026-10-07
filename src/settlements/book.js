@@ -86,10 +86,13 @@ export function createChronicleBook({ root, communities, archive, worldId, onClo
     const foot = element('footer', undefined, 'annals-pagination');
     const previous = button('← Earlier account', () => { pageIndex--; void render(); }); previous.disabled = pageIndex <= 0;
     const next = button('Later account →', () => { pageIndex++; void render(); }); next.disabled = pageIndex >= rows.length - 1;
-    foot.append(previous, element('span', `Folio ${pageIndex + 1} of ${rows.length} · ${entry.date}`), next); shell.append(foot);
+    const choose = element('select'); choose.setAttribute('aria-label', 'Choose a dated account');
+    for (const [i, row] of rows.entries()) { const option = element('option', `${i + 1}. ${new Date(Date.UTC(980, 3, 1) + row.day * 86400000).toISOString().slice(0, 10)}${row.kind === 'opening' ? ' · opening' : ''}`); option.value = String(i); choose.append(option); }
+    choose.value = String(pageIndex); choose.onchange = () => { pageIndex = Number(choose.value); void render(); };
+    foot.append(previous, element('span', `Folio ${pageIndex + 1} of ${rows.length} · ${entry.date}`), choose, next); shell.append(foot);
   }
   function hide() { shell.hidden = true; revision++; onClose(); returnFocus?.focus?.(); }
   function open(id) { returnFocus = document.activeElement; selected = id ?? selected; pageIndex = -1; shell.hidden = false; void render().then(() => shell.querySelector('button')?.focus()); }
-  shell.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hide(); } if (e.key === 'Tab') { const buttons = [...shell.querySelectorAll('button:not(:disabled),[tabindex="0"]')]; const first = buttons[0], last = buttons.at(-1); if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } } });
+  shell.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hide(); } if (e.key === 'Tab') { const buttons = [...shell.querySelectorAll('button:not(:disabled),select,[tabindex="0"]')]; const first = buttons[0], last = buttons.at(-1); if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } } });
   return { open, close: hide, refresh: render, get isOpen() { return !shell.hidden; }, destroy() { revision++; shell.remove(); } };
 }
